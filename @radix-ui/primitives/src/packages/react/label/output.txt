@@ -1,0 +1,239 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/README.md</source>
+<document_content>
+# `react-label`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-label
+# or
+$ npm install @radix-ui/react-label
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/utilities/label).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-label",
+  "version": "2.1.3-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/react-primitive": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "2.1.2"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  Label,
+  //
+  Root,
+} from './label';
+export type { LabelProps } from './label';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/src/label.stories.module.css</source>
+<document_content>
+.root {
+  /* ensures it can receive vertical margins */
+  display: inline-block;
+  /* better default alignment */
+  vertical-align: middle;
+  /* mimics default `label` tag (as we render a `span`) */
+  cursor: default;
+  display: inline-block;
+  border: 1px solid var(--gray-5);
+  padding: 10px;
+}
+
+.control {
+  display: inline-flex;
+  border: 1px solid var(--gray-5);
+  padding: 10px;
+  vertical-align: middle;
+  margin: 0 10px;
+
+  &:hover {
+    background-color: var(--red-9);
+  }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/src/label.stories.tsx</source>
+<document_content>
+import { Label } from '@radix-ui/react-label';
+import styles from './label.stories.module.css';
+
+export default { title: 'Components/Label' };
+
+export const Styled = () => <Label className={styles.root}>Label</Label>;
+
+export const WithControl = () => {
+  return (
+    <>
+      <h1>Wrapping control</h1>
+      <Label>
+        <Control className={styles.control} /> Label
+      </Label>
+
+      <h1>Referencing control</h1>
+      <Control id="control" className={styles.control} />
+      <Label htmlFor="control">Label</Label>
+    </>
+  );
+};
+
+export const WithInputNumber = (_props: any) => {
+  return (
+    <Label>
+      <span>Name:</span>
+      <input type="number" />
+    </Label>
+  );
+};
+
+const Control = (props: any) => {
+  return (
+    <button className={styles.control} {...props} onClick={() => window.alert('clicked')}>
+      Control
+    </button>
+  );
+};
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/label/src/label.tsx</source>
+<document_content>
+import * as React from 'react';
+import { Primitive } from '@radix-ui/react-primitive';
+
+/* -------------------------------------------------------------------------------------------------
+ * Label
+ * -----------------------------------------------------------------------------------------------*/
+
+const NAME = 'Label';
+
+type LabelElement = React.ElementRef<typeof Primitive.label>;
+type PrimitiveLabelProps = React.ComponentPropsWithoutRef<typeof Primitive.label>;
+interface LabelProps extends PrimitiveLabelProps {}
+
+const Label = React.forwardRef<LabelElement, LabelProps>((props, forwardedRef) => {
+  return (
+    <Primitive.label
+      {...props}
+      ref={forwardedRef}
+      onMouseDown={(event) => {
+        // only prevent text selection if clicking inside the label itself
+        const target = event.target as HTMLElement;
+        if (target.closest('button, input, select, textarea')) return;
+
+        props.onMouseDown?.(event);
+        // prevent text selection when double clicking label
+        if (!event.defaultPrevented && event.detail > 1) event.preventDefault();
+      }}
+    />
+  );
+});
+
+Label.displayName = NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+const Root = Label;
+
+export {
+  Label,
+  //
+  Root,
+};
+export type { LabelProps };
+
+</document_content>
+</document>
+</documents>

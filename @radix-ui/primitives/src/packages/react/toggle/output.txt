@@ -1,0 +1,436 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/README.md</source>
+<document_content>
+# `react-toggle`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-toggle
+# or
+$ npm install @radix-ui/react-toggle
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/toggle).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-toggle",
+  "version": "1.1.3-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.2"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  Toggle,
+  //
+  Root,
+} from './toggle';
+export type { ToggleProps } from './toggle';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/src/toggle.stories.module.css</source>
+<document_content>
+.root {
+  padding: 6px;
+  line-height: 1;
+  border: none;
+  font-family: sans-serif;
+  font-weight: bold;
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-black);
+  }
+
+  &[data-disabled] {
+    opacity: 0.5;
+  }
+
+  &[data-state='off'] {
+    background-color: var(--color-red);
+    color: var(--color-white);
+  }
+
+  &[data-state='on'] {
+    background-color: var(--color-green);
+    color: var(--color-white);
+  }
+}
+
+.rootAttr {
+  background-color: rgba(0, 0, 255, 0.3);
+  border: 2px solid blue;
+  padding: 10px;
+
+  &:disabled {
+    opacity: 0.5;
+  }
+  &[data-disabled] {
+    border-style: dashed;
+  }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/src/toggle.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import { Toggle } from '@radix-ui/react-toggle';
+import styles from './toggle.stories.module.css';
+
+export default { title: 'Components/Toggle' };
+
+export const Styled = () => <Toggle className={styles.root}>Toggle</Toggle>;
+
+export const Controlled = () => {
+  const [pressed, setPressed] = React.useState(true);
+
+  return (
+    <Toggle className={styles.root} pressed={pressed} onPressedChange={setPressed}>
+      {pressed ? 'On' : 'Off'}
+    </Toggle>
+  );
+};
+
+export const Chromatic = () => (
+  <>
+    <h1>Uncontrolled</h1>
+    <h2>Off</h2>
+    <Toggle className={styles.root}>Toggle</Toggle>
+
+    <h2>On</h2>
+    <Toggle className={styles.root} defaultPressed>
+      Toggle
+    </Toggle>
+
+    <h1>Controlled</h1>
+    <h2>Off</h2>
+    <Toggle className={styles.root} pressed={false}>
+      Toggle
+    </Toggle>
+
+    <h2>On</h2>
+    <Toggle className={styles.root} pressed>
+      Toggle
+    </Toggle>
+
+    <h1>Disabled</h1>
+    <Toggle className={styles.root} disabled>
+      Toggle
+    </Toggle>
+
+    <h1>State attributes</h1>
+    <Toggle className={styles.rootAttr}>Toggle</Toggle>
+    <Toggle className={styles.rootAttr} disabled>
+      Toggle
+    </Toggle>
+  </>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/src/toggle.test.tsx</source>
+<document_content>
+import type { RenderResult } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
+import * as Toggle from '@radix-ui/react-toggle';
+import { axe } from 'vitest-axe';
+
+const TEXT_CHILD = 'Like';
+
+describe('given a Toggle with text', () => {
+  let rendered: RenderResult;
+
+  beforeEach(() => {
+    rendered = render(<Toggle.Root>{TEXT_CHILD}</Toggle.Root>);
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+
+  it('should render with attributes as false/off by default', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(button).toHaveAttribute('data-state', 'off');
+  });
+
+  it('Click event should change pressed attributes to true/on', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    fireEvent(
+      button,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button).toHaveAttribute('data-state', 'on');
+  });
+});
+
+describe('given a Toggle with text and defaultPressed="true"', () => {
+  let rendered: RenderResult;
+
+  beforeEach(() => {
+    rendered = render(<Toggle.Root defaultPressed>{TEXT_CHILD}</Toggle.Root>);
+  });
+
+  it('should render with attributes true/on by default', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button).toHaveAttribute('data-state', 'on');
+  });
+
+  it('Click event should change attributes back to off/false', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    fireEvent(
+      button,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(button).toHaveAttribute('data-state', 'off');
+  });
+});
+
+describe('given a Toggle with text and disabled="true"', () => {
+  let rendered: RenderResult;
+
+  beforeEach(() => {
+    rendered = render(<Toggle.Root disabled>{TEXT_CHILD}</Toggle.Root>);
+  });
+
+  it('on click the attributes do not change', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(button).toHaveAttribute('data-state', 'off');
+    expect(button).toHaveAttribute('disabled', '');
+
+    fireEvent(
+      button,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(button).toHaveAttribute('data-state', 'off');
+  });
+});
+
+describe('given a controlled Toggle (with pressed and onPressedChange)', () => {
+  let rendered: RenderResult;
+  const onPressedChangeMock = vi.fn();
+
+  beforeEach(() => {
+    rendered = render(
+      <Toggle.Root pressed onPressedChange={onPressedChangeMock}>
+        {TEXT_CHILD}
+      </Toggle.Root>
+    );
+  });
+
+  it('Click event should keep the same attributes, and pass the new state to onPressedChange', () => {
+    const button = rendered.getByRole('button', { name: TEXT_CHILD });
+
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button).toHaveAttribute('data-state', 'on');
+
+    fireEvent(
+      button,
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    expect(onPressedChangeMock).toHaveBeenCalledTimes(1);
+    expect(onPressedChangeMock).toHaveBeenCalledWith(false);
+
+    // The attributes do not change, they keep the same
+    // because it's a controlled component.
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(button).toHaveAttribute('data-state', 'on');
+  });
+});
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toggle/src/toggle.tsx</source>
+<document_content>
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { Primitive } from '@radix-ui/react-primitive';
+
+/* -------------------------------------------------------------------------------------------------
+ * Toggle
+ * -----------------------------------------------------------------------------------------------*/
+
+const NAME = 'Toggle';
+
+type ToggleElement = React.ElementRef<typeof Primitive.button>;
+type PrimitiveButtonProps = React.ComponentPropsWithoutRef<typeof Primitive.button>;
+interface ToggleProps extends PrimitiveButtonProps {
+  /**
+   * The controlled state of the toggle.
+   */
+  pressed?: boolean;
+  /**
+   * The state of the toggle when initially rendered. Use `defaultPressed`
+   * if you do not need to control the state of the toggle.
+   * @defaultValue false
+   */
+  defaultPressed?: boolean;
+  /**
+   * The callback that fires when the state of the toggle changes.
+   */
+  onPressedChange?(pressed: boolean): void;
+}
+
+const Toggle = React.forwardRef<ToggleElement, ToggleProps>((props, forwardedRef) => {
+  const { pressed: pressedProp, defaultPressed = false, onPressedChange, ...buttonProps } = props;
+
+  const [pressed = false, setPressed] = useControllableState({
+    prop: pressedProp,
+    onChange: onPressedChange,
+    defaultProp: defaultPressed,
+  });
+
+  return (
+    <Primitive.button
+      type="button"
+      aria-pressed={pressed}
+      data-state={pressed ? 'on' : 'off'}
+      data-disabled={props.disabled ? '' : undefined}
+      {...buttonProps}
+      ref={forwardedRef}
+      onClick={composeEventHandlers(props.onClick, () => {
+        if (!props.disabled) {
+          setPressed(!pressed);
+        }
+      })}
+    />
+  );
+});
+
+Toggle.displayName = NAME;
+
+/* ---------------------------------------------------------------------------------------------- */
+
+const Root = Toggle;
+
+export {
+  Toggle,
+  //
+  Root,
+};
+export type { ToggleProps };
+
+</document_content>
+</document>
+</documents>

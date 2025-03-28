@@ -1,0 +1,101 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/core/number/README.md</source>
+<document_content>
+# `number`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/number
+# or
+$ npm install @radix-ui/number
+```
+
+## Usage
+
+This is an internal utility, not intended for public usage.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/core/number/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/core/number/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/number",
+  "version": "1.1.1-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.3"
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.0"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/core/number/src/index.ts</source>
+<document_content>
+export { clamp } from './number';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/core/number/src/number.ts</source>
+<document_content>
+function clamp(value: number, [min, max]: [number, number]): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+export { clamp };
+
+</document_content>
+</document>
+</documents>

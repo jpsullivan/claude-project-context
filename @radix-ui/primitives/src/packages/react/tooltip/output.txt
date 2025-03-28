@@ -1,0 +1,2231 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/README.md</source>
+<document_content>
+# `react-tooltip`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-tooltip
+# or
+$ npm install @radix-ui/react-tooltip
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/tooltip).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-tooltip",
+  "version": "1.2.0-rc.1",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-compose-refs": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-dismissable-layer": "workspace:*",
+    "@radix-ui/react-id": "workspace:*",
+    "@radix-ui/react-popper": "workspace:*",
+    "@radix-ui/react-portal": "workspace:*",
+    "@radix-ui/react-presence": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-slot": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*",
+    "@radix-ui/react-visually-hidden": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.8"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createTooltipScope,
+  //
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipPortal,
+  TooltipContent,
+  TooltipArrow,
+  //
+  Provider,
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Arrow,
+} from './tooltip';
+export type {
+  TooltipProps,
+  TooltipProviderProps,
+  TooltipTriggerProps,
+  TooltipPortalProps,
+  TooltipContentProps,
+  TooltipArrowProps,
+} from './tooltip';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/src/tooltip.stories.module.css</source>
+<document_content>
+.positionButton {
+  margin: 5px;
+  border: 1px solid black;
+  background: transparent;
+}
+
+.trigger {
+}
+
+.content {
+  transform-origin: var(--radix-tooltip-content-transform-origin);
+  /* ensures content isn't selectable */
+  /* this is a detterent to people putting interactive content inside a `Tooltip.Root` */
+  user-select: none;
+  /* ---- */
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-size: 12px;
+  border-radius: 5px;
+  padding: 10px;
+  max-width: 300px;
+}
+
+.arrow {
+  fill: black;
+}
+
+.animatedContent {
+  &[data-state='delayed-open'] {
+    animation: tooltip-scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  &[data-state='instant-open'] {
+    animation: tooltip-fadeIn 0.2s ease-out;
+  }
+  &[data-state='closed'] {
+    animation: tooltip-fadeOut 0.2s ease-out;
+  }
+}
+
+.grid {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 50px);
+  column-gap: 150px;
+  row-gap: 100px;
+  padding: 100px;
+  border: 1px solid black;
+}
+
+.chromaticTrigger {
+  width: 30px;
+  height: 30px;
+  background-color: tomato;
+  border: 1px solid rgb(0 0 0 / 0.3);
+}
+
+.chromaticContent {
+  display: grid;
+  place-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: royalblue;
+  color: white;
+  font-size: 10px;
+  border: 1px solid rgb(0 0 0 / 0.3);
+}
+
+.chromaticArrow {
+  fill: black;
+}
+
+@keyframes tooltip-scaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes tooltip-fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes tooltip-fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/src/tooltip.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import { SIDE_OPTIONS, ALIGN_OPTIONS } from '@radix-ui/react-popper';
+import * as Dialog from '@radix-ui/react-dialog';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import styles from './tooltip.stories.module.css';
+
+export default { title: 'Components/Tooltip' };
+
+export const Styled = () => (
+  <Tooltip.Provider>
+    <Tooltip.Root>
+      <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content className={styles.content} sideOffset={5}>
+          Nicely done!
+          <Tooltip.Arrow className={styles.arrow} offset={10} />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  </Tooltip.Provider>
+);
+
+export const Controlled = () => {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <Tooltip.Provider>
+      <Tooltip.Root open={open} onOpenChange={setOpen}>
+        <Tooltip.Trigger style={{ margin: 100 }}>
+          I'm controlled, look I'm {open ? 'open' : 'closed'}
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+};
+
+export const CustomDurations = () => (
+  <Tooltip.Provider>
+    <h1>Delay duration</h1>
+    <h2>Default (700ms)</h2>
+
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
+
+    <h2>Custom (0ms = instant open)</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider delayDuration={0}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+
+    <h2>Custom (2s)</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider delayDuration={2000}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+
+    <h1>Skip delay duration</h1>
+    <h2>Default (300ms to move from one to another tooltip)</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
+
+    <h2>Custom (0ms to move from one to another tooltip = never skip)</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider skipDelayDuration={0}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+
+    <h2>Custom (5s to move from one to another tooltip)</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider skipDelayDuration={5000}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+  </Tooltip.Provider>
+);
+
+export const CustomContent = () => (
+  <Tooltip.Provider>
+    <div style={{ display: 'flex', gap: 20, padding: 100 }}>
+      <Tooltip.Root>
+        <Tooltip.Trigger>Heading</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <h1>Some heading</h1>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Paragraph</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <p>Some paragraph</p>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>List</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <ul>
+              <li>One</li>
+              <li>Two</li>
+              <li>Three</li>
+            </ul>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Article</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <article>
+              Lorem ipsum dolor sit amet consectetur, adipisicing elit. Harum, quae qui. Magnam
+              delectus ex totam repellat amet distinctio unde, porro architecto voluptatibus nemo et
+              nisi, voluptatem eligendi earum autem fugit.
+            </article>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Figure</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <figure style={{ margin: 0 }}>
+              <img
+                src="https://pbs.twimg.com/profile_images/864164353771229187/Catw6Nmh_400x400.jpg"
+                alt=""
+                width={100}
+              />
+              <figcaption>Colm Tuite</figcaption>
+            </figure>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Time</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            {/* @ts-ignore */}
+            <time datetime="2017-10-31T11:21:00+02:00">Tuesday, 31 October 2017</time>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Link</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            View in <a href="https://workos.com">WorkOS</a>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Form</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <form>
+              <label htmlFor="fname">First name:</label>
+              <br />
+              <input type="text" id="fname" name="fname" />
+              <br />
+              <label htmlFor="lname">Last name:</label>
+              <br />
+              <input type="text" id="lname" name="lname" />
+            </form>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <Tooltip.Root>
+        <Tooltip.Trigger>Mini layout</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            <p
+              style={{
+                margin: 0,
+                textAlign: 'center',
+                fontFamily: 'apple-system, BlinkMacSystemFont, helvetica, arial, sans-serif',
+                fontSize: 14,
+              }}
+            >
+              Start video call
+              <span style={{ display: 'block', color: '#999' }}>
+                press{' '}
+                <kbd
+                  style={{
+                    fontFamily: 'apple-system, BlinkMacSystemFont, helvetica, arial, sans-serif',
+                    fontWeight: 'bold',
+                    color: 'white',
+                  }}
+                  aria-label="c key"
+                >
+                  c
+                </kbd>
+              </span>
+            </p>
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
+  </Tooltip.Provider>
+);
+
+export const Positions = () => (
+  <Tooltip.Provider>
+    <div
+      style={{
+        display: 'flex',
+        width: '100vw',
+        height: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gridTemplateRows: 'repeat(5, 50px)',
+        }}
+      >
+        <SimpleTooltip label="Top start" side="top" align="start">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '2', gridRow: '1' }}
+          >
+            Top start
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Top center" side="top" align="center">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '3', gridRow: '1' }}
+          >
+            Top center
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Top end" side="top" align="end">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '4', gridRow: '1' }}
+          >
+            Top end
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+
+        <SimpleTooltip label="Right start" side="right" align="start">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '5', gridRow: '2' }}
+            tabIndex={0}
+          >
+            Right start
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Right center" side="right" align="center">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '5', gridRow: '3' }}
+            tabIndex={0}
+          >
+            Right center
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Right end" side="right" align="end">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '5', gridRow: '4' }}
+            tabIndex={0}
+          >
+            Right end
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+
+        <SimpleTooltip label="Bottom end" side="bottom" align="end">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '4', gridRow: '5' }}
+          >
+            Bottom end
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Bottom center" side="bottom" align="center">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '3', gridRow: '5' }}
+          >
+            Bottom center
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Bottom start" side="bottom" align="start">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '2', gridRow: '5' }}
+          >
+            Bottom start
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+
+        <SimpleTooltip label="Left end" side="left" align="end">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '1', gridRow: '4' }}
+          >
+            Left end
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Left center" side="left" align="center">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '1', gridRow: '3' }}
+          >
+            Left center
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+        <SimpleTooltip label="Left start" side="left" align="start">
+          <Tooltip.Trigger
+            className={styles.positionButton}
+            style={{ gridColumn: '1', gridRow: '2' }}
+          >
+            Left start
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+      </div>
+    </div>
+  </Tooltip.Provider>
+);
+
+export const AriaLabel = () => (
+  <Tooltip.Provider>
+    <p>The first button will display AND enunciate the label.</p>
+    <p>The second button will display the label, but enunciate the aria label.</p>
+    <div style={{ display: 'flex' }}>
+      <SimpleTooltip label="Notifications">
+        <Tooltip.Trigger style={{ margin: 5 }}>
+          <span aria-hidden>🔔(3)</span>
+        </Tooltip.Trigger>
+      </SimpleTooltip>
+
+      <SimpleTooltip label="Notifications" aria-label="3 notifications">
+        <Tooltip.Trigger style={{ margin: 5 }}>
+          <span aria-hidden>🔔(3)</span>
+        </Tooltip.Trigger>
+      </SimpleTooltip>
+    </div>
+  </Tooltip.Provider>
+);
+
+export const WithText = () => (
+  <Tooltip.Provider>
+    <p>
+      Hello this is a test with{' '}
+      <SimpleTooltip label="This is a tooltip">
+        <Tooltip.Trigger asChild>
+          <a href="https://workos.com">Tooltip.Root</a>
+        </Tooltip.Trigger>
+      </SimpleTooltip>{' '}
+      inside a Text Component{' '}
+      <SimpleTooltip label="This is a tooltip" side="top">
+        <Tooltip.Trigger asChild>
+          <a href="https://workos.com">Tooltip.Root</a>
+        </Tooltip.Trigger>
+      </SimpleTooltip>{' '}
+      some more text{' '}
+      <SimpleTooltip label="This is a tooltip" side="right" align="center">
+        <Tooltip.Trigger asChild>
+          <a href="https://workos.com">Tooltip.Root</a>
+        </Tooltip.Trigger>
+      </SimpleTooltip>{' '}
+    </p>
+  </Tooltip.Provider>
+);
+
+export const WithExternalRef = () => {
+  const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  React.useEffect(() => {
+    if (buttonRef.current) {
+      buttonRef.current.style.boxShadow = '0 0 0 2px red';
+    }
+  });
+
+  return (
+    <Tooltip.Provider>
+      <SimpleTooltip label="Save document" side="bottom" align="end">
+        <Tooltip.Trigger ref={buttonRef} type="button" style={{ margin: 100 }}>
+          Save
+        </Tooltip.Trigger>
+      </SimpleTooltip>
+    </Tooltip.Provider>
+  );
+};
+
+export const Unmount = () => {
+  const [isMounted, setIsMounted] = React.useState(true);
+  return (
+    <Tooltip.Provider>
+      <ul>
+        <li>Focus the first button (tooltip 1 shows)</li>
+        <li>Focus the second button (tooltip 2 shows)</li>
+        <li>Press escape (second button unmounts)</li>
+        <li>Focus the first button (tooltip 1 should still show)</li>
+      </ul>
+      <SimpleTooltip label="tooltip 1">
+        <Tooltip.Trigger style={{ alignSelf: 'flex-start', margin: '0vmin' }}>
+          Tool 1
+        </Tooltip.Trigger>
+      </SimpleTooltip>
+
+      {isMounted && (
+        <SimpleTooltip label="tooltip 2">
+          <Tooltip.Trigger
+            style={{ alignSelf: 'flex-start', margin: '0vmin' }}
+            onKeyDown={(event) => event.key === 'Escape' && setIsMounted(false)}
+          >
+            Tool 2
+          </Tooltip.Trigger>
+        </SimpleTooltip>
+      )}
+    </Tooltip.Provider>
+  );
+};
+
+export const Animated = () => {
+  const contentClass = [styles.content, styles.animatedContent].join(' ');
+  return (
+    <Tooltip.Provider>
+      <div style={{ padding: 100 }}>
+        <SimpleTooltip className={contentClass} label="Hello world 1">
+          <Tooltip.Trigger style={{ marginRight: 10 }}>Hello 1</Tooltip.Trigger>
+        </SimpleTooltip>
+
+        <SimpleTooltip className={contentClass} label="Hello world 2" side="top">
+          <Tooltip.Trigger>Hello 2</Tooltip.Trigger>
+        </SimpleTooltip>
+      </div>
+    </Tooltip.Provider>
+  );
+};
+
+export const SlottableContent = () => (
+  <Tooltip.Provider>
+    <Tooltip.Root>
+      <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+      <Tooltip.Portal>
+        <Tooltip.Content asChild sideOffset={5}>
+          <div className={styles.content}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </div>
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  </Tooltip.Provider>
+);
+
+export const WithinDialog = () => (
+  <Tooltip.Provider>
+    <Dialog.Root>
+      <Dialog.Trigger>Open dialog</Dialog.Trigger>
+      <Dialog.Content>
+        <Dialog.Title>Dialog title</Dialog.Title>
+        <Dialog.Description>Dialog description</Dialog.Description>
+        <Dialog.Close>Close dialog</Dialog.Close>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Dialog.Content>
+    </Dialog.Root>
+  </Tooltip.Provider>
+);
+
+export const KeepOpenOnActivation = () => {
+  const triggerRef = React.useRef(null);
+
+  return (
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger
+          ref={triggerRef}
+          className={styles.trigger}
+          onClick={(event) => event.preventDefault()}
+        >
+          Hover or Focus me
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content
+            className={styles.content}
+            sideOffset={5}
+            onPointerDownOutside={(event) => {
+              if (event.target === triggerRef.current) event.preventDefault();
+            }}
+          >
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
+  );
+};
+
+export const WithinScrollable = () => (
+  <Tooltip.Provider>
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        height: 500,
+        width: 300,
+        border: '1px solid black',
+        overflow: 'auto',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 600 }}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </div>
+    </div>
+    <div
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150vh' }}
+    >
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Nicely done!
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
+  </Tooltip.Provider>
+);
+
+export const DisableHoverableContent = () => (
+  <>
+    <h1>Hoverable content (Default)</h1>
+    <p>Content remains open while moving pointer to it</p>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider skipDelayDuration={1000}>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+
+    <h1>Disable hoverable content</h1>
+    <p>Tooltip closes when pointer leaves the trigger</p>
+    <h2>Inherited from provider</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider delayDuration={0} disableHoverableContent>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Hover me</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+    <h2>Inherited value overridden by prop on tooltip</h2>
+    <div style={{ display: 'flex', gap: 50 }}>
+      <Tooltip.Provider delayDuration={0} disableHoverableContent>
+        <Tooltip.Root>
+          <Tooltip.Trigger className={styles.trigger}>Disabled hoverable content</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+        <Tooltip.Root disableHoverableContent={false}>
+          <Tooltip.Trigger className={styles.trigger}>Hoverable content</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    </div>
+  </>
+);
+
+// change order slightly for more pleasing visual
+const SIDES = [...SIDE_OPTIONS.filter((side) => side !== 'bottom'), 'bottom' as const];
+
+export const Chromatic = () => (
+  <Tooltip.Provider>
+    <div style={{ padding: 200 }}>
+      <h1>Uncontrolled</h1>
+      <h2>Closed</h2>
+      <Tooltip.Root>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <h2 style={{ marginBottom: 60 }}>Open</h2>
+      <Tooltip.Root defaultOpen>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <h2 style={{ marginTop: 60, marginBottom: 60 }}>Open with reordered parts</h2>
+      <Tooltip.Root defaultOpen>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+      </Tooltip.Root>
+
+      <h1 style={{ marginTop: 100 }}>Controlled</h1>
+      <h2>Closed</h2>
+      <Tooltip.Root open={false}>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <h2 style={{ marginBottom: 60 }}>Open</h2>
+      <Tooltip.Root open>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <h2 style={{ marginTop: 60, marginBottom: 60 }}>Open with reordered parts</h2>
+      <Tooltip.Root open>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+        <Tooltip.Trigger className={styles.trigger}>open</Tooltip.Trigger>
+      </Tooltip.Root>
+
+      <h1 style={{ marginTop: 100 }}>Positioning</h1>
+      <h2>No collisions</h2>
+      <h3>Side & Align</h3>
+      <div className={styles.grid}>
+        {SIDES.map((side) =>
+          ALIGN_OPTIONS.map((align) => (
+            <Tooltip.Root key={`${side}-${align}`} open>
+              <Tooltip.Trigger className={styles.chromaticTrigger} />
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className={styles.chromaticContent}
+                  side={side}
+                  align={align}
+                  avoidCollisions={false}
+                >
+                  <p style={{ textAlign: 'center' }}>
+                    {side}
+                    <br />
+                    {align}
+                  </p>
+                  <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          ))
+        )}
+      </div>
+
+      <h3>Side offset</h3>
+      <h4>Positive</h4>
+      <div className={styles.grid}>
+        {SIDES.map((side) =>
+          ALIGN_OPTIONS.map((align) => (
+            <Tooltip.Root key={`${side}-${align}`} open>
+              <Tooltip.Trigger className={styles.chromaticTrigger} />
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className={styles.chromaticContent}
+                  side={side}
+                  sideOffset={5}
+                  align={align}
+                  avoidCollisions={false}
+                >
+                  <p style={{ textAlign: 'center' }}>
+                    {side}
+                    <br />
+                    {align}
+                  </p>
+                  <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          ))
+        )}
+      </div>
+      <h4>Negative</h4>
+      <div className={styles.grid}>
+        {SIDES.map((side) =>
+          ALIGN_OPTIONS.map((align) => (
+            <Tooltip.Root key={`${side}-${align}`} open>
+              <Tooltip.Trigger className={styles.chromaticTrigger} />
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className={styles.chromaticContent}
+                  side={side}
+                  sideOffset={-10}
+                  align={align}
+                  avoidCollisions={false}
+                >
+                  <p style={{ textAlign: 'center' }}>
+                    {side}
+                    <br />
+                    {align}
+                  </p>
+                  <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          ))
+        )}
+      </div>
+
+      <h3>Align offset</h3>
+      <h4>Positive</h4>
+      <div className={styles.grid}>
+        {SIDES.map((side) =>
+          ALIGN_OPTIONS.map((align) => (
+            <Tooltip.Root key={`${side}-${align}`} open>
+              <Tooltip.Trigger className={styles.chromaticTrigger} />
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className={styles.chromaticContent}
+                  side={side}
+                  align={align}
+                  alignOffset={20}
+                  avoidCollisions={false}
+                >
+                  <p style={{ textAlign: 'center' }}>
+                    {side}
+                    <br />
+                    {align}
+                  </p>
+                  <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          ))
+        )}
+      </div>
+      <h4>Negative</h4>
+      <div className={styles.grid}>
+        {SIDES.map((side) =>
+          ALIGN_OPTIONS.map((align) => (
+            <Tooltip.Root key={`${side}-${align}`} open>
+              <Tooltip.Trigger className={styles.chromaticTrigger} />
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  className={styles.chromaticContent}
+                  side={side}
+                  align={align}
+                  alignOffset={-10}
+                  avoidCollisions={false}
+                >
+                  <p style={{ textAlign: 'center' }}>
+                    {side}
+                    <br />
+                    {align}
+                  </p>
+                  <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          ))
+        )}
+      </div>
+
+      <h2>Collisions</h2>
+      <p>See instances on the periphery of the page.</p>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <Tooltip.Root key={`${side}-${align}`} open>
+            <Tooltip.Trigger
+              className={styles.chromaticTrigger}
+              style={{
+                position: 'absolute',
+                [side]: 10,
+                ...((side === 'right' || side === 'left') &&
+                  (align === 'start'
+                    ? { bottom: 10 }
+                    : align === 'center'
+                      ? { top: 'calc(50% - 15px)' }
+                      : { top: 10 })),
+                ...((side === 'top' || side === 'bottom') &&
+                  (align === 'start'
+                    ? { right: 10 }
+                    : align === 'center'
+                      ? { left: 'calc(50% - 15px)' }
+                      : { left: 10 })),
+              }}
+            />
+            <Tooltip.Portal>
+              <Tooltip.Content className={styles.chromaticContent} side={side} align={align}>
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <Tooltip.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        ))
+      )}
+
+      <h2 style={{ marginTop: 50, marginBottom: 60 }}>Relative parent (non-portalled)</h2>
+      <div style={{ position: 'relative' }}>
+        <Tooltip.Provider>
+          <Tooltip.Root open>
+            <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+            <Tooltip.Content className={styles.content} sideOffset={5}>
+              Nicely done!
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </Tooltip.Content>
+          </Tooltip.Root>
+        </Tooltip.Provider>
+      </div>
+
+      <h1 style={{ marginTop: 100, marginBottom: 60 }}>With slotted trigger</h1>
+      <Tooltip.Root open>
+        <Tooltip.Trigger asChild>
+          <button className={styles.trigger}>open</button>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content className={styles.content} sideOffset={5}>
+            Some content
+            <Tooltip.Arrow className={styles.arrow} width={20} height={10} offset={10} />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+
+      <h1 style={{ marginTop: 100, marginBottom: 60 }}>With slotted content</h1>
+      <Tooltip.Root open>
+        <Tooltip.Trigger className={styles.trigger}>Hover or Focus me</Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content asChild sideOffset={5}>
+            <div className={styles.content}>
+              Some content
+              <Tooltip.Arrow className={styles.arrow} offset={10} />
+            </div>
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </div>
+  </Tooltip.Provider>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+function SimpleTooltip({
+  children,
+  label,
+  'aria-label': ariaLabel,
+  open,
+  onOpenChange,
+  ...props
+}: any) {
+  return (
+    <Tooltip.Root open={open} onOpenChange={onOpenChange}>
+      {children}
+      <Tooltip.Portal>
+        <Tooltip.Content
+          className={styles.content}
+          sideOffset={5}
+          aria-label={ariaLabel}
+          {...props}
+        >
+          {label}
+          <Tooltip.Arrow className={styles.arrow} offset={10} />
+        </Tooltip.Content>
+      </Tooltip.Portal>
+    </Tooltip.Root>
+  );
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/src/tooltip.test.tsx</source>
+<document_content>
+import { render, screen, waitFor } from '@testing-library/react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import userEvent from '@testing-library/user-event';
+
+describe('Tooltip', () => {
+  it('renders tooltip trigger', () => {
+    render(
+      <Tooltip.Provider>
+        <Tooltip.Root>
+          <Tooltip.Trigger>Tooltip Trigger</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content>
+              Tooltip Content
+              <Tooltip.Arrow />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+
+    expect(screen.getByText('Tooltip Trigger')).toBeInTheDocument();
+    expect(screen.queryByText('Tooltip Content')).not.toBeInTheDocument();
+  });
+
+  it('renders tooltip content when trigger is hovered', async () => {
+    render(
+      <Tooltip.Provider>
+        <Tooltip.Root delayDuration={0}>
+          <Tooltip.Trigger>Tooltip Trigger</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content>
+              Tooltip Content
+              <Tooltip.Arrow />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+
+    const trigger = screen.getByText('Tooltip Trigger');
+    expect(screen.queryByText('Tooltip Content')).not.toBeInTheDocument();
+
+    userEvent.hover(trigger);
+    await waitFor(() => {
+      // Get the first instance of the tooltip content because the second is
+      // the visually hidden primitive.
+      expect(screen.queryAllByText('Tooltip Content')[0]).toBeVisible();
+    });
+  });
+
+  it('renders tooltip content is dismissed when trigger is clicked', async () => {
+    render(
+      <Tooltip.Provider>
+        <Tooltip.Root delayDuration={0}>
+          <Tooltip.Trigger>Tooltip Trigger</Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content>
+              Tooltip Content
+              <Tooltip.Arrow />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
+    );
+
+    const trigger = screen.getByText('Tooltip Trigger');
+    expect(screen.queryByText('Tooltip Content')).not.toBeInTheDocument();
+
+    userEvent.hover(trigger);
+    await waitFor(() => {
+      // Get the first instance of the tooltip content because the second is
+      // the visually hidden primitive.
+      expect(screen.queryAllByText('Tooltip Content')[0]).toBeVisible();
+    });
+
+    userEvent.click(trigger);
+    await waitFor(() => {
+      expect(screen.queryByText('Tooltip Content')).not.toBeInTheDocument();
+    });
+  });
+});
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tooltip/src/tooltip.tsx</source>
+<document_content>
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { createContextScope } from '@radix-ui/react-context';
+import { DismissableLayer } from '@radix-ui/react-dismissable-layer';
+import { useId } from '@radix-ui/react-id';
+import * as PopperPrimitive from '@radix-ui/react-popper';
+import { createPopperScope } from '@radix-ui/react-popper';
+import { Portal as PortalPrimitive } from '@radix-ui/react-portal';
+import { Presence } from '@radix-ui/react-presence';
+import { Primitive } from '@radix-ui/react-primitive';
+import { Slottable } from '@radix-ui/react-slot';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import * as VisuallyHiddenPrimitive from '@radix-ui/react-visually-hidden';
+
+import type { Scope } from '@radix-ui/react-context';
+
+type ScopedProps<P = {}> = P & { __scopeTooltip?: Scope };
+const [createTooltipContext, createTooltipScope] = createContextScope('Tooltip', [
+  createPopperScope,
+]);
+const usePopperScope = createPopperScope();
+
+/* -------------------------------------------------------------------------------------------------
+ * TooltipProvider
+ * -----------------------------------------------------------------------------------------------*/
+
+const PROVIDER_NAME = 'TooltipProvider';
+const DEFAULT_DELAY_DURATION = 700;
+const TOOLTIP_OPEN = 'tooltip.open';
+
+type TooltipProviderContextValue = {
+  isOpenDelayedRef: React.MutableRefObject<boolean>;
+  delayDuration: number;
+  onOpen(): void;
+  onClose(): void;
+  onPointerInTransitChange(inTransit: boolean): void;
+  isPointerInTransitRef: React.MutableRefObject<boolean>;
+  disableHoverableContent: boolean;
+};
+
+const [TooltipProviderContextProvider, useTooltipProviderContext] =
+  createTooltipContext<TooltipProviderContextValue>(PROVIDER_NAME);
+
+interface TooltipProviderProps {
+  children: React.ReactNode;
+  /**
+   * The duration from when the pointer enters the trigger until the tooltip gets opened.
+   * @defaultValue 700
+   */
+  delayDuration?: number;
+  /**
+   * How much time a user has to enter another trigger without incurring a delay again.
+   * @defaultValue 300
+   */
+  skipDelayDuration?: number;
+  /**
+   * When `true`, trying to hover the content will result in the tooltip closing as the pointer leaves the trigger.
+   * @defaultValue false
+   */
+  disableHoverableContent?: boolean;
+}
+
+const TooltipProvider: React.FC<TooltipProviderProps> = (
+  props: ScopedProps<TooltipProviderProps>
+) => {
+  const {
+    __scopeTooltip,
+    delayDuration = DEFAULT_DELAY_DURATION,
+    skipDelayDuration = 300,
+    disableHoverableContent = false,
+    children,
+  } = props;
+  const isOpenDelayedRef = React.useRef(true);
+  const isPointerInTransitRef = React.useRef(false);
+  const skipDelayTimerRef = React.useRef(0);
+
+  React.useEffect(() => {
+    const skipDelayTimer = skipDelayTimerRef.current;
+    return () => window.clearTimeout(skipDelayTimer);
+  }, []);
+
+  return (
+    <TooltipProviderContextProvider
+      scope={__scopeTooltip}
+      isOpenDelayedRef={isOpenDelayedRef}
+      delayDuration={delayDuration}
+      onOpen={React.useCallback(() => {
+        window.clearTimeout(skipDelayTimerRef.current);
+        isOpenDelayedRef.current = false;
+      }, [])}
+      onClose={React.useCallback(() => {
+        window.clearTimeout(skipDelayTimerRef.current);
+        skipDelayTimerRef.current = window.setTimeout(
+          () => (isOpenDelayedRef.current = true),
+          skipDelayDuration
+        );
+      }, [skipDelayDuration])}
+      isPointerInTransitRef={isPointerInTransitRef}
+      onPointerInTransitChange={React.useCallback((inTransit: boolean) => {
+        isPointerInTransitRef.current = inTransit;
+      }, [])}
+      disableHoverableContent={disableHoverableContent}
+    >
+      {children}
+    </TooltipProviderContextProvider>
+  );
+};
+
+TooltipProvider.displayName = PROVIDER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * Tooltip
+ * -----------------------------------------------------------------------------------------------*/
+
+const TOOLTIP_NAME = 'Tooltip';
+
+type TooltipContextValue = {
+  contentId: string;
+  open: boolean;
+  stateAttribute: 'closed' | 'delayed-open' | 'instant-open';
+  trigger: TooltipTriggerElement | null;
+  onTriggerChange(trigger: TooltipTriggerElement | null): void;
+  onTriggerEnter(): void;
+  onTriggerLeave(): void;
+  onOpen(): void;
+  onClose(): void;
+  disableHoverableContent: boolean;
+};
+
+const [TooltipContextProvider, useTooltipContext] =
+  createTooltipContext<TooltipContextValue>(TOOLTIP_NAME);
+
+interface TooltipProps {
+  children?: React.ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /**
+   * The duration from when the pointer enters the trigger until the tooltip gets opened. This will
+   * override the prop with the same name passed to Provider.
+   * @defaultValue 700
+   */
+  delayDuration?: number;
+  /**
+   * When `true`, trying to hover the content will result in the tooltip closing as the pointer leaves the trigger.
+   * @defaultValue false
+   */
+  disableHoverableContent?: boolean;
+}
+
+const Tooltip: React.FC<TooltipProps> = (props: ScopedProps<TooltipProps>) => {
+  const {
+    __scopeTooltip,
+    children,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    disableHoverableContent: disableHoverableContentProp,
+    delayDuration: delayDurationProp,
+  } = props;
+  const providerContext = useTooltipProviderContext(TOOLTIP_NAME, props.__scopeTooltip);
+  const popperScope = usePopperScope(__scopeTooltip);
+  const [trigger, setTrigger] = React.useState<HTMLButtonElement | null>(null);
+  const contentId = useId();
+  const openTimerRef = React.useRef(0);
+  const disableHoverableContent =
+    disableHoverableContentProp ?? providerContext.disableHoverableContent;
+  const delayDuration = delayDurationProp ?? providerContext.delayDuration;
+  const wasOpenDelayedRef = React.useRef(false);
+  const [open = false, setOpen] = useControllableState({
+    prop: openProp,
+    defaultProp: defaultOpen,
+    onChange: (open) => {
+      if (open) {
+        providerContext.onOpen();
+
+        // as `onChange` is called within a lifecycle method we
+        // avoid dispatching via `dispatchDiscreteCustomEvent`.
+        document.dispatchEvent(new CustomEvent(TOOLTIP_OPEN));
+      } else {
+        providerContext.onClose();
+      }
+      onOpenChange?.(open);
+    },
+  });
+  const stateAttribute = React.useMemo(() => {
+    return open ? (wasOpenDelayedRef.current ? 'delayed-open' : 'instant-open') : 'closed';
+  }, [open]);
+
+  const handleOpen = React.useCallback(() => {
+    window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = 0;
+    wasOpenDelayedRef.current = false;
+    setOpen(true);
+  }, [setOpen]);
+
+  const handleClose = React.useCallback(() => {
+    window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = 0;
+    setOpen(false);
+  }, [setOpen]);
+
+  const handleDelayedOpen = React.useCallback(() => {
+    window.clearTimeout(openTimerRef.current);
+    openTimerRef.current = window.setTimeout(() => {
+      wasOpenDelayedRef.current = true;
+      setOpen(true);
+      openTimerRef.current = 0;
+    }, delayDuration);
+  }, [delayDuration, setOpen]);
+
+  React.useEffect(() => {
+    return () => {
+      if (openTimerRef.current) {
+        window.clearTimeout(openTimerRef.current);
+        openTimerRef.current = 0;
+      }
+    };
+  }, []);
+
+  return (
+    <PopperPrimitive.Root {...popperScope}>
+      <TooltipContextProvider
+        scope={__scopeTooltip}
+        contentId={contentId}
+        open={open}
+        stateAttribute={stateAttribute}
+        trigger={trigger}
+        onTriggerChange={setTrigger}
+        onTriggerEnter={React.useCallback(() => {
+          if (providerContext.isOpenDelayedRef.current) handleDelayedOpen();
+          else handleOpen();
+        }, [providerContext.isOpenDelayedRef, handleDelayedOpen, handleOpen])}
+        onTriggerLeave={React.useCallback(() => {
+          if (disableHoverableContent) {
+            handleClose();
+          } else {
+            // Clear the timer in case the pointer leaves the trigger before the tooltip is opened.
+            window.clearTimeout(openTimerRef.current);
+            openTimerRef.current = 0;
+          }
+        }, [handleClose, disableHoverableContent])}
+        onOpen={handleOpen}
+        onClose={handleClose}
+        disableHoverableContent={disableHoverableContent}
+      >
+        {children}
+      </TooltipContextProvider>
+    </PopperPrimitive.Root>
+  );
+};
+
+Tooltip.displayName = TOOLTIP_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TooltipTrigger
+ * -----------------------------------------------------------------------------------------------*/
+
+const TRIGGER_NAME = 'TooltipTrigger';
+
+type TooltipTriggerElement = React.ElementRef<typeof Primitive.button>;
+type PrimitiveButtonProps = React.ComponentPropsWithoutRef<typeof Primitive.button>;
+interface TooltipTriggerProps extends PrimitiveButtonProps {}
+
+const TooltipTrigger = React.forwardRef<TooltipTriggerElement, TooltipTriggerProps>(
+  (props: ScopedProps<TooltipTriggerProps>, forwardedRef) => {
+    const { __scopeTooltip, ...triggerProps } = props;
+    const context = useTooltipContext(TRIGGER_NAME, __scopeTooltip);
+    const providerContext = useTooltipProviderContext(TRIGGER_NAME, __scopeTooltip);
+    const popperScope = usePopperScope(__scopeTooltip);
+    const ref = React.useRef<TooltipTriggerElement>(null);
+    const composedRefs = useComposedRefs(forwardedRef, ref, context.onTriggerChange);
+    const isPointerDownRef = React.useRef(false);
+    const hasPointerMoveOpenedRef = React.useRef(false);
+    const handlePointerUp = React.useCallback(() => (isPointerDownRef.current = false), []);
+
+    React.useEffect(() => {
+      return () => document.removeEventListener('pointerup', handlePointerUp);
+    }, [handlePointerUp]);
+
+    return (
+      <PopperPrimitive.Anchor asChild {...popperScope}>
+        <Primitive.button
+          // We purposefully avoid adding `type=button` here because tooltip triggers are also
+          // commonly anchors and the anchor `type` attribute signifies MIME type.
+          aria-describedby={context.open ? context.contentId : undefined}
+          data-state={context.stateAttribute}
+          {...triggerProps}
+          ref={composedRefs}
+          onPointerMove={composeEventHandlers(props.onPointerMove, (event) => {
+            if (event.pointerType === 'touch') return;
+            if (
+              !hasPointerMoveOpenedRef.current &&
+              !providerContext.isPointerInTransitRef.current
+            ) {
+              context.onTriggerEnter();
+              hasPointerMoveOpenedRef.current = true;
+            }
+          })}
+          onPointerLeave={composeEventHandlers(props.onPointerLeave, () => {
+            context.onTriggerLeave();
+            hasPointerMoveOpenedRef.current = false;
+          })}
+          onPointerDown={composeEventHandlers(props.onPointerDown, () => {
+            if (context.open) {
+              context.onClose();
+            }
+            isPointerDownRef.current = true;
+            document.addEventListener('pointerup', handlePointerUp, { once: true });
+          })}
+          onFocus={composeEventHandlers(props.onFocus, () => {
+            if (!isPointerDownRef.current) context.onOpen();
+          })}
+          onBlur={composeEventHandlers(props.onBlur, context.onClose)}
+          onClick={composeEventHandlers(props.onClick, context.onClose)}
+        />
+      </PopperPrimitive.Anchor>
+    );
+  }
+);
+
+TooltipTrigger.displayName = TRIGGER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TooltipPortal
+ * -----------------------------------------------------------------------------------------------*/
+
+const PORTAL_NAME = 'TooltipPortal';
+
+type PortalContextValue = { forceMount?: true };
+const [PortalProvider, usePortalContext] = createTooltipContext<PortalContextValue>(PORTAL_NAME, {
+  forceMount: undefined,
+});
+
+type PortalProps = React.ComponentPropsWithoutRef<typeof PortalPrimitive>;
+interface TooltipPortalProps {
+  children?: React.ReactNode;
+  /**
+   * Specify a container element to portal the content into.
+   */
+  container?: PortalProps['container'];
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const TooltipPortal: React.FC<TooltipPortalProps> = (props: ScopedProps<TooltipPortalProps>) => {
+  const { __scopeTooltip, forceMount, children, container } = props;
+  const context = useTooltipContext(PORTAL_NAME, __scopeTooltip);
+  return (
+    <PortalProvider scope={__scopeTooltip} forceMount={forceMount}>
+      <Presence present={forceMount || context.open}>
+        <PortalPrimitive asChild container={container}>
+          {children}
+        </PortalPrimitive>
+      </Presence>
+    </PortalProvider>
+  );
+};
+
+TooltipPortal.displayName = PORTAL_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TooltipContent
+ * -----------------------------------------------------------------------------------------------*/
+
+const CONTENT_NAME = 'TooltipContent';
+
+type TooltipContentElement = TooltipContentImplElement;
+interface TooltipContentProps extends TooltipContentImplProps {
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const TooltipContent = React.forwardRef<TooltipContentElement, TooltipContentProps>(
+  (props: ScopedProps<TooltipContentProps>, forwardedRef) => {
+    const portalContext = usePortalContext(CONTENT_NAME, props.__scopeTooltip);
+    const { forceMount = portalContext.forceMount, side = 'top', ...contentProps } = props;
+    const context = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
+
+    return (
+      <Presence present={forceMount || context.open}>
+        {context.disableHoverableContent ? (
+          <TooltipContentImpl side={side} {...contentProps} ref={forwardedRef} />
+        ) : (
+          <TooltipContentHoverable side={side} {...contentProps} ref={forwardedRef} />
+        )}
+      </Presence>
+    );
+  }
+);
+
+type Point = { x: number; y: number };
+type Polygon = Point[];
+
+type TooltipContentHoverableElement = TooltipContentImplElement;
+interface TooltipContentHoverableProps extends TooltipContentImplProps {}
+
+const TooltipContentHoverable = React.forwardRef<
+  TooltipContentHoverableElement,
+  TooltipContentHoverableProps
+>((props: ScopedProps<TooltipContentHoverableProps>, forwardedRef) => {
+  const context = useTooltipContext(CONTENT_NAME, props.__scopeTooltip);
+  const providerContext = useTooltipProviderContext(CONTENT_NAME, props.__scopeTooltip);
+  const ref = React.useRef<TooltipContentHoverableElement>(null);
+  const composedRefs = useComposedRefs(forwardedRef, ref);
+  const [pointerGraceArea, setPointerGraceArea] = React.useState<Polygon | null>(null);
+
+  const { trigger, onClose } = context;
+  const content = ref.current;
+
+  const { onPointerInTransitChange } = providerContext;
+
+  const handleRemoveGraceArea = React.useCallback(() => {
+    setPointerGraceArea(null);
+    onPointerInTransitChange(false);
+  }, [onPointerInTransitChange]);
+
+  const handleCreateGraceArea = React.useCallback(
+    (event: PointerEvent, hoverTarget: HTMLElement) => {
+      const currentTarget = event.currentTarget as HTMLElement;
+      const exitPoint = { x: event.clientX, y: event.clientY };
+      const exitSide = getExitSideFromRect(exitPoint, currentTarget.getBoundingClientRect());
+      const paddedExitPoints = getPaddedExitPoints(exitPoint, exitSide);
+      const hoverTargetPoints = getPointsFromRect(hoverTarget.getBoundingClientRect());
+      const graceArea = getHull([...paddedExitPoints, ...hoverTargetPoints]);
+      setPointerGraceArea(graceArea);
+      onPointerInTransitChange(true);
+    },
+    [onPointerInTransitChange]
+  );
+
+  React.useEffect(() => {
+    return () => handleRemoveGraceArea();
+  }, [handleRemoveGraceArea]);
+
+  React.useEffect(() => {
+    if (trigger && content) {
+      const handleTriggerLeave = (event: PointerEvent) => handleCreateGraceArea(event, content);
+      const handleContentLeave = (event: PointerEvent) => handleCreateGraceArea(event, trigger);
+
+      trigger.addEventListener('pointerleave', handleTriggerLeave);
+      content.addEventListener('pointerleave', handleContentLeave);
+      return () => {
+        trigger.removeEventListener('pointerleave', handleTriggerLeave);
+        content.removeEventListener('pointerleave', handleContentLeave);
+      };
+    }
+  }, [trigger, content, handleCreateGraceArea, handleRemoveGraceArea]);
+
+  React.useEffect(() => {
+    if (pointerGraceArea) {
+      const handleTrackPointerGrace = (event: PointerEvent) => {
+        const target = event.target as HTMLElement;
+        const pointerPosition = { x: event.clientX, y: event.clientY };
+        const hasEnteredTarget = trigger?.contains(target) || content?.contains(target);
+        const isPointerOutsideGraceArea = !isPointInPolygon(pointerPosition, pointerGraceArea);
+
+        if (hasEnteredTarget) {
+          handleRemoveGraceArea();
+        } else if (isPointerOutsideGraceArea) {
+          handleRemoveGraceArea();
+          onClose();
+        }
+      };
+      document.addEventListener('pointermove', handleTrackPointerGrace);
+      return () => document.removeEventListener('pointermove', handleTrackPointerGrace);
+    }
+  }, [trigger, content, pointerGraceArea, onClose, handleRemoveGraceArea]);
+
+  return <TooltipContentImpl {...props} ref={composedRefs} />;
+});
+
+const [VisuallyHiddenContentContextProvider, useVisuallyHiddenContentContext] =
+  createTooltipContext(TOOLTIP_NAME, { isInside: false });
+
+type TooltipContentImplElement = React.ElementRef<typeof PopperPrimitive.Content>;
+type DismissableLayerProps = React.ComponentPropsWithoutRef<typeof DismissableLayer>;
+type PopperContentProps = React.ComponentPropsWithoutRef<typeof PopperPrimitive.Content>;
+interface TooltipContentImplProps extends Omit<PopperContentProps, 'onPlaced'> {
+  /**
+   * A more descriptive label for accessibility purpose
+   */
+  'aria-label'?: string;
+
+  /**
+   * Event handler called when the escape key is down.
+   * Can be prevented.
+   */
+  onEscapeKeyDown?: DismissableLayerProps['onEscapeKeyDown'];
+  /**
+   * Event handler called when the a `pointerdown` event happens outside of the `Tooltip`.
+   * Can be prevented.
+   */
+  onPointerDownOutside?: DismissableLayerProps['onPointerDownOutside'];
+}
+
+const TooltipContentImpl = React.forwardRef<TooltipContentImplElement, TooltipContentImplProps>(
+  (props: ScopedProps<TooltipContentImplProps>, forwardedRef) => {
+    const {
+      __scopeTooltip,
+      children,
+      'aria-label': ariaLabel,
+      onEscapeKeyDown,
+      onPointerDownOutside,
+      ...contentProps
+    } = props;
+    const context = useTooltipContext(CONTENT_NAME, __scopeTooltip);
+    const popperScope = usePopperScope(__scopeTooltip);
+    const { onClose } = context;
+
+    // Close this tooltip if another one opens
+    React.useEffect(() => {
+      document.addEventListener(TOOLTIP_OPEN, onClose);
+      return () => document.removeEventListener(TOOLTIP_OPEN, onClose);
+    }, [onClose]);
+
+    // Close the tooltip if the trigger is scrolled
+    React.useEffect(() => {
+      if (context.trigger) {
+        const handleScroll = (event: Event) => {
+          const target = event.target as HTMLElement;
+          if (target?.contains(context.trigger)) onClose();
+        };
+        window.addEventListener('scroll', handleScroll, { capture: true });
+        return () => window.removeEventListener('scroll', handleScroll, { capture: true });
+      }
+    }, [context.trigger, onClose]);
+
+    return (
+      <DismissableLayer
+        asChild
+        disableOutsidePointerEvents={false}
+        onEscapeKeyDown={onEscapeKeyDown}
+        onPointerDownOutside={onPointerDownOutside}
+        onFocusOutside={(event) => event.preventDefault()}
+        onDismiss={onClose}
+      >
+        <PopperPrimitive.Content
+          data-state={context.stateAttribute}
+          {...popperScope}
+          {...contentProps}
+          ref={forwardedRef}
+          style={{
+            ...contentProps.style,
+            // re-namespace exposed content custom properties
+            ...{
+              '--radix-tooltip-content-transform-origin': 'var(--radix-popper-transform-origin)',
+              '--radix-tooltip-content-available-width': 'var(--radix-popper-available-width)',
+              '--radix-tooltip-content-available-height': 'var(--radix-popper-available-height)',
+              '--radix-tooltip-trigger-width': 'var(--radix-popper-anchor-width)',
+              '--radix-tooltip-trigger-height': 'var(--radix-popper-anchor-height)',
+            },
+          }}
+        >
+          <Slottable>{children}</Slottable>
+          <VisuallyHiddenContentContextProvider scope={__scopeTooltip} isInside={true}>
+            <VisuallyHiddenPrimitive.Root id={context.contentId} role="tooltip">
+              {ariaLabel || children}
+            </VisuallyHiddenPrimitive.Root>
+          </VisuallyHiddenContentContextProvider>
+        </PopperPrimitive.Content>
+      </DismissableLayer>
+    );
+  }
+);
+
+TooltipContent.displayName = CONTENT_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TooltipArrow
+ * -----------------------------------------------------------------------------------------------*/
+
+const ARROW_NAME = 'TooltipArrow';
+
+type TooltipArrowElement = React.ElementRef<typeof PopperPrimitive.Arrow>;
+type PopperArrowProps = React.ComponentPropsWithoutRef<typeof PopperPrimitive.Arrow>;
+interface TooltipArrowProps extends PopperArrowProps {}
+
+const TooltipArrow = React.forwardRef<TooltipArrowElement, TooltipArrowProps>(
+  (props: ScopedProps<TooltipArrowProps>, forwardedRef) => {
+    const { __scopeTooltip, ...arrowProps } = props;
+    const popperScope = usePopperScope(__scopeTooltip);
+    const visuallyHiddenContentContext = useVisuallyHiddenContentContext(
+      ARROW_NAME,
+      __scopeTooltip
+    );
+    // if the arrow is inside the `VisuallyHidden`, we don't want to render it all to
+    // prevent issues in positioning the arrow due to the duplicate
+    return visuallyHiddenContentContext.isInside ? null : (
+      <PopperPrimitive.Arrow {...popperScope} {...arrowProps} ref={forwardedRef} />
+    );
+  }
+);
+
+TooltipArrow.displayName = ARROW_NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+type Side = NonNullable<TooltipContentProps['side']>;
+
+function getExitSideFromRect(point: Point, rect: DOMRect): Side {
+  const top = Math.abs(rect.top - point.y);
+  const bottom = Math.abs(rect.bottom - point.y);
+  const right = Math.abs(rect.right - point.x);
+  const left = Math.abs(rect.left - point.x);
+
+  switch (Math.min(top, bottom, right, left)) {
+    case left:
+      return 'left';
+    case right:
+      return 'right';
+    case top:
+      return 'top';
+    case bottom:
+      return 'bottom';
+    default:
+      throw new Error('unreachable');
+  }
+}
+
+function getPaddedExitPoints(exitPoint: Point, exitSide: Side, padding = 5) {
+  const paddedExitPoints: Point[] = [];
+  switch (exitSide) {
+    case 'top':
+      paddedExitPoints.push(
+        { x: exitPoint.x - padding, y: exitPoint.y + padding },
+        { x: exitPoint.x + padding, y: exitPoint.y + padding }
+      );
+      break;
+    case 'bottom':
+      paddedExitPoints.push(
+        { x: exitPoint.x - padding, y: exitPoint.y - padding },
+        { x: exitPoint.x + padding, y: exitPoint.y - padding }
+      );
+      break;
+    case 'left':
+      paddedExitPoints.push(
+        { x: exitPoint.x + padding, y: exitPoint.y - padding },
+        { x: exitPoint.x + padding, y: exitPoint.y + padding }
+      );
+      break;
+    case 'right':
+      paddedExitPoints.push(
+        { x: exitPoint.x - padding, y: exitPoint.y - padding },
+        { x: exitPoint.x - padding, y: exitPoint.y + padding }
+      );
+      break;
+  }
+  return paddedExitPoints;
+}
+
+function getPointsFromRect(rect: DOMRect) {
+  const { top, right, bottom, left } = rect;
+  return [
+    { x: left, y: top },
+    { x: right, y: top },
+    { x: right, y: bottom },
+    { x: left, y: bottom },
+  ];
+}
+
+// Determine if a point is inside of a polygon.
+// Based on https://github.com/substack/point-in-polygon
+function isPointInPolygon(point: Point, polygon: Polygon) {
+  const { x, y } = point;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x;
+    const yi = polygon[i].y;
+    const xj = polygon[j].x;
+    const yj = polygon[j].y;
+
+    // prettier-ignore
+    const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
+}
+
+// Returns a new array of points representing the convex hull of the given set of points.
+// https://www.nayuki.io/page/convex-hull-algorithm
+function getHull<P extends Point>(points: Readonly<Array<P>>): Array<P> {
+  const newPoints: Array<P> = points.slice();
+  newPoints.sort((a: Point, b: Point) => {
+    if (a.x < b.x) return -1;
+    else if (a.x > b.x) return +1;
+    else if (a.y < b.y) return -1;
+    else if (a.y > b.y) return +1;
+    else return 0;
+  });
+  return getHullPresorted(newPoints);
+}
+
+// Returns the convex hull, assuming that each points[i] <= points[i + 1]. Runs in O(n) time.
+function getHullPresorted<P extends Point>(points: Readonly<Array<P>>): Array<P> {
+  if (points.length <= 1) return points.slice();
+
+  const upperHull: Array<P> = [];
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    while (upperHull.length >= 2) {
+      const q = upperHull[upperHull.length - 1];
+      const r = upperHull[upperHull.length - 2];
+      if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) upperHull.pop();
+      else break;
+    }
+    upperHull.push(p);
+  }
+  upperHull.pop();
+
+  const lowerHull: Array<P> = [];
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i];
+    while (lowerHull.length >= 2) {
+      const q = lowerHull[lowerHull.length - 1];
+      const r = lowerHull[lowerHull.length - 2];
+      if ((q.x - r.x) * (p.y - r.y) >= (q.y - r.y) * (p.x - r.x)) lowerHull.pop();
+      else break;
+    }
+    lowerHull.push(p);
+  }
+  lowerHull.pop();
+
+  if (
+    upperHull.length === 1 &&
+    lowerHull.length === 1 &&
+    upperHull[0].x === lowerHull[0].x &&
+    upperHull[0].y === lowerHull[0].y
+  ) {
+    return upperHull;
+  } else {
+    return upperHull.concat(lowerHull);
+  }
+}
+
+const Provider = TooltipProvider;
+const Root = Tooltip;
+const Trigger = TooltipTrigger;
+const Portal = TooltipPortal;
+const Content = TooltipContent;
+const Arrow = TooltipArrow;
+
+export {
+  createTooltipScope,
+  //
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipPortal,
+  TooltipContent,
+  TooltipArrow,
+  //
+  Provider,
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Arrow,
+};
+export type {
+  TooltipProviderProps,
+  TooltipProps,
+  TooltipTriggerProps,
+  TooltipPortalProps,
+  TooltipContentProps,
+  TooltipArrowProps,
+};
+
+</document_content>
+</document>
+</documents>

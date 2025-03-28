@@ -1,0 +1,1639 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/README.md</source>
+<document_content>
+# `react-context-menu`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-context-menu
+# or
+$ npm install @radix-ui/react-context-menu
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/context-menu).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-context-menu",
+  "version": "2.2.7-rc.6",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-menu": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-use-callback-ref": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/test-data": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "2.2.6"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/src/context-menu.stories.module.css</source>
+<document_content>
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 200px;
+  height: 100px;
+  border: 2px dashed var(--color-black);
+  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.1);
+
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.5);
+  }
+
+  &[data-state='open'] {
+    background-color: lightblue;
+  }
+}
+
+.content {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 130px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-gray100);
+  border-radius: 6px;
+  padding: 5px;
+  box-shadow: 0 5px 10px 0 rgba(0, 0, 0, 0.1);
+  font-family: apple-system, BlinkMacSystemFont, helvetica, arial, sans-serif;
+  font-size: 13px;
+  &:focus-within {
+    border-color: var(--color-black);
+  }
+}
+
+.animatedContent {
+  transform-origin: var(--radix-context-menu-content-transform-origin);
+  &[data-state='open'] {
+    animation: contextMenu-scaleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.label,
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 1;
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+  height: 25px;
+  padding: 0 10px;
+  color: var(--color-black);
+  border-radius: 3px;
+}
+
+.label {
+  color: var(--color-gray100);
+}
+
+.item {
+  outline: none;
+
+  &[data-highlighted] {
+    background-color: var(--color-black);
+    color: var(--color-white);
+  }
+
+  &[data-disabled] {
+    color: var(--color-gray100);
+  }
+}
+
+.subTrigger {
+  &:not([data-highlighted])[data-state='open'] {
+    background-color: var(--color-gray100);
+    color: var(--color-black);
+  }
+}
+
+.separator {
+  height: 1;
+  margin: 5px 10px;
+  background-color: var(--color-gray100);
+}
+
+@keyframes contextMenu-scaleIn {
+  0% {
+    transform: scale(0) rotateZ(-10deg);
+  }
+  20% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/src/context-menu.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import * as ContextMenu from '@radix-ui/react-context-menu';
+import { foodGroups } from '@repo/test-data/foods';
+import styles from './context-menu.stories.module.css';
+
+export default { title: 'Components/ContextMenu' };
+
+export const Styled = () => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '200vw',
+      height: '200vh',
+      gap: 20,
+    }}
+  >
+    <ContextMenu.Root>
+      <ContextMenu.Trigger className={styles.trigger}>Right click here</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className={styles.content} alignOffset={-5}>
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('undo')}>
+            Undo
+          </ContextMenu.Item>
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('redo')}>
+            Redo
+          </ContextMenu.Item>
+          <ContextMenu.Separator className={styles.separator} />
+          <ContextMenu.Item className={styles.item} disabled onSelect={() => console.log('cut')}>
+            Cut
+          </ContextMenu.Item>
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('copy')}>
+            Copy
+          </ContextMenu.Item>
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('paste')}>
+            Paste
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  </div>
+);
+
+export const Modality = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '110vh' }}>
+    <div style={{ display: 'grid', gap: 50 }}>
+      <div style={{ display: 'inline-flex', alignItems: 'center', flexDirection: 'column' }}>
+        <h1>Modal (default)</h1>
+        <ContextMenu.Root>
+          <ContextMenu.Trigger className={styles.trigger} />
+          <ContextMenu.Portal>
+            <ContextMenu.Content className={styles.content} alignOffset={-5}>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('undo')}>
+                Undo
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('redo')}>
+                Redo
+              </ContextMenu.Item>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger}>
+                  Submenu →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('one')}>
+                      One
+                    </ContextMenu.Item>
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('two')}>
+                      Two
+                    </ContextMenu.Item>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Sub>
+                      <ContextMenu.SubTrigger className={styles.subTrigger}>
+                        Submenu →
+                      </ContextMenu.SubTrigger>
+                      <ContextMenu.Portal>
+                        <ContextMenu.SubContent
+                          className={styles.content}
+                          sideOffset={12}
+                          alignOffset={-6}
+                        >
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('one')}
+                          >
+                            One
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('two')}
+                          >
+                            Two
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('three')}
+                          >
+                            Three
+                          </ContextMenu.Item>
+                          <ContextMenu.Arrow />
+                        </ContextMenu.SubContent>
+                      </ContextMenu.Portal>
+                    </ContextMenu.Sub>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('three')}>
+                      Three
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Item
+                className={styles.item}
+                disabled
+                onSelect={() => console.log('cut')}
+              >
+                Cut
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('copy')}>
+                Copy
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('paste')}>
+                Paste
+              </ContextMenu.Item>
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+        <textarea
+          style={{ width: 500, height: 100, marginTop: 10 }}
+          defaultValue="Lorem ipsum dolor sit amet consectetur adipisicing elit. Quaerat nobis at ipsa, nihil tempora debitis maxime dignissimos non amet."
+        />
+      </div>
+      <div style={{ display: 'inline-flex', alignItems: 'center', flexDirection: 'column' }}>
+        <h1>Non modal</h1>
+        <ContextMenu.Root modal={false}>
+          <ContextMenu.Trigger className={styles.trigger} />
+          <ContextMenu.Portal>
+            <ContextMenu.Content className={styles.content} alignOffset={-5}>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('undo')}>
+                Undo
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('redo')}>
+                Redo
+              </ContextMenu.Item>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger}>
+                  Submenu →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('one')}>
+                      One
+                    </ContextMenu.Item>
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('two')}>
+                      Two
+                    </ContextMenu.Item>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Sub>
+                      <ContextMenu.SubTrigger className={styles.subTrigger}>
+                        Submenu →
+                      </ContextMenu.SubTrigger>
+                      <ContextMenu.Portal>
+                        <ContextMenu.SubContent
+                          className={styles.content}
+                          sideOffset={12}
+                          alignOffset={-6}
+                        >
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('one')}
+                          >
+                            One
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('two')}
+                          >
+                            Two
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('three')}
+                          >
+                            Three
+                          </ContextMenu.Item>
+                          <ContextMenu.Arrow />
+                        </ContextMenu.SubContent>
+                      </ContextMenu.Portal>
+                    </ContextMenu.Sub>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('three')}>
+                      Three
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Item
+                className={styles.item}
+                disabled
+                onSelect={() => console.log('cut')}
+              >
+                Cut
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('copy')}>
+                Copy
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('paste')}>
+                Paste
+              </ContextMenu.Item>
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+        <textarea
+          style={{ width: 500, height: 100, marginTop: 10 }}
+          defaultValue="Lorem ipsum dolor sit amet consectetur adipisicing elit. Quaerat nobis at ipsa, nihil tempora debitis maxime dignissimos non amet."
+        />
+      </div>
+    </div>
+  </div>
+);
+
+export const Submenus = () => {
+  const [rtl, setRtl] = React.useState(false);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        gap: 20,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <label style={{ marginBottom: 10 }}>
+          <input
+            type="checkbox"
+            checked={rtl}
+            onChange={(event) => setRtl(event.currentTarget.checked)}
+          />
+          Right-to-left
+        </label>
+        <ContextMenu.Root dir={rtl ? 'rtl' : 'ltr'}>
+          <ContextMenu.Trigger className={styles.trigger}>Right Click Here</ContextMenu.Trigger>
+          <ContextMenu.Portal>
+            <ContextMenu.Content className={styles.content}>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('new-tab')}>
+                New Tab
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('new-window')}>
+                New Window
+              </ContextMenu.Item>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger}>
+                  Bookmarks →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item className={styles.item} onSelect={() => console.log('index')}>
+                      Inbox
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('calendar')}
+                    >
+                      Calendar
+                    </ContextMenu.Item>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Sub>
+                      <ContextMenu.SubTrigger className={styles.subTrigger}>
+                        WorkOS →
+                      </ContextMenu.SubTrigger>
+                      <ContextMenu.Portal>
+                        <ContextMenu.SubContent
+                          className={styles.content}
+                          sideOffset={12}
+                          alignOffset={-6}
+                        >
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('stitches')}
+                          >
+                            Stitches
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('composer')}
+                          >
+                            Composer
+                          </ContextMenu.Item>
+                          <ContextMenu.Item
+                            className={styles.item}
+                            onSelect={() => console.log('radix')}
+                          >
+                            Radix
+                          </ContextMenu.Item>
+                          <ContextMenu.Arrow />
+                        </ContextMenu.SubContent>
+                      </ContextMenu.Portal>
+                    </ContextMenu.Sub>
+                    <ContextMenu.Separator className={styles.separator} />
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('notion')}
+                    >
+                      Notion
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger} disabled>
+                  History →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('github')}
+                    >
+                      Github
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('google')}
+                    >
+                      Google
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('stack-overflow')}
+                    >
+                      Stack Overflow
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger}>
+                  Tools →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('extensions')}
+                    >
+                      Extensions
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('task-manager')}
+                    >
+                      Task Manager
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('developer-tools')}
+                    >
+                      Developer Tools
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Item
+                className={styles.item}
+                disabled
+                onSelect={() => console.log('print')}
+              >
+                Print…
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('cast')}>
+                Cast…
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('find')}>
+                Find…
+              </ContextMenu.Item>
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+      </div>
+    </div>
+  );
+};
+
+export const WithLabels = () => (
+  <div style={{ textAlign: 'center', padding: 50 }}>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger className={styles.trigger}>Right click here</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className={styles.content} alignOffset={-5}>
+          {foodGroups.map((foodGroup, index) => (
+            <ContextMenu.Group key={index}>
+              {foodGroup.label && (
+                <ContextMenu.Label className={styles.label} key={foodGroup.label}>
+                  {foodGroup.label}
+                </ContextMenu.Label>
+              )}
+              {foodGroup.foods.map((food) => (
+                <ContextMenu.Item
+                  key={food.value}
+                  className={styles.item}
+                  disabled={food.disabled}
+                  onSelect={() => console.log(food.label)}
+                >
+                  {food.label}
+                </ContextMenu.Item>
+              ))}
+              {index < foodGroups.length - 1 && (
+                <ContextMenu.Separator className={styles.separator} />
+              )}
+            </ContextMenu.Group>
+          ))}
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  </div>
+);
+
+export const CheckboxItems = () => {
+  const checkboxItems = ['Bold', 'Italic', 'Underline'];
+  const [selection, setSelection] = React.useState<string[]>([]);
+
+  return (
+    <div style={{ textAlign: 'center', padding: 50 }}>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger className={styles.trigger}>Right click here</ContextMenu.Trigger>
+        <ContextMenu.Portal>
+          <ContextMenu.Content className={styles.content} alignOffset={-5}>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('show')}>
+              Show fonts
+            </ContextMenu.Item>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('bigger')}>
+              Bigger
+            </ContextMenu.Item>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('smaller')}>
+              Smaller
+            </ContextMenu.Item>
+            <ContextMenu.Separator className={styles.separator} />
+            {checkboxItems.map((item) => (
+              <ContextMenu.CheckboxItem
+                key={item}
+                className={styles.item}
+                checked={selection.includes(item)}
+                onCheckedChange={() =>
+                  setSelection((current) =>
+                    current.includes(item)
+                      ? current.filter((el) => el !== item)
+                      : current.concat(item)
+                  )
+                }
+              >
+                {item}
+                <ContextMenu.ItemIndicator>
+                  <TickIcon />
+                </ContextMenu.ItemIndicator>
+              </ContextMenu.CheckboxItem>
+            ))}
+            <ContextMenu.Separator />
+            <ContextMenu.CheckboxItem className={styles.item} disabled>
+              Strikethrough
+              <ContextMenu.ItemIndicator>
+                <TickIcon />
+              </ContextMenu.ItemIndicator>
+            </ContextMenu.CheckboxItem>
+          </ContextMenu.Content>
+        </ContextMenu.Portal>
+      </ContextMenu.Root>
+    </div>
+  );
+};
+
+export const RadioItems = () => {
+  const files = ['README.md', 'index.js', 'page.css'];
+  const [file, setFile] = React.useState(files[1]);
+
+  return (
+    <div style={{ textAlign: 'center', padding: 50 }}>
+      <ContextMenu.Root>
+        <ContextMenu.Trigger className={styles.trigger}>Right click here</ContextMenu.Trigger>
+        <ContextMenu.Portal>
+          <ContextMenu.Content className={styles.content} alignOffset={-5}>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('minimize')}>
+              Minimize window
+            </ContextMenu.Item>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('zoom')}>
+              Zoom
+            </ContextMenu.Item>
+            <ContextMenu.Item className={styles.item} onSelect={() => console.log('smaller')}>
+              Smaller
+            </ContextMenu.Item>
+            <ContextMenu.Separator className={styles.separator} />
+            <ContextMenu.RadioGroup value={file} onValueChange={setFile}>
+              {files.map((file) => (
+                <ContextMenu.RadioItem key={file} className={styles.item} value={file}>
+                  {file}
+                  <ContextMenu.ItemIndicator>
+                    <TickIcon />
+                  </ContextMenu.ItemIndicator>
+                </ContextMenu.RadioItem>
+              ))}
+            </ContextMenu.RadioGroup>
+          </ContextMenu.Content>
+        </ContextMenu.Portal>
+      </ContextMenu.Root>
+      <p>Selected file: {file}</p>
+    </div>
+  );
+};
+
+export const PreventClosing = () => (
+  <div style={{ textAlign: 'center', padding: 50 }}>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger className={styles.trigger}>Right click here</ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className={styles.content} alignOffset={-5}>
+          <ContextMenu.Item className={styles.item} onSelect={() => window.alert('action 1')}>
+            I will close
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={styles.item}
+            onSelect={(event) => {
+              event.preventDefault();
+              window.alert('action 1');
+            }}
+          >
+            I won't close
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  </div>
+);
+
+export const Multiple = () => {
+  const [customColors, setCustomColors] = React.useState<{ [index: number]: string }>({});
+  const [fadedIndexes, setFadedIndexes] = React.useState<number[]>([]);
+  return (
+    <div
+      style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}
+      onContextMenu={(event) => event.preventDefault()}
+    >
+      {Array.from({ length: 100 }, (_, i) => {
+        const customColor = customColors[i];
+        return (
+          <ContextMenu.Root key={i}>
+            <ContextMenu.Portal>
+              <ContextMenu.Content
+                className={[styles.content, styles.animatedContent].join(' ')}
+                alignOffset={-5}
+              >
+                <ContextMenu.Label className={styles.label}>Color</ContextMenu.Label>
+                <ContextMenu.RadioGroup
+                  value={customColor}
+                  onValueChange={(color) =>
+                    setCustomColors((colors) => ({ ...colors, [i]: color }))
+                  }
+                >
+                  <ContextMenu.RadioItem className={styles.item} value="royalblue">
+                    Blue
+                    <ContextMenu.ItemIndicator>
+                      <TickIcon />
+                    </ContextMenu.ItemIndicator>
+                  </ContextMenu.RadioItem>
+                  <ContextMenu.RadioItem className={styles.item} value="tomato">
+                    Red
+                    <ContextMenu.ItemIndicator>
+                      <TickIcon />
+                    </ContextMenu.ItemIndicator>
+                  </ContextMenu.RadioItem>
+                </ContextMenu.RadioGroup>
+                <ContextMenu.Separator className={styles.separator} />
+                <ContextMenu.CheckboxItem
+                  className={styles.item}
+                  checked={fadedIndexes.includes(i)}
+                  onCheckedChange={(faded) =>
+                    setFadedIndexes((indexes) =>
+                      faded ? [...indexes, i] : indexes.filter((index) => index !== i)
+                    )
+                  }
+                >
+                  Fade
+                  <ContextMenu.ItemIndicator>
+                    <TickIcon />
+                  </ContextMenu.ItemIndicator>
+                </ContextMenu.CheckboxItem>
+              </ContextMenu.Content>
+            </ContextMenu.Portal>
+            <ContextMenu.Trigger>
+              <div
+                style={{
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 100,
+                  height: 100,
+                  backgroundColor: customColor ? customColor : '#eeeef0',
+                  color: customColor ? 'white' : '#666670',
+                  fontSize: 32,
+                  borderRadius: 5,
+                  cursor: 'default',
+                  userSelect: 'none',
+                  opacity: fadedIndexes.includes(i) ? 0.5 : 1,
+                }}
+              >
+                {i + 1}
+              </div>
+            </ContextMenu.Trigger>
+          </ContextMenu.Root>
+        );
+      })}
+    </div>
+  );
+};
+
+export const Nested = () => (
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger
+        className={styles.trigger}
+        style={{ padding: 100, backgroundColor: 'royalblue' }}
+      >
+        <ContextMenu.Root>
+          <ContextMenu.Trigger className={styles.trigger} style={{ backgroundColor: 'tomato' }} />{' '}
+          <ContextMenu.Portal>
+            <ContextMenu.Content className={styles.content} alignOffset={-5}>
+              <ContextMenu.Label className={styles.label}>Red box menu</ContextMenu.Label>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('red action1')}>
+                Red action 1
+              </ContextMenu.Item>
+              <ContextMenu.Item className={styles.item} onSelect={() => console.log('red action2')}>
+                Red action 2
+              </ContextMenu.Item>
+              <ContextMenu.Separator className={styles.separator} />
+              <ContextMenu.Sub>
+                <ContextMenu.SubTrigger className={styles.subTrigger}>
+                  Submenu →
+                </ContextMenu.SubTrigger>
+                <ContextMenu.Portal>
+                  <ContextMenu.SubContent
+                    className={styles.content}
+                    sideOffset={12}
+                    alignOffset={-6}
+                  >
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('red sub action 1')}
+                    >
+                      Red sub action 1
+                    </ContextMenu.Item>
+                    <ContextMenu.Item
+                      className={styles.item}
+                      onSelect={() => console.log('red sub action 2')}
+                    >
+                      Red sub action 2
+                    </ContextMenu.Item>
+                    <ContextMenu.Arrow />
+                  </ContextMenu.SubContent>
+                </ContextMenu.Portal>
+              </ContextMenu.Sub>
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu.Root>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className={styles.content} alignOffset={-5}>
+          <ContextMenu.Label className={styles.label}>Blue box menu</ContextMenu.Label>
+          <ContextMenu.Separator className={styles.separator} />
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('blue action1')}>
+            Blue action 1
+          </ContextMenu.Item>
+          <ContextMenu.Item className={styles.item} onSelect={() => console.log('blue action2')}>
+            Blue action 2
+          </ContextMenu.Item>
+          <ContextMenu.Separator className={styles.separator} />
+          <ContextMenu.Sub>
+            <ContextMenu.SubTrigger className={styles.subTrigger}>Submenu →</ContextMenu.SubTrigger>
+            <ContextMenu.Portal>
+              <ContextMenu.SubContent className={styles.content} sideOffset={12} alignOffset={-6}>
+                <ContextMenu.Item
+                  className={styles.item}
+                  onSelect={() => console.log('blue sub action 1')}
+                >
+                  Blue sub action 1
+                </ContextMenu.Item>
+                <ContextMenu.Item
+                  className={styles.item}
+                  onSelect={() => console.log('blue sub action 2')}
+                >
+                  Blue sub action 2
+                </ContextMenu.Item>
+                <ContextMenu.Arrow />
+              </ContextMenu.SubContent>
+            </ContextMenu.Portal>
+          </ContextMenu.Sub>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
+  </div>
+);
+
+const TickIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 32 32"
+    width="12"
+    height="12"
+    fill="none"
+    stroke="currentcolor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="3"
+  >
+    <path d="M2 20 L12 28 30 4" />
+  </svg>
+);
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/src/context-menu.tsx</source>
+<document_content>
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { createContextScope } from '@radix-ui/react-context';
+import { Primitive } from '@radix-ui/react-primitive';
+import * as MenuPrimitive from '@radix-ui/react-menu';
+import { createMenuScope } from '@radix-ui/react-menu';
+import { useCallbackRef } from '@radix-ui/react-use-callback-ref';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+
+import type { Scope } from '@radix-ui/react-context';
+
+type Direction = 'ltr' | 'rtl';
+type Point = { x: number; y: number };
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenu
+ * -----------------------------------------------------------------------------------------------*/
+
+const CONTEXT_MENU_NAME = 'ContextMenu';
+
+type ScopedProps<P> = P & { __scopeContextMenu?: Scope };
+const [createContextMenuContext, createContextMenuScope] = createContextScope(CONTEXT_MENU_NAME, [
+  createMenuScope,
+]);
+const useMenuScope = createMenuScope();
+
+type ContextMenuContextValue = {
+  open: boolean;
+  onOpenChange(open: boolean): void;
+  modal: boolean;
+};
+
+const [ContextMenuProvider, useContextMenuContext] =
+  createContextMenuContext<ContextMenuContextValue>(CONTEXT_MENU_NAME);
+
+interface ContextMenuProps {
+  children?: React.ReactNode;
+  onOpenChange?(open: boolean): void;
+  dir?: Direction;
+  modal?: boolean;
+}
+
+const ContextMenu: React.FC<ContextMenuProps> = (props: ScopedProps<ContextMenuProps>) => {
+  const { __scopeContextMenu, children, onOpenChange, dir, modal = true } = props;
+  const [open, setOpen] = React.useState(false);
+  const menuScope = useMenuScope(__scopeContextMenu);
+  const handleOpenChangeProp = useCallbackRef(onOpenChange);
+
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      setOpen(open);
+      handleOpenChangeProp(open);
+    },
+    [handleOpenChangeProp]
+  );
+
+  return (
+    <ContextMenuProvider
+      scope={__scopeContextMenu}
+      open={open}
+      onOpenChange={handleOpenChange}
+      modal={modal}
+    >
+      <MenuPrimitive.Root
+        {...menuScope}
+        dir={dir}
+        open={open}
+        onOpenChange={handleOpenChange}
+        modal={modal}
+      >
+        {children}
+      </MenuPrimitive.Root>
+    </ContextMenuProvider>
+  );
+};
+
+ContextMenu.displayName = CONTEXT_MENU_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuTrigger
+ * -----------------------------------------------------------------------------------------------*/
+
+const TRIGGER_NAME = 'ContextMenuTrigger';
+
+type ContextMenuTriggerElement = React.ElementRef<typeof Primitive.span>;
+type PrimitiveSpanProps = React.ComponentPropsWithoutRef<typeof Primitive.span>;
+interface ContextMenuTriggerProps extends PrimitiveSpanProps {
+  disabled?: boolean;
+}
+
+const ContextMenuTrigger = React.forwardRef<ContextMenuTriggerElement, ContextMenuTriggerProps>(
+  (props: ScopedProps<ContextMenuTriggerProps>, forwardedRef) => {
+    const { __scopeContextMenu, disabled = false, ...triggerProps } = props;
+    const context = useContextMenuContext(TRIGGER_NAME, __scopeContextMenu);
+    const menuScope = useMenuScope(__scopeContextMenu);
+    const pointRef = React.useRef<Point>({ x: 0, y: 0 });
+    const virtualRef = React.useRef({
+      getBoundingClientRect: () => DOMRect.fromRect({ width: 0, height: 0, ...pointRef.current }),
+    });
+    const longPressTimerRef = React.useRef(0);
+    const clearLongPress = React.useCallback(
+      () => window.clearTimeout(longPressTimerRef.current),
+      []
+    );
+    const handleOpen = (event: React.MouseEvent | React.PointerEvent) => {
+      pointRef.current = { x: event.clientX, y: event.clientY };
+      context.onOpenChange(true);
+    };
+
+    React.useEffect(() => clearLongPress, [clearLongPress]);
+    React.useEffect(() => void (disabled && clearLongPress()), [disabled, clearLongPress]);
+
+    return (
+      <>
+        <MenuPrimitive.Anchor {...menuScope} virtualRef={virtualRef} />
+        <Primitive.span
+          data-state={context.open ? 'open' : 'closed'}
+          data-disabled={disabled ? '' : undefined}
+          {...triggerProps}
+          ref={forwardedRef}
+          // prevent iOS context menu from appearing
+          style={{ WebkitTouchCallout: 'none', ...props.style }}
+          // if trigger is disabled, enable the native Context Menu
+          onContextMenu={
+            disabled
+              ? props.onContextMenu
+              : composeEventHandlers(props.onContextMenu, (event) => {
+                  // clearing the long press here because some platforms already support
+                  // long press to trigger a `contextmenu` event
+                  clearLongPress();
+                  handleOpen(event);
+                  event.preventDefault();
+                })
+          }
+          onPointerDown={
+            disabled
+              ? props.onPointerDown
+              : composeEventHandlers(
+                  props.onPointerDown,
+                  whenTouchOrPen((event) => {
+                    // clear the long press here in case there's multiple touch points
+                    clearLongPress();
+                    longPressTimerRef.current = window.setTimeout(() => handleOpen(event), 700);
+                  })
+                )
+          }
+          onPointerMove={
+            disabled
+              ? props.onPointerMove
+              : composeEventHandlers(props.onPointerMove, whenTouchOrPen(clearLongPress))
+          }
+          onPointerCancel={
+            disabled
+              ? props.onPointerCancel
+              : composeEventHandlers(props.onPointerCancel, whenTouchOrPen(clearLongPress))
+          }
+          onPointerUp={
+            disabled
+              ? props.onPointerUp
+              : composeEventHandlers(props.onPointerUp, whenTouchOrPen(clearLongPress))
+          }
+        />
+      </>
+    );
+  }
+);
+
+ContextMenuTrigger.displayName = TRIGGER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuPortal
+ * -----------------------------------------------------------------------------------------------*/
+
+const PORTAL_NAME = 'ContextMenuPortal';
+
+type MenuPortalProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Portal>;
+interface ContextMenuPortalProps extends MenuPortalProps {}
+
+const ContextMenuPortal: React.FC<ContextMenuPortalProps> = (
+  props: ScopedProps<ContextMenuPortalProps>
+) => {
+  const { __scopeContextMenu, ...portalProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.Portal {...menuScope} {...portalProps} />;
+};
+
+ContextMenuPortal.displayName = PORTAL_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuContent
+ * -----------------------------------------------------------------------------------------------*/
+
+const CONTENT_NAME = 'ContextMenuContent';
+
+type ContextMenuContentElement = React.ElementRef<typeof MenuPrimitive.Content>;
+type MenuContentProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Content>;
+interface ContextMenuContentProps
+  extends Omit<MenuContentProps, 'onEntryFocus' | 'side' | 'sideOffset' | 'align'> {}
+
+const ContextMenuContent = React.forwardRef<ContextMenuContentElement, ContextMenuContentProps>(
+  (props: ScopedProps<ContextMenuContentProps>, forwardedRef) => {
+    const { __scopeContextMenu, ...contentProps } = props;
+    const context = useContextMenuContext(CONTENT_NAME, __scopeContextMenu);
+    const menuScope = useMenuScope(__scopeContextMenu);
+    const hasInteractedOutsideRef = React.useRef(false);
+
+    return (
+      <MenuPrimitive.Content
+        {...menuScope}
+        {...contentProps}
+        ref={forwardedRef}
+        side="right"
+        sideOffset={2}
+        align="start"
+        onCloseAutoFocus={(event) => {
+          props.onCloseAutoFocus?.(event);
+
+          if (!event.defaultPrevented && hasInteractedOutsideRef.current) {
+            event.preventDefault();
+          }
+
+          hasInteractedOutsideRef.current = false;
+        }}
+        onInteractOutside={(event) => {
+          props.onInteractOutside?.(event);
+
+          if (!event.defaultPrevented && !context.modal) hasInteractedOutsideRef.current = true;
+        }}
+        style={{
+          ...props.style,
+          // re-namespace exposed content custom properties
+          ...{
+            '--radix-context-menu-content-transform-origin': 'var(--radix-popper-transform-origin)',
+            '--radix-context-menu-content-available-width': 'var(--radix-popper-available-width)',
+            '--radix-context-menu-content-available-height': 'var(--radix-popper-available-height)',
+            '--radix-context-menu-trigger-width': 'var(--radix-popper-anchor-width)',
+            '--radix-context-menu-trigger-height': 'var(--radix-popper-anchor-height)',
+          },
+        }}
+      />
+    );
+  }
+);
+
+ContextMenuContent.displayName = CONTENT_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuGroup
+ * -----------------------------------------------------------------------------------------------*/
+
+const GROUP_NAME = 'ContextMenuGroup';
+
+type ContextMenuGroupElement = React.ElementRef<typeof MenuPrimitive.Group>;
+type MenuGroupProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Group>;
+interface ContextMenuGroupProps extends MenuGroupProps {}
+
+const ContextMenuGroup = React.forwardRef<ContextMenuGroupElement, ContextMenuGroupProps>(
+  (props: ScopedProps<ContextMenuGroupProps>, forwardedRef) => {
+    const { __scopeContextMenu, ...groupProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return <MenuPrimitive.Group {...menuScope} {...groupProps} ref={forwardedRef} />;
+  }
+);
+
+ContextMenuGroup.displayName = GROUP_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuLabel
+ * -----------------------------------------------------------------------------------------------*/
+
+const LABEL_NAME = 'ContextMenuLabel';
+
+type ContextMenuLabelElement = React.ElementRef<typeof MenuPrimitive.Label>;
+type MenuLabelProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Label>;
+interface ContextMenuLabelProps extends MenuLabelProps {}
+
+const ContextMenuLabel = React.forwardRef<ContextMenuLabelElement, ContextMenuLabelProps>(
+  (props: ScopedProps<ContextMenuLabelProps>, forwardedRef) => {
+    const { __scopeContextMenu, ...labelProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return <MenuPrimitive.Label {...menuScope} {...labelProps} ref={forwardedRef} />;
+  }
+);
+
+ContextMenuLabel.displayName = LABEL_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuItem
+ * -----------------------------------------------------------------------------------------------*/
+
+const ITEM_NAME = 'ContextMenuItem';
+
+type ContextMenuItemElement = React.ElementRef<typeof MenuPrimitive.Item>;
+type MenuItemProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Item>;
+interface ContextMenuItemProps extends MenuItemProps {}
+
+const ContextMenuItem = React.forwardRef<ContextMenuItemElement, ContextMenuItemProps>(
+  (props: ScopedProps<ContextMenuItemProps>, forwardedRef) => {
+    const { __scopeContextMenu, ...itemProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return <MenuPrimitive.Item {...menuScope} {...itemProps} ref={forwardedRef} />;
+  }
+);
+
+ContextMenuItem.displayName = ITEM_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuCheckboxItem
+ * -----------------------------------------------------------------------------------------------*/
+
+const CHECKBOX_ITEM_NAME = 'ContextMenuCheckboxItem';
+
+type ContextMenuCheckboxItemElement = React.ElementRef<typeof MenuPrimitive.CheckboxItem>;
+type MenuCheckboxItemProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.CheckboxItem>;
+interface ContextMenuCheckboxItemProps extends MenuCheckboxItemProps {}
+
+const ContextMenuCheckboxItem = React.forwardRef<
+  ContextMenuCheckboxItemElement,
+  ContextMenuCheckboxItemProps
+>((props: ScopedProps<ContextMenuCheckboxItemProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...checkboxItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.CheckboxItem {...menuScope} {...checkboxItemProps} ref={forwardedRef} />;
+});
+
+ContextMenuCheckboxItem.displayName = CHECKBOX_ITEM_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuRadioGroup
+ * -----------------------------------------------------------------------------------------------*/
+
+const RADIO_GROUP_NAME = 'ContextMenuRadioGroup';
+
+type ContextMenuRadioGroupElement = React.ElementRef<typeof MenuPrimitive.RadioGroup>;
+type MenuRadioGroupProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.RadioGroup>;
+interface ContextMenuRadioGroupProps extends MenuRadioGroupProps {}
+
+const ContextMenuRadioGroup = React.forwardRef<
+  ContextMenuRadioGroupElement,
+  ContextMenuRadioGroupProps
+>((props: ScopedProps<ContextMenuRadioGroupProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...radioGroupProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.RadioGroup {...menuScope} {...radioGroupProps} ref={forwardedRef} />;
+});
+
+ContextMenuRadioGroup.displayName = RADIO_GROUP_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuRadioItem
+ * -----------------------------------------------------------------------------------------------*/
+
+const RADIO_ITEM_NAME = 'ContextMenuRadioItem';
+
+type ContextMenuRadioItemElement = React.ElementRef<typeof MenuPrimitive.RadioItem>;
+type MenuRadioItemProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.RadioItem>;
+interface ContextMenuRadioItemProps extends MenuRadioItemProps {}
+
+const ContextMenuRadioItem = React.forwardRef<
+  ContextMenuRadioItemElement,
+  ContextMenuRadioItemProps
+>((props: ScopedProps<ContextMenuRadioItemProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...radioItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.RadioItem {...menuScope} {...radioItemProps} ref={forwardedRef} />;
+});
+
+ContextMenuRadioItem.displayName = RADIO_ITEM_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuItemIndicator
+ * -----------------------------------------------------------------------------------------------*/
+
+const INDICATOR_NAME = 'ContextMenuItemIndicator';
+
+type ContextMenuItemIndicatorElement = React.ElementRef<typeof MenuPrimitive.ItemIndicator>;
+type MenuItemIndicatorProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.ItemIndicator>;
+interface ContextMenuItemIndicatorProps extends MenuItemIndicatorProps {}
+
+const ContextMenuItemIndicator = React.forwardRef<
+  ContextMenuItemIndicatorElement,
+  ContextMenuItemIndicatorProps
+>((props: ScopedProps<ContextMenuItemIndicatorProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...itemIndicatorProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.ItemIndicator {...menuScope} {...itemIndicatorProps} ref={forwardedRef} />;
+});
+
+ContextMenuItemIndicator.displayName = INDICATOR_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuSeparator
+ * -----------------------------------------------------------------------------------------------*/
+
+const SEPARATOR_NAME = 'ContextMenuSeparator';
+
+type ContextMenuSeparatorElement = React.ElementRef<typeof MenuPrimitive.Separator>;
+type MenuSeparatorProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Separator>;
+interface ContextMenuSeparatorProps extends MenuSeparatorProps {}
+
+const ContextMenuSeparator = React.forwardRef<
+  ContextMenuSeparatorElement,
+  ContextMenuSeparatorProps
+>((props: ScopedProps<ContextMenuSeparatorProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...separatorProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.Separator {...menuScope} {...separatorProps} ref={forwardedRef} />;
+});
+
+ContextMenuSeparator.displayName = SEPARATOR_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuArrow
+ * -----------------------------------------------------------------------------------------------*/
+
+const ARROW_NAME = 'ContextMenuArrow';
+
+type ContextMenuArrowElement = React.ElementRef<typeof MenuPrimitive.Arrow>;
+type MenuArrowProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.Arrow>;
+interface ContextMenuArrowProps extends MenuArrowProps {}
+
+const ContextMenuArrow = React.forwardRef<ContextMenuArrowElement, ContextMenuArrowProps>(
+  (props: ScopedProps<ContextMenuArrowProps>, forwardedRef) => {
+    const { __scopeContextMenu, ...arrowProps } = props;
+    const menuScope = useMenuScope(__scopeContextMenu);
+    return <MenuPrimitive.Arrow {...menuScope} {...arrowProps} ref={forwardedRef} />;
+  }
+);
+
+ContextMenuArrow.displayName = ARROW_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuSub
+ * -----------------------------------------------------------------------------------------------*/
+
+const SUB_NAME = 'ContextMenuSub';
+
+interface ContextMenuSubProps {
+  children?: React.ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?(open: boolean): void;
+}
+
+const ContextMenuSub: React.FC<ContextMenuSubProps> = (props: ScopedProps<ContextMenuSubProps>) => {
+  const { __scopeContextMenu, children, onOpenChange, open: openProp, defaultOpen } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  const [open, setOpen] = useControllableState({
+    prop: openProp,
+    defaultProp: defaultOpen,
+    onChange: onOpenChange,
+  });
+
+  return (
+    <MenuPrimitive.Sub {...menuScope} open={open} onOpenChange={setOpen}>
+      {children}
+    </MenuPrimitive.Sub>
+  );
+};
+
+ContextMenuSub.displayName = SUB_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuSubTrigger
+ * -----------------------------------------------------------------------------------------------*/
+
+const SUB_TRIGGER_NAME = 'ContextMenuSubTrigger';
+
+type ContextMenuSubTriggerElement = React.ElementRef<typeof MenuPrimitive.SubTrigger>;
+type MenuSubTriggerProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.SubTrigger>;
+interface ContextMenuSubTriggerProps extends MenuSubTriggerProps {}
+
+const ContextMenuSubTrigger = React.forwardRef<
+  ContextMenuSubTriggerElement,
+  ContextMenuSubTriggerProps
+>((props: ScopedProps<ContextMenuSubTriggerProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...triggerItemProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+  return <MenuPrimitive.SubTrigger {...menuScope} {...triggerItemProps} ref={forwardedRef} />;
+});
+
+ContextMenuSubTrigger.displayName = SUB_TRIGGER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ContextMenuSubContent
+ * -----------------------------------------------------------------------------------------------*/
+
+const SUB_CONTENT_NAME = 'ContextMenuSubContent';
+
+type ContextMenuSubContentElement = React.ElementRef<typeof MenuPrimitive.Content>;
+type MenuSubContentProps = React.ComponentPropsWithoutRef<typeof MenuPrimitive.SubContent>;
+interface ContextMenuSubContentProps extends MenuSubContentProps {}
+
+const ContextMenuSubContent = React.forwardRef<
+  ContextMenuSubContentElement,
+  ContextMenuSubContentProps
+>((props: ScopedProps<ContextMenuSubContentProps>, forwardedRef) => {
+  const { __scopeContextMenu, ...subContentProps } = props;
+  const menuScope = useMenuScope(__scopeContextMenu);
+
+  return (
+    <MenuPrimitive.SubContent
+      {...menuScope}
+      {...subContentProps}
+      ref={forwardedRef}
+      style={{
+        ...props.style,
+        // re-namespace exposed content custom properties
+        ...{
+          '--radix-context-menu-content-transform-origin': 'var(--radix-popper-transform-origin)',
+          '--radix-context-menu-content-available-width': 'var(--radix-popper-available-width)',
+          '--radix-context-menu-content-available-height': 'var(--radix-popper-available-height)',
+          '--radix-context-menu-trigger-width': 'var(--radix-popper-anchor-width)',
+          '--radix-context-menu-trigger-height': 'var(--radix-popper-anchor-height)',
+        },
+      }}
+    />
+  );
+});
+
+ContextMenuSubContent.displayName = SUB_CONTENT_NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function whenTouchOrPen<E>(handler: React.PointerEventHandler<E>): React.PointerEventHandler<E> {
+  return (event) => (event.pointerType !== 'mouse' ? handler(event) : undefined);
+}
+
+const Root = ContextMenu;
+const Trigger = ContextMenuTrigger;
+const Portal = ContextMenuPortal;
+const Content = ContextMenuContent;
+const Group = ContextMenuGroup;
+const Label = ContextMenuLabel;
+const Item = ContextMenuItem;
+const CheckboxItem = ContextMenuCheckboxItem;
+const RadioGroup = ContextMenuRadioGroup;
+const RadioItem = ContextMenuRadioItem;
+const ItemIndicator = ContextMenuItemIndicator;
+const Separator = ContextMenuSeparator;
+const Arrow = ContextMenuArrow;
+const Sub = ContextMenuSub;
+const SubTrigger = ContextMenuSubTrigger;
+const SubContent = ContextMenuSubContent;
+
+export {
+  createContextMenuScope,
+  //
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuLabel,
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuItemIndicator,
+  ContextMenuSeparator,
+  ContextMenuArrow,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+  //
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Group,
+  Label,
+  Item,
+  CheckboxItem,
+  RadioGroup,
+  RadioItem,
+  ItemIndicator,
+  Separator,
+  Arrow,
+  Sub,
+  SubTrigger,
+  SubContent,
+};
+export type {
+  ContextMenuProps,
+  ContextMenuTriggerProps,
+  ContextMenuPortalProps,
+  ContextMenuContentProps,
+  ContextMenuGroupProps,
+  ContextMenuLabelProps,
+  ContextMenuItemProps,
+  ContextMenuCheckboxItemProps,
+  ContextMenuRadioGroupProps,
+  ContextMenuRadioItemProps,
+  ContextMenuItemIndicatorProps,
+  ContextMenuSeparatorProps,
+  ContextMenuArrowProps,
+  ContextMenuSubProps,
+  ContextMenuSubTriggerProps,
+  ContextMenuSubContentProps,
+};
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/context-menu/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createContextMenuScope,
+  //
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuLabel,
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
+  ContextMenuItemIndicator,
+  ContextMenuSeparator,
+  ContextMenuArrow,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
+  //
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Group,
+  Label,
+  Item,
+  CheckboxItem,
+  RadioGroup,
+  RadioItem,
+  ItemIndicator,
+  Separator,
+  Arrow,
+  Sub,
+  SubTrigger,
+  SubContent,
+} from './context-menu';
+export type {
+  ContextMenuProps,
+  ContextMenuTriggerProps,
+  ContextMenuPortalProps,
+  ContextMenuContentProps,
+  ContextMenuGroupProps,
+  ContextMenuLabelProps,
+  ContextMenuItemProps,
+  ContextMenuCheckboxItemProps,
+  ContextMenuRadioGroupProps,
+  ContextMenuRadioItemProps,
+  ContextMenuItemIndicatorProps,
+  ContextMenuSeparatorProps,
+  ContextMenuArrowProps,
+  ContextMenuSubProps,
+  ContextMenuSubTriggerProps,
+  ContextMenuSubContentProps,
+} from './context-menu';
+
+</document_content>
+</document>
+</documents>

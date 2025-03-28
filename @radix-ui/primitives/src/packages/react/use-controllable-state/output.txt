@@ -1,0 +1,169 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-controllable-state/README.md</source>
+<document_content>
+# `react-use-controllable-state`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-use-controllable-state
+# or
+$ npm install @radix-ui/react-use-controllable-state
+```
+
+## Usage
+
+This is an internal utility, not intended for public usage.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-controllable-state/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-controllable-state/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-use-controllable-state",
+  "version": "1.1.1-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/react-use-callback-ref": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.0"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-controllable-state/src/index.ts</source>
+<document_content>
+export { useControllableState } from './use-controllable-state';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-controllable-state/src/use-controllable-state.tsx</source>
+<document_content>
+import * as React from 'react';
+import { useCallbackRef } from '@radix-ui/react-use-callback-ref';
+
+type UseControllableStateParams<T> = {
+  prop?: T | undefined;
+  defaultProp?: T | undefined;
+  onChange?: (state: T) => void;
+};
+
+type SetStateFn<T> = (prevState?: T) => T;
+
+function useControllableState<T>({
+  prop,
+  defaultProp,
+  onChange = () => {},
+}: UseControllableStateParams<T>) {
+  const [uncontrolledProp, setUncontrolledProp] = useUncontrolledState({ defaultProp, onChange });
+  const isControlled = prop !== undefined;
+  const value = isControlled ? prop : uncontrolledProp;
+  const handleChange = useCallbackRef(onChange);
+
+  const setValue: React.Dispatch<React.SetStateAction<T | undefined>> = React.useCallback(
+    (nextValue) => {
+      if (isControlled) {
+        const setter = nextValue as SetStateFn<T>;
+        const value = typeof nextValue === 'function' ? setter(prop) : nextValue;
+        if (value !== prop) handleChange(value as T);
+      } else {
+        setUncontrolledProp(nextValue);
+      }
+    },
+    [isControlled, prop, setUncontrolledProp, handleChange]
+  );
+
+  return [value, setValue] as const;
+}
+
+function useUncontrolledState<T>({
+  defaultProp,
+  onChange,
+}: Omit<UseControllableStateParams<T>, 'prop'>) {
+  const uncontrolledState = React.useState<T | undefined>(defaultProp);
+  const [value] = uncontrolledState;
+  const prevValueRef = React.useRef(value);
+  const handleChange = useCallbackRef(onChange);
+
+  React.useEffect(() => {
+    if (prevValueRef.current !== value) {
+      handleChange(value as T);
+      prevValueRef.current = value;
+    }
+  }, [value, prevValueRef, handleChange]);
+
+  return uncontrolledState;
+}
+
+export { useControllableState };
+
+</document_content>
+</document>
+</documents>

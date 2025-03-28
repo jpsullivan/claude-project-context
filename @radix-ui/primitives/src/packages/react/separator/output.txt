@@ -1,0 +1,239 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/README.md</source>
+<document_content>
+# `react-separator`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-separator
+# or
+$ npm install @radix-ui/react-separator
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/separator).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-separator",
+  "version": "1.1.3-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/react-primitive": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.2"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/index.ts</source>
+<document_content>
+export {
+  Separator,
+  //
+  Root,
+} from './separator';
+export type { SeparatorProps } from './separator';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/separator.stories.module.css</source>
+<document_content>
+.root {
+  border: none;
+  background-color: var(--color-red);
+
+  &[data-orientation='horizontal'] {
+    height: 1px;
+    width: 100%;
+    margin: 20px 0;
+  }
+
+  &[data-orientation='vertical'] {
+    height: 100px;
+    width: 1px;
+    margin: 0 20px;
+  }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/separator.stories.tsx</source>
+<document_content>
+import { Separator } from '@radix-ui/react-separator';
+import styles from './separator.stories.module.css';
+
+export default { title: 'Components/Separator' };
+
+export const Styled = () => (
+  <>
+    <h1>Horizontal</h1>
+    <p>The following separator is horizontal and has semantic meaning.</p>
+    <Separator className={styles.root} orientation="horizontal" />
+    <p>
+      The following separator is horizontal and is purely decorative. Assistive technology will
+      ignore this element.
+    </p>
+    <Separator className={styles.root} orientation="horizontal" decorative />
+
+    <h1>Vertical</h1>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <p>The following separator is vertical and has semantic meaning.</p>
+      <Separator className={styles.root} orientation="vertical" />
+      <p>
+        The following separator is vertical and is purely decorative. Assistive technology will
+        ignore this element.
+      </p>
+      <Separator className={styles.root} orientation="vertical" decorative />
+    </div>
+  </>
+);
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/separator.tsx</source>
+<document_content>
+import * as React from 'react';
+import { Primitive } from '@radix-ui/react-primitive';
+
+/* -------------------------------------------------------------------------------------------------
+ *  Separator
+ * -----------------------------------------------------------------------------------------------*/
+
+const NAME = 'Separator';
+const DEFAULT_ORIENTATION = 'horizontal';
+const ORIENTATIONS = ['horizontal', 'vertical'] as const;
+
+type Orientation = (typeof ORIENTATIONS)[number];
+type SeparatorElement = React.ElementRef<typeof Primitive.div>;
+type PrimitiveDivProps = React.ComponentPropsWithoutRef<typeof Primitive.div>;
+interface SeparatorProps extends PrimitiveDivProps {
+  /**
+   * Either `vertical` or `horizontal`. Defaults to `horizontal`.
+   */
+  orientation?: Orientation;
+  /**
+   * Whether or not the component is purely decorative. When true, accessibility-related attributes
+   * are updated so that that the rendered element is removed from the accessibility tree.
+   */
+  decorative?: boolean;
+}
+
+const Separator = React.forwardRef<SeparatorElement, SeparatorProps>((props, forwardedRef) => {
+  const { decorative, orientation: orientationProp = DEFAULT_ORIENTATION, ...domProps } = props;
+  const orientation = isValidOrientation(orientationProp) ? orientationProp : DEFAULT_ORIENTATION;
+  // `aria-orientation` defaults to `horizontal` so we only need it if `orientation` is vertical
+  const ariaOrientation = orientation === 'vertical' ? orientation : undefined;
+  const semanticProps = decorative
+    ? { role: 'none' }
+    : { 'aria-orientation': ariaOrientation, role: 'separator' };
+
+  return (
+    <Primitive.div
+      data-orientation={orientation}
+      {...semanticProps}
+      {...domProps}
+      ref={forwardedRef}
+    />
+  );
+});
+
+Separator.displayName = NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function isValidOrientation(orientation: any): orientation is Orientation {
+  return ORIENTATIONS.includes(orientation);
+}
+
+const Root = Separator;
+
+export {
+  Separator,
+  //
+  Root,
+};
+export type { SeparatorProps };
+
+</document_content>
+</document>
+</documents>

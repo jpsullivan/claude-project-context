@@ -1,0 +1,422 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/README.md</source>
+<document_content>
+# `react-collection`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-collection
+# or
+$ npm install @radix-ui/react-collection
+```
+
+## Usage
+
+This is an internal utility, not intended for public usage.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-collection",
+  "version": "1.1.3-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/react-compose-refs": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-slot": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.2"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/collection.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import { createCollection } from '@radix-ui/react-collection';
+
+export default { title: 'Utilities/Collection' };
+
+export const Basic = () => (
+  <List>
+    <Item>Red</Item>
+    <Item disabled>Green</Item>
+    <Item>Blue</Item>
+    <LogItems />
+  </List>
+);
+
+export const WithElementInBetween = () => (
+  <List>
+    <div style={{ fontVariant: 'small-caps' }}>Colors</div>
+    <Item>Red</Item>
+    <Item disabled>Green</Item>
+    <Item>Blue</Item>
+    <div style={{ fontVariant: 'small-caps' }}>Words</div>
+    <Item>Hello</Item>
+    <Item>World</Item>
+    <LogItems />
+  </List>
+);
+
+const Tomato = () => <Item style={{ color: 'tomato' }}>Tomato</Item>;
+
+export const WithWrappedItem = () => (
+  <List>
+    <Item>Red</Item>
+    <Item disabled>Green</Item>
+    <Item>Blue</Item>
+    <Tomato />
+    <LogItems />
+  </List>
+);
+
+export const WithFragment = () => {
+  const countries = (
+    <>
+      <Item>France</Item>
+      <Item disabled>UK</Item>
+      <Item>Spain</Item>
+    </>
+  );
+  return (
+    <List>
+      {countries}
+      <LogItems />
+    </List>
+  );
+};
+
+export const DynamicInsertion = () => {
+  const [hasTomato, setHasTomato] = React.useState(false);
+  const [, forceUpdate] = React.useState<any>();
+  return (
+    <>
+      <button onClick={() => setHasTomato(!hasTomato)}>
+        {hasTomato ? 'Remove' : 'Add'} Tomato
+      </button>
+      <button onClick={() => forceUpdate({})} style={{ marginLeft: 10 }}>
+        Force Update
+      </button>
+
+      <List>
+        <MemoItems hasTomato={hasTomato} />
+        <LogItems />
+      </List>
+    </>
+  );
+};
+
+function WrappedItems({ hasTomato }: any) {
+  return (
+    <>
+      <MemoItem>Red</MemoItem>
+      {hasTomato ? <Tomato /> : null}
+      <MemoItem disabled>Green</MemoItem>
+      <MemoItem>Blue</MemoItem>
+    </>
+  );
+}
+
+export const WithChangingItem = () => {
+  const [isDisabled, setIsDisabled] = React.useState(false);
+  return (
+    <>
+      <button onClick={() => setIsDisabled(!isDisabled)}>
+        {isDisabled ? 'Enable' : 'Disable'} Green
+      </button>
+
+      <List>
+        <Item>Red</Item>
+        <Item disabled={isDisabled}>Green</Item>
+        <Item>Blue</Item>
+        <LogItems />
+      </List>
+    </>
+  );
+};
+
+export const Nested = () => (
+  <List>
+    <Item>1</Item>
+    <Item>
+      2
+      <List>
+        <Item>2.1</Item>
+        <Item>2.2</Item>
+        <Item>2.3</Item>
+        <LogItems name="items inside 2" />
+      </List>
+    </Item>
+    <Item>3</Item>
+    <LogItems name="top-level items" />
+  </List>
+);
+
+/* -------------------------------------------------------------------------------------------------
+ * List implementation
+ * -----------------------------------------------------------------------------------------------*/
+
+type ItemData = { disabled: boolean };
+
+const [Collection, useCollection] = createCollection<React.ElementRef<typeof Item>, ItemData>(
+  'List'
+);
+
+const List: React.FC<{ children: React.ReactNode }> = (props) => {
+  return (
+    <Collection.Provider scope={undefined}>
+      <Collection.Slot scope={undefined}>
+        <ul {...props} style={{ width: 200 }} />
+      </Collection.Slot>
+    </Collection.Provider>
+  );
+};
+
+type ItemProps = React.ComponentPropsWithRef<'li'> & {
+  children: React.ReactNode;
+  disabled?: boolean;
+};
+
+function Item({ disabled = false, ...props }: ItemProps) {
+  return (
+    <Collection.ItemSlot scope={undefined} disabled={disabled}>
+      <li {...props} style={{ ...props.style, opacity: disabled ? 0.3 : undefined }} />
+    </Collection.ItemSlot>
+  );
+}
+
+// Ensure that our implementation doesn't break if the item list/item is memoized
+const MemoItem = React.memo(Item);
+const MemoItems = React.memo(WrappedItems);
+
+function LogItems({ name = 'items' }: { name?: string }) {
+  const getItems = useCollection(undefined);
+  React.useEffect(() => console.log(name, getItems()));
+  return null;
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/collection.tsx</source>
+<document_content>
+import React from 'react';
+import { createContextScope } from '@radix-ui/react-context';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { Slot } from '@radix-ui/react-slot';
+
+type SlotProps = React.ComponentPropsWithoutRef<typeof Slot>;
+type CollectionElement = HTMLElement;
+interface CollectionProps extends SlotProps {
+  scope: any;
+}
+
+// We have resorted to returning slots directly rather than exposing primitives that can then
+// be slotted like `<CollectionItem as={Slot}>…</CollectionItem>`.
+// This is because we encountered issues with generic types that cannot be statically analysed
+// due to creating them dynamically via createCollection.
+
+function createCollection<ItemElement extends HTMLElement, ItemData = {}>(name: string) {
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionProvider
+   * ---------------------------------------------------------------------------------------------*/
+
+  const PROVIDER_NAME = name + 'CollectionProvider';
+  const [createCollectionContext, createCollectionScope] = createContextScope(PROVIDER_NAME);
+
+  type ContextValue = {
+    collectionRef: React.RefObject<CollectionElement | null>;
+    itemMap: Map<
+      React.RefObject<ItemElement | null>,
+      { ref: React.RefObject<ItemElement | null> } & ItemData
+    >;
+  };
+
+  const [CollectionProviderImpl, useCollectionContext] = createCollectionContext<ContextValue>(
+    PROVIDER_NAME,
+    { collectionRef: { current: null }, itemMap: new Map() }
+  );
+
+  const CollectionProvider: React.FC<{ children?: React.ReactNode; scope: any }> = (props) => {
+    const { scope, children } = props;
+    const ref = React.useRef<CollectionElement>(null);
+    const itemMap = React.useRef<ContextValue['itemMap']>(new Map()).current;
+    return (
+      <CollectionProviderImpl scope={scope} itemMap={itemMap} collectionRef={ref}>
+        {children}
+      </CollectionProviderImpl>
+    );
+  };
+
+  CollectionProvider.displayName = PROVIDER_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionSlot
+   * ---------------------------------------------------------------------------------------------*/
+
+  const COLLECTION_SLOT_NAME = name + 'CollectionSlot';
+
+  const CollectionSlot = React.forwardRef<CollectionElement, CollectionProps>(
+    (props, forwardedRef) => {
+      const { scope, children } = props;
+      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs(forwardedRef, context.collectionRef);
+      return <Slot ref={composedRefs}>{children}</Slot>;
+    }
+  );
+
+  CollectionSlot.displayName = COLLECTION_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionItem
+   * ---------------------------------------------------------------------------------------------*/
+
+  const ITEM_SLOT_NAME = name + 'CollectionItemSlot';
+  const ITEM_DATA_ATTR = 'data-radix-collection-item';
+
+  type CollectionItemSlotProps = ItemData & {
+    children: React.ReactNode;
+    scope: any;
+  };
+
+  const CollectionItemSlot = React.forwardRef<ItemElement, CollectionItemSlotProps>(
+    (props, forwardedRef) => {
+      const { scope, children, ...itemData } = props;
+      const ref = React.useRef<ItemElement>(null);
+      const composedRefs = useComposedRefs(forwardedRef, ref);
+      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+
+      React.useEffect(() => {
+        context.itemMap.set(ref, { ref, ...(itemData as unknown as ItemData) });
+        return () => void context.itemMap.delete(ref);
+      });
+
+      return (
+        <Slot {...{ [ITEM_DATA_ATTR]: '' }} ref={composedRefs}>
+          {children}
+        </Slot>
+      );
+    }
+  );
+
+  CollectionItemSlot.displayName = ITEM_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * useCollection
+   * ---------------------------------------------------------------------------------------------*/
+
+  function useCollection(scope: any) {
+    const context = useCollectionContext(name + 'CollectionConsumer', scope);
+
+    const getItems = React.useCallback(() => {
+      const collectionNode = context.collectionRef.current;
+      if (!collectionNode) return [];
+      const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
+      const items = Array.from(context.itemMap.values());
+      const orderedItems = items.sort(
+        (a, b) => orderedNodes.indexOf(a.ref.current!) - orderedNodes.indexOf(b.ref.current!)
+      );
+      return orderedItems;
+    }, [context.collectionRef, context.itemMap]);
+
+    return getItems;
+  }
+
+  return [
+    { Provider: CollectionProvider, Slot: CollectionSlot, ItemSlot: CollectionItemSlot },
+    useCollection,
+    createCollectionScope,
+  ] as const;
+}
+
+export { createCollection };
+export type { CollectionProps };
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/index.ts</source>
+<document_content>
+'use client';
+export { createCollection } from './collection';
+export type { CollectionProps } from './collection';
+
+</document_content>
+</document>
+</documents>

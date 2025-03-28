@@ -117,7 +117,7 @@ subdirs.each do |dir|
                 end
   
   # Create the command to run
-  command = "#{command_base} #{full_dir_path} --ignore \"stories\" --ignore \"__tests__\" --cxml -o #{output_path}"
+  command = "#{command_base} #{full_dir_path} --cxml -o #{output_path}"
   
   puts "Running: #{command}"
   

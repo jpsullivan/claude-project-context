@@ -1,0 +1,948 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/README.md</source>
+<document_content>
+# `react-checkbox`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-checkbox
+# or
+$ npm install @radix-ui/react-checkbox
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/checkbox).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-checkbox",
+  "version": "1.1.5-rc.6",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-compose-refs": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-presence": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*",
+    "@radix-ui/react-use-previous": "workspace:*",
+    "@radix-ui/react-use-size": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.4"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/src/checkbox.stories.module.css</source>
+<document_content>
+.root {
+  /* better default alignment */
+  vertical-align: middle;
+  /* ------ */
+  border: 1px solid var(--gray-4);
+  width: 30px;
+  height: 30px;
+  padding: 4px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--red-9);
+    box-shadow: 0 0 0 1px var(--red-9);
+  }
+
+  &[data-disabled] {
+    opacity: 0.3;
+  }
+}
+
+.indicator {
+  background-color: var(--red-9);
+  display: block;
+  width: 20px;
+  height: 4px;
+  &[data-state='checked'],
+  &[data-state='unchecked'] {
+    height: 20px;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animatedIndicator {
+  transition: height 300ms;
+  &[data-state='checked'] {
+    animation: fadeIn 1000ms ease-out;
+  }
+  &[data-state='unchecked'] {
+    animation: fadeOut 1000ms ease-in;
+  }
+}
+
+.rootAttr,
+.indicatorAttr {
+  background-color: var(--blue-a12);
+  border: 2px solid var(--blue-9);
+  padding: 10px;
+  &[data-state='unchecked'] {
+    border-color: var(--red-9);
+  }
+  &[data-state='checked'] {
+    border-color: var(--green-9);
+  }
+  &[data-state='indeterminate'] {
+    border-color: var(--purple-9);
+  }
+  &[data-disabled] {
+    border-style: dashed;
+  }
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.label {
+  /* ensures it can receive vertical margins */
+  display: inline-block;
+  /* better default alignment */
+  vertical-align: middle;
+  /* mimics default `label` tag (as we render a `span`) */
+  cursor: default;
+  display: inline-block;
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/src/checkbox.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import { Label as LabelPrimitive } from '@radix-ui/react-label';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import styles from './checkbox.stories.module.css';
+
+export default { title: 'Components/Checkbox' };
+
+export const Styled = () => (
+  <>
+    <p>This checkbox is nested inside a label. The state is uncontrolled.</p>
+
+    <h1>Custom label</h1>
+    <Label>
+      Label{' '}
+      <Checkbox.Root className={styles.root}>
+        <Checkbox.Indicator className={styles.indicator} />
+      </Checkbox.Root>
+    </Label>
+
+    <br />
+    <br />
+
+    <h1>Native label</h1>
+    <label>
+      Label{' '}
+      <Checkbox.Root className={styles.root}>
+        <Checkbox.Indicator className={styles.indicator} />
+      </Checkbox.Root>
+    </label>
+
+    <h1>Native label + native checkbox</h1>
+    <label>
+      Label <input type="checkbox" />
+    </label>
+
+    <h1>Custom label + htmlFor</h1>
+    <Label htmlFor="one">Label</Label>
+    <Checkbox.Root className={styles.root} id="one">
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <br />
+    <br />
+
+    <h1>Native label + htmlFor</h1>
+    <label htmlFor="two">Label</label>
+    <Checkbox.Root className={styles.root} id="two">
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h1>Native label + native checkbox</h1>
+    <label htmlFor="three">Label</label>
+    <input type="checkbox" id="three" />
+  </>
+);
+
+export const Controlled = () => {
+  const [checked, setChecked] = React.useState<boolean | 'indeterminate'>(true);
+
+  return (
+    <>
+      <p>This checkbox is placed adjacent to its label. The state is controlled.</p>
+      <Label htmlFor="randBox">Label</Label>{' '}
+      <Checkbox.Root
+        className={styles.root}
+        checked={checked}
+        onCheckedChange={setChecked}
+        id="randBox"
+      >
+        <Checkbox.Indicator className={styles.indicator} />
+      </Checkbox.Root>
+    </>
+  );
+};
+
+export const Indeterminate = () => {
+  const [checked, setChecked] = React.useState<boolean | 'indeterminate'>('indeterminate');
+
+  return (
+    <>
+      <p>
+        <Checkbox.Root className={styles.root} checked={checked} onCheckedChange={setChecked}>
+          <Checkbox.Indicator className={styles.indicator} />
+        </Checkbox.Root>
+      </p>
+
+      <button
+        type="button"
+        onClick={() =>
+          setChecked((prevIsChecked) =>
+            prevIsChecked === 'indeterminate' ? false : 'indeterminate'
+          )
+        }
+      >
+        Toggle indeterminate
+      </button>
+    </>
+  );
+};
+
+export const WithinForm = () => {
+  const [data, setData] = React.useState({ optional: false, required: false, stopprop: false });
+  const [checked, setChecked] = React.useState<boolean | 'indeterminate'>('indeterminate');
+
+  return (
+    <form
+      onSubmit={(event) => event.preventDefault()}
+      onChange={(event) => {
+        const input = event.target as HTMLInputElement;
+        setData((prevData) => ({ ...prevData, [input.name]: input.checked }));
+      }}
+    >
+      <fieldset>
+        <legend>optional checked: {String(data.optional)}</legend>
+        <label>
+          <Checkbox.Root
+            className={styles.root}
+            name="optional"
+            checked={checked}
+            onCheckedChange={setChecked}
+          >
+            <Checkbox.Indicator className={styles.indicator} />
+          </Checkbox.Root>{' '}
+          with label
+        </label>
+        <br />
+        <br />
+
+        <button
+          type="button"
+          onClick={() => {
+            setChecked((prevChecked) => {
+              return prevChecked === 'indeterminate' ? false : 'indeterminate';
+            });
+          }}
+        >
+          Toggle indeterminate
+        </button>
+      </fieldset>
+
+      <br />
+      <br />
+
+      <fieldset>
+        <legend>required checked: {String(data.required)}</legend>
+        <Checkbox.Root className={styles.root} name="required" required>
+          <Checkbox.Indicator className={styles.indicator} />
+        </Checkbox.Root>
+      </fieldset>
+
+      <br />
+      <br />
+
+      <fieldset>
+        <legend>stop propagation checked: {String(data.stopprop)}</legend>
+        <Checkbox.Root
+          className={styles.root}
+          name="stopprop"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Checkbox.Indicator className={styles.indicator} />
+        </Checkbox.Root>
+      </fieldset>
+
+      <br />
+      <br />
+
+      <button type="reset">Reset</button>
+      <button>Submit</button>
+    </form>
+  );
+};
+
+export const Animated = () => {
+  const [checked, setChecked] = React.useState<boolean | 'indeterminate'>('indeterminate');
+
+  return (
+    <>
+      <p>
+        <Checkbox.Root className={styles.root} checked={checked} onCheckedChange={setChecked}>
+          <Checkbox.Indicator className={[styles.indicator, styles.animatedIndicator].join(' ')} />
+        </Checkbox.Root>
+      </p>
+
+      <button
+        type="button"
+        onClick={() =>
+          setChecked((prevIsChecked) =>
+            prevIsChecked === 'indeterminate' ? false : 'indeterminate'
+          )
+        }
+      >
+        Toggle indeterminate
+      </button>
+    </>
+  );
+};
+
+export const Chromatic = () => (
+  <>
+    <h1>Uncontrolled</h1>
+    <h2>Unchecked</h2>
+    <Checkbox.Root className={styles.root}>
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h2>Checked</h2>
+    <Checkbox.Root className={styles.root} defaultChecked>
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h1>Controlled</h1>
+    <h2>Unchecked</h2>
+    <Checkbox.Root className={styles.root} checked={false}>
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h2>Checked</h2>
+    <Checkbox.Root className={styles.root} checked>
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h1>Indeterminate</h1>
+    <Checkbox.Root className={styles.root} checked="indeterminate">
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h1>Disabled</h1>
+    <Checkbox.Root className={styles.root} defaultChecked disabled>
+      <Checkbox.Indicator className={styles.indicator} />
+    </Checkbox.Root>
+
+    <h1>Force mounted indicator</h1>
+    <Checkbox.Root className={styles.root}>
+      <Checkbox.Indicator className={styles.indicator} forceMount style={{ height: 20 }} />
+    </Checkbox.Root>
+
+    <h1>State attributes</h1>
+    <h2>Unchecked</h2>
+    <Checkbox.Root className={styles.rootAttr}>
+      <Checkbox.Indicator className={styles.indicatorAttr} />
+    </Checkbox.Root>
+
+    <h2>Checked</h2>
+    <Checkbox.Root className={styles.rootAttr} defaultChecked>
+      <Checkbox.Indicator className={styles.indicatorAttr} />
+    </Checkbox.Root>
+
+    <h2>Indeterminate</h2>
+    <Checkbox.Root className={styles.rootAttr} checked="indeterminate">
+      <Checkbox.Indicator className={styles.indicatorAttr} />
+    </Checkbox.Root>
+
+    <h2>Disabled</h2>
+    <Checkbox.Root className={styles.rootAttr} defaultChecked disabled>
+      <Checkbox.Indicator className={styles.indicatorAttr} />
+    </Checkbox.Root>
+
+    <h2>Force mounted indicator</h2>
+    <Checkbox.Root className={styles.rootAttr}>
+      <Checkbox.Indicator className={styles.indicatorAttr} forceMount style={{ height: 20 }} />
+    </Checkbox.Root>
+  </>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+const Label = (props: any) => <LabelPrimitive {...props} className={styles.label} />;
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/src/checkbox.test.tsx</source>
+<document_content>
+import * as React from 'react';
+import { axe } from 'vitest-axe';
+import type { RenderResult } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
+import { Checkbox, CheckboxIndicator } from '@radix-ui/react-checkbox';
+
+const CHECKBOX_ROLE = 'checkbox';
+const INDICATOR_TEST_ID = 'checkbox-indicator';
+
+global.ResizeObserver = class ResizeObserver {
+  cb: any;
+  constructor(cb: any) {
+    this.cb = cb;
+  }
+  observe() {
+    this.cb([{ borderBoxSize: { inlineSize: 0, blockSize: 0 } }]);
+  }
+  unobserve() {}
+  disconnect() {}
+};
+
+describe('given a default Checkbox', () => {
+  let rendered: RenderResult;
+  let checkbox: HTMLElement;
+  let indicator: HTMLElement | null;
+
+  beforeEach(() => {
+    rendered = render(<CheckboxTest />);
+    checkbox = rendered.getByRole(CHECKBOX_ROLE);
+    indicator = rendered.queryByTestId(INDICATOR_TEST_ID);
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+
+  describe('when clicking the checkbox', () => {
+    beforeEach(async () => {
+      fireEvent.click(checkbox);
+      indicator = rendered.queryByTestId(INDICATOR_TEST_ID);
+    });
+
+    it('should render a visible indicator', () => {
+      expect(indicator).toBeVisible();
+    });
+
+    describe('and clicking the checkbox again', () => {
+      beforeEach(async () => {
+        fireEvent.click(checkbox);
+      });
+
+      it('should remove the indicator', () => {
+        expect(indicator).not.toBeInTheDocument();
+      });
+    });
+  });
+});
+
+describe('given a disabled Checkbox', () => {
+  let rendered: RenderResult;
+
+  beforeEach(() => {
+    rendered = render(<CheckboxTest disabled />);
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+});
+
+describe('given an uncontrolled `checked` Checkbox', () => {
+  let rendered: RenderResult;
+  let checkbox: HTMLElement;
+  let indicator: HTMLElement | null;
+  const onCheckedChange = vi.fn();
+
+  beforeEach(() => {
+    rendered = render(<CheckboxTest defaultChecked onCheckedChange={onCheckedChange} />);
+    checkbox = rendered.getByRole(CHECKBOX_ROLE);
+    indicator = rendered.queryByTestId(INDICATOR_TEST_ID);
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+
+  describe('when clicking the checkbox', () => {
+    beforeEach(async () => {
+      fireEvent.click(checkbox);
+    });
+
+    it('should remove the indicator', () => {
+      expect(indicator).not.toBeInTheDocument();
+    });
+
+    it('should call `onCheckedChange` prop', () => {
+      expect(onCheckedChange).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('given a controlled `checked` Checkbox', () => {
+  let rendered: RenderResult;
+  let checkbox: HTMLElement;
+  const onCheckedChange = vi.fn();
+
+  beforeEach(() => {
+    rendered = render(<CheckboxTest checked onCheckedChange={onCheckedChange} />);
+    checkbox = rendered.getByRole(CHECKBOX_ROLE);
+  });
+
+  describe('when clicking the checkbox', () => {
+    beforeEach(() => {
+      fireEvent.click(checkbox);
+    });
+
+    it('should call `onCheckedChange` prop', () => {
+      expect(onCheckedChange).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('given an uncontrolled Checkbox in form', () => {
+  describe('when clicking the checkbox', () => {
+    it('should receive change event with target `defaultChecked` same as the `defaultChecked` prop of Checkbox', () =>
+      new Promise((done) => {
+        const rendered = render(
+          <form
+            onChange={(event) => {
+              const target = event.target as HTMLInputElement;
+              expect(target.defaultChecked).toBe(true);
+            }}
+          >
+            <CheckboxTest defaultChecked />
+          </form>
+        );
+        const checkbox = rendered.getByRole(CHECKBOX_ROLE);
+        fireEvent.click(checkbox);
+        rendered.rerender(
+          <form
+            onChange={(event) => {
+              const target = event.target as HTMLInputElement;
+              expect(target.defaultChecked).toBe(false);
+              done(null);
+            }}
+          >
+            <CheckboxTest defaultChecked={false} />
+          </form>
+        );
+        fireEvent.click(checkbox);
+      }));
+  });
+});
+
+describe('given a controlled Checkbox in a form', () => {
+  describe('when clicking the checkbox', () => {
+    it('should receive change event with target `defaultChecked` same as initial value of `checked` of Checkbox', () =>
+      new Promise((done) => {
+        const rendered = render(
+          <form
+            onChange={(event) => {
+              const target = event.target as HTMLInputElement;
+              expect(target.defaultChecked).toBe(true);
+            }}
+          >
+            <CheckboxTest checked />
+          </form>
+        );
+        const checkbox = rendered.getByRole(CHECKBOX_ROLE);
+        fireEvent.click(checkbox);
+        rendered.rerender(
+          <form
+            onChange={(event) => {
+              const target = event.target as HTMLInputElement;
+              expect(target.defaultChecked).toBe(true);
+              done(null);
+            }}
+          >
+            <CheckboxTest checked={false} />
+          </form>
+        );
+        fireEvent.click(checkbox);
+      }));
+  });
+});
+
+function CheckboxTest(props: React.ComponentProps<typeof Checkbox>) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    // We use the `hidden` attribute to hide the nested input from both sighted users and the
+    // accessibility tree. This is perfectly valid so long as users don't override the display of
+    // `hidden` in CSS. Unfortunately axe doesn't recognize this, so we get a violation because the
+    // input doesn't have a label. This adds an additional `aria-hidden` attribute to the input to
+    // get around that.
+    // https://developer.paciellogroup.com/blog/2012/05/html5-accessibility-chops-hidden-and-aria-hidden/
+    containerRef.current?.querySelector('input')?.setAttribute('aria-hidden', 'true');
+  }, []);
+  return (
+    <div ref={containerRef}>
+      <Checkbox aria-label="basic checkbox" {...props}>
+        <CheckboxIndicator data-testid={INDICATOR_TEST_ID} />
+      </Checkbox>
+    </div>
+  );
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/src/checkbox.tsx</source>
+<document_content>
+import * as React from 'react';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { createContextScope } from '@radix-ui/react-context';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { usePrevious } from '@radix-ui/react-use-previous';
+import { useSize } from '@radix-ui/react-use-size';
+import { Presence } from '@radix-ui/react-presence';
+import { Primitive } from '@radix-ui/react-primitive';
+
+import type { Scope } from '@radix-ui/react-context';
+
+/* -------------------------------------------------------------------------------------------------
+ * Checkbox
+ * -----------------------------------------------------------------------------------------------*/
+
+const CHECKBOX_NAME = 'Checkbox';
+
+type ScopedProps<P> = P & { __scopeCheckbox?: Scope };
+const [createCheckboxContext, createCheckboxScope] = createContextScope(CHECKBOX_NAME);
+
+type CheckedState = boolean | 'indeterminate';
+
+type CheckboxContextValue = {
+  state: CheckedState;
+  disabled?: boolean;
+};
+
+const [CheckboxProvider, useCheckboxContext] =
+  createCheckboxContext<CheckboxContextValue>(CHECKBOX_NAME);
+
+type CheckboxElement = React.ElementRef<typeof Primitive.button>;
+type PrimitiveButtonProps = React.ComponentPropsWithoutRef<typeof Primitive.button>;
+interface CheckboxProps extends Omit<PrimitiveButtonProps, 'checked' | 'defaultChecked'> {
+  checked?: CheckedState;
+  defaultChecked?: CheckedState;
+  required?: boolean;
+  onCheckedChange?(checked: CheckedState): void;
+}
+
+const Checkbox = React.forwardRef<CheckboxElement, CheckboxProps>(
+  (props: ScopedProps<CheckboxProps>, forwardedRef) => {
+    const {
+      __scopeCheckbox,
+      name,
+      checked: checkedProp,
+      defaultChecked,
+      required,
+      disabled,
+      value = 'on',
+      onCheckedChange,
+      form,
+      ...checkboxProps
+    } = props;
+    const [button, setButton] = React.useState<HTMLButtonElement | null>(null);
+    const composedRefs = useComposedRefs(forwardedRef, (node) => setButton(node));
+    const hasConsumerStoppedPropagationRef = React.useRef(false);
+    // We set this to true by default so that events bubble to forms without JS (SSR)
+    const isFormControl = button ? form || !!button.closest('form') : true;
+    const [checked = false, setChecked] = useControllableState({
+      prop: checkedProp,
+      defaultProp: defaultChecked,
+      onChange: onCheckedChange,
+    });
+    const initialCheckedStateRef = React.useRef(checked);
+    React.useEffect(() => {
+      const form = button?.form;
+      if (form) {
+        const reset = () => setChecked(initialCheckedStateRef.current);
+        form.addEventListener('reset', reset);
+        return () => form.removeEventListener('reset', reset);
+      }
+    }, [button, setChecked]);
+
+    return (
+      <CheckboxProvider scope={__scopeCheckbox} state={checked} disabled={disabled}>
+        <Primitive.button
+          type="button"
+          role="checkbox"
+          aria-checked={isIndeterminate(checked) ? 'mixed' : checked}
+          aria-required={required}
+          data-state={getState(checked)}
+          data-disabled={disabled ? '' : undefined}
+          disabled={disabled}
+          value={value}
+          {...checkboxProps}
+          ref={composedRefs}
+          onKeyDown={composeEventHandlers(props.onKeyDown, (event) => {
+            // According to WAI ARIA, Checkboxes don't activate on enter keypress
+            if (event.key === 'Enter') event.preventDefault();
+          })}
+          onClick={composeEventHandlers(props.onClick, (event) => {
+            setChecked((prevChecked) => (isIndeterminate(prevChecked) ? true : !prevChecked));
+            if (isFormControl) {
+              hasConsumerStoppedPropagationRef.current = event.isPropagationStopped();
+              // if checkbox is in a form, stop propagation from the button so that we only propagate
+              // one click event (from the input). We propagate changes from an input so that native
+              // form validation works and form events reflect checkbox updates.
+              if (!hasConsumerStoppedPropagationRef.current) event.stopPropagation();
+            }
+          })}
+        />
+        {isFormControl && (
+          <BubbleInput
+            control={button}
+            bubbles={!hasConsumerStoppedPropagationRef.current}
+            name={name}
+            value={value}
+            checked={checked}
+            required={required}
+            disabled={disabled}
+            form={form}
+            // We transform because the input is absolutely positioned but we have
+            // rendered it **after** the button. This pulls it back to sit on top
+            // of the button.
+            style={{ transform: 'translateX(-100%)' }}
+            defaultChecked={isIndeterminate(defaultChecked) ? false : defaultChecked}
+          />
+        )}
+      </CheckboxProvider>
+    );
+  }
+);
+
+Checkbox.displayName = CHECKBOX_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * CheckboxIndicator
+ * -----------------------------------------------------------------------------------------------*/
+
+const INDICATOR_NAME = 'CheckboxIndicator';
+
+type CheckboxIndicatorElement = React.ElementRef<typeof Primitive.span>;
+type PrimitiveSpanProps = React.ComponentPropsWithoutRef<typeof Primitive.span>;
+interface CheckboxIndicatorProps extends PrimitiveSpanProps {
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const CheckboxIndicator = React.forwardRef<CheckboxIndicatorElement, CheckboxIndicatorProps>(
+  (props: ScopedProps<CheckboxIndicatorProps>, forwardedRef) => {
+    const { __scopeCheckbox, forceMount, ...indicatorProps } = props;
+    const context = useCheckboxContext(INDICATOR_NAME, __scopeCheckbox);
+    return (
+      <Presence present={forceMount || isIndeterminate(context.state) || context.state === true}>
+        <Primitive.span
+          data-state={getState(context.state)}
+          data-disabled={context.disabled ? '' : undefined}
+          {...indicatorProps}
+          ref={forwardedRef}
+          style={{ pointerEvents: 'none', ...props.style }}
+        />
+      </Presence>
+    );
+  }
+);
+
+CheckboxIndicator.displayName = INDICATOR_NAME;
+
+/* ---------------------------------------------------------------------------------------------- */
+
+type InputProps = React.ComponentPropsWithoutRef<'input'>;
+interface BubbleInputProps extends Omit<InputProps, 'checked'> {
+  checked: CheckedState;
+  control: HTMLElement | null;
+  bubbles: boolean;
+}
+
+const BubbleInput = (props: BubbleInputProps) => {
+  const { control, checked, bubbles = true, defaultChecked, ...inputProps } = props;
+  const ref = React.useRef<HTMLInputElement>(null);
+  const prevChecked = usePrevious(checked);
+  const controlSize = useSize(control);
+
+  // Bubble checked change to parents (e.g form change event)
+  React.useEffect(() => {
+    const input = ref.current!;
+    const inputProto = window.HTMLInputElement.prototype;
+    const descriptor = Object.getOwnPropertyDescriptor(inputProto, 'checked') as PropertyDescriptor;
+    const setChecked = descriptor.set;
+
+    if (prevChecked !== checked && setChecked) {
+      const event = new Event('click', { bubbles });
+      input.indeterminate = isIndeterminate(checked);
+      setChecked.call(input, isIndeterminate(checked) ? false : checked);
+      input.dispatchEvent(event);
+    }
+  }, [prevChecked, checked, bubbles]);
+
+  const defaultCheckedRef = React.useRef(isIndeterminate(checked) ? false : checked);
+  return (
+    <input
+      type="checkbox"
+      aria-hidden
+      defaultChecked={defaultChecked ?? defaultCheckedRef.current}
+      {...inputProps}
+      tabIndex={-1}
+      ref={ref}
+      style={{
+        ...props.style,
+        ...controlSize,
+        position: 'absolute',
+        pointerEvents: 'none',
+        opacity: 0,
+        margin: 0,
+      }}
+    />
+  );
+};
+
+function isIndeterminate(checked?: CheckedState): checked is 'indeterminate' {
+  return checked === 'indeterminate';
+}
+
+function getState(checked: CheckedState) {
+  return isIndeterminate(checked) ? 'indeterminate' : checked ? 'checked' : 'unchecked';
+}
+
+const Root = Checkbox;
+const Indicator = CheckboxIndicator;
+
+export {
+  createCheckboxScope,
+  //
+  Checkbox,
+  CheckboxIndicator,
+  //
+  Root,
+  Indicator,
+};
+export type { CheckboxProps, CheckboxIndicatorProps, CheckedState };
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/checkbox/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createCheckboxScope,
+  //
+  Checkbox,
+  CheckboxIndicator,
+  //
+  Root,
+  Indicator,
+} from './checkbox';
+export type { CheckboxProps, CheckboxIndicatorProps, CheckedState } from './checkbox';
+
+</document_content>
+</document>
+</documents>

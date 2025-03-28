@@ -1,0 +1,265 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/README.md</source>
+<document_content>
+# `react-accessible-icon`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-accessible-icon
+# or
+$ npm install @radix-ui/react-accessible-icon
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/utilities/accessible-icon).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-accessible-icon",
+  "version": "1.1.3-rc.5",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/react-visually-hidden": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.2"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/src/accesible-icon.test.tsx</source>
+<document_content>
+import React from 'react';
+import { axe } from 'vitest-axe';
+import type { RenderResult } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { AccessibleIcon } from '@radix-ui/react-accessible-icon';
+
+const LABEL_TEXT = 'Close';
+
+const AccessibleIconTest = (props: Omit<React.ComponentProps<typeof AccessibleIcon>, 'label'>) => (
+  <AccessibleIcon {...props} label={LABEL_TEXT} />
+);
+
+describe('given a default AccessibleIcon', () => {
+  let rendered: RenderResult;
+  let label: HTMLElement;
+
+  beforeEach(() => {
+    rendered = render(
+      <AccessibleIconTest>
+        <svg
+          viewBox="0 0 32 32"
+          width={24}
+          height={24}
+          fill="none"
+          stroke="currentColor"
+          data-testid="icon"
+        >
+          <path d="M2 30 L30 2 M30 30 L2 2" />
+        </svg>
+      </AccessibleIconTest>
+    );
+
+    label = rendered.getByText(LABEL_TEXT);
+  });
+
+  it('should have no accessibility violations', async () => {
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+
+  it('should have a label', () => {
+    expect(label).toBeInTheDocument();
+  });
+
+  it('should add an aria-hidden attribute to the child', () => {
+    const svg = rendered.getByTestId('icon');
+    expect(svg.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('should set focusable attribute on the child to false', () => {
+    const svg = rendered.getByTestId('icon');
+    expect(svg.getAttribute('focusable')).toBe('false');
+  });
+});
+
+describe('given an AccessibleIcon without children', () => {
+  it('should error', () => {
+    // Even though the error is caught, it still gets printed to the console
+    // so we mock that out to avoid the wall of red text.
+    const spy = vi.spyOn(console, 'error');
+    spy.mockImplementation(() => {});
+
+    expect(() => render(<AccessibleIconTest />)).toThrowError();
+
+    spy.mockRestore();
+  });
+});
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/src/accessible-icon.stories.tsx</source>
+<document_content>
+import { AccessibleIcon } from '@radix-ui/react-accessible-icon';
+
+export default { title: 'Utilities/AccessibleIcon' };
+
+export const Styled = () => (
+  <button type="button">
+    <AccessibleIcon label="Close">
+      <CrossIcon />
+    </AccessibleIcon>
+  </button>
+);
+
+export const Chromatic = () => (
+  <p>
+    Some text with an inline accessible icon{' '}
+    <AccessibleIcon label="Close">
+      <CrossIcon />
+    </AccessibleIcon>
+  </p>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+const CrossIcon = () => (
+  <svg viewBox="0 0 32 32" width={24} height={24} fill="none" stroke="currentColor">
+    <path d="M2 30 L30 2 M30 30 L2 2" />
+  </svg>
+);
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/src/accessible-icon.tsx</source>
+<document_content>
+import * as React from 'react';
+import * as VisuallyHiddenPrimitive from '@radix-ui/react-visually-hidden';
+
+const NAME = 'AccessibleIcon';
+
+interface AccessibleIconProps {
+  children?: React.ReactNode;
+  /**
+   * The accessible label for the icon. This label will be visually hidden but announced to screen
+   * reader users, similar to `alt` text for `img` tags.
+   */
+  label: string;
+}
+
+const AccessibleIcon: React.FC<AccessibleIconProps> = ({ children, label }) => {
+  const child = React.Children.only(children);
+  return (
+    <>
+      {React.cloneElement(child as React.ReactElement<React.SVGAttributes<SVGElement>>, {
+        // accessibility
+        'aria-hidden': 'true',
+        focusable: 'false', // See: https://allyjs.io/tutorials/focusing-in-svg.html#making-svg-elements-focusable
+      })}
+      <VisuallyHiddenPrimitive.Root>{label}</VisuallyHiddenPrimitive.Root>
+    </>
+  );
+};
+
+AccessibleIcon.displayName = NAME;
+
+const Root = AccessibleIcon;
+
+export {
+  AccessibleIcon,
+  //
+  Root,
+};
+export type { AccessibleIconProps };
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/accessible-icon/src/index.ts</source>
+<document_content>
+export {
+  AccessibleIcon,
+  //
+  Root,
+} from './accessible-icon';
+export type { AccessibleIconProps } from './accessible-icon';
+
+</document_content>
+</document>
+</documents>

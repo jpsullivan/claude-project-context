@@ -1,0 +1,930 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/README.md</source>
+<document_content>
+# `react-tabs`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-tabs
+# or
+$ npm install @radix-ui/react-tabs
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/tabs).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-tabs",
+  "version": "1.1.4-rc.6",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-direction": "workspace:*",
+    "@radix-ui/react-id": "workspace:*",
+    "@radix-ui/react-presence": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-roving-focus": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.3"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createTabsScope,
+  //
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  //
+  Root,
+  List,
+  Trigger,
+  Content,
+} from './tabs';
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps } from './tabs';
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/src/tabs.stories.module.css</source>
+<document_content>
+.root {
+  /* ensures things are layed out correctly by default */
+  display: flex;
+  &[data-orientation='horizontal'] {
+    flexdirection: column;
+  }
+  /* ---------- */
+  border: 1px solid #eee;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  max-width: 20rem;
+}
+
+.list {
+  flex-shrink: 0;
+  /* ensures things are layed out correctly by default */
+  display: flex;
+  &[data-orientation='vertical'] {
+    flex-direction: column;
+  }
+  /* ---------- */
+  background-color: #eee;
+}
+
+.trigger {
+  all: unset;
+  flex-shrink: 0;
+  /* ---------- */
+  padding: 0.4em 0.6em;
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+
+  &[data-orientation='horizontal'] {
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid var(--border-color, transparent);
+  }
+
+  &[data-orientation='vertical'] {
+    padding: 0.6em;
+    border-right: 4px solid var(--border-color, transparent);
+  }
+
+  &[data-disabled] {
+    color: var(--color-gray300);
+  }
+
+  &[data-state='active'] {
+    --border-color: crimson;
+  }
+
+  &:focus {
+    --border-color: #111;
+    outline: 1px solid var(--border-color);
+    &[data-state='active'] {
+      --border-color: crimson;
+    }
+  }
+}
+
+.content {
+  flex-grow: 1;
+  /* ---------- */
+  padding: 1em;
+  font-weight: 300;
+  font-size: 0.85em;
+  line-height: 1.65;
+  &[data-orientation='horizontal'] {
+    border-top: none;
+  }
+  &[data-orientation='vertical'] {
+    border-left: none;
+  }
+}
+
+@keyframes show {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+.animatedContent {
+  &[data-state='active'] {
+    animation: tabs--show 400ms ease;
+  }
+}
+
+.contentAttr {
+  /* ensure we can see the content (because it has `hidden` attribute) */
+  display: block;
+}
+
+.rootAttr,
+.contentAttr,
+.listAttr,
+.triggerAttr {
+  background-color: rgb(0 0 255 / 0.3);
+  border: 2px solid blue;
+  padding: 10px;
+  &:disabled {
+    opacity: 0.5;
+  }
+  &[data-disabled] {
+    border-style: dashed;
+  }
+
+  &[data-state='inactive'] {
+    border-color: red;
+  }
+  &[data-state='active'] {
+    border-color: green;
+  }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/src/tabs.stories.tsx</source>
+<document_content>
+import { DirectionProvider } from '@radix-ui/react-direction';
+import * as Tabs from '@radix-ui/react-tabs';
+import styles from './tabs.stories.module.css';
+
+export default { title: 'Components/Tabs' };
+
+const animatedContentClass = [styles.content, styles.animatedContent].join(' ');
+
+export const Styled = () => (
+  <>
+    <h1>Horizontal (automatic activation)</h1>
+    <Tabs.Root defaultValue="tab1" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Vertical (manual activation)</h1>
+    <Tabs.Root
+      defaultValue="tab1"
+      className={styles.root}
+      orientation="vertical"
+      activationMode="manual"
+    >
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+  </>
+);
+
+export const Animated = () => (
+  <>
+    <h1>Horizontal (automatic activation)</h1>
+    <Tabs.Root defaultValue="tab1" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+
+      <Tabs.Content value="tab1" className={animatedContentClass}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={animatedContentClass}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={animatedContentClass}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Vertical (manual activation)</h1>
+    <Tabs.Root
+      defaultValue="tab1"
+      className={styles.root}
+      orientation="vertical"
+      activationMode="manual"
+    >
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={animatedContentClass}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={animatedContentClass}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={animatedContentClass}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+  </>
+);
+
+export const Chromatic = () => (
+  <>
+    <h1>Uncontrolled</h1>
+    <Tabs.Root defaultValue="tab3" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Controlled</h1>
+    <Tabs.Root value="tab3" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Vertical</h1>
+    <Tabs.Root
+      defaultValue="tab3"
+      className={styles.root}
+      orientation="vertical"
+      activationMode="manual"
+    >
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Direction</h1>
+    <h2>Prop</h2>
+    <Tabs.Root defaultValue="tab3" dir="rtl" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h2>Inherited</h2>
+    <DirectionProvider dir="rtl">
+      <Tabs.Root defaultValue="tab3" className={styles.root}>
+        <Tabs.List aria-label="tabs example" className={styles.list}>
+          <Tabs.Trigger value="tab1" className={styles.trigger}>
+            Tab 1
+          </Tabs.Trigger>
+          <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+            Tab 2
+          </Tabs.Trigger>
+          <Tabs.Trigger value="tab3" className={styles.trigger}>
+            Tab 3
+          </Tabs.Trigger>
+        </Tabs.List>
+        <Tabs.Content value="tab1" className={styles.content}>
+          Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem
+          himenaeos integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida
+          elementum pellentesque volutpat dictum ipsum.
+        </Tabs.Content>
+        <Tabs.Content value="tab2" className={styles.content}>
+          You'll never find me!
+        </Tabs.Content>
+        <Tabs.Content value="tab3" className={styles.content}>
+          Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+          quam tempus pretium.
+        </Tabs.Content>
+      </Tabs.Root>
+    </DirectionProvider>
+
+    <h1>Animated</h1>
+    <p>Should not animate on initial mount</p>
+    <Tabs.Root value="tab1" className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content
+        value="tab1"
+        className={animatedContentClass}
+        style={{ animationDuration: '3000ms' }}
+      >
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={animatedContentClass}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={animatedContentClass}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>Force mounted contents</h1>
+    <Tabs.Root className={styles.root}>
+      <Tabs.List aria-label="tabs example" className={styles.list}>
+        <Tabs.Trigger value="tab1" className={styles.trigger}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" className={styles.trigger}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.trigger}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.content} forceMount>
+        Tab 1 content
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.content} forceMount>
+        Tab 2 content
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.content} forceMount>
+        Tab 3 content
+      </Tabs.Content>
+    </Tabs.Root>
+
+    <h1>State attributes</h1>
+    <Tabs.Root defaultValue="tab3" className={styles.rootAttr}>
+      <Tabs.List aria-label="tabs example" className={styles.listAttr}>
+        <Tabs.Trigger value="tab1" className={styles.triggerAttr}>
+          Tab 1
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab2" disabled className={styles.triggerAttr}>
+          Tab 2
+        </Tabs.Trigger>
+        <Tabs.Trigger value="tab3" className={styles.triggerAttr}>
+          Tab 3
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="tab1" className={styles.contentAttr}>
+        Dis metus rhoncus sit convallis sollicitudin vel cum, hac purus tincidunt eros sem himenaeos
+        integer, faucibus varius nullam nostra bibendum consectetur mollis, gravida elementum
+        pellentesque volutpat dictum ipsum.
+      </Tabs.Content>
+      <Tabs.Content value="tab2" className={styles.contentAttr}>
+        You'll never find me!
+      </Tabs.Content>
+      <Tabs.Content value="tab3" className={styles.contentAttr}>
+        Ut nisi elementum metus semper mauris dui fames accumsan aenean, maecenas ac sociis dolor
+        quam tempus pretium.
+      </Tabs.Content>
+    </Tabs.Root>
+  </>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/tabs/src/tabs.tsx</source>
+<document_content>
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { createContextScope } from '@radix-ui/react-context';
+import { createRovingFocusGroupScope } from '@radix-ui/react-roving-focus';
+import { Presence } from '@radix-ui/react-presence';
+import { Primitive } from '@radix-ui/react-primitive';
+import * as RovingFocusGroup from '@radix-ui/react-roving-focus';
+import { useDirection } from '@radix-ui/react-direction';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { useId } from '@radix-ui/react-id';
+
+import type { Scope } from '@radix-ui/react-context';
+
+/* -------------------------------------------------------------------------------------------------
+ * Tabs
+ * -----------------------------------------------------------------------------------------------*/
+
+const TABS_NAME = 'Tabs';
+
+type ScopedProps<P> = P & { __scopeTabs?: Scope };
+const [createTabsContext, createTabsScope] = createContextScope(TABS_NAME, [
+  createRovingFocusGroupScope,
+]);
+const useRovingFocusGroupScope = createRovingFocusGroupScope();
+
+type TabsContextValue = {
+  baseId: string;
+  value?: string;
+  onValueChange: (value: string) => void;
+  orientation?: TabsProps['orientation'];
+  dir?: TabsProps['dir'];
+  activationMode?: TabsProps['activationMode'];
+};
+
+const [TabsProvider, useTabsContext] = createTabsContext<TabsContextValue>(TABS_NAME);
+
+type TabsElement = React.ElementRef<typeof Primitive.div>;
+type RovingFocusGroupProps = React.ComponentPropsWithoutRef<typeof RovingFocusGroup.Root>;
+type PrimitiveDivProps = React.ComponentPropsWithoutRef<typeof Primitive.div>;
+interface TabsProps extends PrimitiveDivProps {
+  /** The value for the selected tab, if controlled */
+  value?: string;
+  /** The value of the tab to select by default, if uncontrolled */
+  defaultValue?: string;
+  /** A function called when a new tab is selected */
+  onValueChange?: (value: string) => void;
+  /**
+   * The orientation the tabs are layed out.
+   * Mainly so arrow navigation is done accordingly (left & right vs. up & down)
+   * @defaultValue horizontal
+   */
+  orientation?: RovingFocusGroupProps['orientation'];
+  /**
+   * The direction of navigation between toolbar items.
+   */
+  dir?: RovingFocusGroupProps['dir'];
+  /**
+   * Whether a tab is activated automatically or manually.
+   * @defaultValue automatic
+   * */
+  activationMode?: 'automatic' | 'manual';
+}
+
+const Tabs = React.forwardRef<TabsElement, TabsProps>(
+  (props: ScopedProps<TabsProps>, forwardedRef) => {
+    const {
+      __scopeTabs,
+      value: valueProp,
+      onValueChange,
+      defaultValue,
+      orientation = 'horizontal',
+      dir,
+      activationMode = 'automatic',
+      ...tabsProps
+    } = props;
+    const direction = useDirection(dir);
+    const [value, setValue] = useControllableState({
+      prop: valueProp,
+      onChange: onValueChange,
+      defaultProp: defaultValue,
+    });
+
+    return (
+      <TabsProvider
+        scope={__scopeTabs}
+        baseId={useId()}
+        value={value}
+        onValueChange={setValue}
+        orientation={orientation}
+        dir={direction}
+        activationMode={activationMode}
+      >
+        <Primitive.div
+          dir={direction}
+          data-orientation={orientation}
+          {...tabsProps}
+          ref={forwardedRef}
+        />
+      </TabsProvider>
+    );
+  }
+);
+
+Tabs.displayName = TABS_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TabsList
+ * -----------------------------------------------------------------------------------------------*/
+
+const TAB_LIST_NAME = 'TabsList';
+
+type TabsListElement = React.ElementRef<typeof Primitive.div>;
+interface TabsListProps extends PrimitiveDivProps {
+  loop?: RovingFocusGroupProps['loop'];
+}
+
+const TabsList = React.forwardRef<TabsListElement, TabsListProps>(
+  (props: ScopedProps<TabsListProps>, forwardedRef) => {
+    const { __scopeTabs, loop = true, ...listProps } = props;
+    const context = useTabsContext(TAB_LIST_NAME, __scopeTabs);
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeTabs);
+    return (
+      <RovingFocusGroup.Root
+        asChild
+        {...rovingFocusGroupScope}
+        orientation={context.orientation}
+        dir={context.dir}
+        loop={loop}
+      >
+        <Primitive.div
+          role="tablist"
+          aria-orientation={context.orientation}
+          {...listProps}
+          ref={forwardedRef}
+        />
+      </RovingFocusGroup.Root>
+    );
+  }
+);
+
+TabsList.displayName = TAB_LIST_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TabsTrigger
+ * -----------------------------------------------------------------------------------------------*/
+
+const TRIGGER_NAME = 'TabsTrigger';
+
+type TabsTriggerElement = React.ElementRef<typeof Primitive.button>;
+type PrimitiveButtonProps = React.ComponentPropsWithoutRef<typeof Primitive.button>;
+interface TabsTriggerProps extends PrimitiveButtonProps {
+  value: string;
+}
+
+const TabsTrigger = React.forwardRef<TabsTriggerElement, TabsTriggerProps>(
+  (props: ScopedProps<TabsTriggerProps>, forwardedRef) => {
+    const { __scopeTabs, value, disabled = false, ...triggerProps } = props;
+    const context = useTabsContext(TRIGGER_NAME, __scopeTabs);
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeTabs);
+    const triggerId = makeTriggerId(context.baseId, value);
+    const contentId = makeContentId(context.baseId, value);
+    const isSelected = value === context.value;
+    return (
+      <RovingFocusGroup.Item
+        asChild
+        {...rovingFocusGroupScope}
+        focusable={!disabled}
+        active={isSelected}
+      >
+        <Primitive.button
+          type="button"
+          role="tab"
+          aria-selected={isSelected}
+          aria-controls={contentId}
+          data-state={isSelected ? 'active' : 'inactive'}
+          data-disabled={disabled ? '' : undefined}
+          disabled={disabled}
+          id={triggerId}
+          {...triggerProps}
+          ref={forwardedRef}
+          onMouseDown={composeEventHandlers(props.onMouseDown, (event) => {
+            // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
+            // but not when the control key is pressed (avoiding MacOS right click)
+            if (!disabled && event.button === 0 && event.ctrlKey === false) {
+              context.onValueChange(value);
+            } else {
+              // prevent focus to avoid accidental activation
+              event.preventDefault();
+            }
+          })}
+          onKeyDown={composeEventHandlers(props.onKeyDown, (event) => {
+            if ([' ', 'Enter'].includes(event.key)) context.onValueChange(value);
+          })}
+          onFocus={composeEventHandlers(props.onFocus, () => {
+            // handle "automatic" activation if necessary
+            // ie. activate tab following focus
+            const isAutomaticActivation = context.activationMode !== 'manual';
+            if (!isSelected && !disabled && isAutomaticActivation) {
+              context.onValueChange(value);
+            }
+          })}
+        />
+      </RovingFocusGroup.Item>
+    );
+  }
+);
+
+TabsTrigger.displayName = TRIGGER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * TabsContent
+ * -----------------------------------------------------------------------------------------------*/
+
+const CONTENT_NAME = 'TabsContent';
+
+type TabsContentElement = React.ElementRef<typeof Primitive.div>;
+interface TabsContentProps extends PrimitiveDivProps {
+  value: string;
+
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const TabsContent = React.forwardRef<TabsContentElement, TabsContentProps>(
+  (props: ScopedProps<TabsContentProps>, forwardedRef) => {
+    const { __scopeTabs, value, forceMount, children, ...contentProps } = props;
+    const context = useTabsContext(CONTENT_NAME, __scopeTabs);
+    const triggerId = makeTriggerId(context.baseId, value);
+    const contentId = makeContentId(context.baseId, value);
+    const isSelected = value === context.value;
+    const isMountAnimationPreventedRef = React.useRef(isSelected);
+
+    React.useEffect(() => {
+      const rAF = requestAnimationFrame(() => (isMountAnimationPreventedRef.current = false));
+      return () => cancelAnimationFrame(rAF);
+    }, []);
+
+    return (
+      <Presence present={forceMount || isSelected}>
+        {({ present }) => (
+          <Primitive.div
+            data-state={isSelected ? 'active' : 'inactive'}
+            data-orientation={context.orientation}
+            role="tabpanel"
+            aria-labelledby={triggerId}
+            hidden={!present}
+            id={contentId}
+            tabIndex={0}
+            {...contentProps}
+            ref={forwardedRef}
+            style={{
+              ...props.style,
+              animationDuration: isMountAnimationPreventedRef.current ? '0s' : undefined,
+            }}
+          >
+            {present && children}
+          </Primitive.div>
+        )}
+      </Presence>
+    );
+  }
+);
+
+TabsContent.displayName = CONTENT_NAME;
+
+/* ---------------------------------------------------------------------------------------------- */
+
+function makeTriggerId(baseId: string, value: string) {
+  return `${baseId}-trigger-${value}`;
+}
+
+function makeContentId(baseId: string, value: string) {
+  return `${baseId}-content-${value}`;
+}
+
+const Root = Tabs;
+const List = TabsList;
+const Trigger = TabsTrigger;
+const Content = TabsContent;
+
+export {
+  createTabsScope,
+  //
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  //
+  Root,
+  List,
+  Trigger,
+  Content,
+};
+export type { TabsProps, TabsListProps, TabsTriggerProps, TabsContentProps };
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,1471 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/README.md</source>
+<document_content>
+# `react-hover-card`
+
+## Installation
+
+```sh
+$ yarn add @radix-ui/react-hover-card
+# or
+$ npm install @radix-ui/react-hover-card
+```
+
+## Usage
+
+View docs [here](https://radix-ui.com/primitives/docs/components/hover-card).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-hover-card",
+  "version": "1.1.7-rc.6",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "source": "./src/index.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "version": "yarn version"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-compose-refs": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-dismissable-layer": "workspace:*",
+    "@radix-ui/react-popper": "workspace:*",
+    "@radix-ui/react-portal": "workspace:*",
+    "@radix-ui/react-presence": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-use-controllable-state": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  },
+  "stableVersion": "1.1.6"
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/src/hover-card.stories.module.css</source>
+<document_content>
+.content {
+  transform-origin: var(--radix-hover-card-content-transform-origin);
+  /* ----- */
+  background-color: var(--color-gray300);
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.arrow {
+  fill: var(--color-gray300);
+}
+
+@keyframes hoverCard-fadeIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes hoverCard-fadeOut {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+}
+
+.animatedContent {
+  &[data-state='open'] {
+    animation: hoverCard-fadeIn 250ms ease;
+  }
+  &[data-state='closed'] {
+    animation: hoverCard-fadeOut 250ms ease;
+  }
+}
+
+.grid {
+  display: inline-grid;
+  grid-template-columns: repeat(3, 50px);
+  column-gap: 150px;
+  row-gap: 100px;
+  padding: 100px;
+  border: 1px solid black;
+}
+
+.contentAttr,
+.arrowAttr,
+.triggerAttr {
+  background-color: rgb(0 0 255 / 0.3);
+  border: 2px solid blue;
+  padding: 10px;
+
+  &[data-state='closed'] {
+    border-color: red;
+  }
+  &[data-state='open'] {
+    border-color: green;
+  }
+}
+
+.chromaticArrow {
+  fill: black;
+}
+
+.chromaticContent,
+.contentAttr {
+  display: grid;
+  place-content: center;
+  width: 60px;
+  height: 60px;
+  background-color: royalblue;
+  color: white;
+  font-size: 10px;
+  border: 1px solid rgb(0 0 0 / 0.3);
+}
+
+.chromaticTrigger {
+  width: 30px;
+  height: 30px;
+  background-color: tomato;
+  border: 1px solid rgb(0 0 0 / 0.3);
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/src/hover-card.stories.tsx</source>
+<document_content>
+import * as React from 'react';
+import * as Dialog from '@radix-ui/react-dialog';
+import { SIDE_OPTIONS, ALIGN_OPTIONS } from '@radix-ui/react-popper';
+import * as HoverCard from '@radix-ui/react-hover-card';
+import styles from './hover-card.stories.module.css';
+
+export default { title: 'Components/HoverCard' };
+
+const contentClass = ({ animated }: { animated?: boolean }) =>
+  [
+    styles.content, ///
+    animated && styles.animatedContent,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+export const Basic = () => {
+  return (
+    <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+      <HoverCard.Root>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Portal>
+          <HoverCard.Content className={styles.content} sideOffset={5}>
+            <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+            <CardContentPlaceholder />
+          </HoverCard.Content>
+        </HoverCard.Portal>
+      </HoverCard.Root>
+    </div>
+  );
+};
+
+export const ContainTextSelection = () => {
+  return (
+    <div
+      style={{
+        padding: 50,
+        display: 'flex',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <div style={{ display: 'flex', gap: 30 }}>
+        <HoverCard.Root>
+          <HoverCard.Trigger href="/" className={styles.trigger}>
+            single
+          </HoverCard.Trigger>
+          <HoverCard.Portal>
+            <HoverCard.Content className={contentClass({ animated: true })} sideOffset={5}>
+              <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+              <div style={{ maxWidth: 400 }}>
+                Text selections will be contained within the content. While a selection is active
+                the content will not dismiss unless the selection is cleared or an outside
+                interaction is performed.
+              </div>
+            </HoverCard.Content>
+          </HoverCard.Portal>
+        </HoverCard.Root>
+
+        <HoverCard.Root>
+          <HoverCard.Trigger href="/" className={styles.trigger}>
+            nested
+          </HoverCard.Trigger>
+          <HoverCard.Portal>
+            <HoverCard.Content className={contentClass({ animated: true })} sideOffset={5}>
+              <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+              <div style={{ maxWidth: 400 }}>
+                Text selections will be contained within the content. While a selection is active
+                the content will not dismiss unless the selection is cleared or an outside
+                interaction is performed.
+              </div>
+
+              <HoverCard.Root>
+                <HoverCard.Trigger href="/" className={styles.trigger}>
+                  nested trigger
+                </HoverCard.Trigger>
+                <HoverCard.Portal>
+                  <HoverCard.Content
+                    className={contentClass({ animated: true })}
+                    sideOffset={5}
+                    style={{ backgroundColor: 'crimson' }}
+                  >
+                    <HoverCard.Arrow
+                      className={styles.arrow}
+                      width={20}
+                      height={10}
+                      style={{ fill: 'crimson' }}
+                    />
+                    <div style={{ maxWidth: 400 }}>
+                      Text selections will be contained within the content. While a selection is
+                      active the content will not dismiss unless the selection is cleared or an
+                      outside interaction is performed.
+                    </div>
+
+                    <HoverCard.Root>
+                      <HoverCard.Trigger href="/" className={styles.trigger}>
+                        nested trigger
+                      </HoverCard.Trigger>
+                      <HoverCard.Portal>
+                        <HoverCard.Content
+                          className={contentClass({ animated: true })}
+                          sideOffset={5}
+                          style={{ backgroundColor: 'green' }}
+                        >
+                          <HoverCard.Arrow
+                            className={styles.arrow}
+                            width={20}
+                            height={10}
+                            style={{ fill: 'green' }}
+                          />
+                          <div style={{ maxWidth: 400 }}>
+                            Text selections will be contained within the content. While a selection
+                            is active the content will not dismiss unless the selection is cleared
+                            or an outside interaction is performed.
+                          </div>
+                        </HoverCard.Content>
+                      </HoverCard.Portal>
+                    </HoverCard.Root>
+                  </HoverCard.Content>
+                </HoverCard.Portal>
+              </HoverCard.Root>
+            </HoverCard.Content>
+          </HoverCard.Portal>
+        </HoverCard.Root>
+      </div>
+      <div style={{ maxWidth: 800 }}>
+        <p>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer feugiat mattis malesuada.
+          Fusce elementum vulputate aliquet. Integer fringilla porta eros. Ut ultricies mattis nisi.
+          Sed et tempor massa. Sed non arcu ut velit scelerisque bibendum tempor sed mi. In non
+          consequat sapien. Donec sollicitudin eget tellus ut venenatis. Donec posuere sem ante, nec
+          iaculis arcu varius sit amet. Praesent non tortor quam. Curabitur dapibus justo a commodo
+          ornare.
+        </p>
+        <p>
+          Suspendisse eleifend consequat iaculis. Nunc bibendum velit felis, nec vulputate purus
+          egestas quis. Integer mauris dui, pulvinar non metus id, tristique dignissim elit. Vivamus
+          massa tellus, porttitor id lorem non, molestie aliquam dolor. Pellentesque erat quam,
+          pellentesque non metus id, tempus sagittis massa.
+        </p>
+        <p>
+          Sed at elementum sem, non venenatis leo. Ut vulputate consectetur finibus. Sed nunc
+          lectus, accumsan in nisl et, vehicula pretium nisi. Vivamus vestibulum ante quis urna
+          consequat, ultrices condimentum sem commodo. Pellentesque eget orci laoreet, feugiat purus
+          sed, maximus nisi. Suspendisse commodo venenatis facilisis.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export const AsyncUpdate = () => {
+  const [open, setOpen] = React.useState(false);
+  const [contentLoaded, setContentLoaded] = React.useState(false);
+  const timerRef = React.useRef(0);
+
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    clearTimeout(timerRef.current);
+
+    if (open) {
+      timerRef.current = window.setTimeout(() => {
+        setContentLoaded(true);
+      }, 500);
+    } else {
+      setContentLoaded(false);
+    }
+
+    setOpen(open);
+  }, []);
+
+  React.useEffect(() => {
+    return () => {
+      clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  return (
+    <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+      <HoverCard.Root open={open} onOpenChange={handleOpenChange}>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Portal>
+          <HoverCard.Content className={styles.content} sideOffset={5}>
+            <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+            {contentLoaded ? <CardContentPlaceholder /> : 'Loading...'}
+          </HoverCard.Content>
+        </HoverCard.Portal>
+      </HoverCard.Root>
+    </div>
+  );
+};
+
+export const CustomDurations = () => (
+  <div>
+    <h1>Delay duration</h1>
+    <h2>Default (700ms open, 300ms close)</h2>
+
+    <HoverCard.Root>
+      <HoverCard.Trigger href="/" className={styles.trigger}>
+        trigger
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content}>
+          <CardContentPlaceholder />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2>Custom (instant, 0ms open, 0ms close)</h2>
+    <HoverCard.Root openDelay={0} closeDelay={0}>
+      <HoverCard.Trigger href="/" className={styles.trigger}>
+        trigger
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content}>
+          <CardContentPlaceholder />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2>Custom (300ms open, 100ms close)</h2>
+
+    <HoverCard.Root openDelay={300} closeDelay={100}>
+      <HoverCard.Trigger href="/" className={styles.trigger}>
+        trigger
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content}>
+          <CardContentPlaceholder />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+  </div>
+);
+
+export const Controlled = () => {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+      <HoverCard.Root open={open} onOpenChange={setOpen}>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Portal>
+          <HoverCard.Content className={styles.content}>
+            <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+            <CardContentPlaceholder />
+          </HoverCard.Content>
+        </HoverCard.Portal>
+      </HoverCard.Root>
+    </div>
+  );
+};
+
+export const Layerable = () => (
+  <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+    <Dialog.Root>
+      <Dialog.Trigger>Open</Dialog.Trigger>
+      <Dialog.Content
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'white',
+          border: '1px solid',
+          borderRadius: 4,
+          padding: 20,
+        }}
+      >
+        <Dialog.Title>Some dialog title</Dialog.Title>
+        Some dialog content with a{' '}
+        <HoverCard.Root>
+          <HoverCard.Trigger href="/" className={styles.trigger}>
+            trigger
+          </HoverCard.Trigger>
+          <HoverCard.Portal>
+            <HoverCard.Content className={styles.content} sideOffset={5}>
+              <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+              <CardContentPlaceholder />
+            </HoverCard.Content>
+          </HoverCard.Portal>
+        </HoverCard.Root>{' '}
+        <Dialog.Close>Close</Dialog.Close>
+      </Dialog.Content>
+    </Dialog.Root>
+  </div>
+);
+
+export const Animated = () => {
+  return (
+    <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+      <HoverCard.Root>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Portal>
+          <HoverCard.Content className={contentClass({ animated: true })} sideOffset={10}>
+            <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+            <CardContentPlaceholder />
+          </HoverCard.Content>
+        </HoverCard.Portal>
+      </HoverCard.Root>
+    </div>
+  );
+};
+
+export const ForcedMount = () => {
+  return (
+    <div style={{ padding: 50, display: 'flex', justifyContent: 'center' }}>
+      <HoverCard.Root>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Portal forceMount>
+          <HoverCard.Content className={styles.content} sideOffset={10}>
+            <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+            <CardContentPlaceholder />
+          </HoverCard.Content>
+        </HoverCard.Portal>
+      </HoverCard.Root>
+    </div>
+  );
+};
+
+export const Nested = () => {
+  return (
+    <HoverCard.Root>
+      <HoverCard.Trigger href="/" className={styles.trigger}>
+        trigger level 1
+      </HoverCard.Trigger>
+
+      <HoverCard.Portal>
+        <HoverCard.Content
+          className={styles.content}
+          sideOffset={5}
+          style={{ backgroundColor: 'crimson' }}
+        >
+          <HoverCard.Root>
+            <HoverCard.Trigger href="/" className={styles.trigger}>
+              trigger level 2
+            </HoverCard.Trigger>
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.content}
+                side="top"
+                align="center"
+                sideOffset={5}
+                style={{ backgroundColor: 'green' }}
+              >
+                <HoverCard.Arrow
+                  className={styles.arrow}
+                  width={20}
+                  height={10}
+                  offset={20}
+                  style={{ fill: 'green' }}
+                />
+                <HoverCard.Root>
+                  <HoverCard.Trigger href="/" className={styles.trigger}>
+                    trigger level 3
+                  </HoverCard.Trigger>
+                  <HoverCard.Portal>
+                    <HoverCard.Content
+                      className={styles.content}
+                      side="bottom"
+                      align="start"
+                      sideOffset={5}
+                      style={{ backgroundColor: 'purple' }}
+                    >
+                      <HoverCard.Arrow
+                        className={styles.arrow}
+                        width={20}
+                        height={10}
+                        offset={20}
+                        style={{ fill: 'purple' }}
+                      />
+                      level 3
+                    </HoverCard.Content>
+                  </HoverCard.Portal>
+                </HoverCard.Root>
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+
+          <HoverCard.Arrow
+            className={styles.arrow}
+            width={20}
+            height={10}
+            offset={20}
+            style={{ fill: 'crimson' }}
+          />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+  );
+};
+
+export const NonPortal = () => {
+  return (
+    <div>
+      <button>button</button>
+      <HoverCard.Root>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} offset={10} />
+          <a href="#link">Should not be able to focus me</a>
+          <CardContentPlaceholder />
+        </HoverCard.Content>
+      </HoverCard.Root>
+      <button>button</button>
+    </div>
+  );
+};
+
+export const WithSlottedTrigger = () => {
+  return (
+    <HoverCard.Root>
+      <HoverCard.Trigger asChild>
+        <button className={styles.trigger} onClick={() => console.log('StyledTrigger click')}>
+          trigger
+        </button>
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} offset={10} />
+          <CardContentPlaceholder />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+  );
+};
+
+export const WithSlottedContent = () => (
+  <HoverCard.Root>
+    <HoverCard.Trigger href="/" className={styles.trigger}>
+      trigger
+    </HoverCard.Trigger>
+    <HoverCard.Portal>
+      <HoverCard.Content asChild sideOffset={5}>
+        <div className={styles.content}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} offset={10} />
+          <CardContentPlaceholder />
+        </div>
+      </HoverCard.Content>
+    </HoverCard.Portal>
+  </HoverCard.Root>
+);
+
+// change order slightly for more pleasing visual
+const SIDES = [...SIDE_OPTIONS.filter((side) => side !== 'bottom'), 'bottom' as const];
+
+export const Chromatic = () => (
+  <div style={{ padding: 200, paddingBottom: 500 }}>
+    <h1>Uncontrolled</h1>
+    <h2>Closed</h2>
+    <HoverCard.Root>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2>Open</h2>
+    <HoverCard.Root defaultOpen>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2 style={{ marginTop: 60 }}>Open with reordered parts</h2>
+    <HoverCard.Root defaultOpen>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          Some content
+          <HoverCard.Arrow className={styles.arrow} offset={10} />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+    </HoverCard.Root>
+
+    <h1 style={{ marginTop: 100 }}>Controlled</h1>
+    <h2>Closed</h2>
+    <HoverCard.Root open={false}>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2>Open</h2>
+    <HoverCard.Root open>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2 style={{ marginTop: 60 }}>Open with reordered parts</h2>
+    <HoverCard.Root open>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          Some content
+          <HoverCard.Arrow className={styles.arrow} offset={10} />
+        </HoverCard.Content>
+      </HoverCard.Portal>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+    </HoverCard.Root>
+
+    <h1 style={{ marginTop: 100 }}>Force mounted content</h1>
+    <HoverCard.Root>
+      <HoverCard.Trigger className={styles.trigger}>open</HoverCard.Trigger>
+      <HoverCard.Portal forceMount>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h1 style={{ marginTop: 100 }}>Positioning</h1>
+    <h2>No collisions</h2>
+    <h3>Side & Align</h3>
+    <div className={styles.grid}>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <HoverCard.Root key={`${side}-${align}`} open>
+            <HoverCard.Trigger className={styles.chromaticTrigger} />
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.chromaticContent}
+                side={side}
+                align={align}
+                avoidCollisions={false}
+              >
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+        ))
+      )}
+    </div>
+
+    <h3>Side offset</h3>
+    <h4>Positive</h4>
+    <div className={styles.grid}>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <HoverCard.Root key={`${side}-${align}`} open>
+            <HoverCard.Trigger className={styles.chromaticTrigger} />
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.chromaticContent}
+                side={side}
+                sideOffset={5}
+                align={align}
+                avoidCollisions={false}
+              >
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+        ))
+      )}
+    </div>
+    <h4>Negative</h4>
+    <div className={styles.grid}>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <HoverCard.Root key={`${side}-${align}`} open>
+            <HoverCard.Trigger className={styles.chromaticTrigger} />
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.chromaticContent}
+                side={side}
+                sideOffset={-10}
+                align={align}
+                avoidCollisions={false}
+              >
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+        ))
+      )}
+    </div>
+
+    <h3>Align offset</h3>
+    <h4>Positive</h4>
+    <div className={styles.grid}>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <HoverCard.Root key={`${side}-${align}`} open>
+            <HoverCard.Trigger className={styles.chromaticTrigger} />
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.chromaticContent}
+                side={side}
+                align={align}
+                alignOffset={20}
+                avoidCollisions={false}
+              >
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+        ))
+      )}
+    </div>
+    <h4>Negative</h4>
+    <div className={styles.grid}>
+      {SIDES.map((side) =>
+        ALIGN_OPTIONS.map((align) => (
+          <HoverCard.Root key={`${side}-${align}`} open>
+            <HoverCard.Trigger className={styles.chromaticTrigger} />
+            <HoverCard.Portal>
+              <HoverCard.Content
+                className={styles.chromaticContent}
+                side={side}
+                align={align}
+                alignOffset={-10}
+                avoidCollisions={false}
+              >
+                <p style={{ textAlign: 'center' }}>
+                  {side}
+                  <br />
+                  {align}
+                </p>
+                <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+        ))
+      )}
+    </div>
+
+    <h2>Collisions</h2>
+    <p>See instances on the periphery of the page.</p>
+    {SIDES.map((side) =>
+      ALIGN_OPTIONS.map((align) => (
+        <HoverCard.Root key={`${side}-${align}`} open>
+          <HoverCard.Trigger
+            className={styles.chromaticTrigger}
+            style={{
+              position: 'absolute',
+              [side]: 10,
+              ...((side === 'right' || side === 'left') &&
+                (align === 'start'
+                  ? { bottom: 10 }
+                  : align === 'center'
+                    ? { top: 'calc(50% - 15px)' }
+                    : { top: 10 })),
+              ...((side === 'top' || side === 'bottom') &&
+                (align === 'start'
+                  ? { right: 10 }
+                  : align === 'center'
+                    ? { left: 'calc(50% - 15px)' }
+                    : { left: 10 })),
+            }}
+          />
+          <HoverCard.Portal>
+            <HoverCard.Content className={styles.chromaticContent} side={side} align={align}>
+              <p style={{ textAlign: 'center' }}>
+                {side}
+                <br />
+                {align}
+              </p>
+              <HoverCard.Arrow className={styles.chromaticArrow} width={20} height={10} />
+            </HoverCard.Content>
+          </HoverCard.Portal>
+        </HoverCard.Root>
+      ))
+    )}
+
+    <h2>Relative parent (non-portalled)</h2>
+    <div style={{ position: 'relative' }}>
+      <HoverCard.Root open>
+        <HoverCard.Trigger href="/" className={styles.trigger}>
+          trigger
+        </HoverCard.Trigger>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Root>
+    </div>
+
+    <h1 style={{ marginTop: 100 }}>With slotted trigger</h1>
+    <HoverCard.Root open>
+      <HoverCard.Trigger asChild>
+        <button className={styles.trigger}>open</button>
+      </HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.content} sideOffset={5}>
+          <HoverCard.Arrow className={styles.arrow} width={20} height={10} offset={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h1 style={{ marginTop: 100 }}>State attributes</h1>
+    <h2>Closed</h2>
+    <HoverCard.Root open={false}>
+      <HoverCard.Trigger className={styles.triggerAttr}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content className={styles.contentAttr} sideOffset={5} avoidCollisions={false}>
+          <HoverCard.Arrow className={styles.arrowAttr} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+
+    <h2>Open</h2>
+    <HoverCard.Root open>
+      <HoverCard.Trigger className={styles.triggerAttr}>open</HoverCard.Trigger>
+      <HoverCard.Portal>
+        <HoverCard.Content
+          className={styles.contentAttr}
+          side="right"
+          sideOffset={5}
+          avoidCollisions={false}
+        >
+          <HoverCard.Arrow className={styles.arrowAttr} width={20} height={10} />
+          Some content
+        </HoverCard.Content>
+      </HoverCard.Portal>
+    </HoverCard.Root>
+  </div>
+);
+Chromatic.parameters = { chromatic: { disable: false } };
+
+function CardContentPlaceholder() {
+  return (
+    <div style={{ maxWidth: 400, display: 'flex', alignItems: 'center' }}>
+      <div style={{ width: 60, height: 60, backgroundColor: 'white', borderRadius: 100 }} />
+      <div style={{ marginLeft: 14 }}>
+        <div style={{ width: 200, backgroundColor: 'white', height: 14, borderRadius: 100 }} />
+        <div
+          style={{
+            width: 150,
+            backgroundColor: 'white',
+            height: 14,
+            borderRadius: 100,
+            marginTop: 10,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/src/hover-card.tsx</source>
+<document_content>
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { createContextScope } from '@radix-ui/react-context';
+import { useControllableState } from '@radix-ui/react-use-controllable-state';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import * as PopperPrimitive from '@radix-ui/react-popper';
+import { createPopperScope } from '@radix-ui/react-popper';
+import { Portal as PortalPrimitive } from '@radix-ui/react-portal';
+import { Presence } from '@radix-ui/react-presence';
+import { Primitive } from '@radix-ui/react-primitive';
+import { DismissableLayer } from '@radix-ui/react-dismissable-layer';
+
+import type { Scope } from '@radix-ui/react-context';
+
+/* -------------------------------------------------------------------------------------------------
+ * HoverCard
+ * -----------------------------------------------------------------------------------------------*/
+
+let originalBodyUserSelect: string;
+
+const HOVERCARD_NAME = 'HoverCard';
+
+type ScopedProps<P> = P & { __scopeHoverCard?: Scope };
+const [createHoverCardContext, createHoverCardScope] = createContextScope(HOVERCARD_NAME, [
+  createPopperScope,
+]);
+const usePopperScope = createPopperScope();
+
+type HoverCardContextValue = {
+  open: boolean;
+  onOpenChange(open: boolean): void;
+  onOpen(): void;
+  onClose(): void;
+  onDismiss(): void;
+  hasSelectionRef: React.MutableRefObject<boolean>;
+  isPointerDownOnContentRef: React.MutableRefObject<boolean>;
+};
+
+const [HoverCardProvider, useHoverCardContext] =
+  createHoverCardContext<HoverCardContextValue>(HOVERCARD_NAME);
+
+interface HoverCardProps {
+  children?: React.ReactNode;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  openDelay?: number;
+  closeDelay?: number;
+}
+
+const HoverCard: React.FC<HoverCardProps> = (props: ScopedProps<HoverCardProps>) => {
+  const {
+    __scopeHoverCard,
+    children,
+    open: openProp,
+    defaultOpen,
+    onOpenChange,
+    openDelay = 700,
+    closeDelay = 300,
+  } = props;
+  const popperScope = usePopperScope(__scopeHoverCard);
+  const openTimerRef = React.useRef(0);
+  const closeTimerRef = React.useRef(0);
+  const hasSelectionRef = React.useRef(false);
+  const isPointerDownOnContentRef = React.useRef(false);
+
+  const [open = false, setOpen] = useControllableState({
+    prop: openProp,
+    defaultProp: defaultOpen,
+    onChange: onOpenChange,
+  });
+
+  const handleOpen = React.useCallback(() => {
+    clearTimeout(closeTimerRef.current);
+    openTimerRef.current = window.setTimeout(() => setOpen(true), openDelay);
+  }, [openDelay, setOpen]);
+
+  const handleClose = React.useCallback(() => {
+    clearTimeout(openTimerRef.current);
+    if (!hasSelectionRef.current && !isPointerDownOnContentRef.current) {
+      closeTimerRef.current = window.setTimeout(() => setOpen(false), closeDelay);
+    }
+  }, [closeDelay, setOpen]);
+
+  const handleDismiss = React.useCallback(() => setOpen(false), [setOpen]);
+
+  // cleanup any queued state updates on unmount
+  React.useEffect(() => {
+    return () => {
+      clearTimeout(openTimerRef.current);
+      clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <HoverCardProvider
+      scope={__scopeHoverCard}
+      open={open}
+      onOpenChange={setOpen}
+      onOpen={handleOpen}
+      onClose={handleClose}
+      onDismiss={handleDismiss}
+      hasSelectionRef={hasSelectionRef}
+      isPointerDownOnContentRef={isPointerDownOnContentRef}
+    >
+      <PopperPrimitive.Root {...popperScope}>{children}</PopperPrimitive.Root>
+    </HoverCardProvider>
+  );
+};
+
+HoverCard.displayName = HOVERCARD_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * HoverCardTrigger
+ * -----------------------------------------------------------------------------------------------*/
+
+const TRIGGER_NAME = 'HoverCardTrigger';
+
+type HoverCardTriggerElement = React.ElementRef<typeof Primitive.a>;
+type PrimitiveLinkProps = React.ComponentPropsWithoutRef<typeof Primitive.a>;
+interface HoverCardTriggerProps extends PrimitiveLinkProps {}
+
+const HoverCardTrigger = React.forwardRef<HoverCardTriggerElement, HoverCardTriggerProps>(
+  (props: ScopedProps<HoverCardTriggerProps>, forwardedRef) => {
+    const { __scopeHoverCard, ...triggerProps } = props;
+    const context = useHoverCardContext(TRIGGER_NAME, __scopeHoverCard);
+    const popperScope = usePopperScope(__scopeHoverCard);
+    return (
+      <PopperPrimitive.Anchor asChild {...popperScope}>
+        <Primitive.a
+          data-state={context.open ? 'open' : 'closed'}
+          {...triggerProps}
+          ref={forwardedRef}
+          onPointerEnter={composeEventHandlers(props.onPointerEnter, excludeTouch(context.onOpen))}
+          onPointerLeave={composeEventHandlers(props.onPointerLeave, excludeTouch(context.onClose))}
+          onFocus={composeEventHandlers(props.onFocus, context.onOpen)}
+          onBlur={composeEventHandlers(props.onBlur, context.onClose)}
+          // prevent focus event on touch devices
+          onTouchStart={composeEventHandlers(props.onTouchStart, (event) => event.preventDefault())}
+        />
+      </PopperPrimitive.Anchor>
+    );
+  }
+);
+
+HoverCardTrigger.displayName = TRIGGER_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * HoverCardPortal
+ * -----------------------------------------------------------------------------------------------*/
+
+const PORTAL_NAME = 'HoverCardPortal';
+
+type PortalContextValue = { forceMount?: true };
+const [PortalProvider, usePortalContext] = createHoverCardContext<PortalContextValue>(PORTAL_NAME, {
+  forceMount: undefined,
+});
+
+type PortalProps = React.ComponentPropsWithoutRef<typeof PortalPrimitive>;
+interface HoverCardPortalProps {
+  children?: React.ReactNode;
+  /**
+   * Specify a container element to portal the content into.
+   */
+  container?: PortalProps['container'];
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const HoverCardPortal: React.FC<HoverCardPortalProps> = (
+  props: ScopedProps<HoverCardPortalProps>
+) => {
+  const { __scopeHoverCard, forceMount, children, container } = props;
+  const context = useHoverCardContext(PORTAL_NAME, __scopeHoverCard);
+  return (
+    <PortalProvider scope={__scopeHoverCard} forceMount={forceMount}>
+      <Presence present={forceMount || context.open}>
+        <PortalPrimitive asChild container={container}>
+          {children}
+        </PortalPrimitive>
+      </Presence>
+    </PortalProvider>
+  );
+};
+
+HoverCardPortal.displayName = PORTAL_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * HoverCardContent
+ * -----------------------------------------------------------------------------------------------*/
+
+const CONTENT_NAME = 'HoverCardContent';
+
+type HoverCardContentElement = HoverCardContentImplElement;
+interface HoverCardContentProps extends HoverCardContentImplProps {
+  /**
+   * Used to force mounting when more control is needed. Useful when
+   * controlling animation with React animation libraries.
+   */
+  forceMount?: true;
+}
+
+const HoverCardContent = React.forwardRef<HoverCardContentElement, HoverCardContentProps>(
+  (props: ScopedProps<HoverCardContentProps>, forwardedRef) => {
+    const portalContext = usePortalContext(CONTENT_NAME, props.__scopeHoverCard);
+    const { forceMount = portalContext.forceMount, ...contentProps } = props;
+    const context = useHoverCardContext(CONTENT_NAME, props.__scopeHoverCard);
+    return (
+      <Presence present={forceMount || context.open}>
+        <HoverCardContentImpl
+          data-state={context.open ? 'open' : 'closed'}
+          {...contentProps}
+          onPointerEnter={composeEventHandlers(props.onPointerEnter, excludeTouch(context.onOpen))}
+          onPointerLeave={composeEventHandlers(props.onPointerLeave, excludeTouch(context.onClose))}
+          ref={forwardedRef}
+        />
+      </Presence>
+    );
+  }
+);
+
+HoverCardContent.displayName = CONTENT_NAME;
+
+/* ---------------------------------------------------------------------------------------------- */
+
+type HoverCardContentImplElement = React.ElementRef<typeof PopperPrimitive.Content>;
+type DismissableLayerProps = React.ComponentPropsWithoutRef<typeof DismissableLayer>;
+type PopperContentProps = React.ComponentPropsWithoutRef<typeof PopperPrimitive.Content>;
+interface HoverCardContentImplProps extends Omit<PopperContentProps, 'onPlaced'> {
+  /**
+   * Event handler called when the escape key is down.
+   * Can be prevented.
+   */
+  onEscapeKeyDown?: DismissableLayerProps['onEscapeKeyDown'];
+  /**
+   * Event handler called when the a `pointerdown` event happens outside of the `HoverCard`.
+   * Can be prevented.
+   */
+  onPointerDownOutside?: DismissableLayerProps['onPointerDownOutside'];
+  /**
+   * Event handler called when the focus moves outside of the `HoverCard`.
+   * Can be prevented.
+   */
+  onFocusOutside?: DismissableLayerProps['onFocusOutside'];
+  /**
+   * Event handler called when an interaction happens outside the `HoverCard`.
+   * Specifically, when a `pointerdown` event happens outside or focus moves outside of it.
+   * Can be prevented.
+   */
+  onInteractOutside?: DismissableLayerProps['onInteractOutside'];
+}
+
+const HoverCardContentImpl = React.forwardRef<
+  HoverCardContentImplElement,
+  HoverCardContentImplProps
+>((props: ScopedProps<HoverCardContentImplProps>, forwardedRef) => {
+  const {
+    __scopeHoverCard,
+    onEscapeKeyDown,
+    onPointerDownOutside,
+    onFocusOutside,
+    onInteractOutside,
+    ...contentProps
+  } = props;
+  const context = useHoverCardContext(CONTENT_NAME, __scopeHoverCard);
+  const popperScope = usePopperScope(__scopeHoverCard);
+  const ref = React.useRef<HoverCardContentImplElement>(null);
+  const composedRefs = useComposedRefs(forwardedRef, ref);
+  const [containSelection, setContainSelection] = React.useState(false);
+
+  React.useEffect(() => {
+    if (containSelection) {
+      const body = document.body;
+
+      // Safari requires prefix
+      originalBodyUserSelect = body.style.userSelect || body.style.webkitUserSelect;
+
+      body.style.userSelect = 'none';
+      body.style.webkitUserSelect = 'none';
+      return () => {
+        body.style.userSelect = originalBodyUserSelect;
+        body.style.webkitUserSelect = originalBodyUserSelect;
+      };
+    }
+  }, [containSelection]);
+
+  React.useEffect(() => {
+    if (ref.current) {
+      const handlePointerUp = () => {
+        setContainSelection(false);
+        context.isPointerDownOnContentRef.current = false;
+
+        // Delay a frame to ensure we always access the latest selection
+        setTimeout(() => {
+          const hasSelection = document.getSelection()?.toString() !== '';
+          if (hasSelection) context.hasSelectionRef.current = true;
+        });
+      };
+
+      document.addEventListener('pointerup', handlePointerUp);
+      return () => {
+        document.removeEventListener('pointerup', handlePointerUp);
+        context.hasSelectionRef.current = false;
+        context.isPointerDownOnContentRef.current = false;
+      };
+    }
+  }, [context.isPointerDownOnContentRef, context.hasSelectionRef]);
+
+  React.useEffect(() => {
+    if (ref.current) {
+      const tabbables = getTabbableNodes(ref.current);
+      tabbables.forEach((tabbable) => tabbable.setAttribute('tabindex', '-1'));
+    }
+  });
+
+  return (
+    <DismissableLayer
+      asChild
+      disableOutsidePointerEvents={false}
+      onInteractOutside={onInteractOutside}
+      onEscapeKeyDown={onEscapeKeyDown}
+      onPointerDownOutside={onPointerDownOutside}
+      onFocusOutside={composeEventHandlers(onFocusOutside, (event) => {
+        event.preventDefault();
+      })}
+      onDismiss={context.onDismiss}
+    >
+      <PopperPrimitive.Content
+        {...popperScope}
+        {...contentProps}
+        onPointerDown={composeEventHandlers(contentProps.onPointerDown, (event) => {
+          // Contain selection to current layer
+          if (event.currentTarget.contains(event.target as HTMLElement)) {
+            setContainSelection(true);
+          }
+          context.hasSelectionRef.current = false;
+          context.isPointerDownOnContentRef.current = true;
+        })}
+        ref={composedRefs}
+        style={{
+          ...contentProps.style,
+          userSelect: containSelection ? 'text' : undefined,
+          // Safari requires prefix
+          WebkitUserSelect: containSelection ? 'text' : undefined,
+          // re-namespace exposed content custom properties
+          ...{
+            '--radix-hover-card-content-transform-origin': 'var(--radix-popper-transform-origin)',
+            '--radix-hover-card-content-available-width': 'var(--radix-popper-available-width)',
+            '--radix-hover-card-content-available-height': 'var(--radix-popper-available-height)',
+            '--radix-hover-card-trigger-width': 'var(--radix-popper-anchor-width)',
+            '--radix-hover-card-trigger-height': 'var(--radix-popper-anchor-height)',
+          },
+        }}
+      />
+    </DismissableLayer>
+  );
+});
+
+/* -------------------------------------------------------------------------------------------------
+ * HoverCardArrow
+ * -----------------------------------------------------------------------------------------------*/
+
+const ARROW_NAME = 'HoverCardArrow';
+
+type HoverCardArrowElement = React.ElementRef<typeof PopperPrimitive.Arrow>;
+type PopperArrowProps = React.ComponentPropsWithoutRef<typeof PopperPrimitive.Arrow>;
+interface HoverCardArrowProps extends PopperArrowProps {}
+
+const HoverCardArrow = React.forwardRef<HoverCardArrowElement, HoverCardArrowProps>(
+  (props: ScopedProps<HoverCardArrowProps>, forwardedRef) => {
+    const { __scopeHoverCard, ...arrowProps } = props;
+    const popperScope = usePopperScope(__scopeHoverCard);
+    return <PopperPrimitive.Arrow {...popperScope} {...arrowProps} ref={forwardedRef} />;
+  }
+);
+
+HoverCardArrow.displayName = ARROW_NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function excludeTouch<E>(eventHandler: () => void) {
+  return (event: React.PointerEvent<E>) =>
+    event.pointerType === 'touch' ? undefined : eventHandler();
+}
+
+/**
+ * Returns a list of nodes that can be in the tab sequence.
+ * @see: https://developer.mozilla.org/en-US/docs/Web/API/TreeWalker
+ */
+function getTabbableNodes(container: HTMLElement) {
+  const nodes: HTMLElement[] = [];
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_ELEMENT, {
+    acceptNode: (node: any) => {
+      // `.tabIndex` is not the same as the `tabindex` attribute. It works on the
+      // runtime's understanding of tabbability, so this automatically accounts
+      // for any kind of element that could be tabbed to.
+      return node.tabIndex >= 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    },
+  });
+  while (walker.nextNode()) nodes.push(walker.currentNode as HTMLElement);
+  return nodes;
+}
+
+const Root = HoverCard;
+const Trigger = HoverCardTrigger;
+const Portal = HoverCardPortal;
+const Content = HoverCardContent;
+const Arrow = HoverCardArrow;
+
+export {
+  createHoverCardScope,
+  //
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardPortal,
+  HoverCardContent,
+  HoverCardArrow,
+  //
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Arrow,
+};
+export type {
+  HoverCardProps,
+  HoverCardTriggerProps,
+  HoverCardPortalProps,
+  HoverCardContentProps,
+  HoverCardArrowProps,
+};
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/hover-card/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createHoverCardScope,
+  //
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardPortal,
+  HoverCardContent,
+  HoverCardArrow,
+  //
+  Root,
+  Trigger,
+  Portal,
+  Content,
+  Arrow,
+} from './hover-card';
+export type {
+  HoverCardProps,
+  HoverCardTriggerProps,
+  HoverCardPortalProps,
+  HoverCardContentProps,
+  HoverCardArrowProps,
+} from './hover-card';
+
+</document_content>
+</document>
+</documents>

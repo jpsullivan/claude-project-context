@@ -27,6 +27,198 @@ export * from './src/separator.directive';
 </document_content>
 </document>
 <document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/separator/stories/separator.docs.mdx</source>
+<document_content>
+import { ArgTypes, Canvas, Meta } from '@storybook/blocks';
+import { RdxSeparatorRootDirective } from '../src/separator.directive';
+import * as SeparatorDirectiveStories from './separator.stories';
+
+<Meta title="Primitives/Separator" />
+
+# Separator
+
+#### Visually or semantically separates content.
+
+<Canvas sourceState="hidden" of={SeparatorDirectiveStories.Default} />
+
+## Features
+
+- ✅ Supports horizontal and vertical orientations.
+
+## Usage
+
+Get started with importing the directive:
+
+```typescript
+import { RdxSeparatorRootDirective } from '@radix-ng/primitives/separator';
+```
+
+## Examples
+
+```html
+<div rdxSeparatorRoot decorative="decorative" orientation="vertical"></div>
+```
+
+## API Reference
+
+<ArgTypes of={RdxSeparatorRootDirective} />
+
+## Accessibility
+
+Adheres to the [`separator` role requirements](https://www.w3.org/TR/wai-aria-1.2/#separator).
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/separator/stories/separator.stories.ts</source>
+<document_content>
+import { CommonModule } from '@angular/common';
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
+import { RdxSeparatorRootDirective } from '../src/separator.directive';
+
+const html = String.raw;
+
+export default {
+    component: RdxSeparatorRootDirective,
+    title: 'Primitives/Separator',
+    decorators: [
+        moduleMetadata({
+            imports: [RdxSeparatorRootDirective, CommonModule]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div class="radix-themes light light-theme" data-radius="medium" data-scaling="100%">${story}</div>
+            `
+        )
+    ]
+};
+
+export const Default = {
+    render: () => ({
+        template: html`
+            <style>
+                .SeparatorRoot {
+                    background-color: var(--violet-6);
+                }
+
+                .SeparatorRoot[data-orientation='horizontal'] {
+                    height: 1px;
+                    width: 100%;
+                }
+
+                .SeparatorRoot[data-orientation='vertical'] {
+                    height: 100%;
+                    width: 1px;
+                }
+
+                .Text {
+                    color: white;
+                    font-size: 15px;
+                    line-height: 20px;
+                }
+            </style>
+            <div style="width: 100%; max-width: 300px; margin: 0 15px;">
+                <div class="Text">Radix Primitives</div>
+                <div class="Text" style="font-weight: 500;">An open-source UI component library.</div>
+                <div class="SeparatorRoot" rdxSeparatorRoot style="margin: 15px 0;"></div>
+                <div style="display: flex; height: 1.25rem; align-items: center;">
+                    <div class="Text">Blog</div>
+                    <div
+                        class="SeparatorRoot"
+                        rdxSeparatorRoot
+                        decorative="decorative"
+                        orientation="vertical"
+                        style="margin: 0 15px;"
+                    ></div>
+                    <div class="Text">Docs</div>
+                    <div
+                        class="SeparatorRoot"
+                        rdxSeparatorRoot
+                        decorative="decorative"
+                        orientation="vertical"
+                        style="margin: 0 15px;"
+                    ></div>
+                    <div class="Text">Source</div>
+                </div>
+            </div>
+        `
+    })
+};
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/separator/__tests__/separator.directive.spec.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Orientation, RdxSeparatorRootDirective } from '../src/separator.directive';
+
+@Component({
+    template: '<div rdxSeparatorRoot [orientation]="orientation" [decorative]="decorative"></div>',
+    imports: [RdxSeparatorRootDirective]
+})
+class TestHostComponent {
+    orientation: Orientation = 'horizontal';
+    decorative = false;
+}
+
+describe('SeparatorDirective', () => {
+    let fixture: ComponentFixture<TestHostComponent>;
+    let element: HTMLElement;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [TestHostComponent]
+        });
+        fixture = TestBed.createComponent(TestHostComponent);
+        element = fixture.nativeElement.querySelector('div');
+    });
+
+    it('should set default role to "separator"', () => {
+        fixture.detectChanges();
+        expect(element.getAttribute('role')).toBe('separator');
+    });
+
+    it('should set role to "none" if decorative is true', () => {
+        fixture.componentInstance.decorative = true;
+        fixture.detectChanges();
+        expect(element.getAttribute('role')).toBe('none');
+    });
+
+    it('should not set aria-orientation if orientation is horizontal', () => {
+        fixture.componentInstance.orientation = 'horizontal';
+        fixture.detectChanges();
+        expect(element.getAttribute('aria-orientation')).toBeNull();
+    });
+
+    it('should set aria-orientation to "vertical" if orientation is vertical and decorative is false', () => {
+        fixture.componentInstance.orientation = 'vertical';
+        fixture.detectChanges();
+        expect(element.getAttribute('aria-orientation')).toBe('vertical');
+    });
+
+    it('should not set aria-orientation if decorative is true', () => {
+        fixture.componentInstance.orientation = 'vertical';
+        fixture.componentInstance.decorative = true;
+        fixture.detectChanges();
+        expect(element.getAttribute('aria-orientation')).toBeNull();
+    });
+
+    it('should set data-orientation based on the orientation input', () => {
+        fixture.componentInstance.orientation = 'vertical';
+        fixture.detectChanges();
+        expect(element.getAttribute('data-orientation')).toBe('vertical');
+
+        fixture.componentInstance.orientation = 'horizontal';
+        fixture.detectChanges();
+        expect(element.getAttribute('data-orientation')).toBe('horizontal');
+    });
+});
+
+</document_content>
+</document>
+<document index="7">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/separator/src/separator.directive.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';

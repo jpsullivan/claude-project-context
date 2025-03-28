@@ -1,0 +1,1489 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/README.md</source>
+<document_content>
+# @radix-ng/primitives/popover
+
+Secondary entry point of `@radix-ng/primitives`. It can be used by importing from `@radix-ng/primitives/popover`.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { RdxPopoverAnchorDirective } from './src/popover-anchor.directive';
+import { RdxPopoverArrowDirective } from './src/popover-arrow.directive';
+import { RdxPopoverCloseDirective } from './src/popover-close.directive';
+import { RdxPopoverContentAttributesComponent } from './src/popover-content-attributes.component';
+import { RdxPopoverContentDirective } from './src/popover-content.directive';
+import { RdxPopoverRootDirective } from './src/popover-root.directive';
+import { RdxPopoverTriggerDirective } from './src/popover-trigger.directive';
+
+export * from './src/popover-anchor.directive';
+export * from './src/popover-arrow.directive';
+export * from './src/popover-close.directive';
+export * from './src/popover-content-attributes.component';
+export * from './src/popover-content.directive';
+export * from './src/popover-root.directive';
+export * from './src/popover-trigger.directive';
+
+const _imports = [
+    RdxPopoverArrowDirective,
+    RdxPopoverCloseDirective,
+    RdxPopoverContentDirective,
+    RdxPopoverTriggerDirective,
+    RdxPopoverRootDirective,
+    RdxPopoverAnchorDirective,
+    RdxPopoverContentAttributesComponent
+];
+
+@NgModule({
+    imports: [..._imports],
+    exports: [..._imports]
+})
+export class RdxPopoverModule {}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/ng-package.json</source>
+<document_content>
+{
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-anchor.directive.ts</source>
+<document_content>
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, forwardRef, inject } from '@angular/core';
+import { injectDocument } from '@radix-ng/primitives/core';
+import { RdxPopoverAnchorToken } from './popover-anchor.token';
+import { RdxPopoverRootDirective } from './popover-root.directive';
+import { injectPopoverRoot } from './popover-root.inject';
+
+@Directive({
+    selector: '[rdxPopoverAnchor]',
+    exportAs: 'rdxPopoverAnchor',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        type: 'button',
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '(click)': 'click()'
+    },
+    providers: [
+        {
+            provide: RdxPopoverAnchorToken,
+            useExisting: forwardRef(() => RdxPopoverAnchorDirective)
+        }
+    ]
+})
+export class RdxPopoverAnchorDirective {
+    /**
+     * @ignore
+     * If outside the root then null, otherwise the root directive - with optional `true` passed in as the first param.
+     * If outside the root and non-null value that means the html structure is wrong - popover inside popover.
+     * */
+    protected popoverRoot = injectPopoverRoot(true);
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+    /** @ignore */
+    readonly document = injectDocument();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-popover-external-anchor-${this.popoverRoot?.uniqueId()}`);
+
+    /** @ignore */
+    click(): void {
+        this.emitOutsideClick();
+    }
+
+    /** @ignore */
+    setPopoverRoot(popoverRoot: RdxPopoverRootDirective) {
+        this.popoverRoot = popoverRoot;
+    }
+
+    private emitOutsideClick() {
+        if (
+            !this.popoverRoot?.isOpen() ||
+            this.popoverRoot?.popoverContentDirective().onOverlayOutsideClickDisabled()
+        ) {
+            return;
+        }
+        const clickEvent = new MouseEvent('click', {
+            view: this.document.defaultView,
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: this.elementRef.nativeElement
+        });
+        this.popoverRoot?.popoverTriggerDirective().elementRef.nativeElement.dispatchEvent(clickEvent);
+    }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-anchor.token.ts</source>
+<document_content>
+import { InjectionToken } from '@angular/core';
+import { RdxPopoverAnchorDirective } from './popover-anchor.directive';
+
+export const RdxPopoverAnchorToken = new InjectionToken<RdxPopoverAnchorDirective>('RdxPopoverAnchorToken');
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-arrow.directive.ts</source>
+<document_content>
+import { NumberInput } from '@angular/cdk/coercion';
+import { ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
+import {
+    afterNextRender,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    forwardRef,
+    inject,
+    input,
+    numberAttribute,
+    Renderer2,
+    signal,
+    untracked
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+    getArrowPositionParams,
+    getSideAndAlignFromAllPossibleConnectedPositions,
+    RDX_POSITIONING_DEFAULTS
+} from '@radix-ng/primitives/core';
+import { RdxPopoverArrowToken } from './popover-arrow.token';
+import { injectPopoverRoot } from './popover-root.inject';
+
+@Directive({
+    selector: '[rdxPopoverArrow]',
+    providers: [
+        {
+            provide: RdxPopoverArrowToken,
+            useExisting: forwardRef(() => RdxPopoverArrowDirective)
+        }
+    ]
+})
+export class RdxPopoverArrowDirective {
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+    /** @ignore */
+    private readonly popoverRoot = injectPopoverRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+
+    /**
+     * @description The width of the arrow in pixels.
+     * @default 10
+     */
+    readonly width = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.width, { transform: numberAttribute });
+
+    /**
+     * @description The height of the arrow in pixels.
+     * @default 5
+     */
+    readonly height = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.height, { transform: numberAttribute });
+
+    /** @ignore */
+    readonly arrowSvgElement = computed<HTMLElement>(() => {
+        const width = this.width();
+        const height = this.height();
+
+        const svgElement = this.renderer.createElement('svg', 'svg');
+        this.renderer.setAttribute(svgElement, 'viewBox', '0 0 30 10');
+        this.renderer.setAttribute(svgElement, 'width', String(width));
+        this.renderer.setAttribute(svgElement, 'height', String(height));
+        const polygonElement = this.renderer.createElement('polygon', 'svg');
+        this.renderer.setAttribute(polygonElement, 'points', '0,0 30,0 15,10');
+        this.renderer.setAttribute(svgElement, 'preserveAspectRatio', 'none');
+        this.renderer.appendChild(svgElement, polygonElement);
+
+        return svgElement;
+    });
+
+    /** @ignore */
+    private readonly currentArrowSvgElement = signal<HTMLOrSVGElement | undefined>(void 0);
+    /** @ignore */
+    private readonly position = toSignal(this.popoverRoot.popoverContentDirective().positionChange());
+
+    /** @ignore */
+    private anchorOrTriggerRect: DOMRect;
+
+    constructor() {
+        afterNextRender({
+            write: () => {
+                if (this.elementRef.nativeElement.parentElement) {
+                    this.renderer.setStyle(this.elementRef.nativeElement.parentElement, 'position', 'relative');
+                }
+                this.renderer.setStyle(this.elementRef.nativeElement, 'position', 'absolute');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'boxSizing', '');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'fontSize', '0px');
+            }
+        });
+        this.onArrowSvgElementChangeEffect();
+        this.onContentPositionAndArrowDimensionsChangeEffect();
+    }
+
+    /** @ignore */
+    private setAnchorOrTriggerRect() {
+        this.anchorOrTriggerRect = (
+            this.popoverRoot.popoverAnchorDirective() ?? this.popoverRoot.popoverTriggerDirective()
+        ).elementRef.nativeElement.getBoundingClientRect();
+    }
+
+    /** @ignore */
+    private setPosition(position: ConnectedOverlayPositionChange, arrowDimensions: { width: number; height: number }) {
+        this.setAnchorOrTriggerRect();
+        const posParams = getArrowPositionParams(
+            getSideAndAlignFromAllPossibleConnectedPositions(position.connectionPair),
+            { width: arrowDimensions.width, height: arrowDimensions.height },
+            { width: this.anchorOrTriggerRect.width, height: this.anchorOrTriggerRect.height }
+        );
+
+        this.renderer.setStyle(this.elementRef.nativeElement, 'top', posParams.top);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'bottom', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'left', posParams.left);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'right', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transform', posParams.transform);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transformOrigin', posParams.transformOrigin);
+    }
+
+    /** @ignore */
+    private onArrowSvgElementChangeEffect() {
+        effect(() => {
+            const arrowElement = this.arrowSvgElement();
+            untracked(() => {
+                const currentArrowSvgElement = this.currentArrowSvgElement();
+                if (currentArrowSvgElement) {
+                    this.renderer.removeChild(this.elementRef.nativeElement, currentArrowSvgElement);
+                }
+                this.currentArrowSvgElement.set(arrowElement);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'width', `${this.width()}px`);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'height', `${this.height()}px`);
+                this.renderer.appendChild(this.elementRef.nativeElement, this.currentArrowSvgElement());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onContentPositionAndArrowDimensionsChangeEffect() {
+        effect(() => {
+            const position = this.position();
+            const arrowDimensions = { width: this.width(), height: this.height() };
+            untracked(() => {
+                if (!position) {
+                    return;
+                }
+                this.setPosition(position, arrowDimensions);
+            });
+        });
+    }
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-arrow.token.ts</source>
+<document_content>
+import { InjectionToken } from '@angular/core';
+import { RdxPopoverArrowDirective } from './popover-arrow.directive';
+
+export const RdxPopoverArrowToken = new InjectionToken<RdxPopoverArrowDirective>('RdxPopoverArrowToken');
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-close.directive.ts</source>
+<document_content>
+import { Directive, effect, ElementRef, forwardRef, inject, Renderer2, untracked } from '@angular/core';
+import { RdxPopoverCloseToken } from './popover-close.token';
+import { injectPopoverRoot } from './popover-root.inject';
+
+@Directive({
+    selector: '[rdxPopoverClose]',
+    host: {
+        type: 'button',
+        '(click)': 'popoverRoot.handleClose()'
+    },
+    providers: [
+        {
+            provide: RdxPopoverCloseToken,
+            useExisting: forwardRef(() => RdxPopoverCloseDirective)
+        }
+    ]
+})
+export class RdxPopoverCloseDirective {
+    /** @ignore */
+    protected readonly popoverRoot = injectPopoverRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+
+    constructor() {
+        this.onIsControlledExternallyEffect();
+    }
+
+    /** @ignore */
+    private onIsControlledExternallyEffect() {
+        effect(() => {
+            const isControlledExternally = this.popoverRoot.controlledExternally()();
+
+            untracked(() => {
+                this.renderer.setStyle(
+                    this.elementRef.nativeElement,
+                    'display',
+                    isControlledExternally ? 'none' : null
+                );
+            });
+        });
+    }
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-close.token.ts</source>
+<document_content>
+import { InjectionToken } from '@angular/core';
+import { RdxPopoverCloseDirective } from './popover-close.directive';
+
+export const RdxPopoverCloseToken = new InjectionToken<RdxPopoverCloseDirective>('RdxPopoverCloseToken');
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-content-attributes.component.ts</source>
+<document_content>
+import { ChangeDetectionStrategy, Component, computed, forwardRef } from '@angular/core';
+import { RdxPopoverContentAttributesToken } from './popover-content-attributes.token';
+import { injectPopoverRoot } from './popover-root.inject';
+import { RdxPopoverAnimationStatus, RdxPopoverState } from './popover.types';
+
+@Component({
+    selector: '[rdxPopoverContentAttributes]',
+    template: `
+        <ng-content />
+    `,
+    host: {
+        '[attr.role]': '"dialog"',
+        '[attr.id]': 'name()',
+        '[attr.data-state]': 'popoverRoot.state()',
+        '[attr.data-side]': 'popoverRoot.popoverContentDirective().side()',
+        '[attr.data-align]': 'popoverRoot.popoverContentDirective().align()',
+        '[style]': 'disableAnimation() ? {animation: "none !important"} : null',
+        '(animationstart)': 'onAnimationStart($event)',
+        '(animationend)': 'onAnimationEnd($event)'
+    },
+    providers: [
+        {
+            provide: RdxPopoverContentAttributesToken,
+            useExisting: forwardRef(() => RdxPopoverContentAttributesComponent)
+        }
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class RdxPopoverContentAttributesComponent {
+    /** @ignore */
+    protected readonly popoverRoot = injectPopoverRoot();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-popover-content-attributes-${this.popoverRoot.uniqueId()}`);
+
+    /** @ignore */
+    readonly disableAnimation = computed(() => !this.canAnimate());
+
+    /** @ignore */
+    protected onAnimationStart(_: AnimationEvent) {
+        this.popoverRoot.cssAnimationStatus.set(
+            this.popoverRoot.state() === RdxPopoverState.OPEN
+                ? RdxPopoverAnimationStatus.OPEN_STARTED
+                : RdxPopoverAnimationStatus.CLOSED_STARTED
+        );
+    }
+
+    /** @ignore */
+    protected onAnimationEnd(_: AnimationEvent) {
+        this.popoverRoot.cssAnimationStatus.set(
+            this.popoverRoot.state() === RdxPopoverState.OPEN
+                ? RdxPopoverAnimationStatus.OPEN_ENDED
+                : RdxPopoverAnimationStatus.CLOSED_ENDED
+        );
+    }
+
+    /** @ignore */
+    private canAnimate() {
+        return (
+            this.popoverRoot.cssAnimation() &&
+            ((this.popoverRoot.cssOpeningAnimation() && this.popoverRoot.state() === RdxPopoverState.OPEN) ||
+                (this.popoverRoot.cssClosingAnimation() && this.popoverRoot.state() === RdxPopoverState.CLOSED))
+        );
+    }
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-content-attributes.token.ts</source>
+<document_content>
+import { InjectionToken } from '@angular/core';
+import { RdxPopoverContentAttributesComponent } from './popover-content-attributes.component';
+
+export const RdxPopoverContentAttributesToken = new InjectionToken<RdxPopoverContentAttributesComponent>(
+    'RdxPopoverContentAttributesToken'
+);
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-content.directive.ts</source>
+<document_content>
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { CdkConnectedOverlay, Overlay } from '@angular/cdk/overlay';
+import {
+    booleanAttribute,
+    computed,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    OnInit,
+    output,
+    SimpleChange,
+    TemplateRef,
+    untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    getAllPossibleConnectedPositions,
+    getContentPosition,
+    RDX_POSITIONING_DEFAULTS,
+    RdxPositionAlign,
+    RdxPositionSide,
+    RdxPositionSideAndAlignOffsets
+} from '@radix-ng/primitives/core';
+import { filter, tap } from 'rxjs';
+import { injectPopoverRoot } from './popover-root.inject';
+import { RdxPopoverAttachDetachEvent } from './popover.types';
+
+@Directive({
+    selector: '[rdxPopoverContent]',
+    hostDirectives: [
+        CdkConnectedOverlay
+    ]
+})
+export class RdxPopoverContentDirective implements OnInit {
+    /** @ignore */
+    private readonly popoverRoot = injectPopoverRoot();
+    /** @ignore */
+    private readonly templateRef = inject(TemplateRef);
+    /** @ignore */
+    private readonly overlay = inject(Overlay);
+    /** @ignore */
+    private readonly destroyRef = inject(DestroyRef);
+    /** @ignore */
+    private readonly connectedOverlay = inject(CdkConnectedOverlay);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-popover-trigger-${this.popoverRoot.uniqueId()}`);
+
+    /**
+     * @description The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
+     * @default top
+     */
+    readonly side = input<RdxPositionSide>(RdxPositionSide.Top);
+    /**
+     * @description The distance in pixels from the trigger.
+     * @default undefined
+     */
+    readonly sideOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+    /**
+     * @description The preferred alignment against the trigger. May change when collisions occur.
+     * @default center
+     */
+    readonly align = input<RdxPositionAlign>(RdxPositionAlign.Center);
+    /**
+     * @description An offset in pixels from the "start" or "end" alignment options.
+     * @default undefined
+     */
+    readonly alignOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+
+    /**
+     * @description Whether to add some alternate positions of the content.
+     * @default false
+     */
+    readonly alternatePositionsDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @description Whether to prevent `onOverlayEscapeKeyDown` handler from calling. */
+    readonly onOverlayEscapeKeyDownDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /** @description Whether to prevent `onOverlayOutsideClick` handler from calling. */
+    readonly onOverlayOutsideClickDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * @description Event handler called when the escape key is down.
+     * It can be prevented by setting `onOverlayEscapeKeyDownDisabled` input to `true`.
+     */
+    readonly onOverlayEscapeKeyDown = output<KeyboardEvent>();
+    /**
+     * @description Event handler called when a pointer event occurs outside the bounds of the component.
+     * It can be prevented by setting `onOverlayOutsideClickDisabled` input to `true`.
+     */
+    readonly onOverlayOutsideClick = output<MouseEvent>();
+
+    /**
+     * @description Event handler called after the overlay is open
+     */
+    readonly onOpen = output<void>();
+    /**
+     * @description Event handler called after the overlay is closed
+     */
+    readonly onClosed = output<void>();
+
+    /** @ingore */
+    readonly positions = computed(() => this.computePositions());
+
+    constructor() {
+        this.onOriginChangeEffect();
+        this.onPositionChangeEffect();
+    }
+
+    /** @ignore */
+    ngOnInit() {
+        this.setScrollStrategy();
+        this.setHasBackdrop();
+        this.setDisableClose();
+        this.onAttach();
+        this.onDetach();
+        this.connectKeydownEscape();
+        this.connectOutsideClick();
+    }
+
+    /** @ignore */
+    open() {
+        if (this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = true;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    close() {
+        if (!this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = false;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    positionChange() {
+        return this.connectedOverlay.positionChange.asObservable();
+    }
+
+    /** @ignore */
+    private connectKeydownEscape() {
+        this.connectedOverlay.overlayKeydown
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayEscapeKeyDownDisabled() &&
+                        !this.popoverRoot.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.popoverRoot,
+                            'cdkOverlayEscapeKeyDown'
+                        )
+                ),
+                filter((event) => event.key === 'Escape'),
+                tap((event) => {
+                    this.onOverlayEscapeKeyDown.emit(event);
+                }),
+                filter(() => !this.popoverRoot.firstDefaultOpen()),
+                tap(() => {
+                    this.popoverRoot.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private connectOutsideClick() {
+        this.connectedOverlay.overlayOutsideClick
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayOutsideClickDisabled() &&
+                        !this.popoverRoot.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.popoverRoot,
+                            'cdkOverlayOutsideClick'
+                        )
+                ),
+                /**
+                 * Handle the situation when an anchor is added and the anchor becomes the origin of the overlay
+                 * hence  the trigger will be considered the outside element
+                 */
+                filter((event) => {
+                    return (
+                        !this.popoverRoot.popoverAnchorDirective() ||
+                        !this.popoverRoot
+                            .popoverTriggerDirective()
+                            .elementRef.nativeElement.contains(event.target as Element)
+                    );
+                }),
+                tap((event) => {
+                    this.onOverlayOutsideClick.emit(event);
+                }),
+                filter(() => !this.popoverRoot.firstDefaultOpen()),
+                tap(() => {
+                    this.popoverRoot.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onAttach() {
+        this.connectedOverlay.attach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onOpen.emit();` is being delegated to the root directive due to the opening animation
+                     */
+                    this.popoverRoot.attachDetachEvent.set(RdxPopoverAttachDetachEvent.ATTACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onDetach() {
+        this.connectedOverlay.detach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onClosed.emit();` is being delegated to the root directive due to the closing animation
+                     */
+                    this.popoverRoot.attachDetachEvent.set(RdxPopoverAttachDetachEvent.DETACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private setScrollStrategy() {
+        const prevScrollStrategy = this.connectedOverlay.scrollStrategy;
+        this.connectedOverlay.scrollStrategy = this.overlay.scrollStrategies.reposition();
+        this.fireOverlayNgOnChanges('scrollStrategy', this.connectedOverlay.scrollStrategy, prevScrollStrategy);
+    }
+
+    /** @ignore */
+    private setHasBackdrop() {
+        const prevHasBackdrop = this.connectedOverlay.hasBackdrop;
+        this.connectedOverlay.hasBackdrop = false;
+        this.fireOverlayNgOnChanges('hasBackdrop', this.connectedOverlay.hasBackdrop, prevHasBackdrop);
+    }
+
+    /** @ignore */
+    private setDisableClose() {
+        const prevDisableClose = this.connectedOverlay.disableClose;
+        this.connectedOverlay.disableClose = true;
+        this.fireOverlayNgOnChanges('disableClose', this.connectedOverlay.disableClose, prevDisableClose);
+    }
+
+    /** @ignore */
+    private setOrigin(origin: CdkConnectedOverlay['origin']) {
+        const prevOrigin = this.connectedOverlay.origin;
+        this.connectedOverlay.origin = origin;
+        this.fireOverlayNgOnChanges('origin', this.connectedOverlay.origin, prevOrigin);
+    }
+
+    /** @ignore */
+    private setPositions(positions: CdkConnectedOverlay['positions']) {
+        const prevPositions = this.connectedOverlay.positions;
+        this.connectedOverlay.positions = positions;
+        this.fireOverlayNgOnChanges('positions', this.connectedOverlay.positions, prevPositions);
+        this.connectedOverlay.overlayRef?.updatePosition();
+    }
+
+    /** @ignore */
+    private computePositions() {
+        const arrowHeight = this.popoverRoot.popoverArrowDirective()?.height() ?? 0;
+        const offsets: RdxPositionSideAndAlignOffsets = {
+            sideOffset:
+                arrowHeight + (isNaN(this.sideOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.side : this.sideOffset()),
+            alignOffset: isNaN(this.alignOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.align : this.alignOffset()
+        };
+        const basePosition = getContentPosition({
+            side: this.side(),
+            align: this.align(),
+            sideOffset: offsets.sideOffset,
+            alignOffset: offsets.alignOffset
+        });
+        const positions = [basePosition];
+        if (!this.alternatePositionsDisabled()) {
+            /**
+             * Alternate positions for better user experience along the X/Y axis (e.g. vertical/horizontal scrolling)
+             */
+            const allPossibleConnectedPositions = getAllPossibleConnectedPositions();
+            allPossibleConnectedPositions.forEach((_, key) => {
+                const sideAndAlignArray = key.split('|');
+                if (
+                    (sideAndAlignArray[0] as RdxPositionSide) !== this.side() ||
+                    (sideAndAlignArray[1] as RdxPositionAlign) !== this.align()
+                ) {
+                    positions.push(
+                        getContentPosition({
+                            side: sideAndAlignArray[0] as RdxPositionSide,
+                            align: sideAndAlignArray[1] as RdxPositionAlign,
+                            sideOffset: offsets.sideOffset,
+                            alignOffset: offsets.alignOffset
+                        })
+                    );
+                }
+            });
+        }
+        return positions;
+    }
+
+    private onOriginChangeEffect() {
+        effect(() => {
+            const origin = (this.popoverRoot.popoverAnchorDirective() ?? this.popoverRoot.popoverTriggerDirective())
+                .overlayOrigin;
+            untracked(() => {
+                this.setOrigin(origin);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onPositionChangeEffect() {
+        effect(() => {
+            const positions = this.positions();
+            this.alternatePositionsDisabled();
+            untracked(() => {
+                this.setPositions(positions);
+            });
+        });
+    }
+
+    /** @ignore */
+    private fireOverlayNgOnChanges<K extends keyof CdkConnectedOverlay, V extends CdkConnectedOverlay[K]>(
+        input: K,
+        currentValue: V,
+        previousValue: V,
+        firstChange = false
+    ) {
+        this.connectedOverlay.ngOnChanges({
+            [input]: new SimpleChange(previousValue, currentValue, firstChange)
+        });
+    }
+}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-root.directive.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    afterNextRender,
+    booleanAttribute,
+    computed,
+    contentChild,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    signal,
+    untracked,
+    ViewContainerRef
+} from '@angular/core';
+import { RdxPopoverAnchorDirective } from './popover-anchor.directive';
+import { RdxPopoverAnchorToken } from './popover-anchor.token';
+import { RdxPopoverArrowToken } from './popover-arrow.token';
+import { RdxPopoverCloseToken } from './popover-close.token';
+import { RdxPopoverContentAttributesToken } from './popover-content-attributes.token';
+import { RdxPopoverContentDirective } from './popover-content.directive';
+import { RdxPopoverTriggerDirective } from './popover-trigger.directive';
+import { RdxPopoverAnimationStatus, RdxPopoverAttachDetachEvent, RdxPopoverState } from './popover.types';
+import { injectRdxCdkEventService } from './utils/cdk-event.service';
+
+let nextId = 0;
+
+@Directive({
+    selector: '[rdxPopoverRoot]',
+    exportAs: 'rdxPopoverRoot'
+})
+export class RdxPopoverRootDirective {
+    /** @ignore */
+    readonly uniqueId = signal(++nextId);
+    /** @ignore */
+    readonly name = computed(() => `rdx-popover-root-${this.uniqueId()}`);
+
+    /**
+     * @description The anchor directive that comes form outside the popover root
+     * @default undefined
+     */
+    readonly anchor = input<RdxPopoverAnchorDirective | undefined>(void 0);
+    /**
+     * @description The open state of the popover when it is initially rendered. Use when you do not need to control its open state.
+     * @default false
+     */
+    readonly defaultOpen = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description The controlled state of the popover. `open` input take precedence of `defaultOpen` input.
+     * @default undefined
+     */
+    readonly open = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * @description Whether to control the state of the popover from external. Use in conjunction with `open` input.
+     * @default undefined
+     */
+    readonly externalControl = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening/closing animations.
+     * @default false
+     */
+    readonly cssAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssOpeningAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS closing animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssClosingAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly cssAnimationStatus = signal<RdxPopoverAnimationStatus | null>(null);
+
+    /** @ignore */
+    readonly popoverContentDirective = contentChild.required(RdxPopoverContentDirective);
+    /** @ignore */
+    readonly popoverTriggerDirective = contentChild.required(RdxPopoverTriggerDirective);
+    /** @ignore */
+    readonly popoverArrowDirective = contentChild(RdxPopoverArrowToken);
+    /** @ignore */
+    readonly popoverCloseDirective = contentChild(RdxPopoverCloseToken);
+    /** @ignore */
+    readonly popoverContentAttributesComponent = contentChild(RdxPopoverContentAttributesToken);
+    /** @ignore */
+    private readonly internalPopoverAnchorDirective = contentChild(RdxPopoverAnchorToken);
+
+    /** @ignore */
+    readonly viewContainerRef = inject(ViewContainerRef);
+    /** @ignore */
+    readonly rdxCdkEventService = injectRdxCdkEventService();
+    /** @ignore */
+    readonly destroyRef = inject(DestroyRef);
+
+    /** @ignore */
+    readonly state = signal(RdxPopoverState.CLOSED);
+
+    /** @ignore */
+    readonly attachDetachEvent = signal(RdxPopoverAttachDetachEvent.DETACH);
+
+    /** @ignore */
+    private readonly isFirstDefaultOpen = signal(false);
+
+    /** @ignore */
+    readonly popoverAnchorDirective = computed(() => this.internalPopoverAnchorDirective() ?? this.anchor());
+
+    constructor() {
+        this.rdxCdkEventService?.registerPrimitive(this);
+        this.destroyRef.onDestroy(() => this.rdxCdkEventService?.deregisterPrimitive(this));
+        this.onStateChangeEffect();
+        this.onCssAnimationStatusChangeChangeEffect();
+        this.onOpenChangeEffect();
+        this.onIsFirstDefaultOpenChangeEffect();
+        this.onAnchorChangeEffect();
+        this.emitOpenOrClosedEventEffect();
+        afterNextRender({
+            write: () => {
+                if (this.defaultOpen() && !this.open()) {
+                    this.isFirstDefaultOpen.set(true);
+                }
+            }
+        });
+    }
+
+    /** @ignore */
+    getAnimationParamsSnapshot() {
+        return {
+            cssAnimation: this.cssAnimation(),
+            cssOpeningAnimation: this.cssOpeningAnimation(),
+            cssClosingAnimation: this.cssClosingAnimation(),
+            cssAnimationStatus: this.cssAnimationStatus(),
+            attachDetachEvent: this.attachDetachEvent(),
+            state: this.state(),
+            canEmitOnOpenOrOnClosed: this.canEmitOnOpenOrOnClosed()
+        };
+    }
+
+    /** @ignore */
+    controlledExternally() {
+        return this.externalControl;
+    }
+
+    /** @ignore */
+    firstDefaultOpen() {
+        return this.isFirstDefaultOpen();
+    }
+
+    /** @ignore */
+    handleOpen(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.setState(RdxPopoverState.OPEN);
+    }
+
+    /** @ignore */
+    handleClose(): void {
+        if (this.isFirstDefaultOpen()) {
+            this.isFirstDefaultOpen.set(false);
+        }
+        if (this.externalControl()) {
+            return;
+        }
+        this.setState(RdxPopoverState.CLOSED);
+    }
+
+    /** @ignore */
+    handleToggle(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.isOpen() ? this.handleClose() : this.handleOpen();
+    }
+
+    /** @ignore */
+    isOpen(state?: RdxPopoverState) {
+        return (state ?? this.state()) === RdxPopoverState.OPEN;
+    }
+
+    /** @ignore */
+    private setState(state = RdxPopoverState.CLOSED): void {
+        if (state === this.state()) {
+            return;
+        }
+        this.state.set(state);
+    }
+
+    /** @ignore */
+    private openContent(): void {
+        this.popoverContentDirective().open();
+        if (!this.cssAnimation() || !this.cssOpeningAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private closeContent(): void {
+        this.popoverContentDirective().close();
+        if (!this.cssAnimation() || !this.cssClosingAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private emitOnOpen(): void {
+        this.popoverContentDirective().onOpen.emit();
+    }
+
+    /** @ignore */
+    private emitOnClosed(): void {
+        this.popoverContentDirective().onClosed.emit();
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithoutAnimations(state: RdxPopoverState) {
+        return (
+            !this.popoverContentAttributesComponent() ||
+            !this.cssAnimation() ||
+            (this.cssAnimation() && !this.cssClosingAnimation() && state === RdxPopoverState.CLOSED) ||
+            (this.cssAnimation() && !this.cssOpeningAnimation() && state === RdxPopoverState.OPEN) ||
+            // !this.cssAnimationStatus() ||
+            (this.cssOpeningAnimation() &&
+                state === RdxPopoverState.OPEN &&
+                [RdxPopoverAnimationStatus.OPEN_STARTED].includes(this.cssAnimationStatus()!)) ||
+            (this.cssClosingAnimation() &&
+                state === RdxPopoverState.CLOSED &&
+                [RdxPopoverAnimationStatus.CLOSED_STARTED].includes(this.cssAnimationStatus()!))
+        );
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithAnimations(cssAnimationStatus: RdxPopoverAnimationStatus | null) {
+        return (
+            this.popoverContentAttributesComponent() &&
+            this.cssAnimation() &&
+            cssAnimationStatus &&
+            ((this.cssOpeningAnimation() &&
+                this.state() === RdxPopoverState.OPEN &&
+                [RdxPopoverAnimationStatus.OPEN_ENDED].includes(cssAnimationStatus)) ||
+                (this.cssClosingAnimation() &&
+                    this.state() === RdxPopoverState.CLOSED &&
+                    [RdxPopoverAnimationStatus.CLOSED_ENDED].includes(cssAnimationStatus)))
+        );
+    }
+
+    /** @ignore */
+    private openOrClose(state: RdxPopoverState) {
+        const isOpen = this.isOpen(state);
+        isOpen ? this.openContent() : this.closeContent();
+    }
+
+    /** @ignore */
+    private emitOnOpenOrOnClosed(state: RdxPopoverState) {
+        this.isOpen(state)
+            ? this.attachDetachEvent() === RdxPopoverAttachDetachEvent.ATTACH && this.emitOnOpen()
+            : this.attachDetachEvent() === RdxPopoverAttachDetachEvent.DETACH && this.emitOnClosed();
+    }
+
+    /** @ignore */
+    private canEmitOnOpenOrOnClosed() {
+        return (
+            !this.cssAnimation() ||
+            (!this.cssOpeningAnimation() && this.state() === RdxPopoverState.OPEN) ||
+            (this.cssOpeningAnimation() &&
+                this.state() === RdxPopoverState.OPEN &&
+                this.cssAnimationStatus() === RdxPopoverAnimationStatus.OPEN_ENDED) ||
+            (!this.cssClosingAnimation() && this.state() === RdxPopoverState.CLOSED) ||
+            (this.cssClosingAnimation() &&
+                this.state() === RdxPopoverState.CLOSED &&
+                this.cssAnimationStatus() === RdxPopoverAnimationStatus.CLOSED_ENDED)
+        );
+    }
+
+    /** @ignore */
+    private onStateChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const state = this.state();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithoutAnimations(state)) {
+                    return;
+                }
+                this.openOrClose(state);
+            });
+        }, {});
+    }
+
+    /** @ignore */
+    private onCssAnimationStatusChangeChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const cssAnimationStatus = this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithAnimations(cssAnimationStatus)) {
+                    return;
+                }
+                this.openOrClose(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private emitOpenOrClosedEventEffect() {
+        let isFirst = true;
+        effect(() => {
+            this.attachDetachEvent();
+            this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                const canEmitOpenClose = untracked(() => this.canEmitOnOpenOrOnClosed());
+                if (!canEmitOpenClose) {
+                    return;
+                }
+                this.emitOnOpenOrOnClosed(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onOpenChangeEffect() {
+        effect(() => {
+            const open = this.open();
+            untracked(() => {
+                this.setState(open ? RdxPopoverState.OPEN : RdxPopoverState.CLOSED);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onIsFirstDefaultOpenChangeEffect() {
+        const effectRef = effect(() => {
+            const defaultOpen = this.defaultOpen();
+            untracked(() => {
+                if (!defaultOpen || this.open()) {
+                    effectRef.destroy();
+                    return;
+                }
+                this.handleOpen();
+            });
+        });
+    }
+
+    /** @ignore */
+    private onAnchorChangeEffect = () => {
+        effect(() => {
+            const anchor = this.anchor();
+            untracked(() => {
+                if (anchor) {
+                    anchor.setPopoverRoot(this);
+                }
+            });
+        });
+    };
+}
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-root.inject.ts</source>
+<document_content>
+import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
+import { RdxPopoverRootDirective } from './popover-root.directive';
+
+export function injectPopoverRoot(optional?: false): RdxPopoverRootDirective;
+export function injectPopoverRoot(optional: true): RdxPopoverRootDirective | null;
+export function injectPopoverRoot(optional = false): RdxPopoverRootDirective | null {
+    isDevMode() && assertInInjectionContext(injectPopoverRoot);
+    return inject(RdxPopoverRootDirective, { optional });
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover-trigger.directive.ts</source>
+<document_content>
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, inject } from '@angular/core';
+import { injectPopoverRoot } from './popover-root.inject';
+
+@Directive({
+    selector: '[rdxPopoverTrigger]',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        type: 'button',
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '[attr.aria-expanded]': 'popoverRoot.isOpen()',
+        '[attr.aria-controls]': 'popoverRoot.popoverContentDirective().name()',
+        '[attr.data-state]': 'popoverRoot.state()',
+        '(click)': 'click()'
+    }
+})
+export class RdxPopoverTriggerDirective {
+    /** @ignore */
+    protected readonly popoverRoot = injectPopoverRoot();
+    /** @ignore */
+    readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-popover-trigger-${this.popoverRoot.uniqueId()}`);
+
+    /** @ignore */
+    protected click(): void {
+        this.popoverRoot.handleToggle();
+    }
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/popover.types.ts</source>
+<document_content>
+export enum RdxPopoverState {
+    OPEN = 'open',
+    CLOSED = 'closed'
+}
+
+export enum RdxPopoverAttachDetachEvent {
+    ATTACH = 'attach',
+    DETACH = 'detach'
+}
+
+export enum RdxPopoverAnimationStatus {
+    OPEN_STARTED = 'open_started',
+    OPEN_ENDED = 'open_ended',
+    CLOSED_STARTED = 'closed_started',
+    CLOSED_ENDED = 'closed_ended'
+}
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/utils/cdk-event.service.ts</source>
+<document_content>
+import {
+    DestroyRef,
+    EnvironmentProviders,
+    inject,
+    Injectable,
+    InjectionToken,
+    isDevMode,
+    makeEnvironmentProviders,
+    NgZone,
+    Provider,
+    Renderer2,
+    VERSION
+} from '@angular/core';
+import { injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { RdxCdkEventServiceWindowKey } from './constants';
+import { EventType, EventTypeAsPrimitiveConfigKey, PrimitiveConfig, PrimitiveConfigs } from './types';
+
+function eventTypeAsPrimitiveConfigKey(eventType: EventType): EventTypeAsPrimitiveConfigKey {
+    return `prevent${eventType[0].toUpperCase()}${eventType.slice(1)}` as EventTypeAsPrimitiveConfigKey;
+}
+
+@Injectable()
+class RdxCdkEventService {
+    document = injectDocument();
+    destroyRef = inject(DestroyRef);
+    ngZone = inject(NgZone);
+    renderer2 = inject(Renderer2);
+    window = injectWindow();
+
+    primitiveConfigs?: PrimitiveConfigs;
+
+    onDestroyCallbacks: Set<() => void> = new Set([() => deleteRdxCdkEventServiceWindowKey(this.window)]);
+
+    #clickDomRootEventCallbacks: Set<(event: MouseEvent) => void> = new Set();
+
+    constructor() {
+        this.#listenToClickDomRootEvent();
+        this.#registerOnDestroyCallbacks();
+    }
+
+    registerPrimitive<T extends object>(primitiveInstance: T) {
+        if (!this.primitiveConfigs) {
+            this.primitiveConfigs = new Map();
+        }
+        if (!this.primitiveConfigs.has(primitiveInstance)) {
+            this.primitiveConfigs.set(primitiveInstance, {});
+        }
+    }
+
+    deregisterPrimitive<T extends object>(primitiveInstance: T) {
+        if (this.primitiveConfigs?.has(primitiveInstance)) {
+            this.primitiveConfigs.delete(primitiveInstance);
+        }
+    }
+
+    preventPrimitiveFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+    }
+
+    allowPrimitiveForCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+    }
+
+    preventPrimitiveFromCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+        });
+    }
+
+    allowPrimitiveForCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+        });
+    }
+
+    setPreventPrimitiveFromCdkMixEvents<T extends object>(primitiveInstance: T, eventTypes: PrimitiveConfig) {
+        Object.keys(eventTypes).forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(
+                primitiveInstance,
+                eventType as EventType,
+                eventTypes[eventTypeAsPrimitiveConfigKey(eventType as EventType)]
+            );
+        });
+    }
+
+    primitivePreventedFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        return this.primitiveConfigs?.get(primitiveInstance)?.[eventTypeAsPrimitiveConfigKey(eventType)];
+    }
+
+    addClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        this.#clickDomRootEventCallbacks.add(callback);
+    }
+
+    removeClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        return this.#clickDomRootEventCallbacks.delete(callback);
+    }
+
+    #setPreventPrimitiveFromCdkEvent<
+        T extends object,
+        R extends EventType,
+        K extends PrimitiveConfig[EventTypeAsPrimitiveConfigKey<R>]
+    >(primitiveInstance: T, eventType: R, value: K) {
+        if (!this.primitiveConfigs?.has(primitiveInstance)) {
+            isDevMode() &&
+                console.error(
+                    '[RdxCdkEventService.preventPrimitiveFromCdkEvent] RDX Primitive instance has not been registered!',
+                    primitiveInstance
+                );
+            return;
+        }
+        switch (eventType) {
+            case 'cdkOverlayOutsideClick':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayOutsideClick = value;
+                break;
+            case 'cdkOverlayEscapeKeyDown':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayEscapeKeyDown = value;
+                break;
+        }
+    }
+
+    #registerOnDestroyCallbacks() {
+        this.destroyRef.onDestroy(() => {
+            this.onDestroyCallbacks.forEach((onDestroyCallback) => onDestroyCallback());
+            this.onDestroyCallbacks.clear();
+        });
+    }
+
+    #listenToClickDomRootEvent() {
+        const target = this.document;
+        const eventName = 'click';
+        const options: boolean | AddEventListenerOptions | undefined = { capture: true };
+        const callback = (event: MouseEvent) => {
+            this.#clickDomRootEventCallbacks.forEach((clickDomRootEventCallback) => clickDomRootEventCallback(event));
+        };
+
+        const major = parseInt(VERSION.major);
+        const minor = parseInt(VERSION.minor);
+
+        let destroyClickDomRootEventListener!: () => void;
+        /**
+         * @see src/cdk/platform/features/backwards-compatibility.ts in @angular/cdk
+         */
+        if (major > 19 || (major === 19 && minor > 0) || (major === 0 && minor === 0)) {
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                const destroyClickDomRootEventListenerInternal = this.renderer2.listen(
+                    target,
+                    eventName,
+                    callback,
+
+                    options
+                );
+                return () => {
+                    destroyClickDomRootEventListenerInternal();
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        } else {
+            /**
+             * This part can get removed when v19.1 or higher is on the board
+             */
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                target.addEventListener(eventName, callback, options);
+                return () => {
+                    this.ngZone.runOutsideAngular(() => target.removeEventListener(eventName, callback, options));
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        }
+        this.onDestroyCallbacks.add(destroyClickDomRootEventListener);
+    }
+}
+
+const RdxCdkEventServiceToken = new InjectionToken<RdxCdkEventService>('RdxCdkEventServiceToken');
+
+const existsErrorMessage = 'RdxCdkEventService should be provided only once!';
+
+const deleteRdxCdkEventServiceWindowKey = (window: Window & typeof globalThis) => {
+    delete (window as any)[RdxCdkEventServiceWindowKey];
+};
+
+const getProvider: (throwWhenExists?: boolean) => Provider = (throwWhenExists = true) => ({
+    provide: RdxCdkEventServiceToken,
+    useFactory: () => {
+        isDevMode() && console.log('providing RdxCdkEventService...');
+        const window = injectWindow();
+        if ((window as any)[RdxCdkEventServiceWindowKey]) {
+            if (throwWhenExists) {
+                throw Error(existsErrorMessage);
+            } else {
+                isDevMode() && console.warn(existsErrorMessage);
+            }
+        }
+        (window as any)[RdxCdkEventServiceWindowKey] ??= new RdxCdkEventService();
+        return (window as any)[RdxCdkEventServiceWindowKey];
+    }
+});
+
+export const provideRdxCdkEventServiceInRoot: () => EnvironmentProviders = () =>
+    makeEnvironmentProviders([getProvider()]);
+export const provideRdxCdkEventService: () => Provider = () => getProvider(false);
+
+export const injectRdxCdkEventService = () => inject(RdxCdkEventServiceToken, { optional: true });
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/utils/constants.ts</source>
+<document_content>
+export const RdxCdkEventServiceWindowKey = Symbol('__RdxCdkEventService__');
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/popover/src/utils/types.ts</source>
+<document_content>
+export type EventType = 'cdkOverlayOutsideClick' | 'cdkOverlayEscapeKeyDown';
+export type EventTypeCapitalized<R extends EventType = EventType> = Capitalize<R>;
+export type EventTypeAsPrimitiveConfigKey<R extends EventType = EventType> = `prevent${EventTypeCapitalized<R>}`;
+export type PrimitiveConfig = {
+    [value in EventTypeAsPrimitiveConfigKey]?: boolean;
+};
+export type PrimitiveConfigs = Map<object, PrimitiveConfig>;
+
+</document_content>
+</document>
+</documents>

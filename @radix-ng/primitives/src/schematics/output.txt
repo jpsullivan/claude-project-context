@@ -1,0 +1,167 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/schematics/collection.json</source>
+<document_content>
+{
+    "$schema": "../node_modules/@angular-devkit/schematics/collection-schema.json",
+    "schematics": {
+        "ng-add": {
+            "description": "Add RadixNG to the application.",
+            "factory": "./ng-add/index#ngAdd",
+            "aliases": ["install"]
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/schematics/ng-add/index.ts</source>
+<document_content>
+import { Rule, SchematicContext, SchematicsException, Tree } from '@angular-devkit/schematics';
+import { NodePackageInstallTask } from '@angular-devkit/schematics/tasks';
+import { addPackageJsonDependency, NodeDependency, NodeDependencyType } from '@schematics/angular/utility/dependencies';
+import * as pkgJson from '../../package.json';
+import { getPackageVersionFromPackageJson, PackageJson } from './package-config';
+
+/**
+ * This is executed when `ng add @radix-ng/primitives` is run.
+ * It installs all dependencies in the 'package.json'.
+ */
+export function ngAdd(): Rule {
+    return (tree: Tree, context: SchematicContext) => {
+        const pkg = pkgJson as unknown as PackageJson;
+
+        context.logger.info(``);
+        context.logger.info(`Installing ${pkg.name} dependencies...`);
+
+        const ngCoreVersionTag = getPackageVersionFromPackageJson(tree, '@angular/core');
+        context.logger.info(`@angular/core version ${ngCoreVersionTag}`);
+
+        if (!ngCoreVersionTag) {
+            throw new SchematicsException('@angular/core version not found');
+        }
+
+        const projectDeps: NodeDependency[] = [
+            {
+                name: '@angular/animations',
+                type: NodeDependencyType.Default,
+                version: ngCoreVersionTag,
+                overwrite: false
+            },
+            { name: '@angular/common', type: NodeDependencyType.Default, version: ngCoreVersionTag, overwrite: false },
+            { name: '@angular/core', type: NodeDependencyType.Default, version: ngCoreVersionTag, overwrite: false }
+        ];
+
+        projectDeps.forEach((dep) => {
+            addPackageJsonDependency(tree, dep);
+            context.logger.info(`Added dependency: ${dep.name}@${dep.version}`);
+        });
+
+        const libraryDeps: NodeDependency[] = [
+            {
+                name: '@angular/cdk',
+                type: NodeDependencyType.Default,
+                version: pkg.peerDependencies['@angular/cdk'],
+                overwrite: false
+            }
+        ];
+
+        libraryDeps.forEach((dep) => {
+            addPackageJsonDependency(tree, dep);
+            context.logger.info(`Added dependency: ${dep.name}@${dep.version}`);
+        });
+
+        const library: NodeDependency = {
+            name: pkg.name,
+            type: NodeDependencyType.Default,
+            version: `~${pkg.version}`,
+            overwrite: true
+        };
+
+        addPackageJsonDependency(tree, library);
+        context.logger.info(`Installing ${library.name}@${library.version}`);
+
+        context.addTask(new NodePackageInstallTask());
+
+        return tree;
+    };
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/schematics/ng-add/package-config.ts</source>
+<document_content>
+/**
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+import { Tree } from '@angular-devkit/schematics';
+
+export interface PackageJson {
+    dependencies: Record<string, string>;
+    name: string;
+    peerDependencies: Record<string, string>;
+    version: string;
+}
+
+/**
+ * Sorts the keys of the given object.
+ * @returns A new object instance with sorted keys
+ */
+function sortObjectByKeys(obj: Record<string, string>) {
+    return Object.keys(obj)
+        .sort()
+        .reduce(
+            (result, key) => {
+                result[key] = obj[key];
+                return result;
+            },
+            {} as Record<string, string>
+        );
+}
+
+/** Adds a package to the package.json in the given host tree. */
+export function addPackageToPackageJson(host: Tree, pkg: string, version: string): Tree {
+    if (host.exists('package.json')) {
+        const sourceText = host.read('package.json')!.toString('utf-8');
+        const json = JSON.parse(sourceText) as PackageJson;
+
+        if (!json.dependencies) {
+            json.dependencies = {};
+        }
+
+        if (!json.dependencies[pkg]) {
+            json.dependencies[pkg] = version;
+            json.dependencies = sortObjectByKeys(json.dependencies);
+        }
+
+        host.overwrite('package.json', JSON.stringify(json, null, 2));
+    }
+
+    return host;
+}
+
+/** Gets the version of the specified package by looking at the package.json in the given tree. */
+export function getPackageVersionFromPackageJson(tree: Tree, name: string): string | null {
+    if (!tree.exists('package.json')) {
+        return null;
+    }
+
+    const packageJson = JSON.parse(tree.read('package.json')!.toString('utf8')) as PackageJson;
+
+    if (packageJson.dependencies && packageJson.dependencies[name]) {
+        return packageJson.dependencies[name];
+    }
+
+    return null;
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,32 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/icons/X.tsx</source>
+<document_content>
+import { X } from "lucide-react-native";
+import { iconWithClassName } from "./iconWithClassName";
+iconWithClassName(X);
+export { X };
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/icons/iconWithClassName.ts</source>
+<document_content>
+import type { LucideIcon } from "lucide-react-native";
+import { cssInterop } from "nativewind";
+
+export function iconWithClassName(icon: LucideIcon) {
+	cssInterop(icon, {
+		className: {
+			target: "style",
+			nativeStyleToProp: {
+				color: true,
+				opacity: true,
+			},
+		},
+	});
+}
+
+</document_content>
+</document>
+</documents>

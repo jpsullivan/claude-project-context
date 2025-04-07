@@ -1,0 +1,947 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/generate.test.ts
+```typescript
+import { describe, expect, it } from "vitest";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { generatePrismaSchema } from "../src/generators/prisma";
+import { twoFactor, username } from "better-auth/plugins";
+import { generateDrizzleSchema } from "../src/generators/drizzle";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { generateMigrations } from "../src/generators/kysely";
+import Database from "better-sqlite3";
+import type { BetterAuthOptions } from "better-auth";
+
+describe("generate", async () => {
+	it("should generate prisma schema", async () => {
+		const schema = await generatePrismaSchema({
+			file: "test.prisma",
+			adapter: prismaAdapter(
+				{},
+				{
+					provider: "postgresql",
+				},
+			)({} as BetterAuthOptions),
+			options: {
+				database: prismaAdapter(
+					{},
+					{
+						provider: "postgresql",
+					},
+				),
+				plugins: [twoFactor(), username()],
+			},
+		});
+		expect(schema.code).toMatchFileSnapshot("./__snapshots__/schema.prisma");
+	});
+
+	it("should generate prisma schema for mongodb", async () => {
+		const schema = await generatePrismaSchema({
+			file: "test.prisma",
+			adapter: prismaAdapter(
+				{},
+				{
+					provider: "mongodb",
+				},
+			)({} as BetterAuthOptions),
+			options: {
+				database: prismaAdapter(
+					{},
+					{
+						provider: "mongodb",
+					},
+				),
+				plugins: [twoFactor(), username()],
+			},
+		});
+		expect(schema.code).toMatchFileSnapshot(
+			"./__snapshots__/schema-mongodb.prisma",
+		);
+	});
+
+	it("should generate prisma schema for mysql", async () => {
+		const schema = await generatePrismaSchema({
+			file: "test.prisma",
+			adapter: prismaAdapter(
+				{},
+				{
+					provider: "mysql",
+				},
+			)({} as BetterAuthOptions),
+			options: {
+				database: prismaAdapter(
+					{},
+					{
+						provider: "mongodb",
+					},
+				),
+				plugins: [twoFactor(), username()],
+			},
+		});
+		expect(schema.code).toMatchFileSnapshot(
+			"./__snapshots__/schema-mysql.prisma",
+		);
+	});
+
+	it("should generate drizzle schema", async () => {
+		const schema = await generateDrizzleSchema({
+			file: "test.drizzle",
+			adapter: drizzleAdapter(
+				{},
+				{
+					provider: "pg",
+					schema: {},
+				},
+			)({} as BetterAuthOptions),
+			options: {
+				database: drizzleAdapter(
+					{},
+					{
+						provider: "pg",
+						schema: {},
+					},
+				),
+				plugins: [twoFactor(), username()],
+			},
+		});
+		expect(schema.code).toMatchFileSnapshot("./__snapshots__/auth-schema.txt");
+	});
+
+	it("should generate kysely schema", async () => {
+		const schema = await generateMigrations({
+			file: "test.sql",
+			options: {
+				database: new Database(":memory:"),
+			},
+			adapter: {} as any,
+		});
+		expect(schema.code).toMatchFileSnapshot("./__snapshots__/migrations.sql");
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/get-config.test.ts
+```typescript
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { test } from "vitest";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { getConfig } from "../src/utils/get-config";
+
+interface TmpDirFixture {
+	tmpdir: string;
+}
+
+async function createTempDir() {
+	const tmpdir = path.join(process.cwd(), "test", "getConfig_test-");
+	return await fs.mkdtemp(tmpdir);
+}
+
+export const tmpdirTest = test.extend<TmpDirFixture>({
+	tmpdir: async ({}, use) => {
+		const directory = await createTempDir();
+
+		await use(directory);
+
+		await fs.rm(directory, { recursive: true });
+	},
+});
+
+let tmpDir = ".";
+
+describe("getConfig", async () => {
+	beforeEach(async () => {
+		const tmp = path.join(process.cwd(), "getConfig_test-");
+		tmpDir = await fs.mkdtemp(tmp);
+	});
+
+	afterEach(async () => {
+		await fs.rm(tmpDir, { recursive: true });
+	});
+
+	it("should resolve resolver type alias", async () => {
+		const authPath = path.join(tmpDir, "server", "auth");
+		const dbPath = path.join(tmpDir, "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": ".",
+                "paths": {
+                  "@server/*": ["./server/*"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "@server/db/db";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "server/auth/auth.ts",
+		});
+
+		expect(config).not.toBe(null);
+	});
+
+	it("should resolve direct alias", async () => {
+		const authPath = path.join(tmpDir, "server", "auth");
+		const dbPath = path.join(tmpDir, "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": ".",
+                "paths": {
+                  "prismaDbClient": ["./server/db/db"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "prismaDbClient";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "server/auth/auth.ts",
+		});
+
+		expect(config).not.toBe(null);
+	});
+
+	it("should resolve resolver type alias with relative path", async () => {
+		const authPath = path.join(tmpDir, "test", "server", "auth");
+		const dbPath = path.join(tmpDir, "test", "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": "./test",
+                "paths": {
+                  "@server/*": ["./server/*"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "@server/db/db";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "test/server/auth/auth.ts",
+		});
+
+		expect(config).not.toBe(null);
+	});
+
+	it("should resolve direct alias with relative path", async () => {
+		const authPath = path.join(tmpDir, "test", "server", "auth");
+		const dbPath = path.join(tmpDir, "test", "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": "./test",
+                "paths": {
+                  "prismaDbClient": ["./server/db/db"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "prismaDbClient";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "test/server/auth/auth.ts",
+		});
+
+		expect(config).not.toBe(null);
+	});
+
+	it("should resolve with relative import", async () => {
+		const authPath = path.join(tmpDir, "test", "server", "auth");
+		const dbPath = path.join(tmpDir, "test", "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": "./test",
+                "paths": {
+                  "prismaDbClient": ["./server/db/db"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "../db/db";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "test/server/auth/auth.ts",
+		});
+
+		expect(config).not.toBe(null);
+	});
+
+	it("should error with invalid alias", async () => {
+		const authPath = path.join(tmpDir, "server", "auth");
+		const dbPath = path.join(tmpDir, "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy tsconfig.json
+		await fs.writeFile(
+			path.join(tmpDir, "tsconfig.json"),
+			`{
+              "compilerOptions": {
+                /* Path Aliases */
+                "baseUrl": ".",
+                "paths": {
+                  "@server/*": ["./PathIsInvalid/*"]
+                }
+              }
+					}`,
+		);
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.ts"),
+			`import {betterAuth} from "better-auth";
+			 import {prismaAdapter} from "better-auth/adapters/prisma";			
+			 import {db} from "@server/db/db";
+
+			 export const auth = betterAuth({
+					database: prismaAdapter(db, {
+							provider: 'sqlite'
+					}),
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+
+		//create dummy db.ts
+		await fs.writeFile(
+			path.join(dbPath, "db.ts"),
+			`class PrismaClient {
+				constructor() {}
+			}
+			
+			export const db = new PrismaClient()`,
+		);
+
+		await expect(() =>
+			getConfig({ cwd: tmpDir, configPath: "server/auth/auth.ts" }),
+		).rejects.toThrowError();
+	});
+
+	it("should resolve js config", async () => {
+		const authPath = path.join(tmpDir, "server", "auth");
+		const dbPath = path.join(tmpDir, "server", "db");
+		await fs.mkdir(authPath, { recursive: true });
+		await fs.mkdir(dbPath, { recursive: true });
+
+		//create dummy auth.ts
+		await fs.writeFile(
+			path.join(authPath, "auth.js"),
+			`import  { betterAuth } from "better-auth";
+
+			 export const auth = betterAuth({
+					emailAndPassword: {
+						enabled: true,
+					}
+			 })`,
+		);
+		const config = await getConfig({
+			cwd: tmpDir,
+			configPath: "server/auth/auth.js",
+		});
+		expect(config).toMatchObject({
+			emailAndPassword: { enabled: true },
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/migrate.test.ts
+```typescript
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { migrateAction } from "../src/commands/migrate";
+import * as config from "../src/utils/get-config";
+import { betterAuth, type BetterAuthPlugin } from "better-auth";
+import Database from "better-sqlite3";
+
+describe("migrate base auth instance", () => {
+	const db = new Database(":memory:");
+
+	const auth = betterAuth({
+		baseURL: "http://localhost:3000",
+		database: db,
+		emailAndPassword: {
+			enabled: true,
+		},
+	});
+
+	beforeEach(() => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			return code as never;
+		});
+		vi.spyOn(config, "getConfig").mockImplementation(async () => auth.options);
+	});
+
+	afterEach(async () => {
+		vi.restoreAllMocks();
+	});
+
+	it("should migrate the database and sign-up a user", async () => {
+		await migrateAction({
+			cwd: process.cwd(),
+			config: "test/auth.ts",
+			y: true,
+		});
+		const signUpRes = await auth.api.signUpEmail({
+			body: {
+				name: "test",
+				email: "test@email.com",
+				password: "password",
+			},
+		});
+		expect(signUpRes.token).toBeDefined();
+	});
+});
+
+describe("migrate auth instance with plugins", () => {
+	const db = new Database(":memory:");
+	const testPlugin = {
+		id: "plugin",
+		schema: {
+			plugin: {
+				fields: {
+					test: {
+						type: "string",
+						fieldName: "test",
+					},
+				},
+			},
+		},
+	} satisfies BetterAuthPlugin;
+
+	const auth = betterAuth({
+		baseURL: "http://localhost:3000",
+		database: db,
+		emailAndPassword: {
+			enabled: true,
+		},
+		plugins: [testPlugin],
+	});
+
+	beforeEach(() => {
+		vi.spyOn(process, "exit").mockImplementation((code) => {
+			return code as never;
+		});
+		vi.spyOn(config, "getConfig").mockImplementation(async () => auth.options);
+	});
+
+	afterEach(async () => {
+		vi.restoreAllMocks();
+	});
+
+	it("should migrate the database and sign-up a user", async () => {
+		await migrateAction({
+			cwd: process.cwd(),
+			config: "test/auth.ts",
+			y: true,
+		});
+		const res = db
+			.prepare("INSERT INTO plugin (id, test) VALUES (?, ?)")
+			.run("1", "test");
+		expect(res.changes).toBe(1);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/__snapshots__/auth-schema.txt
+```
+import { pgTable, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+			
+export const user = pgTable("user", {
+					id: text("id").primaryKey(),
+					name: text('name').notNull(),
+ email: text('email').notNull().unique(),
+ emailVerified: boolean('email_verified').notNull(),
+ image: text('image'),
+ createdAt: timestamp('created_at').notNull(),
+ updatedAt: timestamp('updated_at').notNull(),
+ twoFactorEnabled: boolean('two_factor_enabled'),
+ username: text('username').unique(),
+ displayUsername: text('display_username')
+				});
+
+export const session = pgTable("session", {
+					id: text("id").primaryKey(),
+					expiresAt: timestamp('expires_at').notNull(),
+ token: text('token').notNull().unique(),
+ createdAt: timestamp('created_at').notNull(),
+ updatedAt: timestamp('updated_at').notNull(),
+ ipAddress: text('ip_address'),
+ userAgent: text('user_agent'),
+ userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
+				});
+
+export const account = pgTable("account", {
+					id: text("id").primaryKey(),
+					accountId: text('account_id').notNull(),
+ providerId: text('provider_id').notNull(),
+ userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' }),
+ accessToken: text('access_token'),
+ refreshToken: text('refresh_token'),
+ idToken: text('id_token'),
+ accessTokenExpiresAt: timestamp('access_token_expires_at'),
+ refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
+ scope: text('scope'),
+ password: text('password'),
+ createdAt: timestamp('created_at').notNull(),
+ updatedAt: timestamp('updated_at').notNull()
+				});
+
+export const verification = pgTable("verification", {
+					id: text("id").primaryKey(),
+					identifier: text('identifier').notNull(),
+ value: text('value').notNull(),
+ expiresAt: timestamp('expires_at').notNull(),
+ createdAt: timestamp('created_at'),
+ updatedAt: timestamp('updated_at')
+				});
+
+export const twoFactor = pgTable("two_factor", {
+					id: text("id").primaryKey(),
+					secret: text('secret').notNull(),
+ backupCodes: text('backup_codes').notNull(),
+ userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
+				});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/__snapshots__/migrations.sql
+```
+create table "user" ("id" text not null primary key, "name" text not null, "email" text not null unique, "emailVerified" integer not null, "image" text, "createdAt" date not null, "updatedAt" date not null);
+
+create table "session" ("id" text not null primary key, "expiresAt" date not null, "token" text not null unique, "createdAt" date not null, "updatedAt" date not null, "ipAddress" text, "userAgent" text, "userId" text not null references "user" ("id"));
+
+create table "account" ("id" text not null primary key, "accountId" text not null, "providerId" text not null, "userId" text not null references "user" ("id"), "accessToken" text, "refreshToken" text, "idToken" text, "accessTokenExpiresAt" date, "refreshTokenExpiresAt" date, "scope" text, "password" text, "createdAt" date not null, "updatedAt" date not null);
+
+create table "verification" ("id" text not null primary key, "identifier" text not null, "value" text not null, "expiresAt" date not null, "createdAt" date, "updatedAt" date);
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/__snapshots__/schema-mongodb.prisma
+```
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String      @id @map("_id")
+  name             String
+  email            String
+  emailVerified    Boolean
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  twoFactorEnabled Boolean?
+  username         String?
+  displayUsername  String?
+  sessions         Session[]
+  accounts         Account[]
+  twofactors       TwoFactor[]
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id @map("_id")
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @map("_id")
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id @map("_id")
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String @id @map("_id")
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twoFactor")
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/__snapshots__/schema-mysql.prisma
+```
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String      @id
+  name             String      @db.Text
+  email            String
+  emailVerified    Boolean
+  image            String?     @db.Text
+  createdAt        DateTime
+  updatedAt        DateTime
+  twoFactorEnabled Boolean?
+  username         String?
+  displayUsername  String?     @db.Text
+  sessions         Session[]
+  accounts         Account[]
+  twofactors       TwoFactor[]
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?  @db.Text
+  userAgent String?  @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String    @db.Text
+  value      String    @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String @id
+  secret      String @db.Text
+  backupCodes String @db.Text
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twoFactor")
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/test/__snapshots__/schema.prisma
+```
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String      @id
+  name             String
+  email            String
+  emailVerified    Boolean
+  image            String?
+  createdAt        DateTime
+  updatedAt        DateTime
+  twoFactorEnabled Boolean?
+  username         String?
+  displayUsername  String?
+  sessions         Session[]
+  accounts         Account[]
+  twofactors       TwoFactor[]
+
+  @@unique([email])
+  @@unique([username])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("twoFactor")
+}
+
+```

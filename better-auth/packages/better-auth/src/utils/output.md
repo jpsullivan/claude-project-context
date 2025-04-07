@@ -1,0 +1,1115 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/boolean.ts
+```typescript
+export function toBoolean(value: any): boolean {
+	return value === "true" || value === true;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/callback-url.ts
+```typescript
+import { APIError } from "better-call";
+import type { GenericEndpointContext } from "../types";
+
+/**
+ * Checks if the callbackURL is a valid URL and if it's in the trustedOrigins
+ * to avoid open redirect attacks
+ */
+export const checkCallbackURL = (
+	callbackURL: string,
+	ctx: GenericEndpointContext,
+) => {
+	const trustedOrigins = ctx.context.trustedOrigins;
+	const callbackOrigin = callbackURL ? new URL(callbackURL).origin : null;
+	if (callbackOrigin && !trustedOrigins.includes(callbackOrigin)) {
+		throw new APIError("FORBIDDEN", {
+			message: "Invalid callback URL",
+		});
+	}
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/clone.ts
+```typescript
+const cloneBase = (object: any, base: any): any => {
+	for (const key in object) {
+		if (!object.hasOwnProperty(key)) continue;
+
+		const value = object[key];
+
+		if (typeof value === "object" && value !== null) {
+			base[key] = cloneBase(value, value.constructor());
+		} else {
+			base[key] = value;
+		}
+	}
+
+	return base;
+};
+
+export const clone = <T extends object>(object: T): T => {
+	return cloneBase(object, object.constructor());
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/constants.ts
+```typescript
+export const DEFAULT_SECRET = "better-auth-secret-123456789";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/date.ts
+```typescript
+export const getDate = (span: number, unit: "sec" | "ms" = "ms") => {
+	return new Date(Date.now() + (unit === "sec" ? span * 1000 : span));
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/env.ts
+```typescript
+//https://github.com/unjs/std-env/blob/main/src/env.ts
+
+const _envShim = Object.create(null);
+
+export type EnvObject = Record<string, string | undefined>;
+
+const _getEnv = (useShim?: boolean) =>
+	globalThis.process?.env ||
+	//@ts-expect-error
+	globalThis.Deno?.env.toObject() ||
+	//@ts-expect-error
+	globalThis.__env__ ||
+	(useShim ? _envShim : globalThis);
+
+export const env = new Proxy<EnvObject>(_envShim, {
+	get(_, prop) {
+		const env = _getEnv();
+		return env[prop as any] ?? _envShim[prop];
+	},
+	has(_, prop) {
+		const env = _getEnv();
+		return prop in env || prop in _envShim;
+	},
+	set(_, prop, value) {
+		const env = _getEnv(true);
+		env[prop as any] = value;
+		return true;
+	},
+	deleteProperty(_, prop) {
+		if (!prop) {
+			return false;
+		}
+		const env = _getEnv(true);
+		delete env[prop as any];
+		return true;
+	},
+	ownKeys() {
+		const env = _getEnv(true);
+		return Object.keys(env);
+	},
+});
+
+function toBoolean(val: boolean | string | undefined) {
+	return val ? val !== "false" : false;
+}
+
+export const nodeENV =
+	(typeof process !== "undefined" && process.env && process.env.NODE_ENV) || "";
+
+/** Detect if `NODE_ENV` environment variable is `production` */
+export const isProduction = nodeENV === "production";
+
+/** Detect if `NODE_ENV` environment variable is `dev` or `development` */
+export const isDevelopment = nodeENV === "dev" || nodeENV === "development";
+
+/** Detect if `NODE_ENV` environment variable is `test` */
+export const isTest = nodeENV === "test" || toBoolean(env.TEST);
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/get-request-ip.ts
+```typescript
+import type { BetterAuthOptions } from "../types";
+import { isTest } from "../utils/env";
+
+export function getIp(
+	req: Request | Headers,
+	options: BetterAuthOptions,
+): string | null {
+	if (options.advanced?.ipAddress?.disableIpTracking) {
+		return null;
+	}
+	const testIP = "127.0.0.1";
+	if (isTest) {
+		return testIP;
+	}
+	const ipHeaders = options.advanced?.ipAddress?.ipAddressHeaders;
+	const keys = ipHeaders || [
+		"x-client-ip",
+		"x-forwarded-for",
+		"cf-connecting-ip",
+		"fastly-client-ip",
+		"x-real-ip",
+		"x-cluster-client-ip",
+		"x-forwarded",
+		"forwarded-for",
+		"forwarded",
+	];
+	const headers = "headers" in req ? req.headers : req;
+	for (const key of keys) {
+		const value = headers.get(key);
+		if (typeof value === "string") {
+			const ip = value.split(",")[0].trim();
+			if (ip) return ip;
+		}
+	}
+	return null;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/hide-metadata.ts
+```typescript
+export const HIDE_METADATA = {
+	isAction: false as const,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/id.ts
+```typescript
+import { createRandomStringGenerator } from "@better-auth/utils/random";
+
+export const generateId = (size?: number) => {
+	return createRandomStringGenerator("a-z", "A-Z", "0-9")(size || 32);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/index.ts
+```typescript
+export * from "./misc";
+export * from "./hide-metadata";
+export * from "./id";
+export * from "../oauth2/state";
+export * from "./id";
+export * from "./logger";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/json.ts
+```typescript
+export function safeJSONParse<T>(data: string): T | null {
+	function reviver(_: string, value: any): any {
+		if (typeof value === "string") {
+			const iso8601Regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
+			if (iso8601Regex.test(value)) {
+				const date = new Date(value);
+				if (!isNaN(date.getTime())) {
+					return date;
+				}
+			}
+		}
+		return value;
+	}
+	try {
+		return JSON.parse(data, reviver);
+	} catch {
+		return null;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/logger.test.ts
+```typescript
+import { describe, it, expect } from "vitest";
+import { shouldPublishLog, type LogLevel } from "./logger";
+
+describe("shouldPublishLog", () => {
+	const testCases: {
+		currentLogLevel: LogLevel;
+		logLevel: LogLevel;
+		expected: boolean;
+	}[] = [
+		{ currentLogLevel: "info", logLevel: "info", expected: true },
+		{ currentLogLevel: "info", logLevel: "warn", expected: false },
+		{ currentLogLevel: "info", logLevel: "error", expected: false },
+		{ currentLogLevel: "info", logLevel: "debug", expected: false },
+		{ currentLogLevel: "warn", logLevel: "info", expected: true },
+		{ currentLogLevel: "warn", logLevel: "warn", expected: true },
+		{ currentLogLevel: "warn", logLevel: "error", expected: false },
+		{ currentLogLevel: "warn", logLevel: "debug", expected: false },
+		{ currentLogLevel: "error", logLevel: "info", expected: true },
+		{ currentLogLevel: "error", logLevel: "warn", expected: true },
+		{ currentLogLevel: "error", logLevel: "error", expected: true },
+		{ currentLogLevel: "error", logLevel: "debug", expected: false },
+		{ currentLogLevel: "debug", logLevel: "info", expected: true },
+		{ currentLogLevel: "debug", logLevel: "warn", expected: true },
+		{ currentLogLevel: "debug", logLevel: "error", expected: true },
+		{ currentLogLevel: "debug", logLevel: "debug", expected: true },
+	];
+
+	testCases.forEach(({ currentLogLevel, logLevel, expected }) => {
+		it(`should return "${expected}" when currentLogLevel is "${currentLogLevel}" and logLevel is "${logLevel}"`, () => {
+			expect(shouldPublishLog(currentLogLevel, logLevel)).toBe(expected);
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/logger.ts
+```typescript
+export type LogLevel = "info" | "success" | "warn" | "error" | "debug";
+
+export const levels = ["info", "success", "warn", "error", "debug"] as const;
+
+export function shouldPublishLog(
+	currentLogLevel: LogLevel,
+	logLevel: LogLevel,
+): boolean {
+	return levels.indexOf(logLevel) <= levels.indexOf(currentLogLevel);
+}
+
+export interface Logger {
+	disabled?: boolean;
+	level?: Exclude<LogLevel, "success">;
+	log?: (
+		level: Exclude<LogLevel, "success">,
+		message: string,
+		...args: any[]
+	) => void;
+}
+
+export type LogHandlerParams = Parameters<NonNullable<Logger["log"]>> extends [
+	LogLevel,
+	...infer Rest,
+]
+	? Rest
+	: never;
+
+const colors = {
+	reset: "\x1b[0m",
+	bright: "\x1b[1m",
+	dim: "\x1b[2m",
+	underscore: "\x1b[4m",
+	blink: "\x1b[5m",
+	reverse: "\x1b[7m",
+	hidden: "\x1b[8m",
+	fg: {
+		black: "\x1b[30m",
+		red: "\x1b[31m",
+		green: "\x1b[32m",
+		yellow: "\x1b[33m",
+		blue: "\x1b[34m",
+		magenta: "\x1b[35m",
+		cyan: "\x1b[36m",
+		white: "\x1b[37m",
+	},
+	bg: {
+		black: "\x1b[40m",
+		red: "\x1b[41m",
+		green: "\x1b[42m",
+		yellow: "\x1b[43m",
+		blue: "\x1b[44m",
+		magenta: "\x1b[45m",
+		cyan: "\x1b[46m",
+		white: "\x1b[47m",
+	},
+};
+
+const levelColors: Record<LogLevel, string> = {
+	info: colors.fg.blue,
+	success: colors.fg.green,
+	warn: colors.fg.yellow,
+	error: colors.fg.red,
+	debug: colors.fg.magenta,
+};
+
+const formatMessage = (level: LogLevel, message: string): string => {
+	const timestamp = new Date().toISOString();
+	return `${colors.dim}${timestamp}${colors.reset} ${
+		levelColors[level]
+	}${level.toUpperCase()}${colors.reset} ${colors.bright}[Better Auth]:${
+		colors.reset
+	} ${message}`;
+};
+
+export const createLogger = (
+	options?: Logger,
+): Record<LogLevel, (...params: LogHandlerParams) => void> => {
+	const enabled = options?.disabled !== true;
+	const logLevel = options?.level ?? "error";
+
+	const LogFunc = (
+		level: LogLevel,
+		message: string,
+		args: any[] = [],
+	): void => {
+		if (!enabled || !shouldPublishLog(logLevel, level)) {
+			return;
+		}
+
+		const formattedMessage = formatMessage(level, message);
+
+		if (!options || typeof options.log !== "function") {
+			if (level === "error") {
+				console.error(formattedMessage, ...args);
+			} else if (level === "warn") {
+				console.warn(formattedMessage, ...args);
+			} else {
+				console.log(formattedMessage, ...args);
+			}
+			return;
+		}
+
+		options.log(level === "success" ? "info" : level, message, ...args);
+	};
+
+	return Object.fromEntries(
+		levels.map((level) => [
+			level,
+			(...[message, ...args]: LogHandlerParams) =>
+				LogFunc(level, message, args),
+		]),
+	) as Record<LogLevel, (...params: LogHandlerParams) => void>;
+};
+
+export const logger = createLogger();
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/merger.ts
+```typescript
+import { clone } from "./clone";
+
+const mergeObjects = (target: any, source: any): any => {
+	for (const key in source) {
+		if (!source.hasOwnProperty(key)) continue;
+
+		if (key === "constructor" || key === "prototype" || key === "__proto__")
+			continue;
+
+		const value = source[key];
+
+		if (isPrimitive(value)) {
+			if (value !== undefined || !(key in target)) {
+				target[key] = value;
+			}
+		} else if (!target[key] || isArray(value)) {
+			target[key] = clone(value);
+		} else {
+			target[key] = mergeObjects(target[key], value);
+		}
+	}
+
+	return target;
+};
+
+const isArray = (value: unknown): value is unknown[] => {
+	return Array.isArray(value);
+};
+
+const isPrimitive = (
+	value: unknown,
+): value is bigint | symbol | string | number | boolean | null | undefined => {
+	if (value === null) return true;
+
+	const type = typeof value;
+
+	return type !== "object" && type !== "function";
+};
+
+export const merge = (objects: object[]): object => {
+	const target = clone(objects[0]);
+
+	for (let i = 1, l = objects.length; i < l; i++) {
+		mergeObjects(target, objects[i]);
+	}
+
+	return target;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/middleware-response.ts
+```typescript
+type Params = {
+	message: string;
+	status: number;
+};
+
+export const middlewareResponse = ({ message, status }: Params) => ({
+	response: new Response(
+		JSON.stringify({
+			message,
+		}),
+		{
+			status,
+		},
+	),
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/misc.ts
+```typescript
+export function capitalizeFirstLetter(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/password.ts
+```typescript
+import { APIError } from "better-call";
+import type { GenericEndpointContext } from "../types/context";
+
+export async function validatePassword(
+	ctx: GenericEndpointContext,
+	data: {
+		password: string;
+		userId: string;
+	},
+) {
+	const accounts = await ctx.context.internalAdapter.findAccounts(data.userId);
+	const credentialAccount = accounts?.find(
+		(account) => account.providerId === "credential",
+	);
+	const currentPassword = credentialAccount?.password;
+	if (!credentialAccount || !currentPassword) {
+		return false;
+	}
+	const compare = await ctx.context.password.verify({
+		hash: currentPassword,
+		password: data.password,
+	});
+	return compare;
+}
+
+export async function checkPassword(userId: string, c: GenericEndpointContext) {
+	const accounts = await c.context.internalAdapter.findAccounts(userId);
+	const credentialAccount = accounts?.find(
+		(account) => account.providerId === "credential",
+	);
+	const currentPassword = credentialAccount?.password;
+	if (!credentialAccount || !currentPassword || !c.body.password) {
+		throw new APIError("BAD_REQUEST", {
+			message: "No password credential found",
+		});
+	}
+	const compare = await c.context.password.verify({
+		hash: currentPassword,
+		password: c.body.password,
+	});
+	if (!compare) {
+		throw new APIError("BAD_REQUEST", {
+			message: "Invalid password",
+		});
+	}
+	return true;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/plugin-helper.ts
+```typescript
+import { APIError } from "better-call";
+
+export const getEndpointResponse = async <T>(ctx: {
+	context: {
+		returned?: unknown;
+	};
+}) => {
+	const returned = ctx.context.returned;
+	if (!returned) {
+		return null;
+	}
+	if (returned instanceof Response) {
+		if (returned.status !== 200) {
+			return null;
+		}
+		return (await returned.clone().json()) as T;
+	}
+	if (returned instanceof APIError) {
+		return null;
+	}
+	return returned as T;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/shim.ts
+```typescript
+import type { AuthContext } from "../init";
+
+export const shimContext = <T extends Record<string, any>>(
+	originalObject: T,
+	newContext: Record<string, any>,
+) => {
+	const shimmedObj: Record<string, any> = {};
+	for (const [key, value] of Object.entries(originalObject)) {
+		shimmedObj[key] = (ctx: Record<string, any>) => {
+			return value({
+				...ctx,
+				context: {
+					...newContext,
+					...ctx.context,
+				},
+			});
+		};
+		shimmedObj[key].path = value.path;
+		shimmedObj[key].method = value.method;
+		shimmedObj[key].options = value.options;
+		shimmedObj[key].headers = value.headers;
+	}
+	return shimmedObj as T;
+};
+
+export const shimEndpoint = (ctx: AuthContext, value: any) => {
+	return async (context: any) => {
+		for (const plugin of ctx.options.plugins || []) {
+			if (plugin.hooks?.before) {
+				for (const hook of plugin.hooks.before) {
+					const match = hook.matcher({
+						...context,
+						...value,
+					});
+					if (match) {
+						const hookRes = await hook.handler(context);
+						if (
+							hookRes &&
+							typeof hookRes === "object" &&
+							"context" in hookRes
+						) {
+							context = {
+								...context,
+								...(hookRes.context as any),
+								...value,
+							};
+						}
+					}
+				}
+			}
+		}
+		//@ts-ignore
+		const endpointRes = value({
+			...context,
+			context: {
+				...ctx,
+				...context.context,
+			},
+		});
+		let response = endpointRes;
+		for (const plugin of ctx.options.plugins || []) {
+			if (plugin.hooks?.after) {
+				for (const hook of plugin.hooks.after) {
+					const match = hook.matcher(context);
+					if (match) {
+						const obj = Object.assign(context, {
+							returned: endpointRes,
+						});
+						const hookRes = await hook.handler(obj);
+						if (
+							hookRes &&
+							typeof hookRes === "object" &&
+							"response" in hookRes
+						) {
+							response = hookRes.response as any;
+						}
+					}
+				}
+			}
+		}
+		return response;
+	};
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/time.ts
+```typescript
+type TimeFormat = "ms" | "s" | "m" | "h" | "d" | "w" | "y";
+type Time = `${number}${TimeFormat}`;
+
+interface TimeObject {
+	t: Time;
+	value: number;
+	tFormat: TimeFormat;
+	toMilliseconds: () => number;
+	toSeconds: () => number;
+	toMinutes: () => number;
+	toHours: () => number;
+	toDays: () => number;
+	toWeeks: () => number;
+	toYears: () => number;
+	getDate: () => Date;
+	add: (other: Time | TimeObject) => TimeObject;
+	subtract: (other: Time | TimeObject) => TimeObject;
+	multiply: (factor: number) => TimeObject;
+	divide: (divisor: number) => TimeObject;
+	equals: (other: Time | TimeObject) => boolean;
+	lessThan: (other: Time | TimeObject) => boolean;
+	greaterThan: (other: Time | TimeObject) => boolean;
+	format: (pattern: string) => string;
+	fromNow: () => string;
+	ago: () => string;
+}
+
+export const createTime = (value: number, format: TimeFormat): TimeObject => {
+	const toMilliseconds = (): number => {
+		switch (format) {
+			case "ms":
+				return value;
+			case "s":
+				return value * 1000;
+			case "m":
+				return value * 1000 * 60;
+			case "h":
+				return value * 1000 * 60 * 60;
+			case "d":
+				return value * 1000 * 60 * 60 * 24;
+			case "w":
+				return value * 1000 * 60 * 60 * 24 * 7;
+			case "y":
+				return value * 1000 * 60 * 60 * 24 * 365;
+		}
+	};
+
+	const time: TimeObject = {
+		t: `${value}${format}` as Time,
+		value,
+		tFormat: format,
+		toMilliseconds,
+		toSeconds: () => time.toMilliseconds() / 1000,
+		toMinutes: () => time.toSeconds() / 60,
+		toHours: () => time.toMinutes() / 60,
+		toDays: () => time.toHours() / 24,
+		toWeeks: () => time.toDays() / 7,
+		toYears: () => time.toDays() / 365,
+		getDate: () => new Date(Date.now() + time.toMilliseconds()),
+		add: (other: Time | TimeObject) => {
+			const otherMs =
+				typeof other === "string"
+					? parseTime(other).toMilliseconds()
+					: other.toMilliseconds();
+			return createTime(time.toMilliseconds() + otherMs, "ms");
+		},
+		subtract: (other: Time | TimeObject) => {
+			const otherMs =
+				typeof other === "string"
+					? parseTime(other).toMilliseconds()
+					: other.toMilliseconds();
+			return createTime(time.toMilliseconds() - otherMs, "ms");
+		},
+		multiply: (factor: number) =>
+			createTime(time.toMilliseconds() * factor, "ms"),
+		divide: (divisor: number) =>
+			createTime(time.toMilliseconds() / divisor, "ms"),
+		equals: (other: Time | TimeObject) => {
+			const otherMs =
+				typeof other === "string"
+					? parseTime(other).toMilliseconds()
+					: other.toMilliseconds();
+			return time.toMilliseconds() === otherMs;
+		},
+		lessThan: (other: Time | TimeObject) => {
+			const otherMs =
+				typeof other === "string"
+					? parseTime(other).toMilliseconds()
+					: other.toMilliseconds();
+			return time.toMilliseconds() < otherMs;
+		},
+		greaterThan: (other: Time | TimeObject) => {
+			const otherMs =
+				typeof other === "string"
+					? parseTime(other).toMilliseconds()
+					: other.toMilliseconds();
+			return time.toMilliseconds() > otherMs;
+		},
+		format: (pattern: string) => {
+			const date = time.getDate();
+			return pattern.replace(/YYYY|MM|DD|HH|mm|ss/g, (match) => {
+				switch (match) {
+					case "YYYY":
+						return date.getFullYear().toString();
+					case "MM":
+						return (date.getMonth() + 1).toString().padStart(2, "0");
+					case "DD":
+						return date.getDate().toString().padStart(2, "0");
+					case "HH":
+						return date.getHours().toString().padStart(2, "0");
+					case "mm":
+						return date.getMinutes().toString().padStart(2, "0");
+					case "ss":
+						return date.getSeconds().toString().padStart(2, "0");
+					default:
+						return match;
+				}
+			});
+		},
+		fromNow: () => {
+			const ms = time.toMilliseconds();
+			if (ms < 0) return time.ago();
+			if (ms < 1000) return "in a few seconds";
+			if (ms < 60000) return `in ${Math.round(ms / 1000)} seconds`;
+			if (ms < 3600000) return `in ${Math.round(ms / 60000)} minutes`;
+			if (ms < 86400000) return `in ${Math.round(ms / 3600000)} hours`;
+			if (ms < 604800000) return `in ${Math.round(ms / 86400000)} days`;
+			if (ms < 2629800000) return `in ${Math.round(ms / 604800000)} weeks`;
+			if (ms < 31557600000) return `in ${Math.round(ms / 2629800000)} months`;
+			return `in ${Math.round(ms / 31557600000)} years`;
+		},
+		ago: () => {
+			const ms = -time.toMilliseconds();
+			if (ms < 0) return time.fromNow();
+			if (ms < 1000) return "a few seconds ago";
+			if (ms < 60000) return `${Math.round(ms / 1000)} seconds ago`;
+			if (ms < 3600000) return `${Math.round(ms / 60000)} minutes ago`;
+			if (ms < 86400000) return `${Math.round(ms / 3600000)} hours ago`;
+			if (ms < 604800000) return `${Math.round(ms / 86400000)} days ago`;
+			if (ms < 2629800000) return `${Math.round(ms / 604800000)} weeks ago`;
+			if (ms < 31557600000) return `${Math.round(ms / 2629800000)} months ago`;
+			return `${Math.round(ms / 31557600000)} years ago`;
+		},
+	};
+
+	return time;
+};
+
+export const parseTime = (time: Time): TimeObject => {
+	const match = time.match(/^(\d+)(ms|s|m|h|d|w|y)$/);
+	if (!match) throw new Error("Invalid time format");
+	return createTime(parseInt(match[1]), match[2] as TimeFormat);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/url.ts
+```typescript
+import { env } from "../utils/env";
+import { BetterAuthError } from "../error";
+
+function checkHasPath(url: string): boolean {
+	try {
+		const parsedUrl = new URL(url);
+		return parsedUrl.pathname !== "/";
+	} catch (error) {
+		throw new BetterAuthError(
+			`Invalid base URL: ${url}. Please provide a valid base URL.`,
+		);
+	}
+}
+
+function withPath(url: string, path = "/api/auth") {
+	const hasPath = checkHasPath(url);
+	if (hasPath) {
+		return url;
+	}
+	path = path.startsWith("/") ? path : `/${path}`;
+	return `${url.replace(/\/+$/, "")}${path}`;
+}
+
+export function getBaseURL(url?: string, path?: string, request?: Request) {
+	if (url) {
+		return withPath(url, path);
+	}
+
+	const fromEnv =
+		env.BETTER_AUTH_URL ||
+		env.NEXT_PUBLIC_BETTER_AUTH_URL ||
+		env.PUBLIC_BETTER_AUTH_URL ||
+		env.NUXT_PUBLIC_BETTER_AUTH_URL ||
+		env.NUXT_PUBLIC_AUTH_URL ||
+		(env.BASE_URL !== "/" ? env.BASE_URL : undefined);
+
+	if (fromEnv) {
+		return withPath(fromEnv, path);
+	}
+
+	const fromRequest = request?.headers.get("x-forwarded-host");
+	const fromRequestProto = request?.headers.get("x-forwarded-proto");
+	if (fromRequest && fromRequestProto) {
+		return withPath(`${fromRequestProto}://${fromRequest}`, path);
+	}
+
+	if (request) {
+		const url = getOrigin(request.url);
+		if (!url) {
+			throw new BetterAuthError(
+				"Could not get origin from request. Please provide a valid base URL.",
+			);
+		}
+		return withPath(url, path);
+	}
+
+	if (typeof window !== "undefined" && window.location) {
+		return withPath(window.location.origin, path);
+	}
+	return undefined;
+}
+
+export function getOrigin(url: string) {
+	try {
+		const parsedUrl = new URL(url);
+		return parsedUrl.origin;
+	} catch (error) {
+		return null;
+	}
+}
+
+export function getProtocol(url: string) {
+	try {
+		const parsedUrl = new URL(url);
+		return parsedUrl.protocol;
+	} catch (error) {
+		return null;
+	}
+}
+
+export function getHost(url: string) {
+	try {
+		const parsedUrl = new URL(url);
+		return parsedUrl.host;
+	} catch (error) {
+		return url;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/utils/wildcard.ts
+````typescript
+//https://github.com/axtgr/wildcard-match
+
+/**
+ * Escapes a character if it has a special meaning in regular expressions
+ * and returns the character as is if it doesn't
+ */
+function escapeRegExpChar(char: string) {
+	if (
+		char === "-" ||
+		char === "^" ||
+		char === "$" ||
+		char === "+" ||
+		char === "." ||
+		char === "(" ||
+		char === ")" ||
+		char === "|" ||
+		char === "[" ||
+		char === "]" ||
+		char === "{" ||
+		char === "}" ||
+		char === "*" ||
+		char === "?" ||
+		char === "\\"
+	) {
+		return `\\${char}`;
+	} else {
+		return char;
+	}
+}
+
+/**
+ * Escapes all characters in a given string that have a special meaning in regular expressions
+ */
+function escapeRegExpString(str: string) {
+	let result = "";
+	for (let i = 0; i < str.length; i++) {
+		result += escapeRegExpChar(str[i]);
+	}
+	return result;
+}
+
+/**
+ * Transforms one or more glob patterns into a RegExp pattern
+ */
+function transform(
+	pattern: string | string[],
+	separator: string | boolean = true,
+): string {
+	if (Array.isArray(pattern)) {
+		let regExpPatterns = pattern.map((p) => `^${transform(p, separator)}$`);
+		return `(?:${regExpPatterns.join("|")})`;
+	}
+
+	let separatorSplitter = "";
+	let separatorMatcher = "";
+	let wildcard = ".";
+
+	if (separator === true) {
+		// In this case forward slashes in patterns match both forward and backslashes in samples:
+		//
+		// `foo/bar` will match `foo/bar`
+		//           will match `foo\bar`
+		//
+		separatorSplitter = "/";
+		separatorMatcher = "[/\\\\]";
+		wildcard = "[^/\\\\]";
+	} else if (separator) {
+		separatorSplitter = separator;
+		separatorMatcher = escapeRegExpString(separatorSplitter);
+
+		if (separatorMatcher.length > 1) {
+			separatorMatcher = `(?:${separatorMatcher})`;
+			wildcard = `((?!${separatorMatcher}).)`;
+		} else {
+			wildcard = `[^${separatorMatcher}]`;
+		}
+	}
+
+	// When a separator is explicitly specified in a pattern,
+	// it MUST match ONE OR MORE separators in a sample:
+	//
+	// `foo/bar/` will match  `foo//bar///`
+	//            won't match `foo/bar`
+	//
+	// When a pattern doesn't have a trailing separator,
+	// a sample can still optionally have them:
+	//
+	// `foo/bar` will match `foo/bar//`
+	//
+	// So we use different quantifiers depending on the index of a segment.
+	let requiredSeparator = separator ? `${separatorMatcher}+?` : "";
+	let optionalSeparator = separator ? `${separatorMatcher}*?` : "";
+
+	let segments = separator ? pattern.split(separatorSplitter) : [pattern];
+	let result = "";
+
+	for (let s = 0; s < segments.length; s++) {
+		let segment = segments[s];
+		let nextSegment = segments[s + 1];
+		let currentSeparator = "";
+
+		if (!segment && s > 0) {
+			continue;
+		}
+
+		if (separator) {
+			if (s === segments.length - 1) {
+				currentSeparator = optionalSeparator;
+			} else if (nextSegment !== "**") {
+				currentSeparator = requiredSeparator;
+			} else {
+				currentSeparator = "";
+			}
+		}
+
+		if (separator && segment === "**") {
+			if (currentSeparator) {
+				result += s === 0 ? "" : currentSeparator;
+				result += `(?:${wildcard}*?${currentSeparator})*?`;
+			}
+			continue;
+		}
+
+		for (let c = 0; c < segment.length; c++) {
+			let char = segment[c];
+
+			if (char === "\\") {
+				if (c < segment.length - 1) {
+					result += escapeRegExpChar(segment[c + 1]);
+					c++;
+				}
+			} else if (char === "?") {
+				result += wildcard;
+			} else if (char === "*") {
+				result += `${wildcard}*?`;
+			} else {
+				result += escapeRegExpChar(char);
+			}
+		}
+
+		result += currentSeparator;
+	}
+
+	return result;
+}
+
+export default transform;
+
+interface WildcardMatchOptions {
+	/** Separator to be used to split patterns and samples into segments */
+	separator?: string | boolean;
+
+	/** Flags to pass to the RegExp */
+	flags?: string;
+}
+
+// This overrides the function's signature because for the end user
+// the function is always bound to a RegExp
+interface isMatch {
+	/**
+	 * Tests if a sample string matches the pattern(s)
+	 *
+	 * ```js
+	 * isMatch('foo') //=> true
+	 * ```
+	 */
+	(sample: string): boolean;
+
+	/** Compiled regular expression */
+	regexp: RegExp;
+
+	/** Original pattern or array of patterns that was used to compile the RegExp */
+	pattern: string | string[];
+
+	/** Options that were used to compile the RegExp */
+	options: WildcardMatchOptions;
+}
+
+function isMatch(regexp: RegExp, sample: string) {
+	if (typeof sample !== "string") {
+		throw new TypeError(`Sample must be a string, but ${typeof sample} given`);
+	}
+
+	return regexp.test(sample);
+}
+
+/**
+ * Compiles one or more glob patterns into a RegExp and returns an isMatch function.
+ * The isMatch function takes a sample string as its only argument and returns `true`
+ * if the string matches the pattern(s).
+ *
+ * ```js
+ * wildcardMatch('src/*.js')('src/index.js') //=> true
+ * ```
+ *
+ * ```js
+ * const isMatch = wildcardMatch('*.example.com', '.')
+ * isMatch('foo.example.com') //=> true
+ * isMatch('foo.bar.com') //=> false
+ * ```
+ */
+function wildcardMatch(
+	pattern: string | string[],
+	options?: string | boolean | WildcardMatchOptions,
+) {
+	if (typeof pattern !== "string" && !Array.isArray(pattern)) {
+		throw new TypeError(
+			`The first argument must be a single pattern string or an array of patterns, but ${typeof pattern} given`,
+		);
+	}
+
+	if (typeof options === "string" || typeof options === "boolean") {
+		options = { separator: options };
+	}
+
+	if (
+		arguments.length === 2 &&
+		!(
+			typeof options === "undefined" ||
+			(typeof options === "object" &&
+				options !== null &&
+				!Array.isArray(options))
+		)
+	) {
+		throw new TypeError(
+			`The second argument must be an options object or a string/boolean separator, but ${typeof options} given`,
+		);
+	}
+
+	options = options || {};
+
+	if (options.separator === "\\") {
+		throw new Error(
+			"\\ is not a valid separator because it is used for escaping. Try setting the separator to `true` instead",
+		);
+	}
+
+	let regexpPattern = transform(pattern, options.separator);
+	let regexp = new RegExp(`^${regexpPattern}$`, options.flags);
+
+	let fn = isMatch.bind(null, regexp) as isMatch;
+	fn.options = options;
+	fn.pattern = pattern;
+	fn.regexp = regexp;
+	return fn;
+}
+
+export { wildcardMatch, isMatch };
+
+````

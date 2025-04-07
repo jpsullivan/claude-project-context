@@ -1,0 +1,199 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/bearer/bearer.test.ts
+```typescript
+import { describe, expect, it } from "vitest";
+import { getTestInstance } from "../../test-utils/test-instance";
+
+describe("bearer", async () => {
+	const { client, auth, testUser } = await getTestInstance(
+		{},
+		{
+			disableTestUser: true,
+		},
+	);
+
+	let token: string;
+	it("should get session", async () => {
+		await client.signUp.email(
+			{
+				email: testUser.email,
+				password: testUser.password,
+				name: testUser.name,
+			},
+			{
+				onSuccess: (ctx) => {
+					token = ctx.response.headers.get("set-auth-token") || "";
+				},
+			},
+		);
+		const session = await client.getSession({
+			fetchOptions: {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		});
+		expect(session.data?.session).toBeDefined();
+	});
+
+	it("should list session", async () => {
+		const sessions = await client.listSessions({
+			fetchOptions: {
+				headers: {
+					Authorization: `Bearer ${token}`,
+				},
+			},
+		});
+		expect(sessions.data).toHaveLength(1);
+	});
+
+	it("should work on server actions", async () => {
+		const session = await auth.api.getSession({
+			headers: new Headers({
+				authorization: `Bearer ${token}`,
+			}),
+		});
+		expect(session?.session).toBeDefined();
+	});
+
+	it("should work with ", async () => {
+		const session = await client.getSession({
+			fetchOptions: {
+				headers: {
+					authorization: `Bearer ${token.split(".")[0]}`,
+				},
+			},
+		});
+		expect(session.data?.session).toBeDefined();
+	});
+
+	it("should work if valid cookie is provided even if authorization header isn't valid", async () => {
+		const session = await client.getSession({
+			fetchOptions: {
+				headers: {
+					Authorization: `Bearer invalid.token`,
+					cookie: `better-auth.session_token=${token}`,
+				},
+			},
+		});
+		expect(session.data?.session).toBeDefined();
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/bearer/index.ts
+```typescript
+import { serializeSignedCookie } from "better-call";
+import type { BetterAuthPlugin } from "../../types/plugins";
+import { parseSetCookieHeader } from "../../cookies";
+import { createAuthMiddleware } from "../../api";
+import { createHMAC } from "@better-auth/utils/hmac";
+
+interface BearerOptions {
+	/**
+	 * If true, only signed tokens
+	 * will be converted to session
+	 * cookies
+	 *
+	 * @default false
+	 */
+	requireSignature?: boolean;
+}
+
+/**
+ * Converts bearer token to session cookie
+ */
+export const bearer = (options?: BearerOptions) => {
+	return {
+		id: "bearer",
+		hooks: {
+			before: [
+				{
+					matcher(context) {
+						return Boolean(
+							context.request?.headers.get("authorization") ||
+								context.headers?.get("authorization"),
+						);
+					},
+					handler: createAuthMiddleware(async (c) => {
+						const token =
+							c.request?.headers.get("authorization")?.replace("Bearer ", "") ||
+							c.headers?.get("Authorization")?.replace("Bearer ", "");
+						if (!token) {
+							return;
+						}
+
+						let signedToken = "";
+						if (token.includes(".")) {
+							signedToken = token.replace("=", "");
+						} else {
+							if (options?.requireSignature) {
+								return;
+							}
+							signedToken = (
+								await serializeSignedCookie("", token, c.context.secret)
+							).replace("=", "");
+						}
+						try {
+							const decodedToken = decodeURIComponent(signedToken);
+							const isValid = await createHMAC(
+								"SHA-256",
+								"base64urlnopad",
+							).verify(
+								c.context.secret,
+								decodedToken.split(".")[0],
+								decodedToken.split(".")[1],
+							);
+							if (!isValid) {
+								return;
+							}
+						} catch (e) {
+							return;
+						}
+						const existingHeaders = (c.request?.headers ||
+							c.headers) as Headers;
+						const headers = new Headers({
+							...Object.fromEntries(existingHeaders?.entries()),
+						});
+						headers.append(
+							"cookie",
+							`${c.context.authCookies.sessionToken.name}=${signedToken}`,
+						);
+						return {
+							context: {
+								headers,
+							},
+						};
+					}),
+				},
+			],
+			after: [
+				{
+					matcher(context) {
+						return true;
+					},
+					handler: createAuthMiddleware(async (ctx) => {
+						const setCookie = ctx.context.responseHeaders?.get("set-cookie");
+						if (!setCookie) {
+							return;
+						}
+						const parsedCookies = parseSetCookieHeader(setCookie);
+						const cookieName = ctx.context.authCookies.sessionToken.name;
+						const sessionCookie = parsedCookies.get(cookieName);
+						if (
+							!sessionCookie ||
+							!sessionCookie.value ||
+							sessionCookie["max-age"] === 0
+						) {
+							return;
+						}
+						const token = sessionCookie.value;
+						ctx.setHeader("set-auth-token", token);
+						ctx.setHeader("Access-Control-Expose-Headers", "set-auth-token");
+					}),
+				},
+			],
+		},
+	} satisfies BetterAuthPlugin;
+};
+
+```

@@ -1,0 +1,2429 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/build.config.ts
+```typescript
+import { defineBuildConfig } from "unbuild";
+
+export default defineBuildConfig({
+	declaration: true,
+	rollup: {
+		emitCJS: true,
+	},
+	outDir: "dist",
+	clean: false,
+	failOnWarn: false,
+	externals: ["better-auth", "better-call", "@better-fetch/fetch", "stripe"],
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/package.json
+```json
+{
+  "name": "@better-auth/stripe",
+  "author": "Bereket Engida",
+  "version": "1.2.6-beta.6",
+  "main": "dist/index.cjs",
+  "license": "MIT",
+  "keywords": [
+    "stripe",
+    "auth",
+    "stripe"
+  ],
+  "module": "dist/index.mjs",
+  "description": "Stripe plugin for Better Auth",
+  "scripts": {
+    "test": "vitest",
+    "build": "unbuild",
+    "dev": "unbuild --watch"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.cjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.ts"
+      ],
+      "client": [
+        "./dist/client.d.ts"
+      ]
+    }
+  },
+  "dependencies": {
+    "better-auth": "workspace:^",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.6.0",
+    "vitest": "^1.6.0",
+    "stripe": "^17.7.0",
+    "better-call": "catalog:"
+  }
+}
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"target": "es2022",
+		"allowJs": true,
+		"resolveJsonModule": true,
+		"module": "ESNext",
+		"noEmit": true,
+		"moduleResolution": "Bundler",
+		"moduleDetection": "force",
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"exclude": ["node_modules", "dist"],
+	"include": ["src"]
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/vitest.config.ts
+```typescript
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+	root: ".",
+	test: {
+		clearMocks: true,
+		globals: true,
+		setupFiles: ["dotenv/config"],
+	},
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/client.ts
+```typescript
+import type { BetterAuthClientPlugin } from "better-auth";
+import type { stripe } from "./index";
+
+export const stripeClient = <
+	O extends {
+		subscription: boolean;
+	},
+>(
+	options?: O,
+) => {
+	return {
+		id: "stripe-client",
+		$InferServerPlugin: {} as ReturnType<
+			typeof stripe<
+				O["subscription"] extends true
+					? {
+							stripeClient: any;
+							stripeWebhookSecret: string;
+							subscription: {
+								enabled: true;
+								plans: [];
+							};
+						}
+					: {
+							stripeClient: any;
+							stripeWebhookSecret: string;
+						}
+			>
+		>,
+	} satisfies BetterAuthClientPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/hooks.ts
+```typescript
+import { logger, type GenericEndpointContext } from "better-auth";
+import type Stripe from "stripe";
+import type { InputSubscription, StripeOptions, Subscription } from "./types";
+import { getPlanByPriceId } from "./utils";
+
+export async function onCheckoutSessionCompleted(
+	ctx: GenericEndpointContext,
+	options: StripeOptions,
+	event: Stripe.Event,
+) {
+	try {
+		const client = options.stripeClient;
+		const checkoutSession = event.data.object as Stripe.Checkout.Session;
+		if (checkoutSession.mode === "setup" || !options.subscription?.enabled) {
+			return;
+		}
+		const subscription = await client.subscriptions.retrieve(
+			checkoutSession.subscription as string,
+		);
+		const priceId = subscription.items.data[0]?.price.id;
+		const plan = await getPlanByPriceId(options, priceId as string);
+		if (plan) {
+			const referenceId = checkoutSession?.metadata?.referenceId;
+			const subscriptionId = checkoutSession?.metadata?.subscriptionId;
+			const seats = subscription.items.data[0].quantity;
+			if (referenceId && subscriptionId) {
+				const trial =
+					subscription.trial_start && subscription.trial_end
+						? {
+								trialStart: new Date(subscription.trial_start * 1000),
+								trialEnd: new Date(subscription.trial_end * 1000),
+							}
+						: {};
+
+				let dbSubscription =
+					await ctx.context.adapter.update<InputSubscription>({
+						model: "subscription",
+						update: {
+							plan: plan.name.toLowerCase(),
+							status: subscription.status,
+							updatedAt: new Date(),
+							periodStart: new Date(subscription.current_period_start * 1000),
+							periodEnd: new Date(subscription.current_period_end * 1000),
+							stripeSubscriptionId: checkoutSession.subscription as string,
+							seats,
+							...trial,
+						},
+						where: [
+							{
+								field: "id",
+								value: subscriptionId,
+							},
+						],
+					});
+
+				if (trial.trialStart && plan.freeTrial?.onTrialStart) {
+					await plan.freeTrial.onTrialStart(dbSubscription as Subscription);
+				}
+
+				if (!dbSubscription) {
+					dbSubscription = await ctx.context.adapter.findOne<Subscription>({
+						model: "subscription",
+						where: [
+							{
+								field: "id",
+								value: subscriptionId,
+							},
+						],
+					});
+				}
+				await options.subscription?.onSubscriptionComplete?.({
+					event,
+					subscription: dbSubscription as Subscription,
+					stripeSubscription: subscription,
+					plan,
+				});
+				return;
+			}
+		}
+	} catch (e: any) {
+		logger.error(`Stripe webhook failed. Error: ${e.message}`);
+	}
+}
+
+export async function onSubscriptionUpdated(
+	ctx: GenericEndpointContext,
+	options: StripeOptions,
+	event: Stripe.Event,
+) {
+	try {
+		if (!options.subscription?.enabled) {
+			return;
+		}
+		const subscriptionUpdated = event.data.object as Stripe.Subscription;
+		const priceId = subscriptionUpdated.items.data[0].price.id;
+		const plan = await getPlanByPriceId(options, priceId);
+
+		const subscriptionId = subscriptionUpdated.metadata?.subscriptionId;
+		const customerId = subscriptionUpdated.customer?.toString();
+		let subscription = await ctx.context.adapter.findOne<Subscription>({
+			model: "subscription",
+			where: subscriptionId
+				? [{ field: "id", value: subscriptionId }]
+				: [{ field: "stripeSubscriptionId", value: subscriptionUpdated.id }],
+		});
+		if (!subscription) {
+			const subs = await ctx.context.adapter.findMany<Subscription>({
+				model: "subscription",
+				where: [{ field: "stripeCustomerId", value: customerId }],
+			});
+			if (subs.length > 1) {
+				const activeSub = subs.find(
+					(sub) => sub.status === "active" || sub.status === "trialing",
+				);
+				if (!activeSub) {
+					logger.warn(
+						`Stripe webhook error: Multiple subscriptions found for customerId: ${customerId} and no active subscription is found`,
+					);
+					return;
+				}
+				subscription = activeSub;
+			} else {
+				subscription = subs[0];
+			}
+		}
+
+		const seats = subscriptionUpdated.items.data[0].quantity;
+		await ctx.context.adapter.update({
+			model: "subscription",
+			update: {
+				...(plan
+					? {
+							plan: plan.name.toLowerCase(),
+							limits: plan.limits,
+						}
+					: {}),
+				updatedAt: new Date(),
+				status: subscriptionUpdated.status,
+				periodStart: new Date(subscriptionUpdated.current_period_start * 1000),
+				periodEnd: new Date(subscriptionUpdated.current_period_end * 1000),
+				cancelAtPeriodEnd: subscriptionUpdated.cancel_at_period_end,
+				seats,
+				stripeSubscriptionId: subscriptionUpdated.id,
+			},
+			where: [
+				{
+					field: "id",
+					value: subscription.id,
+				},
+			],
+		});
+		const subscriptionCanceled =
+			subscriptionUpdated.status === "active" &&
+			subscriptionUpdated.cancel_at_period_end &&
+			!subscription.cancelAtPeriodEnd; //if this is true, it means the subscription was canceled before the event was triggered
+		if (subscriptionCanceled) {
+			await options.subscription.onSubscriptionCancel?.({
+				subscription,
+				cancellationDetails:
+					subscriptionUpdated.cancellation_details || undefined,
+				stripeSubscription: subscriptionUpdated,
+				event,
+			});
+		}
+		await options.subscription.onSubscriptionUpdate?.({
+			event,
+			subscription,
+		});
+		if (plan) {
+			if (
+				subscriptionUpdated.status === "active" &&
+				subscription.status === "trialing" &&
+				plan.freeTrial?.onTrialEnd
+			) {
+				await plan.freeTrial.onTrialEnd({ subscription }, ctx.request);
+			}
+			if (
+				subscriptionUpdated.status === "incomplete_expired" &&
+				subscription.status === "trialing" &&
+				plan.freeTrial?.onTrialExpired
+			) {
+				await plan.freeTrial.onTrialExpired(subscription, ctx.request);
+			}
+		}
+	} catch (error: any) {
+		logger.error(`Stripe webhook failed. Error: ${error}`);
+	}
+}
+
+export async function onSubscriptionDeleted(
+	ctx: GenericEndpointContext,
+	options: StripeOptions,
+	event: Stripe.Event,
+) {
+	if (!options.subscription?.enabled) {
+		return;
+	}
+	try {
+		const subscriptionDeleted = event.data.object as Stripe.Subscription;
+		const subscriptionId = subscriptionDeleted.id;
+		const subscription = await ctx.context.adapter.findOne<Subscription>({
+			model: "subscription",
+			where: [
+				{
+					field: "stripeSubscriptionId",
+					value: subscriptionId,
+				},
+			],
+		});
+		if (subscription) {
+			await ctx.context.adapter.update({
+				model: "subscription",
+				where: [
+					{
+						field: "id",
+						value: subscription.id,
+					},
+				],
+				update: {
+					status: "canceled",
+					updatedAt: new Date(),
+				},
+			});
+			await options.subscription.onSubscriptionDeleted?.({
+				event,
+				stripeSubscription: subscriptionDeleted,
+				subscription,
+			});
+		} else {
+			logger.warn(
+				`Stripe webhook error: Subscription not found for subscriptionId: ${subscriptionId}`,
+			);
+		}
+	} catch (error: any) {
+		logger.error(`Stripe webhook failed. Error: ${error}`);
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/index.ts
+```typescript
+import {
+	type GenericEndpointContext,
+	type BetterAuthPlugin,
+	logger,
+} from "better-auth";
+import { createAuthEndpoint, createAuthMiddleware } from "better-auth/plugins";
+import Stripe from "stripe";
+import { z } from "zod";
+import {
+	sessionMiddleware,
+	APIError,
+	originCheck,
+	getSessionFromCtx,
+} from "better-auth/api";
+import { generateRandomString } from "better-auth/crypto";
+import {
+	onCheckoutSessionCompleted,
+	onSubscriptionDeleted,
+	onSubscriptionUpdated,
+} from "./hooks";
+import type {
+	Customer,
+	InputSubscription,
+	StripeOptions,
+	Subscription,
+} from "./types";
+import { getPlanByName, getPlanByPriceId, getPlans } from "./utils";
+import { getSchema } from "./schema";
+
+const STRIPE_ERROR_CODES = {
+	SUBSCRIPTION_NOT_FOUND: "Subscription not found",
+	SUBSCRIPTION_PLAN_NOT_FOUND: "Subscription plan not found",
+	ALREADY_SUBSCRIBED_PLAN: "You're already subscribed to this plan",
+	UNABLE_TO_CREATE_CUSTOMER: "Unable to create customer",
+	FAILED_TO_FETCH_PLANS: "Failed to fetch plans",
+	EMAIL_VERIFICATION_REQUIRED:
+		"Email verification is required before you can subscribe to a plan",
+} as const;
+
+const getUrl = (ctx: GenericEndpointContext, url: string) => {
+	if (url.startsWith("http")) {
+		return url;
+	}
+	return `${ctx.context.options.baseURL}${
+		url.startsWith("/") ? url : `/${url}`
+	}`;
+};
+
+export const stripe = <O extends StripeOptions>(options: O) => {
+	const client = options.stripeClient;
+
+	const referenceMiddleware = (
+		action:
+			| "upgrade-subscription"
+			| "list-subscription"
+			| "cancel-subscription",
+	) =>
+		createAuthMiddleware(async (ctx) => {
+			const session = ctx.context.session;
+			if (!session) {
+				throw new APIError("UNAUTHORIZED");
+			}
+			const referenceId =
+				ctx.body?.referenceId || ctx.query?.referenceId || session.user.id;
+			const isAuthorized = ctx.body?.referenceId
+				? await options.subscription?.authorizeReference?.({
+						user: session.user,
+						session: session.session,
+						referenceId,
+						action,
+					})
+				: true;
+			if (!isAuthorized) {
+				throw new APIError("UNAUTHORIZED", {
+					message: "Unauthorized",
+				});
+			}
+		});
+
+	const subscriptionEndpoints = {
+		upgradeSubscription: createAuthEndpoint(
+			"/subscription/upgrade",
+			{
+				method: "POST",
+				body: z.object({
+					/**
+					 * The name of the plan to subscribe
+					 */
+					plan: z.string({
+						description: "The name of the plan to upgrade to",
+					}),
+					/**
+					 * If annual plan should be applied.
+					 */
+					annual: z
+						.boolean({
+							description: "Whether to upgrade to an annual plan",
+						})
+						.optional(),
+					/**
+					 * Reference id of the subscription to upgrade
+					 * This is used to identify the subscription to upgrade
+					 * If not provided, the user's id will be used
+					 */
+					referenceId: z
+						.string({
+							description: "Reference id of the subscription to upgrade",
+						})
+						.optional(),
+					/**
+					 * This is to allow a specific subscription to be upgrade.
+					 * If subscription id is provided, and subscription isn't found,
+					 * it'll throw an error.
+					 */
+					subscriptionId: z
+						.string({
+							description: "The id of the subscription to upgrade",
+						})
+						.optional(),
+					/**
+					 * Any additional data you want to store in your database
+					 * subscriptions
+					 */
+					metadata: z.record(z.string(), z.any()).optional(),
+					/**
+					 * If a subscription
+					 */
+					seats: z
+						.number({
+							description: "Number of seats to upgrade to (if applicable)",
+						})
+						.optional(),
+					/**
+					 * Success url to redirect back after successful subscription
+					 */
+					successUrl: z
+						.string({
+							description:
+								"callback url to redirect back after successful subscription",
+						})
+						.default("/"),
+					/**
+					 * Cancel URL
+					 */
+					cancelUrl: z
+						.string({
+							description:
+								"callback url to redirect back after successful subscription",
+						})
+						.default("/"),
+					/**
+					 * Return URL
+					 */
+					returnUrl: z.string().optional(),
+					/**
+					 * Disable Redirect
+					 */
+					disableRedirect: z.boolean().default(false),
+				}),
+				use: [
+					sessionMiddleware,
+					originCheck((c) => {
+						return [c.body.successURL as string, c.body.cancelURL as string];
+					}),
+					referenceMiddleware("upgrade-subscription"),
+				],
+			},
+			async (ctx) => {
+				const { user, session } = ctx.context.session;
+				if (
+					!user.emailVerified &&
+					options.subscription?.requireEmailVerification
+				) {
+					throw new APIError("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.EMAIL_VERIFICATION_REQUIRED,
+					});
+				}
+				const referenceId = ctx.body.referenceId || user.id;
+				const plan = await getPlanByName(options, ctx.body.plan);
+				if (!plan) {
+					throw new APIError("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.SUBSCRIPTION_PLAN_NOT_FOUND,
+					});
+				}
+				const subscriptionToUpdate = ctx.body.subscriptionId
+					? await ctx.context.adapter.findOne<Subscription>({
+							model: "subscription",
+							where: [{ field: "id", value: ctx.body.subscriptionId }],
+						})
+					: null;
+
+				if (ctx.body.subscriptionId && !subscriptionToUpdate) {
+					throw new APIError("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.SUBSCRIPTION_NOT_FOUND,
+					});
+				}
+
+				let customerId =
+					subscriptionToUpdate?.stripeCustomerId || user.stripeCustomerId;
+
+				if (!customerId) {
+					try {
+						const stripeCustomer = await client.customers.create(
+							{
+								email: user.email,
+								name: user.name,
+								metadata: {
+									...ctx.body.metadata,
+									userId: user.id,
+								},
+							},
+							{
+								idempotencyKey: generateRandomString(32, "a-z", "0-9"),
+							},
+						);
+						await ctx.context.adapter.update({
+							model: "user",
+							update: {
+								stripeCustomerId: stripeCustomer.id,
+							},
+							where: [
+								{
+									field: "id",
+									value: user.id,
+								},
+							],
+						});
+						customerId = stripeCustomer.id;
+					} catch (e: any) {
+						ctx.context.logger.error(e);
+						throw new APIError("BAD_REQUEST", {
+							message: STRIPE_ERROR_CODES.UNABLE_TO_CREATE_CUSTOMER,
+						});
+					}
+				}
+
+				const activeSubscription = customerId
+					? await client.subscriptions
+							.list({
+								customer: customerId,
+								status: "active",
+							})
+							.then((res) =>
+								res.data.find(
+									(subscription) => subscription.id === ctx.body.subscriptionId,
+								),
+							)
+							.catch((e) => null)
+					: null;
+
+				const subscriptions = subscriptionToUpdate
+					? [subscriptionToUpdate]
+					: await ctx.context.adapter.findMany<Subscription>({
+							model: "subscription",
+							where: [
+								{
+									field: "referenceId",
+									value: ctx.body.referenceId || user.id,
+								},
+							],
+						});
+
+				const existingSubscription = subscriptions.find(
+					(sub) => sub.status === "active" || sub.status === "trialing",
+				);
+
+				if (
+					existingSubscription &&
+					existingSubscription.status === "active" &&
+					existingSubscription.plan === ctx.body.plan
+				) {
+					throw new APIError("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.ALREADY_SUBSCRIBED_PLAN,
+					});
+				}
+
+				if (activeSubscription && customerId) {
+					const { url } = await client.billingPortal.sessions
+						.create({
+							customer: customerId,
+							return_url: getUrl(ctx, ctx.body.returnUrl || "/"),
+							flow_data: {
+								type: "subscription_update_confirm",
+								subscription_update_confirm: {
+									subscription: activeSubscription.id,
+									items: [
+										{
+											id: activeSubscription.items.data[0]?.id as string,
+											quantity: 1,
+											price: ctx.body.annual
+												? plan.annualDiscountPriceId
+												: plan.priceId,
+										},
+									],
+								},
+							},
+						})
+						.catch(async (e) => {
+							throw ctx.error("BAD_REQUEST", {
+								message: e.message,
+								code: e.code,
+							});
+						});
+					return ctx.json({
+						url,
+						redirect: true,
+					});
+				}
+
+				let subscription = existingSubscription;
+				if (!subscription) {
+					const newSubscription = await ctx.context.adapter.create<
+						InputSubscription,
+						Subscription
+					>({
+						model: "subscription",
+						data: {
+							plan: plan.name.toLowerCase(),
+							stripeCustomerId: customerId,
+							status: "incomplete",
+							referenceId,
+							seats: ctx.body.seats || 1,
+						},
+					});
+					subscription = newSubscription;
+				}
+
+				if (!subscription) {
+					ctx.context.logger.error("Subscription ID not found");
+					throw new APIError("INTERNAL_SERVER_ERROR");
+				}
+
+				const params = await options.subscription?.getCheckoutSessionParams?.(
+					{
+						user,
+						session,
+						plan,
+						subscription,
+					},
+					ctx.request,
+				);
+
+				const freeTrail = plan.freeTrial
+					? {
+							trial_period_days: plan.freeTrial.days,
+						}
+					: undefined;
+
+				const checkoutSession = await client.checkout.sessions
+					.create(
+						{
+							...(customerId
+								? {
+										customer: customerId,
+										customer_update: {
+											name: "auto",
+											address: "auto",
+										},
+									}
+								: {
+										customer_email: session.user.email,
+									}),
+							success_url: getUrl(
+								ctx,
+								`${
+									ctx.context.baseURL
+								}/subscription/success?callbackURL=${encodeURIComponent(
+									ctx.body.successUrl,
+								)}&subscriptionId=${encodeURIComponent(subscription.id)}`,
+							),
+							cancel_url: getUrl(ctx, ctx.body.cancelUrl),
+							line_items: [
+								{
+									price: ctx.body.annual
+										? plan.annualDiscountPriceId
+										: plan.priceId,
+									quantity: ctx.body.seats || 1,
+								},
+							],
+							subscription_data: {
+								...freeTrail,
+							},
+							mode: "subscription",
+							client_reference_id: referenceId,
+							...params?.params,
+							metadata: {
+								userId: user.id,
+								subscriptionId: subscription.id,
+								referenceId,
+								...params?.params?.metadata,
+							},
+						},
+						params?.options,
+					)
+					.catch(async (e) => {
+						throw ctx.error("BAD_REQUEST", {
+							message: e.message,
+							code: e.code,
+						});
+					});
+				return ctx.json({
+					...checkoutSession,
+					redirect: !ctx.body.disableRedirect,
+				});
+			},
+		),
+		cancelSubscriptionCallback: createAuthEndpoint(
+			"/subscription/cancel/callback",
+			{
+				method: "GET",
+				query: z.record(z.string(), z.any()).optional(),
+				use: [originCheck((ctx) => ctx.query.callbackURL)],
+			},
+			async (ctx) => {
+				if (!ctx.query || !ctx.query.callbackURL || !ctx.query.subscriptionId) {
+					throw ctx.redirect(getUrl(ctx, ctx.query?.callbackURL || "/"));
+				}
+				const session = await getSessionFromCtx<{ stripeCustomerId: string }>(
+					ctx,
+				);
+				if (!session) {
+					throw ctx.redirect(getUrl(ctx, ctx.query?.callbackURL || "/"));
+				}
+				const { user } = session;
+				const { callbackURL, subscriptionId } = ctx.query;
+
+				if (user?.stripeCustomerId) {
+					try {
+						const subscription =
+							await ctx.context.adapter.findOne<Subscription>({
+								model: "subscription",
+								where: [
+									{
+										field: "id",
+										value: subscriptionId,
+									},
+								],
+							});
+						if (
+							!subscription ||
+							subscription.cancelAtPeriodEnd ||
+							subscription.status === "canceled"
+						) {
+							throw ctx.redirect(getUrl(ctx, callbackURL));
+						}
+
+						const stripeSubscription = await client.subscriptions.list({
+							customer: user.stripeCustomerId,
+							status: "active",
+						});
+						const currentSubscription = stripeSubscription.data.find(
+							(sub) => sub.id === subscription.stripeSubscriptionId,
+						);
+						if (currentSubscription?.cancel_at_period_end === true) {
+							await ctx.context.adapter.update({
+								model: "subscription",
+								update: {
+									status: currentSubscription?.status,
+									cancelAtPeriodEnd: true,
+								},
+								where: [
+									{
+										field: "id",
+										value: subscription.id,
+									},
+								],
+							});
+							await options.subscription?.onSubscriptionCancel?.({
+								subscription,
+								cancellationDetails: currentSubscription.cancellation_details,
+								stripeSubscription: currentSubscription,
+								event: undefined,
+							});
+						}
+					} catch (error) {
+						ctx.context.logger.error(
+							"Error checking subscription status from Stripe",
+							error,
+						);
+					}
+				}
+				throw ctx.redirect(getUrl(ctx, callbackURL));
+			},
+		),
+		cancelSubscription: createAuthEndpoint(
+			"/subscription/cancel",
+			{
+				method: "POST",
+				body: z.object({
+					referenceId: z.string().optional(),
+					subscriptionId: z.string().optional(),
+					returnUrl: z.string(),
+				}),
+				use: [
+					sessionMiddleware,
+					originCheck((ctx) => ctx.body.returnUrl),
+					referenceMiddleware("cancel-subscription"),
+				],
+			},
+			async (ctx) => {
+				const referenceId =
+					ctx.body?.referenceId || ctx.context.session.user.id;
+				const subscription = ctx.body.subscriptionId
+					? await ctx.context.adapter.findOne<Subscription>({
+							model: "subscription",
+							where: [
+								{
+									field: "id",
+									value: ctx.body.subscriptionId,
+								},
+							],
+						})
+					: await ctx.context.adapter
+							.findMany<Subscription>({
+								model: "subscription",
+								where: [{ field: "referenceId", value: referenceId }],
+							})
+							.then((subs) =>
+								subs.find(
+									(sub) => sub.status === "active" || sub.status === "trialing",
+								),
+							);
+
+				if (!subscription || !subscription.stripeCustomerId) {
+					throw ctx.error("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.SUBSCRIPTION_NOT_FOUND,
+					});
+				}
+				const activeSubscriptions = await client.subscriptions
+					.list({
+						customer: subscription.stripeCustomerId,
+					})
+					.then((res) =>
+						res.data.filter(
+							(sub) => sub.status === "active" || sub.status === "trialing",
+						),
+					);
+				if (!activeSubscriptions.length) {
+					/**
+					 * If the subscription is not found, we need to delete the subscription
+					 * from the database. This is a rare case and should not happen.
+					 */
+					await ctx.context.adapter.deleteMany({
+						model: "subscription",
+						where: [
+							{
+								field: "referenceId",
+								value: referenceId,
+							},
+						],
+					});
+					throw ctx.error("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.SUBSCRIPTION_NOT_FOUND,
+					});
+				}
+				const activeSubscription = activeSubscriptions.find(
+					(sub) => sub.id === subscription.stripeSubscriptionId,
+				);
+				if (!activeSubscription) {
+					throw ctx.error("BAD_REQUEST", {
+						message: STRIPE_ERROR_CODES.SUBSCRIPTION_NOT_FOUND,
+					});
+				}
+				const { url } = await client.billingPortal.sessions
+					.create({
+						customer: subscription.stripeCustomerId,
+						return_url: getUrl(
+							ctx,
+							`${
+								ctx.context.baseURL
+							}/subscription/cancel/callback?callbackURL=${encodeURIComponent(
+								ctx.body?.returnUrl || "/",
+							)}&subscriptionId=${encodeURIComponent(subscription.id)}`,
+						),
+						flow_data: {
+							type: "subscription_cancel",
+							subscription_cancel: {
+								subscription: activeSubscription.id,
+							},
+						},
+					})
+					.catch(async (e) => {
+						if (e.message.includes("already set to be cancel")) {
+							/**
+							 * incase we missed the event from stripe, we set it manually
+							 * this is a rare case and should not happen
+							 */
+							if (!subscription.cancelAtPeriodEnd) {
+								await ctx.context.adapter.update({
+									model: "subscription",
+									update: {
+										cancelAtPeriodEnd: true,
+									},
+									where: [
+										{
+											field: "referenceId",
+											value: referenceId,
+										},
+									],
+								});
+							}
+						}
+						throw ctx.error("BAD_REQUEST", {
+							message: e.message,
+							code: e.code,
+						});
+					});
+				return {
+					url,
+					redirect: true,
+				};
+			},
+		),
+		listActiveSubscriptions: createAuthEndpoint(
+			"/subscription/list",
+			{
+				method: "GET",
+				query: z.optional(
+					z.object({
+						referenceId: z.string().optional(),
+					}),
+				),
+				use: [sessionMiddleware, referenceMiddleware("list-subscription")],
+			},
+			async (ctx) => {
+				const subscriptions = await ctx.context.adapter.findMany<Subscription>({
+					model: "subscription",
+					where: [
+						{
+							field: "referenceId",
+							value: ctx.query?.referenceId || ctx.context.session.user.id,
+						},
+					],
+				});
+				if (!subscriptions.length) {
+					return [];
+				}
+				const plans = await getPlans(options);
+				if (!plans) {
+					return [];
+				}
+				const subs = subscriptions
+					.map((sub) => {
+						const plan = plans.find(
+							(p) => p.name.toLowerCase() === sub.plan.toLowerCase(),
+						);
+						return {
+							...sub,
+							limits: plan?.limits,
+						};
+					})
+					.filter((sub) => {
+						return sub.status === "active" || sub.status === "trialing";
+					});
+				return ctx.json(subs);
+			},
+		),
+		subscriptionSuccess: createAuthEndpoint(
+			"/subscription/success",
+			{
+				method: "GET",
+				query: z.record(z.string(), z.any()).optional(),
+				use: [originCheck((ctx) => ctx.query.callbackURL)],
+			},
+			async (ctx) => {
+				if (!ctx.query || !ctx.query.callbackURL || !ctx.query.subscriptionId) {
+					throw ctx.redirect(getUrl(ctx, ctx.query?.callbackURL || "/"));
+				}
+				const session = await getSessionFromCtx<{ stripeCustomerId: string }>(
+					ctx,
+				);
+				if (!session) {
+					throw ctx.redirect(getUrl(ctx, ctx.query?.callbackURL || "/"));
+				}
+				const { user } = session;
+				const { callbackURL, subscriptionId } = ctx.query;
+
+				const subscription = await ctx.context.adapter.findOne<Subscription>({
+					model: "subscription",
+					where: [
+						{
+							field: "id",
+							value: subscriptionId,
+						},
+					],
+				});
+
+				if (
+					subscription?.status === "active" ||
+					subscription?.status === "trialing"
+				) {
+					return ctx.redirect(getUrl(ctx, callbackURL));
+				}
+				const customerId =
+					subscription?.stripeCustomerId || user.stripeCustomerId;
+
+				if (customerId) {
+					try {
+						const stripeSubscription = await client.subscriptions
+							.list({
+								customer: customerId,
+								status: "active",
+							})
+							.then((res) => res.data[0]);
+
+						if (stripeSubscription) {
+							const plan = await getPlanByPriceId(
+								options,
+								stripeSubscription.items.data[0]?.plan.id,
+							);
+
+							if (plan && subscription) {
+								await ctx.context.adapter.update({
+									model: "subscription",
+									update: {
+										status: stripeSubscription.status,
+										seats: stripeSubscription.items.data[0]?.quantity || 1,
+										plan: plan.name.toLowerCase(),
+										periodEnd: new Date(
+											stripeSubscription.current_period_end * 1000,
+										),
+										periodStart: new Date(
+											stripeSubscription.current_period_start * 1000,
+										),
+										stripeSubscriptionId: stripeSubscription.id,
+										...(stripeSubscription.trial_start &&
+										stripeSubscription.trial_end
+											? {
+													trialStart: new Date(
+														stripeSubscription.trial_start * 1000,
+													),
+													trialEnd: new Date(
+														stripeSubscription.trial_end * 1000,
+													),
+												}
+											: {}),
+									},
+									where: [
+										{
+											field: "id",
+											value: subscription.id,
+										},
+									],
+								});
+							}
+						}
+					} catch (error) {
+						ctx.context.logger.error(
+							"Error fetching subscription from Stripe",
+							error,
+						);
+					}
+				}
+				throw ctx.redirect(getUrl(ctx, callbackURL));
+			},
+		),
+	} as const;
+	return {
+		id: "stripe",
+		endpoints: {
+			stripeWebhook: createAuthEndpoint(
+				"/stripe/webhook",
+				{
+					method: "POST",
+					metadata: {
+						isAction: false,
+					},
+					cloneRequest: true,
+				},
+				async (ctx) => {
+					if (!ctx.request?.body) {
+						throw new APIError("INTERNAL_SERVER_ERROR");
+					}
+					const buf = await ctx.request.text();
+					const sig = ctx.request.headers.get("stripe-signature") as string;
+					const webhookSecret = options.stripeWebhookSecret;
+					let event: Stripe.Event;
+					try {
+						if (!sig || !webhookSecret) {
+							throw new APIError("BAD_REQUEST", {
+								message: "Stripe webhook secret not found",
+							});
+						}
+						event = await client.webhooks.constructEventAsync(
+							buf,
+							sig,
+							webhookSecret,
+						);
+					} catch (err: any) {
+						ctx.context.logger.error(`${err.message}`);
+						throw new APIError("BAD_REQUEST", {
+							message: `Webhook Error: ${err.message}`,
+						});
+					}
+					try {
+						switch (event.type) {
+							case "checkout.session.completed":
+								await onCheckoutSessionCompleted(ctx, options, event);
+								await options.onEvent?.(event);
+								break;
+							case "customer.subscription.updated":
+								await onSubscriptionUpdated(ctx, options, event);
+								await options.onEvent?.(event);
+								break;
+							case "customer.subscription.deleted":
+								await onSubscriptionDeleted(ctx, options, event);
+								await options.onEvent?.(event);
+								break;
+							default:
+								await options.onEvent?.(event);
+								break;
+						}
+					} catch (e: any) {
+						ctx.context.logger.error(
+							`Stripe webhook failed. Error: ${e.message}`,
+						);
+						throw new APIError("BAD_REQUEST", {
+							message: "Webhook error: See server logs for more information.",
+						});
+					}
+					return ctx.json({ success: true });
+				},
+			),
+			...((options.subscription?.enabled
+				? subscriptionEndpoints
+				: {}) as O["subscription"] extends {
+				enabled: boolean;
+			}
+				? typeof subscriptionEndpoints
+				: {}),
+		},
+		init(ctx) {
+			return {
+				options: {
+					databaseHooks: {
+						user: {
+							create: {
+								async after(user, ctx) {
+									if (ctx && options.createCustomerOnSignUp) {
+										const stripeCustomer = await client.customers.create({
+											email: user.email,
+											name: user.name,
+											metadata: {
+												userId: user.id,
+											},
+										});
+										const customer = await ctx.context.adapter.update<Customer>(
+											{
+												model: "user",
+												update: {
+													stripeCustomerId: stripeCustomer.id,
+												},
+												where: [
+													{
+														field: "id",
+														value: user.id,
+													},
+												],
+											},
+										);
+										if (!customer) {
+											logger.error("#BETTER_AUTH: Failed to create  customer");
+										} else {
+											await options.onCustomerCreate?.({
+												customer,
+												stripeCustomer,
+												user,
+											});
+										}
+									}
+								},
+							},
+						},
+					},
+				},
+			};
+		},
+		schema: getSchema(options),
+	} satisfies BetterAuthPlugin;
+};
+
+export type { Subscription };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/schema.ts
+```typescript
+import type { AuthPluginSchema } from "better-auth";
+import type { StripeOptions } from "./types";
+import { mergeSchema } from "better-auth/db";
+
+export const subscriptions = {
+	subscription: {
+		fields: {
+			plan: {
+				type: "string",
+				required: true,
+			},
+			referenceId: {
+				type: "string",
+				required: true,
+			},
+			stripeCustomerId: {
+				type: "string",
+				required: false,
+			},
+			stripeSubscriptionId: {
+				type: "string",
+				required: false,
+			},
+			status: {
+				type: "string",
+				defaultValue: "incomplete",
+			},
+			periodStart: {
+				type: "date",
+				required: false,
+			},
+			periodEnd: {
+				type: "date",
+				required: false,
+			},
+			cancelAtPeriodEnd: {
+				type: "boolean",
+				required: false,
+				defaultValue: false,
+			},
+			seats: {
+				type: "number",
+				required: false,
+			},
+		},
+	},
+} satisfies AuthPluginSchema;
+
+export const user = {
+	user: {
+		fields: {
+			stripeCustomerId: {
+				type: "string",
+				required: false,
+			},
+		},
+	},
+} satisfies AuthPluginSchema;
+
+export const getSchema = (options: StripeOptions) => {
+	if (
+		options.schema &&
+		!options.subscription?.enabled &&
+		"subscription" in options.schema
+	) {
+		options.schema.subscription = undefined;
+	}
+	return mergeSchema(
+		{
+			...(options.subscription?.enabled ? subscriptions : {}),
+			...user,
+		},
+		options.schema,
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/stripe.test.ts
+```typescript
+import { betterAuth, type User } from "better-auth";
+import { memoryAdapter } from "better-auth/adapters/memory";
+import { createAuthClient } from "better-auth/client";
+import { setCookieToHeader } from "better-auth/cookies";
+import { bearer } from "better-auth/plugins";
+import Stripe from "stripe";
+import { vi } from "vitest";
+import { stripe } from ".";
+import { stripeClient } from "./client";
+import type { StripeOptions, Subscription } from "./types";
+
+describe("stripe", async () => {
+	const mockStripe = {
+		customers: {
+			create: vi.fn().mockResolvedValue({ id: "cus_mock123" }),
+		},
+		checkout: {
+			sessions: {
+				create: vi.fn().mockResolvedValue({
+					url: "https://checkout.stripe.com/mock",
+					id: "",
+				}),
+			},
+		},
+		billingPortal: {
+			sessions: {
+				create: vi
+					.fn()
+					.mockResolvedValue({ url: "https://billing.stripe.com/mock" }),
+			},
+		},
+		subscriptions: {
+			retrieve: vi.fn(),
+			list: vi.fn().mockResolvedValue({ data: [] }),
+		},
+		webhooks: {
+			constructEvent: vi.fn(),
+		},
+	};
+
+	const _stripe = mockStripe as unknown as Stripe;
+	const data = {
+		user: [],
+		session: [],
+		verification: [],
+		account: [],
+		customer: [],
+		subscription: [],
+	};
+	const memory = memoryAdapter(data);
+	const stripeOptions = {
+		stripeClient: _stripe,
+		stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+		createCustomerOnSignUp: true,
+		subscription: {
+			enabled: true,
+			plans: [
+				{
+					priceId: process.env.STRIPE_PRICE_ID_1!,
+					name: "starter",
+				},
+				{
+					priceId: process.env.STRIPE_PRICE_ID_2!,
+					name: "premium",
+				},
+			],
+		},
+	} satisfies StripeOptions;
+	const auth = betterAuth({
+		database: memory,
+		baseURL: "http://localhost:3000",
+		// database: new Database(":memory:"),
+		emailAndPassword: {
+			enabled: true,
+		},
+		plugins: [stripe(stripeOptions)],
+	});
+	const ctx = await auth.$context;
+	const authClient = createAuthClient({
+		baseURL: "http://localhost:3000",
+		plugins: [
+			bearer(),
+			stripeClient({
+				subscription: true,
+			}),
+		],
+		fetchOptions: {
+			customFetchImpl: async (url, init) => {
+				return auth.handler(new Request(url, init));
+			},
+		},
+	});
+
+	const testUser = {
+		email: "test@email.com",
+		password: "password",
+		name: "Test User",
+	};
+
+	beforeEach(() => {
+		data.user = [];
+		data.session = [];
+		data.verification = [];
+		data.account = [];
+		data.customer = [];
+		data.subscription = [];
+
+		vi.clearAllMocks();
+	});
+
+	async function getHeader() {
+		const headers = new Headers();
+		const userRes = await authClient.signIn.email(testUser, {
+			throw: true,
+			onSuccess: setCookieToHeader(headers),
+		});
+		return {
+			headers,
+			response: userRes,
+		};
+	}
+
+	it("should create a customer on sign up", async () => {
+		const userRes = await authClient.signUp.email(testUser, {
+			throw: true,
+		});
+		const res = await ctx.adapter.findOne<User>({
+			model: "user",
+			where: [
+				{
+					field: "id",
+					value: userRes.user.id,
+				},
+			],
+		});
+		expect(res).toMatchObject({
+			id: expect.any(String),
+			stripeCustomerId: expect.any(String),
+		});
+	});
+
+	it("should create a subscription", async () => {
+		const userRes = await authClient.signUp.email(testUser, {
+			throw: true,
+		});
+
+		const headers = new Headers();
+		await authClient.signIn.email(testUser, {
+			throw: true,
+			onSuccess: setCookieToHeader(headers),
+		});
+
+		const res = await authClient.subscription.upgrade({
+			plan: "starter",
+			fetchOptions: {
+				headers,
+			},
+		});
+		expect(res.data?.url).toBeDefined();
+		const subscription = await ctx.adapter.findOne<Subscription>({
+			model: "subscription",
+			where: [
+				{
+					field: "referenceId",
+					value: userRes.user.id,
+				},
+			],
+		});
+		expect(subscription).toMatchObject({
+			id: expect.any(String),
+			plan: "starter",
+			referenceId: userRes.user.id,
+			stripeCustomerId: expect.any(String),
+			status: "incomplete",
+			periodStart: undefined,
+			cancelAtPeriodEnd: undefined,
+		});
+	});
+
+	it("should list active subscriptions", async () => {
+		const userRes = await authClient.signUp.email(
+			{
+				...testUser,
+				email: "list-test@email.com",
+			},
+			{
+				throw: true,
+			},
+		);
+		const userId = userRes.user.id;
+
+		const headers = new Headers();
+		await authClient.signIn.email(
+			{
+				...testUser,
+				email: "list-test@email.com",
+			},
+			{
+				throw: true,
+				onSuccess: setCookieToHeader(headers),
+			},
+		);
+
+		const listRes = await authClient.subscription.list({
+			fetchOptions: {
+				headers,
+			},
+		});
+
+		expect(Array.isArray(listRes.data)).toBe(true);
+
+		await authClient.subscription.upgrade({
+			plan: "starter",
+			fetchOptions: {
+				headers,
+			},
+		});
+		const listBeforeActive = await authClient.subscription.list({
+			fetchOptions: {
+				headers,
+			},
+		});
+		expect(listBeforeActive.data?.length).toBe(0);
+		// Update the subscription status to active
+		await ctx.adapter.update({
+			model: "subscription",
+			update: {
+				status: "active",
+			},
+			where: [
+				{
+					field: "referenceId",
+					value: userId,
+				},
+			],
+		});
+		const listAfterRes = await authClient.subscription.list({
+			fetchOptions: {
+				headers,
+			},
+		});
+		expect(listAfterRes.data?.length).toBeGreaterThan(0);
+	});
+
+	it("should handle subscription webhook events", async () => {
+		const testSubscriptionId = "sub_123456";
+		const testReferenceId = "user_123";
+		await ctx.adapter.create({
+			model: "user",
+			data: {
+				id: testReferenceId,
+				email: "test@email.com",
+			},
+		});
+		await ctx.adapter.create({
+			model: "subscription",
+			data: {
+				id: testSubscriptionId,
+				referenceId: testReferenceId,
+				stripeCustomerId: "cus_mock123",
+				status: "active",
+				plan: "starter",
+			},
+		});
+		const mockCheckoutSessionEvent = {
+			type: "checkout.session.completed",
+			data: {
+				object: {
+					mode: "subscription",
+					subscription: testSubscriptionId,
+					metadata: {
+						referenceId: testReferenceId,
+						subscriptionId: testSubscriptionId,
+					},
+				},
+			},
+		};
+
+		const mockSubscription = {
+			id: testSubscriptionId,
+			status: "active",
+			items: {
+				data: [
+					{
+						price: { id: process.env.STRIPE_PRICE_ID_1 },
+						quantity: 1,
+					},
+				],
+			},
+			current_period_start: Math.floor(Date.now() / 1000),
+			current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+		};
+
+		const stripeForTest = {
+			...stripeOptions.stripeClient,
+			subscriptions: {
+				...stripeOptions.stripeClient.subscriptions,
+				retrieve: vi.fn().mockResolvedValue(mockSubscription),
+			},
+			webhooks: {
+				constructEventAsync: vi
+					.fn()
+					.mockResolvedValue(mockCheckoutSessionEvent),
+			},
+		};
+
+		const testOptions = {
+			...stripeOptions,
+			stripeClient: stripeForTest as unknown as Stripe,
+			stripeWebhookSecret: "test_secret",
+		};
+
+		const testAuth = betterAuth({
+			baseURL: "http://localhost:3000",
+			database: memory,
+			emailAndPassword: {
+				enabled: true,
+			},
+			plugins: [stripe(testOptions)],
+		});
+
+		const testCtx = await testAuth.$context;
+
+		const mockRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(mockCheckoutSessionEvent),
+			},
+		);
+		const response = await testAuth.handler(mockRequest);
+		expect(response.status).toBe(200);
+
+		const updatedSubscription = await testCtx.adapter.findOne<Subscription>({
+			model: "subscription",
+			where: [
+				{
+					field: "id",
+					value: testSubscriptionId,
+				},
+			],
+		});
+
+		expect(updatedSubscription).toMatchObject({
+			id: testSubscriptionId,
+			status: "active",
+			periodStart: expect.any(Date),
+			periodEnd: expect.any(Date),
+			plan: "starter",
+		});
+	});
+
+	it("should handle subscription deletion webhook", async () => {
+		const userId = "test_user";
+		const subId = "test_sub_delete";
+
+		await ctx.adapter.create({
+			model: "user",
+			data: {
+				id: userId,
+				email: "delete-test@email.com",
+			},
+		});
+
+		await ctx.adapter.create({
+			model: "subscription",
+			data: {
+				id: subId,
+				referenceId: userId,
+				stripeCustomerId: "cus_delete_test",
+				status: "active",
+				plan: "starter",
+				stripeSubscriptionId: "sub_delete_test",
+			},
+		});
+
+		const subscription = await ctx.adapter.findOne<Subscription>({
+			model: "subscription",
+			where: [
+				{
+					field: "referenceId",
+					value: userId,
+				},
+			],
+		});
+
+		const mockDeleteEvent = {
+			type: "customer.subscription.deleted",
+			data: {
+				object: {
+					id: "sub_delete_test",
+					customer: subscription?.stripeCustomerId,
+					status: "canceled",
+					metadata: {
+						referenceId: subscription?.referenceId,
+						subscriptionId: subscription?.id,
+					},
+				},
+			},
+		};
+
+		const stripeForTest = {
+			...stripeOptions.stripeClient,
+			webhooks: {
+				constructEventAsync: vi.fn().mockResolvedValue(mockDeleteEvent),
+			},
+			subscriptions: {
+				retrieve: vi.fn().mockResolvedValue({
+					status: "canceled",
+					id: subId,
+				}),
+			},
+		};
+
+		const testOptions = {
+			...stripeOptions,
+			stripeClient: stripeForTest as unknown as Stripe,
+			stripeWebhookSecret: "test_secret",
+		};
+
+		const testAuth = betterAuth({
+			baseURL: "http://localhost:3000",
+			emailAndPassword: {
+				enabled: true,
+			},
+			database: memory,
+			plugins: [stripe(testOptions)],
+		});
+
+		const mockRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(mockDeleteEvent),
+			},
+		);
+
+		const response = await testAuth.handler(mockRequest);
+		expect(response.status).toBe(200);
+
+		if (subscription) {
+			const updatedSubscription = await ctx.adapter.findOne<Subscription>({
+				model: "subscription",
+				where: [
+					{
+						field: "id",
+						value: subscription.id,
+					},
+				],
+			});
+			expect(updatedSubscription?.status).toBe("canceled");
+		}
+	});
+
+	it("should execute subscription event handlers", async () => {
+		const onSubscriptionComplete = vi.fn();
+		const onSubscriptionUpdate = vi.fn();
+		const onSubscriptionCancel = vi.fn();
+		const onSubscriptionDeleted = vi.fn();
+
+		const testOptions = {
+			...stripeOptions,
+			subscription: {
+				...stripeOptions.subscription,
+				onSubscriptionComplete,
+				onSubscriptionUpdate,
+				onSubscriptionCancel,
+				onSubscriptionDeleted,
+			},
+			stripeWebhookSecret: "test_secret",
+		} as unknown as StripeOptions;
+
+		const testAuth = betterAuth({
+			baseURL: "http://localhost:3000",
+			database: memory,
+			emailAndPassword: {
+				enabled: true,
+			},
+			plugins: [stripe(testOptions)],
+		});
+
+		// Test subscription complete handler
+		const completeEvent = {
+			type: "checkout.session.completed",
+			data: {
+				object: {
+					mode: "subscription",
+					subscription: "sub_123",
+					metadata: {
+						referenceId: "user_123",
+						subscriptionId: "sub_123",
+					},
+				},
+			},
+		};
+
+		const mockSubscription = {
+			id: "sub_123",
+			status: "active",
+			items: {
+				data: [{ price: { id: process.env.STRIPE_PRICE_ID_1 } }],
+			},
+			current_period_start: Math.floor(Date.now() / 1000),
+			current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+		};
+
+		const mockStripeForEvents = {
+			...testOptions.stripeClient,
+			subscriptions: {
+				retrieve: vi.fn().mockResolvedValue(mockSubscription),
+			},
+			webhooks: {
+				constructEventAsync: vi.fn().mockResolvedValue(completeEvent),
+			},
+		};
+
+		const eventTestOptions = {
+			...testOptions,
+			stripeClient: mockStripeForEvents as unknown as Stripe,
+		};
+
+		const eventTestAuth = betterAuth({
+			baseURL: "http://localhost:3000",
+			database: memory,
+			emailAndPassword: { enabled: true },
+			plugins: [stripe(eventTestOptions)],
+		});
+
+		await ctx.adapter.create({
+			model: "subscription",
+			data: {
+				id: "sub_123",
+				referenceId: "user_123",
+				stripeCustomerId: "cus_123",
+				stripeSubscriptionId: "sub_123",
+				status: "incomplete",
+				plan: "starter",
+			},
+		});
+
+		const webhookRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(completeEvent),
+			},
+		);
+
+		await eventTestAuth.handler(webhookRequest);
+
+		expect(onSubscriptionComplete).toHaveBeenCalledWith(
+			expect.objectContaining({
+				event: expect.any(Object),
+				subscription: expect.any(Object),
+				stripeSubscription: expect.any(Object),
+				plan: expect.any(Object),
+			}),
+		);
+
+		const updateEvent = {
+			type: "customer.subscription.updated",
+			data: {
+				object: {
+					id: "sub_123",
+					customer: "cus_123",
+					status: "active",
+					items: {
+						data: [{ price: { id: process.env.STRIPE_PRICE_ID_1 } }],
+					},
+					current_period_start: Math.floor(Date.now() / 1000),
+					current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+				},
+			},
+		};
+
+		const updateRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(updateEvent),
+			},
+		);
+
+		mockStripeForEvents.webhooks.constructEventAsync.mockReturnValue(
+			updateEvent,
+		);
+		await eventTestAuth.handler(updateRequest);
+		expect(onSubscriptionUpdate).toHaveBeenCalledWith(
+			expect.objectContaining({
+				event: expect.any(Object),
+				subscription: expect.any(Object),
+			}),
+		);
+
+		const userCancelEvent = {
+			type: "customer.subscription.updated",
+			data: {
+				object: {
+					id: "sub_123",
+					customer: "cus_123",
+					status: "active",
+					cancel_at_period_end: true,
+					cancellation_details: {
+						reason: "cancellation_requested",
+						comment: "Customer canceled subscription",
+					},
+					items: {
+						data: [{ price: { id: process.env.STRIPE_PRICE_ID_1 } }],
+					},
+					current_period_start: Math.floor(Date.now() / 1000),
+					current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+				},
+			},
+		};
+
+		const userCancelRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(userCancelEvent),
+			},
+		);
+
+		mockStripeForEvents.webhooks.constructEventAsync.mockReturnValue(
+			userCancelEvent,
+		);
+		await eventTestAuth.handler(userCancelRequest);
+		const cancelEvent = {
+			type: "customer.subscription.updated",
+			data: {
+				object: {
+					id: "sub_123",
+					customer: "cus_123",
+					status: "active",
+					cancel_at_period_end: true,
+					items: {
+						data: [{ price: { id: process.env.STRIPE_PRICE_ID_1 } }],
+					},
+					current_period_start: Math.floor(Date.now() / 1000),
+					current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
+				},
+			},
+		};
+
+		const cancelRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(cancelEvent),
+			},
+		);
+
+		mockStripeForEvents.webhooks.constructEventAsync.mockReturnValue(
+			cancelEvent,
+		);
+		await eventTestAuth.handler(cancelRequest);
+
+		expect(onSubscriptionCancel).toHaveBeenCalled();
+
+		const deleteEvent = {
+			type: "customer.subscription.deleted",
+			data: {
+				object: {
+					id: "sub_123",
+					customer: "cus_123",
+					status: "canceled",
+					metadata: {
+						referenceId: "user_123",
+						subscriptionId: "sub_123",
+					},
+				},
+			},
+		};
+
+		const deleteRequest = new Request(
+			"http://localhost:3000/api/auth/stripe/webhook",
+			{
+				method: "POST",
+				headers: {
+					"stripe-signature": "test_signature",
+				},
+				body: JSON.stringify(deleteEvent),
+			},
+		);
+
+		mockStripeForEvents.webhooks.constructEventAsync.mockReturnValue(
+			deleteEvent,
+		);
+		await eventTestAuth.handler(deleteRequest);
+
+		expect(onSubscriptionDeleted).toHaveBeenCalled();
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/types.ts
+```typescript
+import type { InferOptionSchema, Session, User } from "better-auth";
+import type Stripe from "stripe";
+import type { subscriptions, user } from "./schema";
+
+export type StripePlan = {
+	/**
+	 * Monthly price id
+	 */
+	priceId?: string;
+	/**
+	 * To use lookup key instead of price id
+	 *
+	 * https://docs.stripe.com/products-prices/
+	 * manage-prices#lookup-keys
+	 */
+	lookupKey?: string;
+	/**
+	 * A yearly discount price id
+	 *
+	 * useful when you want to offer a discount for
+	 * yearly subscription
+	 */
+	annualDiscountPriceId?: string;
+	/**
+	 * To use lookup key instead of price id
+	 *
+	 * https://docs.stripe.com/products-prices/
+	 * manage-prices#lookup-keys
+	 */
+	annualDiscountLookupKey?: string;
+	/**
+	 * Plan name
+	 */
+	name: string;
+	/**
+	 * Limits for the plan
+	 */
+	limits?: Record<string, number>;
+	/**
+	 * Plan group name
+	 *
+	 * useful when you want to group plans or
+	 * when a user can subscribe to multiple plans.
+	 */
+	group?: string;
+	/**
+	 * Free trial days
+	 */
+	freeTrial?: {
+		/**
+		 * Number of days
+		 */
+		days: number;
+		/**
+		 * A function that will be called when the trial
+		 * starts.
+		 *
+		 * @param subscription
+		 * @returns
+		 */
+		onTrialStart?: (subscription: Subscription) => Promise<void>;
+		/**
+		 * A function that will be called when the trial
+		 * ends
+		 *
+		 * @param subscription - Subscription
+		 * @returns
+		 */
+		onTrialEnd?: (
+			data: {
+				subscription: Subscription;
+			},
+			request?: Request,
+		) => Promise<void>;
+		/**
+		 * A function that will be called when the trial
+		 * expired.
+		 * @param subscription - Subscription
+		 * @returns
+		 */
+		onTrialExpired?: (
+			subscription: Subscription,
+			request?: Request,
+		) => Promise<void>;
+	};
+};
+
+export interface Subscription {
+	/**
+	 * Database identifier
+	 */
+	id: string;
+	/**
+	 * The plan name
+	 */
+	plan: string;
+	/**
+	 * Stripe customer id
+	 */
+	stripeCustomerId?: string;
+	/**
+	 * Stripe subscription id
+	 */
+	stripeSubscriptionId?: string;
+	/**
+	 * Trial start date
+	 */
+	trialStart?: Date;
+	/**
+	 * Trial end date
+	 */
+	trialEnd?: Date;
+	/**
+	 * Price Id for the subscription
+	 */
+	priceId?: string;
+	/**
+	 * To what reference id the subscription belongs to
+	 * @example
+	 * - userId for a user
+	 * - workspace id for a saas platform
+	 * - website id for a hosting platform
+	 *
+	 * @default - userId
+	 */
+	referenceId: string;
+	/**
+	 * Subscription status
+	 */
+	status:
+		| "active"
+		| "canceled"
+		| "incomplete"
+		| "incomplete_expired"
+		| "past_due"
+		| "paused"
+		| "trialing"
+		| "unpaid";
+	/**
+	 * The billing cycle start date
+	 */
+	periodStart?: Date;
+	/**
+	 * The billing cycle end date
+	 */
+	periodEnd?: Date;
+	/**
+	 * Cancel at period end
+	 */
+	cancelAtPeriodEnd?: boolean;
+	/**
+	 * A field to group subscriptions so you can have multiple subscriptions
+	 * for one reference id
+	 */
+	groupId?: string;
+	/**
+	 * Number of seats for the subscription (useful for team plans)
+	 */
+	seats?: number;
+}
+
+export interface StripeOptions {
+	/**
+	 * Stripe Client
+	 */
+	stripeClient: Stripe;
+	/**
+	 * Stripe Webhook Secret
+	 *
+	 * @description Stripe webhook secret key
+	 */
+	stripeWebhookSecret: string;
+	/**
+	 * Enable customer creation when a user signs up
+	 */
+	createCustomerOnSignUp?: boolean;
+	/**
+	 * A callback to run after a customer has been created
+	 * @param customer - Customer Data
+	 * @param stripeCustomer - Stripe Customer Data
+	 * @returns
+	 */
+	onCustomerCreate?: (
+		data: {
+			customer: Customer;
+			stripeCustomer: Stripe.Customer;
+			user: User;
+		},
+		request?: Request,
+	) => Promise<void>;
+	/**
+	 * A custom function to get the customer create
+	 * params
+	 * @param data - data containing user and session
+	 * @returns
+	 */
+	getCustomerCreateParams?: (
+		data: {
+			user: User;
+			session: Session;
+		},
+		request?: Request,
+	) => Promise<{}>;
+	/**
+	 * Subscriptions
+	 */
+	subscription?: {
+		enabled: boolean;
+		/**
+		 * Subscription Configuration
+		 */
+		/**
+		 * List of plan
+		 */
+		plans: StripePlan[] | (() => Promise<StripePlan[]>);
+		/**
+		 * Require email verification before a user is allowed to upgrade
+		 * their subscriptions
+		 *
+		 * @default false
+		 */
+		requireEmailVerification?: boolean;
+		/**
+		 * A callback to run after a user has subscribed to a package
+		 * @param event - Stripe Event
+		 * @param subscription - Subscription Data
+		 * @returns
+		 */
+		onSubscriptionComplete?: (
+			data: {
+				event: Stripe.Event;
+				stripeSubscription: Stripe.Subscription;
+				subscription: Subscription;
+				plan: StripePlan;
+			},
+			request?: Request,
+		) => Promise<void>;
+		/**
+		 * A callback to run after a user is about to cancel their subscription
+		 * @returns
+		 */
+		onSubscriptionUpdate?: (data: {
+			event: Stripe.Event;
+			subscription: Subscription;
+		}) => Promise<void>;
+		/**
+		 * A callback to run after a user is about to cancel their subscription
+		 * @returns
+		 */
+		onSubscriptionCancel?: (data: {
+			event?: Stripe.Event;
+			subscription: Subscription;
+			stripeSubscription: Stripe.Subscription;
+			cancellationDetails?: Stripe.Subscription.CancellationDetails | null;
+		}) => Promise<void>;
+		/**
+		 * A function to check if the reference id is valid
+		 * and belongs to the user
+		 *
+		 * @param data - data containing user, session and referenceId
+		 * @param request - Request Object
+		 * @returns
+		 */
+		authorizeReference?: (
+			data: {
+				user: User & Record<string, any>;
+				session: Session & Record<string, any>;
+				referenceId: string;
+				action:
+					| "upgrade-subscription"
+					| "list-subscription"
+					| "cancel-subscription";
+			},
+			request?: Request,
+		) => Promise<boolean>;
+		/**
+		 * A callback to run after a user has deleted their subscription
+		 * @returns
+		 */
+		onSubscriptionDeleted?: (data: {
+			event: Stripe.Event;
+			stripeSubscription: Stripe.Subscription;
+			subscription: Subscription;
+		}) => Promise<void>;
+		/**
+		 * parameters for session create params
+		 *
+		 * @param data - data containing user, session and plan
+		 * @param request - Request Object
+		 */
+		getCheckoutSessionParams?: (
+			data: {
+				user: User & Record<string, any>;
+				session: Session & Record<string, any>;
+				plan: StripePlan;
+				subscription: Subscription;
+			},
+			request?: Request,
+		) =>
+			| Promise<{
+					params?: Stripe.Checkout.SessionCreateParams;
+					options?: Stripe.RequestOptions;
+			  }>
+			| {
+					params?: Stripe.Checkout.SessionCreateParams;
+					options?: Stripe.RequestOptions;
+			  };
+		/**
+		 * Enable organization subscription
+		 */
+		organization?: {
+			enabled: boolean;
+		};
+	};
+	onEvent?: (event: Stripe.Event) => Promise<void>;
+	/**
+	 * Schema for the stripe plugin
+	 */
+	schema?: InferOptionSchema<typeof subscriptions & typeof user>;
+}
+
+export interface Customer {
+	id: string;
+	stripeCustomerId?: string;
+	userId: string;
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+export interface InputSubscription extends Omit<Subscription, "id"> {}
+export interface InputCustomer extends Omit<Customer, "id"> {}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/stripe/src/utils.ts
+```typescript
+import type { StripeOptions } from "./types";
+
+export async function getPlans(options: StripeOptions) {
+	return typeof options?.subscription?.plans === "function"
+		? await options.subscription?.plans()
+		: options.subscription?.plans;
+}
+
+export async function getPlanByPriceId(
+	options: StripeOptions,
+	priceId: string,
+) {
+	return await getPlans(options).then((res) =>
+		res?.find(
+			(plan) =>
+				plan.priceId === priceId || plan.annualDiscountPriceId === priceId,
+		),
+	);
+}
+
+export async function getPlanByName(options: StripeOptions, name: string) {
+	return await getPlans(options).then((res) =>
+		res?.find((plan) => plan.name.toLowerCase() === name.toLowerCase()),
+	);
+}
+
+```

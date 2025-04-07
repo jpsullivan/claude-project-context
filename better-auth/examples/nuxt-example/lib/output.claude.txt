@@ -1,0 +1,56 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/auth-client.ts</source>
+<document_content>
+import { createAuthClient } from "better-auth/vue";
+
+export const authClient = createAuthClient();
+
+export const {
+	signIn,
+	signOut,
+	signUp,
+	useSession,
+	forgetPassword,
+	resetPassword,
+} = authClient;
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/auth.ts</source>
+<document_content>
+import Database from "better-sqlite3";
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+	database: new Database("./db.sqlite"),
+	socialProviders: {
+		google: {
+			clientId: process.env.GOOGLE_CLIENT_ID || "",
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+		},
+	},
+	emailAndPassword: {
+		enabled: true,
+		async sendResetPassword(url, user) {
+			console.log("Reset password url:", url);
+		},
+	},
+});
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/utils.ts</source>
+<document_content>
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+</document_content>
+</document>
+</documents>

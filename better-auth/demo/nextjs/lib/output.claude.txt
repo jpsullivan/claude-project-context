@@ -1,0 +1,533 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/auth-client.ts</source>
+<document_content>
+import { createAuthClient } from "better-auth/react";
+import {
+	organizationClient,
+	passkeyClient,
+	twoFactorClient,
+	adminClient,
+	multiSessionClient,
+	oneTapClient,
+	oidcClient,
+	genericOAuthClient,
+} from "better-auth/client/plugins";
+import { toast } from "sonner";
+import { stripeClient } from "@better-auth/stripe/client";
+
+export const client = createAuthClient({
+	plugins: [
+		organizationClient(),
+		twoFactorClient({
+			onTwoFactorRedirect() {
+				window.location.href = "/two-factor";
+			},
+		}),
+		passkeyClient(),
+		adminClient(),
+		multiSessionClient(),
+		oneTapClient({
+			clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+			promptOptions: {
+				maxAttempts: 1,
+			},
+		}),
+		oidcClient(),
+		genericOAuthClient(),
+		stripeClient({
+			subscription: true,
+		}),
+	],
+	fetchOptions: {
+		onError(e) {
+			if (e.error.status === 429) {
+				toast.error("Too many requests. Please try again later.");
+			}
+		},
+	},
+});
+
+export const {
+	signUp,
+	signIn,
+	signOut,
+	useSession,
+	organization,
+	useListOrganizations,
+	useActiveOrganization,
+} = client;
+
+client.$store.listen("$sessionSignal", async () => {});
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/auth-types.ts</source>
+<document_content>
+import type { auth } from "./auth";
+import { client } from "./auth-client";
+
+export type Session = typeof auth.$Infer.Session;
+export type ActiveOrganization = typeof client.$Infer.ActiveOrganization;
+export type Invitation = typeof client.$Infer.Invitation;
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/auth.ts</source>
+<document_content>
+import { betterAuth } from "better-auth";
+import {
+	bearer,
+	admin,
+	multiSession,
+	organization,
+	twoFactor,
+	oneTap,
+	oAuthProxy,
+	openAPI,
+	oidcProvider,
+	customSession,
+} from "better-auth/plugins";
+import { reactInvitationEmail } from "./email/invitation";
+import { LibsqlDialect } from "@libsql/kysely-libsql";
+import { reactResetPasswordEmail } from "./email/reset-password";
+import { resend } from "./email/resend";
+import { MysqlDialect } from "kysely";
+import { createPool } from "mysql2/promise";
+import { nextCookies } from "better-auth/next-js";
+import { passkey } from "better-auth/plugins/passkey";
+import { stripe } from "@better-auth/stripe";
+import { Stripe } from "stripe";
+
+const from = process.env.BETTER_AUTH_EMAIL || "delivered@resend.dev";
+const to = process.env.TEST_EMAIL || "";
+
+const libsql = new LibsqlDialect({
+	url: process.env.TURSO_DATABASE_URL || "",
+	authToken: process.env.TURSO_AUTH_TOKEN || "",
+});
+
+const mysql = process.env.USE_MYSQL
+	? new MysqlDialect(createPool(process.env.MYSQL_DATABASE_URL || ""))
+	: null;
+
+const dialect = process.env.USE_MYSQL ? mysql : libsql;
+
+if (!dialect) {
+	throw new Error("No dialect found");
+}
+
+const PROFESSION_PRICE_ID = {
+	default: "price_1QxWZ5LUjnrYIrml5Dnwnl0X",
+	annual: "price_1QxWZTLUjnrYIrmlyJYpwyhz",
+};
+const STARTER_PRICE_ID = {
+	default: "price_1QxWWtLUjnrYIrmleljPKszG",
+	annual: "price_1QxWYqLUjnrYIrmlonqPThVF",
+};
+
+export const auth = betterAuth({
+	appName: "Better Auth Demo",
+	database: {
+		dialect,
+		type: process.env.USE_MYSQL ? "mysql" : "sqlite",
+	},
+	emailVerification: {
+		async sendVerificationEmail({ user, url }) {
+			const res = await resend.emails.send({
+				from,
+				to: to || user.email,
+				subject: "Verify your email address",
+				html: `<a href="${url}">Verify your email address</a>`,
+			});
+			console.log(res, user.email);
+		},
+	},
+	account: {
+		accountLinking: {
+			trustedProviders: ["google", "github", "demo-app"],
+		},
+	},
+	emailAndPassword: {
+		enabled: true,
+		async sendResetPassword({ user, url }) {
+			await resend.emails.send({
+				from,
+				to: user.email,
+				subject: "Reset your password",
+				react: reactResetPasswordEmail({
+					username: user.email,
+					resetLink: url,
+				}),
+			});
+		},
+	},
+	socialProviders: {
+		facebook: {
+			clientId: process.env.FACEBOOK_CLIENT_ID || "",
+			clientSecret: process.env.FACEBOOK_CLIENT_SECRET || "",
+		},
+		github: {
+			clientId: process.env.GITHUB_CLIENT_ID || "",
+			clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+		},
+		google: {
+			clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "",
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+		},
+		discord: {
+			clientId: process.env.DISCORD_CLIENT_ID || "",
+			clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+		},
+		microsoft: {
+			clientId: process.env.MICROSOFT_CLIENT_ID || "",
+			clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",
+		},
+		twitch: {
+			clientId: process.env.TWITCH_CLIENT_ID || "",
+			clientSecret: process.env.TWITCH_CLIENT_SECRET || "",
+		},
+		twitter: {
+			clientId: process.env.TWITTER_CLIENT_ID || "",
+			clientSecret: process.env.TWITTER_CLIENT_SECRET || "",
+		},
+	},
+	plugins: [
+		organization({
+			async sendInvitationEmail(data) {
+				await resend.emails.send({
+					from,
+					to: data.email,
+					subject: "You've been invited to join an organization",
+					react: reactInvitationEmail({
+						username: data.email,
+						invitedByUsername: data.inviter.user.name,
+						invitedByEmail: data.inviter.user.email,
+						teamName: data.organization.name,
+						inviteLink:
+							process.env.NODE_ENV === "development"
+								? `http://localhost:3000/accept-invitation/${data.id}`
+								: `${
+										process.env.BETTER_AUTH_URL ||
+										"https://demo.better-auth.com"
+									}/accept-invitation/${data.id}`,
+					}),
+				});
+			},
+		}),
+		twoFactor({
+			otpOptions: {
+				async sendOTP({ user, otp }) {
+					await resend.emails.send({
+						from,
+						to: user.email,
+						subject: "Your OTP",
+						html: `Your OTP is ${otp}`,
+					});
+				},
+			},
+		}),
+		passkey(),
+		openAPI(),
+		bearer(),
+		admin({
+			adminUserIds: ["EXD5zjob2SD6CBWcEQ6OpLRHcyoUbnaB"],
+		}),
+		multiSession(),
+		oAuthProxy(),
+		nextCookies(),
+		oidcProvider({
+			loginPage: "/sign-in",
+		}),
+		oneTap(),
+		customSession(async (session) => {
+			return {
+				...session,
+				user: {
+					...session.user,
+					dd: "test",
+				},
+			};
+		}),
+		stripe({
+			stripeClient: new Stripe(process.env.STRIPE_KEY || "sk_test_"),
+			stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+			subscription: {
+				enabled: true,
+				plans: [
+					{
+						name: "Starter",
+						priceId: STARTER_PRICE_ID.default,
+						annualDiscountPriceId: STARTER_PRICE_ID.annual,
+						freeTrial: {
+							days: 7,
+						},
+					},
+					{
+						name: "Professional",
+						priceId: PROFESSION_PRICE_ID.default,
+						annualDiscountPriceId: PROFESSION_PRICE_ID.annual,
+					},
+					{
+						name: "Enterprise",
+					},
+				],
+			},
+		}),
+	],
+});
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/metadata.ts</source>
+<document_content>
+import type { Metadata } from "next/types";
+
+export function createMetadata(override: Metadata): Metadata {
+	return {
+		...override,
+		openGraph: {
+			title: override.title ?? undefined,
+			description: override.description ?? undefined,
+			url: "https://demo.better-auth.com",
+			images: "https://demo.better-auth.com/og.png",
+			siteName: "Better Auth",
+			...override.openGraph,
+		},
+		twitter: {
+			card: "summary_large_image",
+			creator: "@beakcru",
+			title: override.title ?? undefined,
+			description: override.description ?? undefined,
+			images: "https://demo.better-auth.com/og.png",
+			...override.twitter,
+		},
+	};
+}
+
+export const baseUrl =
+	process.env.NODE_ENV === "development"
+		? new URL("http://localhost:3000")
+		: new URL(`https://${process.env.VERCEL_URL!}`);
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/utils.ts</source>
+<document_content>
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/email/invitation.tsx</source>
+<document_content>
+import {
+	Body,
+	Button,
+	Container,
+	Column,
+	Head,
+	Heading,
+	Hr,
+	Html,
+	Img,
+	Link,
+	Preview,
+	Row,
+	Section,
+	Text,
+	Tailwind,
+} from "@react-email/components";
+
+interface BetterAuthInviteUserEmailProps {
+	username?: string;
+	invitedByUsername?: string;
+	invitedByEmail?: string;
+	teamName?: string;
+	teamImage?: string;
+	inviteLink?: string;
+}
+
+export const InviteUserEmail = ({
+	username,
+	invitedByUsername,
+	invitedByEmail,
+	teamName,
+	teamImage,
+	inviteLink,
+}: BetterAuthInviteUserEmailProps) => {
+	const previewText = `Join ${invitedByUsername} on BetterAuth`;
+	return (
+		<Html>
+			<Head />
+			<Preview>{previewText}</Preview>
+			<Tailwind>
+				<Body className="bg-white my-auto mx-auto font-sans px-2">
+					<Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
+						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+							Join <strong>{invitedByUsername}</strong> on{" "}
+							<strong>Better Auth.</strong>
+						</Heading>
+						<Text className="text-black text-[14px] leading-[24px]">
+							Hello there,
+						</Text>
+						<Text className="text-black text-[14px] leading-[24px]">
+							<strong>{invitedByUsername}</strong> (
+							<Link
+								href={`mailto:${invitedByEmail}`}
+								className="text-blue-600 no-underline"
+							>
+								{invitedByEmail}
+							</Link>
+							) has invited you to the <strong>{teamName}</strong> team on{" "}
+							<strong>Better Auth</strong>.
+						</Text>
+						<Section>
+							{teamImage ? (
+								<Row>
+									<Column align="left">
+										<Img
+											className="rounded-full"
+											src={teamImage}
+											width="64"
+											height="64"
+											fetchPriority="high"
+										/>
+									</Column>
+								</Row>
+							) : null}
+						</Section>
+						<Section className="text-center mt-[32px] mb-[32px]">
+							<Button
+								className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+								href={inviteLink}
+							>
+								Join the team
+							</Button>
+						</Section>
+						<Text className="text-black text-[14px] leading-[24px]">
+							or copy and paste this URL into your browser:{" "}
+							<Link href={inviteLink} className="text-blue-600 no-underline">
+								{inviteLink}
+							</Link>
+						</Text>
+						<Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
+						<Text className="text-[#666666] text-[12px] leading-[24px]">
+							This invitation was intended for{" "}
+							<span className="text-black">{username}</span>. If you were not
+							expecting this invitation, you can ignore this email.
+						</Text>
+					</Container>
+				</Body>
+			</Tailwind>
+		</Html>
+	);
+};
+
+export function reactInvitationEmail(props: BetterAuthInviteUserEmailProps) {
+	console.log(props);
+	return <InviteUserEmail {...props} />;
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/email/resend.ts</source>
+<document_content>
+import { Resend } from "resend";
+
+export const resend = new Resend(process.env.RESEND_API_KEY || "re_123");
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/lib/email/reset-password.tsx</source>
+<document_content>
+import {
+	Body,
+	Button,
+	Container,
+	Head,
+	Heading,
+	Hr,
+	Html,
+	Link,
+	Preview,
+	Text,
+	Tailwind,
+	Section,
+} from "@react-email/components";
+
+interface BetterAuthResetPasswordEmailProps {
+	username?: string;
+	resetLink?: string;
+}
+
+export const ResetPasswordEmail = ({
+	username,
+	resetLink,
+}: BetterAuthResetPasswordEmailProps) => {
+	const previewText = `Reset your BetterAuth password`;
+	return (
+		<Html>
+			<Head />
+			<Preview>{previewText}</Preview>
+			<Tailwind>
+				<Body className="bg-white my-auto mx-auto font-sans px-2">
+					<Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
+						<Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+							Reset your <strong>Better Auth</strong> password
+						</Heading>
+						<Text className="text-black text-[14px] leading-[24px]">
+							Hello {username},
+						</Text>
+						<Text className="text-black text-[14px] leading-[24px]">
+							We received a request to reset your password for your Better Auth
+							account. If you didn't make this request, you can safely ignore
+							this email.
+						</Text>
+						<Section className="text-center mt-[32px] mb-[32px]">
+							<Button
+								className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+								href={resetLink}
+							>
+								Reset Password
+							</Button>
+						</Section>
+						<Text className="text-black text-[14px] leading-[24px]">
+							Or copy and paste this URL into your browser:{" "}
+							<Link href={resetLink} className="text-blue-600 no-underline">
+								{resetLink}
+							</Link>
+						</Text>
+						<Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
+						<Text className="text-[#666666] text-[12px] leading-[24px]">
+							If you didn't request a password reset, please ignore this email
+							or contact support if you have concerns.
+						</Text>
+					</Container>
+				</Body>
+			</Tailwind>
+		</Html>
+	);
+};
+
+export function reactResetPasswordEmail(
+	props: BetterAuthResetPasswordEmailProps,
+) {
+	console.log(props);
+	return <ResetPasswordEmail {...props} />;
+}
+
+</document_content>
+</document>
+</documents>

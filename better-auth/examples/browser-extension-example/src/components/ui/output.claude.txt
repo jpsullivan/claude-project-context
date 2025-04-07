@@ -1,0 +1,283 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/button.tsx</source>
+<document_content>
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+	{
+		variants: {
+			variant: {
+				default:
+					"bg-primary text-primary-foreground shadow hover:bg-primary/90",
+				destructive:
+					"bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+				outline:
+					"border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+				secondary:
+					"bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+				ghost: "hover:bg-accent hover:text-accent-foreground",
+				link: "text-primary underline-offset-4 hover:underline",
+			},
+			size: {
+				default: "h-9 px-4 py-2",
+				sm: "h-8 rounded-md px-3 text-xs",
+				lg: "h-10 rounded-md px-8",
+				icon: "h-9 w-9",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+export interface ButtonProps
+	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+		VariantProps<typeof buttonVariants> {
+	asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+	({ className, variant, size, asChild = false, ...props }, ref) => {
+		const Comp = asChild ? Slot : "button";
+		return (
+			<Comp
+				className={cn(buttonVariants({ variant, size, className }))}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/card.tsx</source>
+<document_content>
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const Card = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn(
+			"rounded-xl border bg-card text-card-foreground shadow",
+			className,
+		)}
+		{...props}
+	/>
+));
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("flex flex-col space-y-1.5 p-6", className)}
+		{...props}
+	/>
+));
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("font-semibold leading-none tracking-tight", className)}
+		{...props}
+	/>
+));
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("text-sm text-muted-foreground", className)}
+		{...props}
+	/>
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("flex items-center p-6 pt-0", className)}
+		{...props}
+	/>
+));
+CardFooter.displayName = "CardFooter";
+
+export {
+	Card,
+	CardHeader,
+	CardFooter,
+	CardTitle,
+	CardDescription,
+	CardContent,
+};
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/checkbox.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Check } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+const Checkbox = React.forwardRef<
+	React.ElementRef<typeof CheckboxPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+	<CheckboxPrimitive.Root
+		ref={ref}
+		className={cn(
+			"peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+			className,
+		)}
+		{...props}
+	>
+		<CheckboxPrimitive.Indicator
+			className={cn("flex items-center justify-center text-current")}
+		>
+			<Check className="h-4 w-4" />
+		</CheckboxPrimitive.Indicator>
+	</CheckboxPrimitive.Root>
+));
+Checkbox.displayName = CheckboxPrimitive.Root.displayName;
+
+export { Checkbox };
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/input.tsx</source>
+<document_content>
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+	({ className, type, ...props }, ref) => {
+		return (
+			<input
+				type={type}
+				className={cn(
+					"flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+					className,
+				)}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Input.displayName = "Input";
+
+export { Input };
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/label.tsx</source>
+<document_content>
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const labelVariants = cva(
+	"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+);
+
+const Label = React.forwardRef<
+	React.ElementRef<typeof LabelPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+		VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+	<LabelPrimitive.Root
+		ref={ref}
+		className={cn(labelVariants(), className)}
+		{...props}
+	/>
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+
+export { Label };
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/browser-extension-example/src/components/ui/separator.tsx</source>
+<document_content>
+import * as React from "react";
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
+
+import { cn } from "@/lib/utils";
+
+const Separator = React.forwardRef<
+	React.ElementRef<typeof SeparatorPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
+>(
+	(
+		{ className, orientation = "horizontal", decorative = true, ...props },
+		ref,
+	) => (
+		<SeparatorPrimitive.Root
+			ref={ref}
+			decorative={decorative}
+			orientation={orientation}
+			className={cn(
+				"shrink-0 bg-border",
+				orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Separator.displayName = SeparatorPrimitive.Root.displayName;
+
+export { Separator };
+
+</document_content>
+</document>
+</documents>

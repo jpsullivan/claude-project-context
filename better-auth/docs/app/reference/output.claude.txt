@@ -1,0 +1,17 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/app/reference/route.ts</source>
+<document_content>
+import { ApiReference } from "@scalar/nextjs-api-reference";
+
+const config = {
+	spec: {
+		url: "/openapi.yml",
+	},
+};
+
+export const GET = ApiReference(config);
+
+</document_content>
+</document>
+</documents>

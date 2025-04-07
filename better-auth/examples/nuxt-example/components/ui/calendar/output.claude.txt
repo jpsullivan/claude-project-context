@@ -1,0 +1,425 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/Calendar.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type CalendarRootEmits,
+	type CalendarRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	CalendarRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<CalendarRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <CalendarRoot
+    v-slot="{ grid, weekDays }"
+    :class="cn('p-3', props.class)"
+    v-bind="forwarded"
+  >
+    <CalendarHeader>
+      <CalendarPrevButton />
+      <CalendarHeading />
+      <CalendarNextButton />
+    </CalendarHeader>
+
+    <div class="flex flex-col gap-y-4 mt-4 sm:flex-row sm:gap-x-4 sm:gap-y-0">
+      <CalendarGrid v-for="month in grid" :key="month.value.toString()">
+        <CalendarGridHead>
+          <CalendarGridRow>
+            <CalendarHeadCell
+              v-for="day in weekDays" :key="day"
+            >
+              {{ day }}
+            </CalendarHeadCell>
+          </CalendarGridRow>
+        </CalendarGridHead>
+        <CalendarGridBody>
+          <CalendarGridRow v-for="(weekDates, index) in month.rows" :key="`weekDate-${index}`" class="mt-2 w-full">
+            <CalendarCell
+              v-for="weekDate in weekDates"
+              :key="weekDate.toString()"
+              :date="weekDate"
+            >
+              <CalendarCellTrigger
+                :day="weekDate"
+                :month="month.value"
+              />
+            </CalendarCell>
+          </CalendarGridRow>
+        </CalendarGridBody>
+      </CalendarGrid>
+    </div>
+  </CalendarRoot>
+</template>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarCell.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarCell
+    :class="cn('relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([data-selected])]:rounded-md [&:has([data-selected])]:bg-accent [&:has([data-selected][data-outside-view])]:bg-accent/50', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarCell>
+</template>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarCellTrigger.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarCellTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarCellTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarCellTrigger
+    :class="cn(
+      buttonVariants({ variant: 'ghost' }),
+      'h-8 w-8 p-0 font-normal',
+      '[&[data-today]:not([data-selected])]:bg-accent [&[data-today]:not([data-selected])]:text-accent-foreground',
+      // Selected
+      'data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:opacity-100 data-[selected]:hover:bg-primary data-[selected]:hover:text-primary-foreground data-[selected]:focus:bg-primary data-[selected]:focus:text-primary-foreground',
+      // Disabled
+      'data-[disabled]:text-muted-foreground data-[disabled]:opacity-50',
+      // Unavailable
+      'data-[unavailable]:text-destructive-foreground data-[unavailable]:line-through',
+      // Outside months
+      'data-[outside-view]:text-muted-foreground data-[outside-view]:opacity-50 [&[data-outside-view][data-selected]]:bg-accent/50 [&[data-outside-view][data-selected]]:text-muted-foreground [&[data-outside-view][data-selected]]:opacity-30',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarCellTrigger>
+</template>
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGrid.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarGridProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarGrid
+    :class="cn('w-full border-collapse space-y-1', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarGrid>
+</template>
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridBody.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type CalendarGridBodyProps } from "radix-vue";
+
+const props = defineProps<CalendarGridBodyProps>();
+</script>
+
+<template>
+  <CalendarGridBody v-bind="props">
+    <slot />
+  </CalendarGridBody>
+</template>
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridHead.vue</source>
+<document_content>
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+import { type CalendarGridHeadProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridHeadProps & { class?: HTMLAttributes["class"] }
+>();
+</script>
+
+<template>
+  <CalendarGridHead v-bind="props">
+    <slot />
+  </CalendarGridHead>
+</template>
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridRow.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarGridRowProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridRowProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarGridRow :class="cn('flex', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarGridRow>
+</template>
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeadCell.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeadCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeadCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeadCell :class="cn('w-8 rounded-md text-[0.8rem] font-normal text-muted-foreground', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarHeadCell>
+</template>
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeader.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeaderProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeaderProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeader :class="cn('relative flex w-full items-center justify-between pt-1', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarHeader>
+</template>
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeading.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeadingProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeadingProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeading
+    v-slot="{ headingValue }"
+    :class="cn('text-sm font-medium', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot :heading-value>
+      {{ headingValue }}
+    </slot>
+  </CalendarHeading>
+</template>
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarNextButton.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarNextProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarNextProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarNext
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronRightIcon class="h-4 w-4" />
+    </slot>
+  </CalendarNext>
+</template>
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarPrevButton.vue</source>
+<document_content>
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarPrevProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarPrevProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarPrev
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronLeftIcon class="h-4 w-4" />
+    </slot>
+  </CalendarPrev>
+</template>
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/index.ts</source>
+<document_content>
+export { default as Calendar } from "./Calendar.vue";
+export { default as CalendarCell } from "./CalendarCell.vue";
+export { default as CalendarCellTrigger } from "./CalendarCellTrigger.vue";
+export { default as CalendarGrid } from "./CalendarGrid.vue";
+export { default as CalendarGridBody } from "./CalendarGridBody.vue";
+export { default as CalendarGridHead } from "./CalendarGridHead.vue";
+export { default as CalendarGridRow } from "./CalendarGridRow.vue";
+export { default as CalendarHeadCell } from "./CalendarHeadCell.vue";
+export { default as CalendarHeader } from "./CalendarHeader.vue";
+export { default as CalendarHeading } from "./CalendarHeading.vue";
+export { default as CalendarNextButton } from "./CalendarNextButton.vue";
+export { default as CalendarPrevButton } from "./CalendarPrevButton.vue";
+
+</document_content>
+</document>
+</documents>

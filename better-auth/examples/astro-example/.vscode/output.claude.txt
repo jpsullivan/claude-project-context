@@ -1,0 +1,29 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/astro-example/.vscode/extensions.json</source>
+<document_content>
+{
+	"recommendations": ["astro-build.astro-vscode"],
+	"unwantedRecommendations": []
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/astro-example/.vscode/launch.json</source>
+<document_content>
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"command": "./node_modules/.bin/astro dev",
+			"name": "Development server",
+			"request": "launch",
+			"type": "node-terminal"
+		}
+	]
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,1085 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/guides/browser-extension-guide.mdx
+````
+---
+title: Browser Extension Guide
+description: A step-by-step guide to creating a browser extension with Better Auth.
+---
+
+In this guide, we’ll walk you through the steps of creating a browser extension using <Link href="https://docs.plasmo.com/">Plasmo</Link> with Better Auth for authentication.
+
+If you would like to view a completed example, you can check out the <Link href="https://github.com/better-auth/better-auth/tree/main/examples/browser-extension-example">browser extension example</Link>.
+
+<Callout type="warn">
+  The Plasmo framework does not provide a backend for the browser extension.
+  This guide assumes you have{" "}
+  <Link href="/docs/integrations/hono">a backend setup</Link> of BetterAuth and
+  are ready to create a browser extension to connect to it.
+</Callout>
+
+<Steps>
+
+    <Step>
+        ## Setup & Installations
+
+        Initialize a new Plasmo project with TailwindCSS and a src directory.
+
+        ```bash
+        pnpm create plasmo --with-tailwindcss --with-src
+        ```
+
+        Then, install the BetterAuth package.
+
+        ```bash
+        pnpm add better-auth
+        ```
+
+        To start the Plasmo development server, run the following command.
+
+        ```bash
+        pnpm dev
+        ```
+    </Step>
+
+
+    <Step>
+        ## Configure tsconfig
+
+        Configure the `tsconfig.json` file to include `strict` mode.
+
+        For this demo, we have also changed the import alias from `~` to `@` and set it to the `src` directory.
+
+        ```json title="tsconfig.json"
+        {
+            "compilerOptions": {
+                "paths": {
+                    "@/_": [
+                        "./src/_"
+                    ]
+                },
+                "strict": true,
+                "baseUrl": "."
+            }
+        }
+        ```
+    </Step>
+
+
+    <Step>
+        ## Create the client auth instance
+
+        Create a new file at `src/auth/auth-client.ts` and add the following code.
+
+       <Files>
+            <Folder name="src" defaultOpen>
+                <Folder name="auth" defaultOpen>
+                    <File name="auth-client.ts" />
+                </Folder>
+            </Folder>
+       </Files>
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/react"
+
+        export const authClient = createAuthClient({
+            baseURL: "http://localhost:3000" /* base url of your Better Auth backend. */,
+            plugins: [],
+        });
+        ```
+    </Step>
+
+    <Step>
+        ## Configure the manifest
+
+        We must ensure the extension knows the URL to the BetterAuth backend.
+
+        Head to your package.json file, and add the following code.
+
+        ```json title="package.json"
+        {
+            //...
+            "manifest": {
+                "host_permissions": [
+                    "https://URL_TO_YOUR_BACKEND" // localhost works too (e.g. http://localhost:3000)
+                ]
+            }
+        }
+        ```
+    </Step>
+
+
+    <Step>
+        ## You're now ready!
+
+        You have now setup BetterAuth for your browser extension.
+
+        Add your desired UI and create your dream extension!
+
+        To learn more about the client BetterAuth API, check out the <Link href="/docs/concepts/client">client documentation</Link>.
+
+
+        Here’s a quick example 😎
+
+        ```tsx title="src/popup.tsx"
+        import { authClient } from "./auth/auth-client"
+
+
+        function IndexPopup() {
+            const {data, isPending, error} = authClient.useSession();
+            if(isPending){
+                return <>Loading...</>
+            }
+            if(error){
+                return <>Error: {error.message}</>
+            }
+            if(data){
+                return <>Signed in as {data.user.name}</>
+            }
+        }
+
+        export default IndexPopup;
+        ```
+
+    </Step>
+
+
+    <Step>
+        ## Bundle your extension
+
+        To get a production build, run the following command.
+
+        ```bash
+        pnpm build
+        ```
+
+        Head over to <Link href="chrome://extensions" target="_blank">chrome://extensions</Link> and enable developer mode.
+
+        <img src="https://docs.plasmo.com/_next/image?url=%2F_next%2Fstatic%2Fmedia%2Fdeveloper_mode.76f090f7.png&w=1920&q=75" />
+
+        Click on "Load Unpacked" and navigate to your extension's `build/chrome-mv3-dev` (or `build/chrome-mv3-prod`) directory.
+
+        To see your popup, click on the puzzle piece icon on the Chrome toolbar, and click on your extension.
+
+        Learn more about <Link href="https://docs.plasmo.com/framework#loading-the-extension-in-chrome">bundling your extension here.</Link>
+    </Step>
+
+    <Step>
+        ## Configure the server auth instance
+
+        First, we will need your extension URL.
+        
+        An extension URL formed like this: `chrome-extension://YOUR_EXTENSION_ID`.
+
+        You can find your extension ID at <Link href="chrome://extensions" target="_blank">chrome://extensions</Link>.
+
+        <img src="/extension-id.png" width={500} />
+
+        Head to your server's auth file, and make sure that your extension's URL is added to the `trustedOrigins` list.
+
+
+        ```ts title="server.ts"
+        import { betterAuth } from "better-auth"
+        import { auth } from "@/auth/auth"
+
+        export const auth = betterAuth({
+            trustedOrigins: ["chrome-extension://YOUR_EXTENSION_ID"],
+        })
+        ```
+    </Step>
+
+    <Step>
+        ## That's it!
+
+        Everything is set up! You can now start developing your extension. 🎉
+    </Step>
+
+</Steps>
+
+
+## Wrapping Up
+
+Congratulations! You’ve successfully created a browser extension using BetterAuth and Plasmo.
+We highly recommend you visit the <Link href="https://docs.plasmo.com/">Plasmo documentation</Link> to learn more about the framework.
+
+If you would like to view a completed example, you can check out the <Link href="https://github.com/better-auth/better-auth/tree/main/examples/browser-extension-example">browser extension example</Link>.
+
+If you have any questions, feel free to open an issue on our <Link href="https://github.com/better-auth/better-auth/issues">Github repo</Link>, or join our <Link href="https://discord.gg/6jHcdYMzyq">Discord server</Link> for support.
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/guides/next-auth-migration-guide.mdx
+````
+---
+title: Migrating from NextAuth.js to Better Auth
+description: A step-by-step guide to transitioning from NextAuth.js to Better Auth.
+---
+
+In this guide, we’ll walk through the steps to migrate a project from [NextAuth.js](https://authjs.dev/) to Better Auth, ensuring no loss of data or functionality. While this guide focuses on Next.js, it can be adapted for other frameworks as well.
+
+---
+
+## Before You Begin
+
+Before starting the migration process, set up Better Auth in your project. Follow the [installation guide](/docs/installation) to get started.
+
+---
+
+<Steps>
+<Step>
+### Mapping Existing Columns
+
+Instead of altering your existing database column names, you can map them to match Better Auth's expected structure. This allows you to retain your current database schema.
+
+#### User Schema
+
+Your existing user schema is likely compatible with Better Auth, so no changes are needed.
+
+#### Session Schema
+
+Map the following fields in the session schema:
+
+- `expires` → `expiresAt`
+- `sessionToken` → `token`
+
+```typescript title="auth.ts"
+export const auth = betterAuth({
+    // Other configs
+    session: {
+        fields: {
+            expiresAt: "expires", // e.g., "expires_at" or your existing field name
+            token: "sessionToken" // e.g., "session_token" or your existing field name
+        }
+    },
+});
+```
+
+#### Accounts Schema
+
+Map these fields in the accounts schema:
+
+- `providerAccountId` → `accountId`
+- `refresh_token` → `refreshToken`
+- `access_token` → `accessToken`
+- `access_token_expires` → `accessTokenExpiresAt`
+- `id_token` → `idToken`
+
+Remove the `session_state`, `type`, and `token_type` fields, as they are not required by Better Auth.
+
+```typescript title="auth.ts"
+export const auth = betterAuth({
+    // Other configs
+    accounts: {
+        fields: {
+            accountId: "providerAccountId",
+            refreshToken: "refresh_token",
+            accessToken: "access_token",
+            accessTokenExpiresAt: "access_token_expires",
+            idToken: "id_token",
+        }
+    },
+});
+```
+
+**Note:** If you use ORM adapters, you can map these fields in your schema file.
+
+**Example with Prisma:**
+
+```prisma title="schema.prisma"
+model Session {
+    id          String   @id @default(cuid())
+    expires     DateTime @map("expiresAt") // Map `expires` to your existing field
+    token       String   @map("sessionToken") // Map `token` to your existing field
+    userId      String
+    user        User     @relation(fields: [userId], references: [id])
+}
+```
+</Step>
+<Step>
+
+### Update the Route Handler
+
+In the `app/api/auth` folder, rename the `[...nextauth]` file to `[...all]` to avoid confusion. Then, update the `route.ts` file as follows:
+
+```typescript title="app/api/auth/[...all]/route.ts"
+import { toNextJsHandler } from "better-auth/next-js";
+import { auth } from "~/server/auth";
+
+export const { POST, GET } = toNextJsHandler(auth);
+```
+</Step>
+
+<Step>
+### Update the Client
+
+Create a file named `auth-client.ts` in the `lib` folder. Add the following code:
+
+```typescript title="auth-client.ts"
+import { createAuthClient } from "better-auth/react";
+
+export const authClient = createAuthClient({
+    baseURL: process.env.BASE_URL! // Optional if the API base URL matches the frontend
+});
+
+export const { signIn, signOut, useSession } = authClient;
+```
+
+#### Social Login Functions
+
+Update your social login functions to use Better Auth. For example, for Discord:
+
+```typescript
+import { signIn } from "~/lib/auth-client";
+
+export const signInDiscord = async () => {
+    const data = await signIn.social({
+        provider: "discord"
+    });
+    return data;
+};
+```
+
+#### Update `useSession` Calls
+
+Replace `useSession` calls with Better Auth’s version. Example:
+
+```typescript title="Profile.tsx"
+import { useSession } from "~/lib/auth-client";
+
+export const Profile = () => {
+    const { data } = useSession();
+    return (
+        <div>
+            <pre>
+                {JSON.stringify(data, null, 2)}
+            </pre>
+        </div>
+    );
+};
+```
+</Step>
+
+<Step>
+
+### Server-Side Session Handling
+
+Use the `auth` instance to get session data on the server:
+
+```typescript title="actions.ts"
+"use server";
+
+import { auth } from "~/server/auth";
+import { headers } from "next/headers";
+
+export const protectedAction = async () => {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+};
+```
+</Step>
+
+<Step>
+### Middleware
+
+To protect routes with middleware, refer to the [Next.js middleware guide](/docs/integrations/next#middleware).
+</Step>
+</Steps>
+
+
+## Wrapping Up
+
+Congratulations! You’ve successfully migrated from NextAuth.js to Better Auth. For a complete implementation with multiple authentication methods, check out the [demo repository](https://github.com/Bekacru/t3-app-better-auth).
+
+Better Auth offers greater flexibility and more features—be sure to explore the [documentation](/docs) to unlock its full potential.
+
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/guides/optimizing-for-performance.mdx
+````
+---
+title: Optimizing for Performance
+description: A guide to optimizing your Better Auth application for performance.
+---
+
+In this guide, we’ll go over some of the ways you can optimize your application for a more performant Better Auth app.
+
+## Caching
+
+Caching is a powerful technique that can significantly improve the performance of your Better Auth application by reducing the number of database queries and speeding up response times.
+
+### Cookie Cache
+
+Calling your database every time `useSession` or `getSession` invoked isn’t ideal, especially if sessions don’t change frequently. Cookie caching handles this by storing session data in a short-lived, signed cookie—similar to how JWT access tokens are used with refresh tokens.
+
+To turn on cookie caching, just set `session.cookieCache` in your auth config:
+
+```ts title="auth.ts"
+const auth = new betterAuth({
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // Cache duration in seconds
+    },
+  },
+});
+```
+
+Read more about [cookie caching](/docs/concepts/session-management#cookie-cache).
+
+### Framework Caching
+
+Here are examples of how you can do caching in different frameworks and environments:
+
+<Tabs items={["NextJs", "Remix", "Solid Start", "React Query"]}>
+  <Tab value="NextJS">
+    Since Next v15, we can use the `"use cache"` directive to cache the response of a server function.
+
+    ```ts
+    export async function getUsers() {
+        'use cache' // [!code highlight]
+        const { users } = await auth.api.listUsers();
+        return users
+    }
+    ```
+
+    Learn more about NextJS use cache directive <Link href="https://nextjs.org/docs/app/api-reference/directives/use-cache">here</Link>.
+
+  </Tab>
+    <Tab value="Remix">
+    In Remix, you can use the `cache` option in the `loader` function to cache responses on the server. Here’s an example:
+
+    ```ts
+    import { json } from '@remix-run/node';
+
+    export const loader = async () => {
+    const { users } = await auth.api.listUsers();
+    return json(users, {
+        headers: {
+        'Cache-Control': 'max-age=3600', // Cache for 1 hour
+        },
+    });
+    };
+    ```
+
+
+    You can read a nice guide on Loader vs Route Cache Headers in Remix <Link href="https://sergiodxa.com/articles/loader-vs-route-cache-headers-in-remix">here</Link>.
+
+  </Tab>
+
+  <Tab value="Solid Start">
+    In Solid Start, you can use the `query` function to cache data. Here’s an example:
+
+    ```tsx
+    const getUsers = query(
+        async () => (await auth.api.listUsers()).users,
+        "getUsers"
+    );
+    ```
+
+    Learn more about Solid Start `query` function <Link href="https://docs.solidjs.com/solid-router/reference/data-apis/query">here</Link>.
+
+  </Tab>
+  <Tab value="React Query">
+    With React Query you can use the `useQuery` hook to cache data. Here’s an example:
+
+    ```ts
+    import { useQuery } from '@tanstack/react-query';
+
+    const fetchUsers = async () => {
+        const { users } = await auth.api.listUsers();
+        return users;
+    };
+
+    export default function Users() {
+        const { data: users, isLoading } = useQuery('users', fetchUsers, {
+            staleTime: 1000 * 60 * 15, // Cache for 15 minutes
+        });
+
+        if (isLoading) return <div>Loading...</div>;
+
+        return (
+            <ul>
+                {users.map(user => (
+                    <li key={user.id}>{user.name}</li>
+                ))}
+            </ul>
+        );
+    }
+    ```
+
+    Learn more about React Query use cache directive <Link href="https://react-query.tanstack.com/reference/useQuery#usecache">here</Link>.
+
+  </Tab>
+</Tabs>
+
+## SSR Optimizations
+
+If you're using a framework that supports server-side rendering, it's usually best to pre-fetch user session on the server and use it as a fallback on the client.
+
+```ts
+const session = await auth.api.getSession({
+  headers: await headers(),
+});
+//then pass the session to the client
+```
+
+## Database optimizations
+
+Optimizing database performance is essential to get the best out of Better Auth.
+
+#### Recommended fields to index
+
+| Table         | Fields                     | Plugin       |
+| ------------- | -------------------------- | ------------ |
+| users         | `email`                    |              |
+| accounts      | `userId`                   |              |
+| sessions      | `userId`, `token`          |              |
+| verifications | `identifier`               |              |
+| invitations   | `email`, `organizationId`  | organization |
+| members       | `userId`, `organizationId` | organization |
+| organizations | `slug`                     | organization |
+| passkey       | `userId`                   | passkey      |
+| twoFactor     | `secret`                   | twoFactor    |
+
+<Callout>
+  We intend to add indexing support in our schema generation tool in the future.
+</Callout>
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/guides/supabase-migration-guide.mdx
+````
+---
+title: Migrating from Supabase Auth to Better Auth
+description: A step-by-step guide to transitioning from Supabase Auth to Better Auth.
+---
+
+In this guide, we'll walk through the steps to migrate a project from Supabase Auth to Better Auth. 
+
+<Callout type="warn">
+This migration will invalidate all active sessions. While this guide doesn't currently cover migrating two-factor (2FA) or Row Level Security (RLS) configurations, both should be possible with additional steps.
+</Callout>
+
+
+## Before You Begin
+
+Before starting the migration process, set up Better Auth in your project. Follow the [installation guide](/docs/installation) to get started.
+
+
+<Steps>
+<Step>
+### Connect to your database
+
+You'll need to connect to your database to migrate the users and accounts. Copy your `DATABASE_URL` from your Supabase project and use it to connect to your database. And for this example, we'll need to install `pg` to connect to the database.
+
+```package-install
+npm install pg
+```
+
+And then you can use the following code to connect to your database.
+
+```ts title="auth.ts"
+import { Pool } from "pg";
+
+export const auth = betterAuth({
+    database: new Pool({ 
+        connectionString: process.env.DATABASE_URL 
+    }),
+})
+```
+</Step>
+<Step>
+### Enable Email and Password (Optional)
+
+Enable the email and password in your auth config.
+
+```ts title="auth.ts"
+import { admin, anonymous } from "better-auth/plugins";
+
+export const auth = betterAuth({
+    database: new Pool({ 
+        connectionString: process.env.DATABASE_URL 
+    }),
+    emailAndPassword: { // [!code highlight]
+        enabled: true, // [!code highlight]
+    } // [!code highlight]
+})
+```
+</Step>
+<Step>
+### Setup Social Providers (Optional)
+
+Add social providers you have enabled in your Supabase project in your auth config.
+
+```ts title="auth.ts"
+import { admin, anonymous } from "better-auth/plugins";
+
+export const auth = betterAuth({
+    database: new Pool({ 
+        connectionString: process.env.DATABASE_URL 
+    }),
+    emailAndPassword: { 
+        enabled: true,
+    },
+    socialProviders: { // [!code highlight]
+        github: { // [!code highlight]
+            clientId: process.env.GITHUB_CLIENT_ID, // [!code highlight]
+            clientSecret: process.env.GITHUB_CLIENT_SECRET, // [!code highlight]
+        } // [!code highlight]
+    } // [!code highlight]
+})
+```
+</Step>
+<Step>
+### Add admin and anonymous plugins (Optional)
+
+Add the [admin](/docs/plugins/admin) and [anonymous](/docs/plugins/anonymous) plugins to your auth config.
+
+```ts title="auth.ts"
+import { admin, anonymous } from "better-auth/plugins";
+
+export const auth = betterAuth({
+    database: new Pool({ 
+        connectionString: process.env.DATABASE_URL 
+    }),
+    emailAndPassword: { 
+        enabled: true,
+    },
+    socialProviders: {
+        github: {
+            clientId: process.env.GITHUB_CLIENT_ID!,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+        }
+    },
+    plugins: [admin(), anonymous()], // [!code highlight]
+})
+```
+</Step>
+<Step>
+### Run the migration
+
+Run the migration to create the necessary tables in your database.
+
+```bash title="Terminal"
+npx @better-auth/cli migrate
+```
+
+This will create the following tables in your database:
+
+- [`user`](/docs/concepts/database#user)
+- [`account`](/docs/concepts/database#account)
+- [`session`](/docs/concepts/database#session)
+- [`verification`](/docs/concepts/database#verification)
+
+This tables will be created on the `public` schema.
+</Step>
+<Step>
+### Copy the migration script
+
+Now that we have the necessary tables in our database, we can run the migration script to migrate the users and accounts from supabase to better auth.
+
+Start by creating a `.ts` file in your project.
+
+```bash title="Terminal"
+touch migration.ts
+```
+
+And then copy and paste the following code into the file.
+
+```ts title="migration.ts"
+import { Pool } from "pg";
+import { auth } from "./auth";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+
+type User = SupabaseUser & {
+	is_super_admin: boolean;
+	raw_user_meta_data: {
+		avatar_url: string;
+	};
+	encrypted_password: string;
+	email_confirmed_at: string;
+	created_at: string;
+	updated_at: string;
+	is_anonymous: boolean;
+	identities: {
+		provider: string;
+		identity_data: {
+			sub: string;
+			email: string;
+		};
+		created_at: string;
+		updated_at: string;
+	};
+};
+
+const migrateFromSupabase = async () => {
+	const ctx = await auth.$context;
+	const db = ctx.options.database as Pool;
+	const users = await db
+		.query(`
+			SELECT 
+				u.*,
+				COALESCE(
+					json_agg(
+						i.* ORDER BY i.id
+					) FILTER (WHERE i.id IS NOT NULL),
+					'[]'::json
+				) as identities
+			FROM auth.users u
+			LEFT JOIN auth.identities i ON u.id = i.user_id
+			GROUP BY u.id
+		`)
+		.then((res) => res.rows as User[]);
+	for (const user of users) {
+		if (!user.email) {
+			continue;
+		}
+		await ctx.adapter
+			.create({
+				model: "user",
+				data: {
+					id: user.id,
+					email: user.email,
+					name: user.email,
+					role: user.is_super_admin ? "admin" : user.role,
+					emailVerified: !!user.email_confirmed_at,
+					image: user.raw_user_meta_data.avatar_url,
+					createdAt: new Date(user.created_at),
+					updatedAt: new Date(user.updated_at),
+					isAnonymous: user.is_anonymous,
+				},
+			})
+			.catch(() => {});
+		for (const identity of user.identities) {
+			const existingAccounts = await ctx.internalAdapter.findAccounts(user.id);
+
+			if (identity.provider === "email") {
+				const hasCredential = existingAccounts.find(
+					(account) => account.providerId === "credential",
+				);
+				if (!hasCredential) {
+					await ctx.adapter
+						.create({
+							model: "account",
+							data: {
+								userId: user.id,
+								providerId: "credential",
+								accountId: user.id,
+								password: user.encrypted_password,
+								createdAt: new Date(user.created_at),
+								updatedAt: new Date(user.updated_at),
+							},
+						})
+						.catch(() => {});
+				}
+			}
+			const supportedProviders = Object.keys(ctx.options.socialProviders || {})
+			if (supportedProviders.includes(identity.provider)) {
+				const hasAccount = existingAccounts.find(
+					(account) => account.providerId === identity.provider,
+				);
+				if (!hasAccount) {
+					await ctx.adapter.create({
+						model: "account",
+						data: {
+							userId: user.id,
+							providerId: identity.provider,
+							accountId: identity.identity_data?.sub,
+							createdAt: new Date(identity.created_at ?? user.created_at),
+							updatedAt: new Date(identity.updated_at ?? user.updated_at),
+						},
+					});
+				}
+			}
+		}
+	}
+};
+migrateFromSupabase();
+```
+</Step>
+
+<Step>
+### Customize the migration script (Optional)
+
+- `name`: the migration script will use the user's email as the name. You might want to customize it if you have the user display name in your database.
+- `socialProviderList`: the migration script will use the social providers you have enabled in your auth config. You might want to customize it if you have additional social providers that you haven't enabled in your auth config.
+- `role`: remove `role` if you're not using the `admin` plugin 
+- `isAnonymous`: remove `isAnonymous` if you're not using the `anonymous` plugin.
+- update other tables that reference the `users` table to use the `id` field.
+</Step>
+<Step>
+### Run the migration script
+
+Run the migration script to migrate the users and accounts from supabase to better auth.
+
+```bash title="Terminal"
+bun migration.ts # or use node, ts-node, etc.
+```
+</Step>
+<Step>
+### Update your code
+
+Update your codebase from supabase auth calls to better auth api.
+
+Here's a list of the supabase auth api calls and their better auth counterparts.
+
+- `supabase.auth.signUp` -> `authClient.signUp.email`
+- `supabase.auth.signInWithPassword` -> `authClient.signIn.email`
+- `supabase.auth.signInWithOAuth` -> `authClient.signIn.social`
+- `supabase.auth.signInAnonymously` -> `authClient.signIn.anonymous`
+- `supabase.auth.signOut` -> `authClient.signOut`
+- `supabase.auth.getSession` -> `authClient.getSession` -  you can also use `authClient.useSession` for reactive state
+
+Learn more:
+- [Basic Usage](/docs/basic-usage): Learn how to use the auth client to sign up, sign in, and sign out.
+- [Email and Password](/docs/authentication/email-and-password): Learn how to add email and password authentication to your project.
+- [Anonymous](/docs/plugins/anonymous): Learn how to add anonymous authentication to your project.
+- [Admin](/docs/plugins/admin): Learn how to add admin authentication to your project.
+- [Email OTP](/docs/authentication/email-otp): Learn how to add email OTP authentication to your project.
+- [Hooks](/docs/concepts/hooks): Learn how to use the hooks to listen for events.
+- [Next.js](/docs/integrations/next): Learn how to use the auth client in a Next.js project.
+</Step>
+</Steps>
+
+### Middleware
+
+To protect routes with middleware, refer to the [Next.js middleware guide](/docs/integrations/next#middleware) or your framework's documentation.
+
+## Wrapping Up
+
+Congratulations! You've successfully migrated from Supabase Auth to Better Auth.
+
+Better Auth offers greater flexibility and more features—be sure to explore the [documentation](/docs) to unlock its full potential.
+
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/guides/your-first-plugin.mdx
+````
+---
+title: Create your first plugin
+description: A step-by-step guide to creating your first Better Auth plugin.
+---
+
+In this guide, we’ll walk you through the steps of creating your first Better Auth plugin.
+
+
+<Callout type="warn">
+This guide assumes you have <Link href="/docs/installation">setup the basics</Link> of Better Auth and are ready to create your first plugin.
+</Callout>
+
+<Steps>
+<Step>
+## Plan your idea
+Before beginning, you must know what plugin you intend to create.
+
+In this guide, we’ll create a **birthday plugin** to keep track of user birth dates.
+</Step>
+
+<Step>
+## Server plugin first
+Better Auth plugins operate as a pair: a <Link href="/docs/concepts/plugins#create-a-server-plugin">server plugin</Link> and a <Link href="/docs/concepts/plugins#create-a-client-plugin">client plugin</Link>.
+The server plugin forms the foundation of your authentication system, while the client plugin provides convenient frontend APIs to interact with your server implementation.
+
+
+<Callout>
+You can read more about server/client plugins in our <Link href="/docs/concepts/plugins#creating-a-plugin">documentation</Link>.
+</Callout>
+
+### Creating the server plugin
+Go ahead and find a suitable location create an your birthday plugin folder, with an `index.ts` file within.
+<Files>
+  <Folder name="birthday-plugin" defaultOpen>
+    <File name="index.ts" />
+  </Folder>
+</Files>
+In the `index.ts` file, we’ll export a function that represents our server plugin.
+This will be what we will later add to our plugin list in the `auth.ts` file.
+
+```ts title="index.ts"
+import { createAuthClient } from "better-auth/client";
+import type { BetterAuthPlugin } from "better-auth";
+
+export const birthdayPlugin = () =>
+  ({
+    id: "birthdayPlugin",
+  } satisfies BetterAuthPlugin);
+
+```
+Although this does nothing, you have technically just made yourself your first plugin, congratulations! 🎉
+
+</Step>
+
+<Step>
+### Defining a schema
+In order to save each user’s birthday data, we must create a schema on top of the `user` model.
+
+By creating a schema here, this also allows <Link href="/docs/concepts/cli">Better Auth’s CLI</Link> to generate the schemas required to update your database.
+
+<Callout type="info">
+You can learn more about <Link href="/docs/concepts/plugins#schema">plugin schemas here</Link>.
+</Callout>
+
+```ts title="index.ts"
+//...
+export const birthdayPlugin = () =>
+  ({
+    id: "birthdayPlugin",
+    schema: {// [!code highlight]
+      user: {// [!code highlight]
+        fields: {// [!code highlight]
+          birthday: {// [!code highlight]
+            type: "date", // string, number, boolean, date // [!code highlight]
+            required: true, // if the field should be required on a new record. (default: false) // [!code highlight]
+            unique: false, // if the field should be unique. (default: false) // [!code highlight]
+            reference: null // if the field is a reference to another table. (default: null) // [!code highlight]
+          },// [!code highlight]
+        },// [!code highlight]
+      },// [!code highlight]
+    },
+  } satisfies BetterAuthPlugin);
+```
+
+</Step>
+
+<Step>
+### Authorization logic
+For this example guide, we’ll setup authentication logic to check and ensure that the user who signs-up is older than 5.
+But the same concept could be applied for something like verifying users agreeing to the TOS or anything alike.
+
+To do this, we’ll utilize <Link href="/docs/concepts/plugins#hooks">Hooks</Link>, which allows us to run code `before` or `after` an action is performed.
+
+```ts title="index.ts"
+export const birthdayPlugin = () => ({
+    //...
+    // In our case, we want to write authorization logic,
+    // meaning we want to intercept it `before` hand.
+    hooks: {
+      before: [
+        {
+          matcher: (context) => /* ... */,
+          handler: createAuthMiddleware(async (ctx) => {
+            //...
+          }),
+        },
+      ],
+    },
+} satisfies BetterAuthPlugin)
+```
+
+In our case we want to match any requests going to the signup path:
+```ts title="Before hook"
+{
+  matcher: (context) => context.path.startsWith("/sign-up/email"),
+  //...
+}
+```
+
+And for our logic, we’ll write the following code to check the if user’s birthday makes them above 5 years old.
+```ts title="Imports"
+import { APIError } from "better-auth/api";
+import { createAuthMiddleware } from "better-auth/plugins";
+```
+```ts title="Before hook"
+{
+  //...
+  handler: createAuthMiddleware(async (ctx) => {
+    const { birthday } = ctx.body;
+    if(!birthday instanceof Date) {
+      throw new APIError("BAD_REQUEST", { message: "Birthday must be of type Date." });
+    }
+
+    const today = new Date();
+    const fiveYearsAgo = new Date(today.setFullYear(today.getFullYear() - 5));
+
+    if(birthday >= fiveYearsAgo) {
+      throw new APIError("BAD_REQUEST", { message: "User must be above 5 years old." });
+    }
+
+    return { context: ctx };
+  }),
+}
+```
+
+**Authorized!** 🔒
+
+We’ve now successfully written code to ensure authorization for users above 5!
+
+</Step>
+
+<Step>
+## Client Plugin
+We’re close to the finish line! 🏁
+
+Now that we have created our server plugin, the next step is to develop our client plugin.
+Since there isn’t much frontend APIs going on for this plugin, there isn’t much to do!
+
+First, let’s create our `client.ts` file first:
+<Files>
+  <Folder name="birthday-plugin" defaultOpen>
+    <File name="index.ts" />
+    <File name="client.ts" />
+  </Folder>
+</Files>
+Then, add the following code:
+```ts title="client.ts"
+import { BetterAuthClientPlugin } from "better-auth";
+import type { birthdayPlugin } from "./index"; // make sure to import the server plugin as a type // [!code highlight]
+
+type BirthdayPlugin = typeof birthdayPlugin;
+
+export const birthdayClientPlugin = () => {
+  return {
+    id: "birthdayPlugin",
+    $InferServerPlugin: {} as ReturnType<BirthdayPlugin>,
+  } satisfies BetterAuthClientPlugin;
+};
+```
+What we’ve done is allow the client plugin to infer the types defined by our schema from the server plugin.
+
+And that’s it!  This is all it takes for the birthday client plugin. 🎂
+
+</Step>
+
+<Step>
+## Initiate your plugin!
+Both the `client` and `server` plugins are now ready, the last step is to import them to both your `auth-client.ts` and your `server.ts` files respectively to initiate the plugin.
+
+### Server initiation
+```ts title="server.ts"
+import { betterAuth } from "better-auth";
+import { birthdayPlugin } from "./birthday-plugin";// [!code highlight]
+ 
+export const auth = betterAuth({
+    plugins: [
+      birthdayPlugin(),// [!code highlight]
+    ]
+});
+```
+
+### Client initiation
+```ts title="auth-client.ts"
+import { createAuthClient } from "better-auth/client";
+import { birthdayClientPlugin } from "./birthday-plugin/client";// [!code highlight]
+ 
+const authClient = createAuthClient({
+    plugins: [
+      birthdayClientPlugin()// [!code highlight]
+    ]
+});
+```
+
+### Oh yeah, the schemas! 
+Don’t forget to add your `birthday` field to your `user` table model! 
+
+Or, use the `generate` <Link href="/docs/concepts/cli#generate">CLI command</Link>:
+```bash
+npx @better-auth/cli@latest generate
+```
+
+</Step>
+</Steps>
+
+## Wrapping Up
+
+Congratulations! You’ve successfully created your first ever Better Auth plugin.
+We highly recommend you visit our <Link href="/docs/concepts/plugins">plugins documentation</Link> to learn more information.
+
+If you have a plugin you’d like to share with the community, feel free to let us know through 
+our <Link href="https://discord.gg/6jHcdYMzyq">Discord server</Link>,
+or through a <Link href="https://github.com/better-auth/better-auth/pulls">pull-request</Link>
+and we may add it to the <Link href="/docs/plugins/community-plugins">community-plugins</Link> list!
+
+````

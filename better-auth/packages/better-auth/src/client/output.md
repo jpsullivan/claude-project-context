@@ -1,0 +1,2192 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/client.test.ts
+```typescript
+// @vitest-environment happy-dom
+import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { createAuthClient as createSolidClient } from "./solid";
+import { createAuthClient as createReactClient } from "./react";
+import { createAuthClient as createVueClient } from "./vue";
+import { createAuthClient as createSvelteClient } from "./svelte";
+import { testClientPlugin, testClientPlugin2 } from "./test-plugin";
+import type { Accessor } from "solid-js";
+import type { Ref } from "vue";
+import type { ReadableAtom } from "nanostores";
+import type { Session } from "../types";
+import { BetterFetchError } from "@better-fetch/fetch";
+import { twoFactorClient } from "../plugins";
+import { organizationClient, passkeyClient } from "./plugins";
+
+describe("run time proxy", async () => {
+	it("proxy api should be called", async () => {
+		let apiCalled = false;
+		const client = createSolidClient({
+			plugins: [testClientPlugin()],
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					apiCalled = true;
+					return new Response();
+				},
+				baseURL: "http://localhost:3000",
+			},
+		});
+		await client.test();
+		expect(apiCalled).toBe(true);
+	});
+
+	it("state listener should be called on matched path", async () => {
+		const client = createSolidClient({
+			plugins: [testClientPlugin()],
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+				baseURL: "http://localhost:3000",
+			},
+		});
+		const res = client.useComputedAtom();
+		expect(res()).toBe(0);
+		await client.test();
+		vi.useFakeTimers();
+		setTimeout(() => {
+			expect(res()).toBe(1);
+		}, 100);
+	});
+
+	it("should call useSession", async () => {
+		let returnNull = false;
+		const client = createSolidClient({
+			plugins: [testClientPlugin()],
+			fetchOptions: {
+				customFetchImpl: async () => {
+					if (returnNull) {
+						return new Response(JSON.stringify(null));
+					}
+					return new Response(
+						JSON.stringify({
+							user: {
+								id: 1,
+								email: "test@email.com",
+							},
+						}),
+					);
+				},
+				baseURL: "http://localhost:3000",
+			},
+		});
+		const res = client.useSession();
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(1);
+		expect(res()).toMatchObject({
+			data: { user: { id: 1, email: "test@email.com" } },
+			error: null,
+			isPending: false,
+		});
+		/**
+		 * recall
+		 */
+		returnNull = true;
+		await client.test2.signOut();
+		await vi.advanceTimersByTimeAsync(10);
+		expect(res()).toMatchObject({
+			data: null,
+			error: null,
+			isPending: false,
+		});
+	});
+
+	it("should allow second argument fetch options", async () => {
+		let called = false;
+		const client = createSolidClient({
+			plugins: [testClientPlugin()],
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+				baseURL: "http://localhost:3000",
+			},
+		});
+		await client.test(
+			{},
+			{
+				onSuccess(context) {
+					called = true;
+				},
+			},
+		);
+		expect(called).toBe(true);
+	});
+});
+
+describe("type", () => {
+	it("should infer session additional fields", () => {
+		const client = createReactClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		type ReturnedSession = ReturnType<typeof client.useSession>;
+		expectTypeOf<ReturnedSession>().toMatchTypeOf<{
+			data: {
+				user: {
+					id: string;
+					email: string;
+					emailVerified: boolean;
+					name: string;
+					createdAt: Date;
+					updatedAt: Date;
+					image?: string | undefined | null;
+					testField4: string;
+					testField?: string | undefined | null;
+					testField2?: number | undefined | null;
+				};
+				session: Session;
+			} | null;
+			error: BetterFetchError | null;
+			isPending: boolean;
+		}>();
+	});
+	it("should infer resolved hooks react", () => {
+		const client = createReactClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		expectTypeOf(client.useComputedAtom).toEqualTypeOf<() => number>();
+	});
+	it("should infer resolved hooks solid", () => {
+		const client = createSolidClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		expectTypeOf(client.useComputedAtom).toEqualTypeOf<
+			() => Accessor<number>
+		>();
+	});
+	it("should infer resolved hooks vue", () => {
+		const client = createVueClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		expectTypeOf(client.useComputedAtom).toEqualTypeOf<
+			() => Readonly<Ref<number>>
+		>();
+	});
+	it("should infer resolved hooks svelte", () => {
+		const client = createSvelteClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		expectTypeOf(client.useComputedAtom).toEqualTypeOf<
+			() => ReadableAtom<number>
+		>();
+	});
+
+	it("should infer actions", () => {
+		const client = createSolidClient({
+			plugins: [testClientPlugin(), testClientPlugin2()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		expectTypeOf(client.setTestAtom).toEqualTypeOf<(value: boolean) => void>();
+		expectTypeOf(client.test.signOut).toEqualTypeOf<() => Promise<void>>();
+	});
+
+	it("should infer session", () => {
+		const client = createSolidClient({
+			plugins: [testClientPlugin(), testClientPlugin2(), twoFactorClient()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		const $infer = client.$Infer;
+		expectTypeOf($infer.Session).toEqualTypeOf<{
+			session: {
+				id: string;
+				userId: string;
+				expiresAt: Date;
+				token: string;
+				ipAddress?: string | undefined | null;
+				userAgent?: string | undefined | null;
+				createdAt: Date;
+				updatedAt: Date;
+			};
+			user: {
+				id: string;
+				email: string;
+				emailVerified: boolean;
+				name: string;
+				createdAt: Date;
+				updatedAt: Date;
+				image?: string | undefined | null;
+				testField4: string;
+				testField?: string | undefined | null;
+				testField2?: number | undefined | null;
+				twoFactorEnabled: boolean | undefined | null;
+			};
+		}>();
+	});
+
+	it("should infer session react", () => {
+		const client = createReactClient({
+			plugins: [organizationClient(), twoFactorClient(), passkeyClient()],
+		});
+		const $infer = client.$Infer.Session;
+		expectTypeOf($infer.user).toEqualTypeOf<{
+			name: string;
+			id: string;
+			email: string;
+			emailVerified: boolean;
+			createdAt: Date;
+			updatedAt: Date;
+			image?: string | undefined | null;
+			twoFactorEnabled: boolean | undefined | null;
+		}>();
+	});
+
+	it("should infer `throw:true` in fetch options", async () => {
+		const client = createReactClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				throw: true,
+				customFetchImpl: async (url, init) => {
+					return new Response();
+				},
+			},
+		});
+		const data = client.getSession();
+		expectTypeOf(data).toMatchTypeOf<
+			Promise<{
+				user: {
+					id: string;
+					email: string;
+					emailVerified: boolean;
+					name: string;
+					createdAt: Date;
+					updatedAt: Date;
+					image?: string | undefined | null;
+					testField4: string;
+					testField?: string | undefined | null;
+					testField2?: number | undefined | null;
+				};
+				session: {
+					id: string;
+					userId: string;
+					expiresAt: Date;
+					ipAddress?: string | undefined | null;
+					userAgent?: string | undefined | null;
+				};
+			} | null>
+		>();
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/config.ts
+```typescript
+import { createFetch } from "@better-fetch/fetch";
+import { getBaseURL } from "../utils/url";
+import { type WritableAtom } from "nanostores";
+import type { AtomListener, ClientOptions } from "./types";
+import { redirectPlugin } from "./fetch-plugins";
+import { getSessionAtom } from "./session-atom";
+import { parseJSON } from "./parser";
+
+export const getClientConfig = (options?: ClientOptions) => {
+	/* check if the credentials property is supported. Useful for cf workers */
+	const isCredentialsSupported = "credentials" in Request.prototype;
+	const baseURL = getBaseURL(options?.baseURL, options?.basePath);
+	const pluginsFetchPlugins =
+		options?.plugins
+			?.flatMap((plugin) => plugin.fetchPlugins)
+			.filter((pl) => pl !== undefined) || [];
+	const $fetch = createFetch({
+		baseURL,
+		...(isCredentialsSupported ? { credentials: "include" } : {}),
+		method: "GET",
+		jsonParser(text) {
+			if (!text) {
+				return null as any;
+			}
+			return parseJSON(text, {
+				strict: false,
+			});
+		},
+		customFetchImpl: async (input, init) => {
+			try {
+				return await fetch(input, init);
+			} catch (error) {
+				return Response.error();
+			}
+		},
+		...options?.fetchOptions,
+		plugins: options?.disableDefaultFetchPlugins
+			? [...(options?.fetchOptions?.plugins || []), ...pluginsFetchPlugins]
+			: [
+					redirectPlugin,
+					...(options?.fetchOptions?.plugins || []),
+					...pluginsFetchPlugins,
+				],
+	});
+	const { $sessionSignal, session } = getSessionAtom($fetch);
+	const plugins = options?.plugins || [];
+	let pluginsActions = {} as Record<string, any>;
+	let pluginsAtoms = {
+		$sessionSignal,
+		session,
+	} as Record<string, WritableAtom<any>>;
+	let pluginPathMethods: Record<string, "POST" | "GET"> = {
+		"/sign-out": "POST",
+		"/revoke-sessions": "POST",
+		"/revoke-other-sessions": "POST",
+		"/delete-user": "POST",
+	};
+	const atomListeners: AtomListener[] = [
+		{
+			signal: "$sessionSignal",
+			matcher(path) {
+				return (
+					path === "/sign-out" ||
+					path === "/update-user" ||
+					path.startsWith("/sign-in") ||
+					path.startsWith("/sign-up") ||
+					path === "/delete-user" ||
+					path === "/verify-email"
+				);
+			},
+		},
+	];
+
+	for (const plugin of plugins) {
+		if (plugin.getAtoms) {
+			Object.assign(pluginsAtoms, plugin.getAtoms?.($fetch));
+		}
+		if (plugin.pathMethods) {
+			Object.assign(pluginPathMethods, plugin.pathMethods);
+		}
+		if (plugin.atomListeners) {
+			atomListeners.push(...plugin.atomListeners);
+		}
+	}
+
+	const $store = {
+		notify: (signal?: Omit<string, "$sessionSignal"> | "$sessionSignal") => {
+			pluginsAtoms[signal as keyof typeof pluginsAtoms].set(
+				!pluginsAtoms[signal as keyof typeof pluginsAtoms].get(),
+			);
+		},
+		listen: (
+			signal: Omit<string, "$sessionSignal"> | "$sessionSignal",
+			listener: (value: boolean, oldValue?: boolean | undefined) => void,
+		) => {
+			pluginsAtoms[signal as keyof typeof pluginsAtoms].subscribe(listener);
+		},
+		atoms: pluginsAtoms,
+	};
+
+	for (const plugin of plugins) {
+		if (plugin.getActions) {
+			Object.assign(pluginsActions, plugin.getActions?.($fetch, $store));
+		}
+	}
+	return {
+		pluginsActions,
+		pluginsAtoms,
+		pluginPathMethods,
+		atomListeners,
+		$fetch,
+		$store,
+	};
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/fetch-plugins.ts
+```typescript
+import { type BetterFetchPlugin } from "@better-fetch/fetch";
+
+export const redirectPlugin = {
+	id: "redirect",
+	name: "Redirect",
+	hooks: {
+		onSuccess(context) {
+			if (context.data?.url && context.data?.redirect) {
+				if (typeof window !== "undefined" && window.location) {
+					if (window.location) {
+						try {
+							window.location.href = context.data.url;
+						} catch {}
+					}
+				}
+			}
+		},
+	},
+} satisfies BetterFetchPlugin;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/index.ts
+```typescript
+import type { BetterAuthPlugin } from "../types";
+import type { BetterAuthClientPlugin } from "./types";
+export * from "./vanilla";
+export * from "./query";
+export * from "./types";
+
+export const InferPlugin = <T extends BetterAuthPlugin>() => {
+	return {
+		id: "infer-server-plugin",
+		$InferServerPlugin: {} as T,
+	} satisfies BetterAuthClientPlugin;
+};
+
+//@ts-expect-error
+export type * from "nanostores";
+export type * from "@better-fetch/fetch";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/parser.ts
+```typescript
+const PROTO_POLLUTION_PATTERNS = {
+	proto:
+		/"(?:_|\\u0{2}5[Ff]){2}(?:p|\\u0{2}70)(?:r|\\u0{2}72)(?:o|\\u0{2}6[Ff])(?:t|\\u0{2}74)(?:o|\\u0{2}6[Ff])(?:_|\\u0{2}5[Ff]){2}"\s*:/,
+	constructor:
+		/"(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)"\s*:/,
+	protoShort: /"__proto__"\s*:/,
+	constructorShort: /"constructor"\s*:/,
+} as const;
+
+const JSON_SIGNATURE =
+	/^\s*["[{]|^\s*-?\d{1,16}(\.\d{1,17})?([Ee][+-]?\d+)?\s*$/;
+
+const SPECIAL_VALUES = {
+	true: true,
+	false: false,
+	null: null,
+	undefined: undefined,
+	nan: Number.NaN,
+	infinity: Number.POSITIVE_INFINITY,
+	"-infinity": Number.NEGATIVE_INFINITY,
+} as const;
+
+const ISO_DATE_REGEX =
+	/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,7}))?(?:Z|([+-])(\d{2}):(\d{2}))$/;
+
+type ParseOptions = {
+	/** Throw errors instead of returning the original value */
+	strict?: boolean;
+	/** Log warnings when suspicious patterns are detected */
+	warnings?: boolean;
+	/** Custom reviver function */
+	reviver?: (key: string, value: any) => any;
+	/** Automatically convert ISO date strings to Date objects */
+	parseDates?: boolean;
+};
+
+function isValidDate(date: Date): boolean {
+	return date instanceof Date && !isNaN(date.getTime());
+}
+
+function parseISODate(value: string): Date | null {
+	const match = ISO_DATE_REGEX.exec(value);
+	if (!match) return null;
+
+	const [
+		,
+		year,
+		month,
+		day,
+		hour,
+		minute,
+		second,
+		ms,
+		offsetSign,
+		offsetHour,
+		offsetMinute,
+	] = match;
+
+	let date = new Date(
+		Date.UTC(
+			parseInt(year, 10),
+			parseInt(month, 10) - 1,
+			parseInt(day, 10),
+			parseInt(hour, 10),
+			parseInt(minute, 10),
+			parseInt(second, 10),
+			ms ? parseInt(ms.padEnd(3, "0"), 10) : 0,
+		),
+	);
+
+	if (offsetSign) {
+		const offset =
+			(parseInt(offsetHour, 10) * 60 + parseInt(offsetMinute, 10)) *
+			(offsetSign === "+" ? -1 : 1);
+		date.setUTCMinutes(date.getUTCMinutes() + offset);
+	}
+
+	return isValidDate(date) ? date : null;
+}
+
+function betterJSONParse<T = unknown>(
+	value: unknown,
+	options: ParseOptions = {},
+): T {
+	const {
+		strict = false,
+		warnings = false,
+		reviver,
+		parseDates = true,
+	} = options;
+
+	if (typeof value !== "string") {
+		return value as T;
+	}
+
+	const trimmed = value.trim();
+
+	if (
+		trimmed[0] === '"' &&
+		trimmed.endsWith('"') &&
+		!trimmed.slice(1, -1).includes('"')
+	) {
+		return trimmed.slice(1, -1) as T;
+	}
+
+	const lowerValue = trimmed.toLowerCase();
+	if (lowerValue.length <= 9 && lowerValue in SPECIAL_VALUES) {
+		return SPECIAL_VALUES[lowerValue as keyof typeof SPECIAL_VALUES] as T;
+	}
+
+	if (!JSON_SIGNATURE.test(trimmed)) {
+		if (strict) {
+			throw new SyntaxError("[better-json] Invalid JSON");
+		}
+		return value as T;
+	}
+
+	const hasProtoPattern = Object.entries(PROTO_POLLUTION_PATTERNS).some(
+		([key, pattern]) => {
+			const matches = pattern.test(trimmed);
+			if (matches && warnings) {
+				console.warn(
+					`[better-json] Detected potential prototype pollution attempt using ${key} pattern`,
+				);
+			}
+			return matches;
+		},
+	);
+
+	if (hasProtoPattern && strict) {
+		throw new Error(
+			"[better-json] Potential prototype pollution attempt detected",
+		);
+	}
+
+	try {
+		const secureReviver = (key: string, value: any) => {
+			if (
+				key === "__proto__" ||
+				(key === "constructor" &&
+					value &&
+					typeof value === "object" &&
+					"prototype" in value)
+			) {
+				if (warnings) {
+					console.warn(
+						`[better-json] Dropping "${key}" key to prevent prototype pollution`,
+					);
+				}
+				return undefined;
+			}
+
+			if (parseDates && typeof value === "string") {
+				const date = parseISODate(value);
+				if (date) {
+					return date;
+				}
+			}
+
+			return reviver ? reviver(key, value) : value;
+		};
+
+		return JSON.parse(trimmed, secureReviver);
+	} catch (error) {
+		if (strict) {
+			throw error;
+		}
+		return value as T;
+	}
+}
+
+export function parseJSON<T = unknown>(
+	value: unknown,
+	options: ParseOptions = { strict: true },
+): T {
+	return betterJSONParse<T>(value, options);
+}
+
+export default parseJSON;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/path-to-object.ts
+```typescript
+import type {
+	BetterFetchOption,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import type { InputContext, Endpoint } from "better-call";
+import type {
+	HasRequiredKeys,
+	Prettify,
+	UnionToIntersection,
+} from "../types/helper";
+import type {
+	ClientOptions,
+	InferAdditionalFromClient,
+	InferSessionFromClient,
+	InferUserFromClient,
+} from "./types";
+
+export type CamelCase<S extends string> =
+	S extends `${infer P1}-${infer P2}${infer P3}`
+		? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<P3>}`
+		: Lowercase<S>;
+
+export type PathToObject<
+	T extends string,
+	Fn extends (...args: any[]) => any,
+> = T extends `/${infer Segment}/${infer Rest}`
+	? { [K in CamelCase<Segment>]: PathToObject<`/${Rest}`, Fn> }
+	: T extends `/${infer Segment}`
+		? { [K in CamelCase<Segment>]: Fn }
+		: never;
+
+export type InferSignUpEmailCtx<
+	ClientOpts extends ClientOptions,
+	FetchOptions extends BetterFetchOption,
+> = {
+	email: string;
+	name: string;
+	password: string;
+	image?: string;
+	callbackURL?: string;
+	fetchOptions?: FetchOptions;
+} & UnionToIntersection<InferAdditionalFromClient<ClientOpts, "user", "input">>;
+
+export type InferUserUpdateCtx<
+	ClientOpts extends ClientOptions,
+	FetchOptions extends BetterFetchOption,
+> = {
+	image?: string | null;
+	name?: string;
+	fetchOptions?: FetchOptions;
+} & Partial<
+	UnionToIntersection<InferAdditionalFromClient<ClientOpts, "user", "input">>
+>;
+
+export type InferCtx<
+	C extends InputContext<any, any>,
+	FetchOptions extends BetterFetchOption,
+> = C["body"] extends Record<string, any>
+	? C["body"] & {
+			fetchOptions?: FetchOptions;
+		}
+	: C["query"] extends Record<string, any>
+		? {
+				query: C["query"];
+				fetchOptions?: FetchOptions;
+			}
+		: C["query"] extends Record<string, any> | undefined
+			? {
+					query?: C["query"];
+					fetchOptions?: FetchOptions;
+				}
+			: {
+					fetchOptions?: FetchOptions;
+				};
+
+export type MergeRoutes<T> = UnionToIntersection<T>;
+
+export type InferRoute<API, COpts extends ClientOptions> = API extends Record<
+	string,
+	infer T
+>
+	? T extends Endpoint
+		? T["options"]["metadata"] extends
+				| {
+						isAction: false;
+				  }
+				| {
+						SERVER_ONLY: true;
+				  }
+			? {}
+			: PathToObject<
+					T["path"],
+					T extends (ctx: infer C) => infer R
+						? C extends InputContext<any, any>
+							? <
+									FetchOptions extends BetterFetchOption<
+										Partial<C["body"]> & Record<string, any>,
+										Partial<C["query"]> & Record<string, any>,
+										C["params"]
+									>,
+								>(
+									...data: HasRequiredKeys<
+										InferCtx<C, FetchOptions>
+									> extends true
+										? [
+												Prettify<
+													T["path"] extends `/sign-up/email`
+														? InferSignUpEmailCtx<COpts, FetchOptions>
+														: InferCtx<C, FetchOptions>
+												>,
+												FetchOptions?,
+											]
+										: [
+												Prettify<
+													T["path"] extends `/update-user`
+														? InferUserUpdateCtx<COpts, FetchOptions>
+														: InferCtx<C, FetchOptions>
+												>?,
+												FetchOptions?,
+											]
+								) => Promise<
+									BetterFetchResponse<
+										T["options"]["metadata"] extends {
+											CUSTOM_SESSION: boolean;
+										}
+											? NonNullable<Awaited<R>>
+											: T["path"] extends "/get-session"
+												? {
+														user: InferUserFromClient<COpts>;
+														session: InferSessionFromClient<COpts>;
+													}
+												: NonNullable<Awaited<R>>,
+										{
+											code?: string;
+											message?: string;
+											t?: FetchOptions["throw"];
+										},
+										FetchOptions["throw"] extends true
+											? true
+											: COpts["fetchOptions"] extends { throw: true }
+												? true
+												: false
+									>
+								>
+							: never
+						: never
+				>
+		: {}
+	: never;
+
+export type InferRoutes<
+	API extends Record<string, Endpoint>,
+	ClientOpts extends ClientOptions,
+> = MergeRoutes<InferRoute<API, ClientOpts>>;
+
+export type ProxyRequest = {
+	options?: BetterFetchOption<any, any>;
+	query?: any;
+	[key: string]: any;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/proxy.ts
+```typescript
+import type { BetterFetch, BetterFetchOption } from "@better-fetch/fetch";
+import type { Atom, PreinitializedWritableAtom } from "nanostores";
+import type { ProxyRequest } from "./path-to-object";
+import type { BetterAuthClientPlugin } from "./types";
+
+function getMethod(
+	path: string,
+	knownPathMethods: Record<string, "POST" | "GET">,
+	args:
+		| { fetchOptions?: BetterFetchOption; query?: Record<string, any> }
+		| undefined,
+) {
+	const method = knownPathMethods[path];
+	const { fetchOptions, query, ...body } = args || {};
+	if (method) {
+		return method;
+	}
+	if (fetchOptions?.method) {
+		return fetchOptions.method;
+	}
+	if (body && Object.keys(body).length > 0) {
+		return "POST";
+	}
+	return "GET";
+}
+
+export type AuthProxySignal = {
+	atom: PreinitializedWritableAtom<boolean>;
+	matcher: (path: string) => boolean;
+};
+
+export function createDynamicPathProxy<T extends Record<string, any>>(
+	routes: T,
+	client: BetterFetch,
+	knownPathMethods: Record<string, "POST" | "GET">,
+	atoms: Record<string, Atom>,
+	atomListeners: BetterAuthClientPlugin["atomListeners"],
+): T {
+	function createProxy(path: string[] = []): any {
+		return new Proxy(function () {}, {
+			get(target, prop: string) {
+				const fullPath = [...path, prop];
+				let current: any = routes;
+				for (const segment of fullPath) {
+					if (current && typeof current === "object" && segment in current) {
+						current = current[segment];
+					} else {
+						current = undefined;
+						break;
+					}
+				}
+				if (typeof current === "function") {
+					return current;
+				}
+				return createProxy(fullPath);
+			},
+			apply: async (_, __, args) => {
+				const routePath =
+					"/" +
+					path
+						.map((segment) =>
+							segment.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`),
+						)
+						.join("/");
+				const arg = (args[0] || {}) as ProxyRequest;
+				const fetchOptions = (args[1] || {}) as BetterFetchOption;
+				const { query, fetchOptions: argFetchOptions, ...body } = arg;
+				const options = {
+					...fetchOptions,
+					...argFetchOptions,
+				} as BetterFetchOption;
+				const method = getMethod(routePath, knownPathMethods, arg);
+
+				return await client(routePath, {
+					...options,
+					body:
+						method === "GET"
+							? undefined
+							: {
+									...body,
+									...(options?.body || {}),
+								},
+					query: query || options?.query,
+					method,
+					async onSuccess(context) {
+						await options?.onSuccess?.(context);
+						/**
+						 * We trigger listeners
+						 */
+						const matches = atomListeners?.find((s) => s.matcher(routePath));
+						if (!matches) return;
+						const signal = atoms[matches.signal as any];
+						if (!signal) return;
+						/**
+						 * To avoid race conditions we set the signal in a setTimeout
+						 */
+						const val = signal.get();
+						setTimeout(() => {
+							//@ts-expect-error
+							signal.set(!val);
+						}, 10);
+					},
+				});
+			},
+		});
+	}
+	return createProxy() as T;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/query.ts
+```typescript
+import {
+	BetterFetchError,
+	type BetterFetch,
+	type BetterFetchOption,
+} from "@better-fetch/fetch";
+import { atom, onMount, type PreinitializedWritableAtom } from "nanostores";
+
+export const useAuthQuery = <T>(
+	initializedAtom:
+		| PreinitializedWritableAtom<any>
+		| PreinitializedWritableAtom<any>[],
+	path: string,
+	$fetch: BetterFetch,
+	options?:
+		| ((value: {
+				data: null | T;
+				error: null | BetterFetchError;
+				isPending: boolean;
+		  }) => BetterFetchOption)
+		| BetterFetchOption,
+) => {
+	const value = atom<{
+		data: null | T;
+		error: null | BetterFetchError;
+		isPending: boolean;
+		isRefetching: boolean;
+		refetch: () => void;
+	}>({
+		data: null,
+		error: null,
+		isPending: true,
+		isRefetching: false,
+		refetch: () => {
+			return fn();
+		},
+	});
+
+	const fn = () => {
+		const opts =
+			typeof options === "function"
+				? options({
+						data: value.get().data,
+						error: value.get().error,
+						isPending: value.get().isPending,
+					})
+				: options;
+
+		return $fetch<T>(path, {
+			...opts,
+			async onSuccess(context) {
+				//to avoid hydration error
+				if (typeof window !== "undefined") {
+					value.set({
+						data: context.data,
+						error: null,
+						isPending: false,
+						isRefetching: false,
+						refetch: value.value.refetch,
+					});
+				}
+				await opts?.onSuccess?.(context);
+			},
+			async onError(context) {
+				const { request } = context;
+				const retryAttempts =
+					typeof request.retry === "number"
+						? request.retry
+						: request.retry?.attempts;
+				const retryAttempt = request.retryAttempt || 0;
+				if (retryAttempts && retryAttempt < retryAttempts) return;
+				value.set({
+					error: context.error,
+					data: null,
+					isPending: false,
+					isRefetching: false,
+					refetch: value.value.refetch,
+				});
+				await opts?.onError?.(context);
+			},
+			async onRequest(context) {
+				const currentValue = value.get();
+				value.set({
+					isPending: currentValue.data === null,
+					data: currentValue.data,
+					error: null,
+					isRefetching: true,
+					refetch: value.value.refetch,
+				});
+				await opts?.onRequest?.(context);
+			},
+		});
+	};
+	initializedAtom = Array.isArray(initializedAtom)
+		? initializedAtom
+		: [initializedAtom];
+	let isMounted = false;
+	for (const initAtom of initializedAtom) {
+		initAtom.subscribe(() => {
+			if (isMounted) {
+				fn();
+			} else {
+				onMount(value, () => {
+					fn();
+					isMounted = true;
+					return () => {
+						value.off();
+						initAtom.off();
+					};
+				});
+			}
+		});
+	}
+	return value;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/session-atom.ts
+```typescript
+import type { BetterFetch } from "@better-fetch/fetch";
+import { atom } from "nanostores";
+import { useAuthQuery } from "./query";
+import type { Session, User } from "../types";
+
+export function getSessionAtom($fetch: BetterFetch) {
+	const $signal = atom<boolean>(false);
+	const session = useAuthQuery<{
+		user: User;
+		session: Session;
+	}>($signal, "/get-session", $fetch, {
+		method: "GET",
+	});
+	return {
+		session,
+		$sessionSignal: $signal,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/test-plugin.ts
+```typescript
+import { atom, computed } from "nanostores";
+import type { BetterAuthClientPlugin } from "./types";
+import type { BetterAuthPlugin } from "../types/plugins";
+import { createAuthEndpoint } from "../api/call";
+import { useAuthQuery } from "./query";
+
+const serverPlugin = {
+	id: "test",
+	endpoints: {
+		test: createAuthEndpoint(
+			"/test",
+			{
+				method: "GET",
+			},
+			async (c) => {
+				return {
+					data: "test",
+				};
+			},
+		),
+		testSignOut2: createAuthEndpoint(
+			"/test-2/sign-out",
+			{
+				method: "POST",
+			},
+			async (c) => {
+				return null;
+			},
+		),
+	},
+	schema: {
+		user: {
+			fields: {
+				testField: {
+					type: "string",
+					required: false,
+				},
+				testField2: {
+					type: "number",
+					required: false,
+				},
+				testField3: {
+					type: "string",
+					returned: false,
+				},
+				testField4: {
+					type: "string",
+					defaultValue: "test",
+				},
+			},
+		},
+	},
+} satisfies BetterAuthPlugin;
+
+export const testClientPlugin = () => {
+	const $test = atom(false);
+	let testValue = 0;
+	const computedAtom = computed($test, () => {
+		return testValue++;
+	});
+	return {
+		id: "test" as const,
+		getActions($fetch) {
+			return {
+				setTestAtom(value: boolean) {
+					$test.set(value);
+				},
+				test: {
+					signOut: async () => {},
+				},
+			};
+		},
+		getAtoms($fetch) {
+			const $signal = atom(false);
+			const queryAtom = useAuthQuery<any>($signal, "/test", $fetch, {
+				method: "GET",
+			});
+			return {
+				$test,
+				$signal,
+				computedAtom,
+				queryAtom,
+			};
+		},
+		$InferServerPlugin: {} as typeof serverPlugin,
+		atomListeners: [
+			{
+				matcher: (path) => path === "/test",
+				signal: "$test",
+			},
+			{
+				matcher: (path) => path === "/test2/sign-out",
+				signal: "$sessionSignal",
+			},
+		],
+	} satisfies BetterAuthClientPlugin;
+};
+export const testClientPlugin2 = () => {
+	const $test2 = atom(false);
+	let testValue = 0;
+	const anotherAtom = computed($test2, () => {
+		return testValue++;
+	});
+	return {
+		id: "test",
+		getAtoms($fetch) {
+			return {
+				$test2,
+				anotherAtom,
+			};
+		},
+		atomListeners: [
+			{
+				matcher: (path) => path === "/test",
+				signal: "$test",
+			},
+			{
+				matcher: (path) => path === "/test2/sign-out",
+				signal: "$sessionSignal",
+			},
+		],
+	} satisfies BetterAuthClientPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/types.ts
+```typescript
+import type {
+	BetterFetch,
+	BetterFetchOption,
+	BetterFetchPlugin,
+} from "@better-fetch/fetch";
+import type { BetterAuthPlugin } from "../types/plugins";
+import type { Atom, WritableAtom } from "nanostores";
+import type {
+	LiteralString,
+	StripEmptyObjects,
+	UnionToIntersection,
+} from "../types/helper";
+import type { Auth } from "../auth";
+import type { InferRoutes } from "./path-to-object";
+import type { Session, User } from "../types";
+import type { InferFieldsInputClient, InferFieldsOutput } from "../db";
+
+export type AtomListener = {
+	matcher: (path: string) => boolean;
+	signal: "$sessionSignal" | Omit<string, "$sessionSignal">;
+};
+
+export interface Store {
+	notify: (signal: string) => void;
+	listen: (signal: string, listener: () => void) => void;
+	atoms: Record<string, WritableAtom<any>>;
+}
+
+export interface BetterAuthClientPlugin {
+	id: LiteralString;
+	/**
+	 * only used for type inference. don't pass the
+	 * actual plugin
+	 */
+	$InferServerPlugin?: BetterAuthPlugin;
+	/**
+	 * Custom actions
+	 */
+	getActions?: ($fetch: BetterFetch, $store: Store) => Record<string, any>;
+	/**
+	 * State atoms that'll be resolved by each framework
+	 * auth store.
+	 */
+	getAtoms?: ($fetch: BetterFetch) => Record<string, Atom<any>>;
+	/**
+	 * specify path methods for server plugin inferred
+	 * endpoints to force a specific method.
+	 */
+	pathMethods?: Record<string, "POST" | "GET">;
+	/**
+	 * Better fetch plugins
+	 */
+	fetchPlugins?: BetterFetchPlugin[];
+	/**
+	 * a list of recaller based on a matcher function.
+	 * The signal name needs to match a signal in this
+	 * plugin or any plugin the user might have added.
+	 */
+	atomListeners?: AtomListener[];
+}
+
+export interface ClientOptions {
+	fetchOptions?: BetterFetchOption;
+	plugins?: BetterAuthClientPlugin[];
+	baseURL?: string;
+	basePath?: string;
+	disableDefaultFetchPlugins?: boolean;
+}
+
+export type InferClientAPI<O extends ClientOptions> = InferRoutes<
+	O["plugins"] extends Array<any>
+		? Auth["api"] &
+				(O["plugins"] extends Array<infer Pl>
+					? UnionToIntersection<
+							Pl extends {
+								$InferServerPlugin: infer Plug;
+							}
+								? Plug extends {
+										endpoints: infer Endpoints;
+									}
+									? Endpoints
+									: {}
+								: {}
+						>
+					: {})
+		: Auth["api"],
+	O
+>;
+
+export type InferActions<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? UnionToIntersection<
+			Plugin extends BetterAuthClientPlugin
+				? Plugin["getActions"] extends (...args: any) => infer Actions
+					? Actions
+					: {}
+				: {}
+		>
+	: {};
+
+export type InferErrorCodes<O extends ClientOptions> =
+	O["plugins"] extends Array<infer Plugin>
+		? UnionToIntersection<
+				Plugin extends BetterAuthClientPlugin
+					? Plugin["$InferServerPlugin"] extends BetterAuthPlugin
+						? Plugin["$InferServerPlugin"]["$ERROR_CODES"]
+						: {}
+					: {}
+			>
+		: {};
+/**
+ * signals are just used to recall a computed value.
+ * as a convention they start with "$"
+ */
+export type IsSignal<T> = T extends `$${infer _}` ? true : false;
+
+export type InferPluginsFromClient<O extends ClientOptions> =
+	O["plugins"] extends Array<BetterAuthClientPlugin>
+		? Array<O["plugins"][number]["$InferServerPlugin"]>
+		: undefined;
+
+export type InferSessionFromClient<O extends ClientOptions> = StripEmptyObjects<
+	Session &
+		UnionToIntersection<InferAdditionalFromClient<O, "session", "output">>
+>;
+export type InferUserFromClient<O extends ClientOptions> = StripEmptyObjects<
+	User & UnionToIntersection<InferAdditionalFromClient<O, "user", "output">>
+>;
+
+export type InferAdditionalFromClient<
+	Options extends ClientOptions,
+	Key extends string,
+	Format extends "input" | "output" = "output",
+> = Options["plugins"] extends Array<infer T>
+	? T extends BetterAuthClientPlugin
+		? T["$InferServerPlugin"] extends {
+				schema: {
+					[key in Key]: {
+						fields: infer Field;
+					};
+				};
+			}
+			? Format extends "input"
+				? InferFieldsInputClient<Field>
+				: InferFieldsOutput<Field>
+			: {}
+		: {}
+	: {};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/url.test.ts
+```typescript
+import { describe, expect, it } from "vitest";
+import { createAuthClient } from "./vanilla";
+import { testClientPlugin } from "./test-plugin";
+
+describe("url", () => {
+	it("should not require base url", async () => {
+		const client = createAuthClient({
+			plugins: [testClientPlugin()],
+			baseURL: "",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response(JSON.stringify({ hello: "world" }));
+				},
+			},
+		});
+		const response = await client.test();
+		expect(response.data).toEqual({ hello: "world" });
+	});
+
+	it("should use base url and append `/api/auth` by default", async () => {
+		const client = createAuthClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response(JSON.stringify({ url }));
+				},
+			},
+		});
+		const response = await client.test();
+		expect(response.data).toEqual({
+			url: "http://localhost:3000/api/auth/test",
+		});
+	});
+
+	it("should use base url and use the provider path if provided", async () => {
+		const client = createAuthClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000/auth",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response(JSON.stringify({ url }));
+				},
+			},
+		});
+		const response = await client.test();
+		expect(response.data).toEqual({
+			url: "http://localhost:3000/auth/test",
+		});
+	});
+
+	it("should use be able to detect `/` in the base url", async () => {
+		const client = createAuthClient({
+			plugins: [testClientPlugin()],
+			baseURL: "http://localhost:3000",
+			basePath: "/",
+			fetchOptions: {
+				customFetchImpl: async (url, init) => {
+					return new Response(JSON.stringify({ url }));
+				},
+			},
+		});
+		const response = await client.test();
+		expect(response.data).toEqual({
+			url: "http://localhost:3000/test",
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/vanilla.ts
+```typescript
+import { getClientConfig } from "./config";
+import { capitalizeFirstLetter } from "../utils/misc";
+import type {
+	BetterAuthClientPlugin,
+	ClientOptions,
+	InferActions,
+	InferClientAPI,
+	InferErrorCodes,
+	IsSignal,
+} from "./types";
+import { createDynamicPathProxy } from "./proxy";
+import type { PrettifyDeep, UnionToIntersection } from "../types/helper";
+import type { Atom } from "nanostores";
+import type {
+	BetterFetchError,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import type { BASE_ERROR_CODES } from "../error/codes";
+
+type InferResolvedHooks<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? Plugin extends BetterAuthClientPlugin
+		? Plugin["getAtoms"] extends (fetch: any) => infer Atoms
+			? Atoms extends Record<string, any>
+				? {
+						[key in keyof Atoms as IsSignal<key> extends true
+							? never
+							: key extends string
+								? `use${Capitalize<key>}`
+								: never]: Atoms[key];
+					}
+				: {}
+			: {}
+		: {}
+	: {};
+
+export function createAuthClient<Option extends ClientOptions>(
+	options?: Option,
+) {
+	const {
+		pluginPathMethods,
+		pluginsActions,
+		pluginsAtoms,
+		$fetch,
+		atomListeners,
+		$store,
+	} = getClientConfig(options);
+	let resolvedHooks: Record<string, any> = {};
+	for (const [key, value] of Object.entries(pluginsAtoms)) {
+		resolvedHooks[`use${capitalizeFirstLetter(key)}`] = value;
+	}
+	const routes = {
+		...pluginsActions,
+		...resolvedHooks,
+		$fetch,
+		$store,
+	};
+	const proxy = createDynamicPathProxy(
+		routes,
+		$fetch,
+		pluginPathMethods,
+		pluginsAtoms,
+		atomListeners,
+	);
+	type ClientAPI = InferClientAPI<Option>;
+	type Session = ClientAPI extends {
+		getSession: () => Promise<infer Res>;
+	}
+		? Res extends BetterFetchResponse<infer S>
+			? S
+			: Res extends Record<string, any>
+				? Res
+				: never
+		: never;
+	return proxy as UnionToIntersection<InferResolvedHooks<Option>> &
+		ClientAPI &
+		InferActions<Option> & {
+			useSession: Atom<{
+				data: Session;
+				error: BetterFetchError | null;
+				isPending: boolean;
+			}>;
+			$fetch: typeof $fetch;
+			$store: typeof $store;
+			$Infer: {
+				Session: NonNullable<Session>;
+			};
+			$ERROR_CODES: PrettifyDeep<
+				InferErrorCodes<Option> & typeof BASE_ERROR_CODES
+			>;
+		};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/svelte/index.ts
+```typescript
+import { getClientConfig } from "../config";
+import { capitalizeFirstLetter } from "../../utils/misc";
+import type {
+	BetterAuthClientPlugin,
+	ClientOptions,
+	InferActions,
+	InferClientAPI,
+	InferErrorCodes,
+	IsSignal,
+} from "../types";
+import { createDynamicPathProxy } from "../proxy";
+import type { PrettifyDeep, UnionToIntersection } from "../../types/helper";
+import type { Atom } from "nanostores";
+import type {
+	BetterFetchError,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import type { BASE_ERROR_CODES } from "../../error/codes";
+
+type InferResolvedHooks<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? Plugin extends BetterAuthClientPlugin
+		? Plugin["getAtoms"] extends (fetch: any) => infer Atoms
+			? Atoms extends Record<string, any>
+				? {
+						[key in keyof Atoms as IsSignal<key> extends true
+							? never
+							: key extends string
+								? `use${Capitalize<key>}`
+								: never]: () => Atoms[key];
+					}
+				: {}
+			: {}
+		: {}
+	: {};
+
+export function createAuthClient<Option extends ClientOptions>(
+	options?: Option,
+) {
+	const {
+		pluginPathMethods,
+		pluginsActions,
+		pluginsAtoms,
+		$fetch,
+		atomListeners,
+		$store,
+	} = getClientConfig(options);
+	let resolvedHooks: Record<string, any> = {};
+	for (const [key, value] of Object.entries(pluginsAtoms)) {
+		resolvedHooks[`use${capitalizeFirstLetter(key)}`] = () => value;
+	}
+	const routes = {
+		...pluginsActions,
+		...resolvedHooks,
+		$fetch,
+		$store,
+	};
+	const proxy = createDynamicPathProxy(
+		routes,
+		$fetch,
+		pluginPathMethods,
+		pluginsAtoms,
+		atomListeners,
+	);
+	type ClientAPI = InferClientAPI<Option>;
+	type Session = ClientAPI extends {
+		getSession: () => Promise<infer Res>;
+	}
+		? Res extends BetterFetchResponse<infer S>
+			? S
+			: Res extends Record<string, any>
+				? Res
+				: never
+		: never;
+	return proxy as UnionToIntersection<InferResolvedHooks<Option>> &
+		InferClientAPI<Option> &
+		InferActions<Option> & {
+			useSession: () => Atom<{
+				data: Session;
+				error: BetterFetchError | null;
+				isPending: boolean;
+				isRefetching: boolean;
+			}>;
+			$fetch: typeof $fetch;
+			$store: typeof $store;
+			$Infer: {
+				Session: NonNullable<Session>;
+			};
+			$ERROR_CODES: PrettifyDeep<
+				InferErrorCodes<Option> & typeof BASE_ERROR_CODES
+			>;
+		};
+}
+
+export type * from "@better-fetch/fetch";
+export type * from "nanostores";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/plugins/index.ts
+```typescript
+export * from "../../plugins/organization/client";
+export * from "../../plugins/username/client";
+export * from "../../plugins/passkey/client";
+export * from "../../plugins/two-factor/client";
+export * from "../../plugins/magic-link/client";
+export * from "../../plugins/phone-number/client";
+export * from "../../plugins/anonymous/client";
+export * from "../../plugins/additional-fields/client";
+export * from "../../plugins/admin/client";
+export * from "../../plugins/generic-oauth/client";
+export * from "../../plugins/jwt/client";
+export * from "../../plugins/multi-session/client";
+export * from "../../plugins/email-otp/client";
+export * from "../../plugins/one-tap/client";
+export * from "../../plugins/custom-session/client";
+export * from "./infer-plugin";
+export * from "../../plugins/sso/client";
+export * from "../../plugins/oidc-provider/client";
+export * from "../../plugins/api-key/client";
+export type * from "@simplewebauthn/server";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/plugins/infer-plugin.ts
+```typescript
+import type { BetterAuthClientPlugin, BetterAuthOptions } from "../../types";
+
+export const InferServerPlugin = <
+	AuthOrOption extends
+		| BetterAuthOptions
+		| {
+				options: BetterAuthOptions;
+		  },
+	ID extends string,
+>() => {
+	type Option = AuthOrOption extends { options: infer O } ? O : AuthOrOption;
+	type Plugin = Option["plugins"] extends Array<infer P>
+		? P extends {
+				id: ID;
+			}
+			? P
+			: never
+		: never;
+	return {
+		id: "infer-server-plugin",
+		$InferServerPlugin: {} as Plugin,
+	} satisfies BetterAuthClientPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/vue/index.ts
+```typescript
+import { useStore } from "./vue-store";
+import type { DeepReadonly, Ref } from "vue";
+import { getClientConfig } from "../config";
+import { capitalizeFirstLetter } from "../../utils/misc";
+import type {
+	BetterAuthClientPlugin,
+	ClientOptions,
+	InferActions,
+	InferClientAPI,
+	InferErrorCodes,
+	IsSignal,
+} from "../types";
+import { createDynamicPathProxy } from "../proxy";
+import type { PrettifyDeep, UnionToIntersection } from "../../types/helper";
+import type {
+	BetterFetchError,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import type { BASE_ERROR_CODES } from "../../error/codes";
+
+function getAtomKey(str: string) {
+	return `use${capitalizeFirstLetter(str)}`;
+}
+
+type InferResolvedHooks<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? Plugin extends BetterAuthClientPlugin
+		? Plugin["getAtoms"] extends (fetch: any) => infer Atoms
+			? Atoms extends Record<string, any>
+				? {
+						[key in keyof Atoms as IsSignal<key> extends true
+							? never
+							: key extends string
+								? `use${Capitalize<key>}`
+								: never]: () => DeepReadonly<
+							Ref<ReturnType<Atoms[key]["get"]>>
+						>;
+					}
+				: {}
+			: {}
+		: {}
+	: {};
+
+export function createAuthClient<Option extends ClientOptions>(
+	options?: Option,
+) {
+	const {
+		pluginPathMethods,
+		pluginsActions,
+		pluginsAtoms,
+		$fetch,
+		$store,
+		atomListeners,
+	} = getClientConfig(options);
+	let resolvedHooks: Record<string, any> = {};
+	for (const [key, value] of Object.entries(pluginsAtoms)) {
+		resolvedHooks[getAtomKey(key)] = () => useStore(value);
+	}
+
+	type ClientAPI = InferClientAPI<Option>;
+	type Session = ClientAPI extends {
+		getSession: () => Promise<infer Res>;
+	}
+		? Res extends BetterFetchResponse<infer S>
+			? S
+			: Res extends Record<string, any>
+				? Res
+				: never
+		: never;
+
+	function useSession(): DeepReadonly<
+		Ref<{
+			data: Session;
+			isPending: boolean;
+			isRefetching: boolean;
+			error: BetterFetchError | null;
+		}>
+	>;
+	function useSession<F extends (...args: any) => any>(
+		useFetch: F,
+	): Promise<{
+		data: Ref<Session>;
+		isPending: false; //this is just to be consistent with the default hook
+		error: Ref<{
+			message?: string;
+			status: number;
+			statusText: string;
+		}>;
+	}>;
+	function useSession<UseFetch extends <T>(...args: any) => any>(
+		useFetch?: UseFetch,
+	) {
+		if (useFetch) {
+			const ref = useStore(pluginsAtoms.$sessionSignal);
+			const baseURL = options?.fetchOptions?.baseURL || options?.baseURL;
+			let authPath = baseURL ? new URL(baseURL).pathname : "/api/auth";
+			authPath = authPath === "/" ? "/api/auth" : authPath; //fix for root path
+			authPath = authPath.endsWith("/") ? authPath.slice(0, -1) : authPath; //fix for trailing slash
+			return useFetch(`${authPath}/get-session`, {
+				ref,
+			}).then((res: any) => {
+				return {
+					data: res.data,
+					isPending: false,
+					error: res.error,
+				};
+			});
+		}
+		return resolvedHooks.useSession();
+	}
+
+	const routes = {
+		...pluginsActions,
+		...resolvedHooks,
+		useSession,
+		$fetch,
+		$store,
+	};
+
+	const proxy = createDynamicPathProxy(
+		routes,
+		$fetch,
+		pluginPathMethods,
+		pluginsAtoms,
+		atomListeners,
+	);
+
+	return proxy as UnionToIntersection<InferResolvedHooks<Option>> &
+		InferClientAPI<Option> &
+		InferActions<Option> & {
+			useSession: typeof useSession;
+			$Infer: {
+				Session: NonNullable<Session>;
+			};
+			$fetch: typeof $fetch;
+			$store: typeof $store;
+			$ERROR_CODES: PrettifyDeep<
+				InferErrorCodes<Option> & typeof BASE_ERROR_CODES
+			>;
+		};
+}
+
+export type * from "@better-fetch/fetch";
+export type * from "nanostores";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/vue/vue-store.ts
+```typescript
+import type { Store, StoreValue } from "nanostores";
+import {
+	getCurrentInstance,
+	getCurrentScope,
+	onScopeDispose,
+	readonly,
+	shallowRef,
+	type DeepReadonly,
+	type ShallowRef,
+	type UnwrapNestedRefs,
+} from "vue";
+
+export function registerStore(store: Store) {
+	let instance = getCurrentInstance();
+	if (instance && instance.proxy) {
+		let vm = instance.proxy as any;
+		let cache = "_nanostores" in vm ? vm._nanostores : (vm._nanostores = []);
+		cache.push(store);
+	}
+}
+
+export function useStore<
+	SomeStore extends Store,
+	Value extends StoreValue<SomeStore>,
+>(store: SomeStore): DeepReadonly<UnwrapNestedRefs<ShallowRef<Value>>> {
+	let state = shallowRef();
+
+	let unsubscribe = store.subscribe((value) => {
+		state.value = value;
+	});
+
+	getCurrentScope() && onScopeDispose(unsubscribe);
+
+	if (process.env.NODE_ENV !== "production") {
+		registerStore(store);
+		return readonly(state);
+	}
+	return state;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/solid/index.ts
+```typescript
+import { getClientConfig } from "../config";
+import { createDynamicPathProxy } from "../proxy";
+import { capitalizeFirstLetter } from "../../utils/misc";
+import type {
+	BetterAuthClientPlugin,
+	ClientOptions,
+	InferActions,
+	InferClientAPI,
+	InferErrorCodes,
+	IsSignal,
+} from "../types";
+import type { Accessor } from "solid-js";
+import type { PrettifyDeep, UnionToIntersection } from "../../types/helper";
+import type {
+	BetterFetchError,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import { useStore } from "./solid-store";
+import type { BASE_ERROR_CODES } from "../../error/codes";
+
+function getAtomKey(str: string) {
+	return `use${capitalizeFirstLetter(str)}`;
+}
+
+type InferResolvedHooks<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? Plugin extends BetterAuthClientPlugin
+		? Plugin["getAtoms"] extends (fetch: any) => infer Atoms
+			? Atoms extends Record<string, any>
+				? {
+						[key in keyof Atoms as IsSignal<key> extends true
+							? never
+							: key extends string
+								? `use${Capitalize<key>}`
+								: never]: () => Accessor<ReturnType<Atoms[key]["get"]>>;
+					}
+				: {}
+			: {}
+		: {}
+	: {};
+
+export function createAuthClient<Option extends ClientOptions>(
+	options?: Option,
+) {
+	const {
+		pluginPathMethods,
+		pluginsActions,
+		pluginsAtoms,
+		$fetch,
+		atomListeners,
+	} = getClientConfig(options);
+	let resolvedHooks: Record<string, any> = {};
+	for (const [key, value] of Object.entries(pluginsAtoms)) {
+		resolvedHooks[getAtomKey(key)] = () => useStore(value);
+	}
+	const routes = {
+		...pluginsActions,
+		...resolvedHooks,
+	};
+	const proxy = createDynamicPathProxy(
+		routes,
+		$fetch,
+		pluginPathMethods,
+		pluginsAtoms,
+		atomListeners,
+	);
+	type ClientAPI = InferClientAPI<Option>;
+	type Session = ClientAPI extends {
+		getSession: () => Promise<infer Res>;
+	}
+		? Res extends BetterFetchResponse<infer S>
+			? S
+			: Res extends Record<string, any>
+				? Res
+				: never
+		: never;
+	return proxy as UnionToIntersection<InferResolvedHooks<Option>> &
+		InferClientAPI<Option> &
+		InferActions<Option> & {
+			useSession: () => Accessor<{
+				data: Session;
+				isPending: boolean;
+				isRefetching: boolean;
+				error: BetterFetchError | null;
+			}>;
+			$Infer: {
+				Session: NonNullable<Session>;
+			};
+			$fetch: typeof $fetch;
+			$ERROR_CODES: PrettifyDeep<
+				InferErrorCodes<Option> & typeof BASE_ERROR_CODES
+			>;
+		};
+}
+
+export type * from "@better-fetch/fetch";
+export type * from "nanostores";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/solid/solid-store.ts
+```typescript
+import type { Store, StoreValue } from "nanostores";
+import { createStore, reconcile } from "solid-js/store";
+import type { Accessor } from "solid-js";
+import { onCleanup } from "solid-js";
+
+/**
+ * Subscribes to store changes and gets store’s value.
+ *
+ * @param store Store instance.
+ * @returns Store value.
+ */
+export function useStore<
+	SomeStore extends Store,
+	Value extends StoreValue<SomeStore>,
+>(store: SomeStore): Accessor<Value> {
+	// Activate the store explicitly:
+	// https://github.com/nanostores/solid/issues/19
+	const unbindActivation = store.listen(() => {});
+
+	const [state, setState] = createStore({
+		value: store.get(),
+	});
+
+	const unsubscribe = store.subscribe((newValue) => {
+		setState("value", reconcile(newValue));
+	});
+
+	onCleanup(() => unsubscribe());
+
+	// Remove temporary listener now that there is already a proper subscriber.
+	unbindActivation();
+
+	return () => state.value;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/react/index.ts
+```typescript
+import { getClientConfig } from "../config";
+import type {
+	BetterAuthClientPlugin,
+	ClientOptions,
+	InferActions,
+	InferClientAPI,
+	InferErrorCodes,
+	IsSignal,
+} from "../types";
+import { createDynamicPathProxy } from "../proxy";
+import type { PrettifyDeep, UnionToIntersection } from "../../types/helper";
+import type {
+	BetterFetchError,
+	BetterFetchResponse,
+} from "@better-fetch/fetch";
+import { useStore } from "./react-store";
+import type { BASE_ERROR_CODES } from "../../error/codes";
+
+function getAtomKey(str: string) {
+	return `use${capitalizeFirstLetter(str)}`;
+}
+
+export function capitalizeFirstLetter(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+type InferResolvedHooks<O extends ClientOptions> = O["plugins"] extends Array<
+	infer Plugin
+>
+	? Plugin extends BetterAuthClientPlugin
+		? Plugin["getAtoms"] extends (fetch: any) => infer Atoms
+			? Atoms extends Record<string, any>
+				? {
+						[key in keyof Atoms as IsSignal<key> extends true
+							? never
+							: key extends string
+								? `use${Capitalize<key>}`
+								: never]: () => ReturnType<Atoms[key]["get"]>;
+					}
+				: {}
+			: {}
+		: {}
+	: {};
+
+export function createAuthClient<Option extends ClientOptions>(
+	options?: Option,
+) {
+	const {
+		pluginPathMethods,
+		pluginsActions,
+		pluginsAtoms,
+		$fetch,
+		$store,
+		atomListeners,
+	} = getClientConfig(options);
+	let resolvedHooks: Record<string, any> = {};
+	for (const [key, value] of Object.entries(pluginsAtoms)) {
+		resolvedHooks[getAtomKey(key)] = () => useStore(value);
+	}
+
+	const routes = {
+		...pluginsActions,
+		...resolvedHooks,
+		$fetch,
+		$store,
+	};
+	const proxy = createDynamicPathProxy(
+		routes,
+		$fetch,
+		pluginPathMethods,
+		pluginsAtoms,
+		atomListeners,
+	);
+
+	type ClientAPI = InferClientAPI<Option>;
+	type Session = ClientAPI extends {
+		getSession: () => Promise<infer Res>;
+	}
+		? Res extends BetterFetchResponse<infer S>
+			? S
+			: Res
+		: never;
+	return proxy as UnionToIntersection<InferResolvedHooks<Option>> &
+		ClientAPI &
+		InferActions<Option> & {
+			useSession: () => {
+				data: Session;
+				isPending: boolean;
+				error: BetterFetchError | null;
+				refetch: () => void;
+			};
+			$Infer: {
+				Session: NonNullable<Session>;
+			};
+			$fetch: typeof $fetch;
+			$store: typeof $store;
+			$ERROR_CODES: PrettifyDeep<
+				InferErrorCodes<Option> & typeof BASE_ERROR_CODES
+			>;
+		};
+}
+
+export { useStore };
+export type * from "@better-fetch/fetch";
+export type * from "nanostores";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/client/react/react-store.ts
+````typescript
+import { listenKeys } from "nanostores";
+import { useCallback, useRef, useSyncExternalStore } from "react";
+import type { Store, StoreValue } from "nanostores";
+import type { DependencyList } from "react";
+
+type StoreKeys<T> = T extends { setKey: (k: infer K, v: any) => unknown }
+	? K
+	: never;
+
+export interface UseStoreOptions<SomeStore> {
+	/**
+	 * @default
+	 * ```ts
+	 * [store, options.keys]
+	 * ```
+	 */
+	deps?: DependencyList;
+
+	/**
+	 * Will re-render components only on specific key changes.
+	 */
+	keys?: StoreKeys<SomeStore>[];
+}
+
+/**
+ * Subscribe to store changes and get store's value.
+ *
+ * Can be user with store builder too.
+ *
+ * ```js
+ * import { useStore } from 'nanostores/react'
+ *
+ * import { router } from '../store/router'
+ *
+ * export const Layout = () => {
+ *   let page = useStore(router)
+ *   if (page.route === 'home') {
+ *     return <HomePage />
+ *   } else {
+ *     return <Error404 />
+ *   }
+ * }
+ * ```
+ *
+ * @param store Store instance.
+ * @returns Store value.
+ */
+export function useStore<SomeStore extends Store>(
+	store: SomeStore,
+	options: UseStoreOptions<SomeStore> = {},
+): StoreValue<SomeStore> {
+	let snapshotRef = useRef<StoreValue<SomeStore>>(store.get());
+
+	const { keys, deps = [store, keys] } = options;
+
+	let subscribe = useCallback((onChange: () => void) => {
+		const emitChange = (value: StoreValue<SomeStore>) => {
+			if (snapshotRef.current === value) return;
+			snapshotRef.current = value;
+			onChange();
+		};
+
+		emitChange(store.value);
+		if (keys?.length) {
+			return listenKeys(store as any, keys, emitChange);
+		}
+		return store.listen(emitChange);
+	}, deps);
+
+	let get = () => snapshotRef.current as StoreValue<SomeStore>;
+
+	return useSyncExternalStore(subscribe, get, get);
+}
+
+````

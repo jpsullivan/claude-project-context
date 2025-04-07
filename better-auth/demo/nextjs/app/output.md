@@ -1,0 +1,3812 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/features.tsx
+```
+"use client";
+import React from "react";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Logo } from "@/components/logo";
+
+export function Features() {
+	return (
+		<>
+			<div className="flex flex-col lg:flex-row bg-white dark:bg-black w-full gap-4 mx-auto px-8">
+				<Card title="Better Auth" icon={<Logo className=" w-44" />}></Card>
+			</div>
+		</>
+	);
+}
+
+const Card = ({
+	title,
+	icon,
+	children,
+}: {
+	title: string;
+	icon: React.ReactNode;
+	children?: React.ReactNode;
+}) => {
+	const [hovered, setHovered] = React.useState(false);
+	return (
+		<div
+			onMouseEnter={() => setHovered(true)}
+			onMouseLeave={() => setHovered(false)}
+			className="border border-black/[0.2] group/canvas-card flex items-center justify-center dark:border-white/[0.2]  max-w-sm w-full mx-auto p-4 relative h-[18rem]"
+		>
+			<Icon className="absolute h-6 w-6 -top-3 -left-3 dark:text-white text-black" />
+			<Icon className="absolute h-6 w-6 -bottom-3 -left-3 dark:text-white text-black" />
+			<Icon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black" />
+			<Icon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black" />
+
+			<AnimatePresence>
+				{hovered && (
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						className="h-full w-full absolute inset-0"
+					>
+						{children}
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<div className="relative z-20">
+				<div className="text-center group-hover/canvas-card:-translate-y-4 group-hover/canvas-card:opacity-0 transition duration-200 w-full  mx-auto flex items-center justify-center">
+					{icon}
+				</div>
+				<h2 className="dark:text-white text-xl opacity-0 group-hover/canvas-card:opacity-100 relative z-10 text-black mt-4  font-bold group-hover/canvas-card:text-white group-hover/canvas-card:-translate-y-2 transition duration-200">
+					{title}
+				</h2>
+			</div>
+		</div>
+	);
+};
+
+const AceternityIcon = () => {
+	return (
+		<svg
+			width="66"
+			height="65"
+			viewBox="0 0 66 65"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			className="h-10 w-10 text-black dark:text-white group-hover/canvas-card:text-white "
+		>
+			<path
+				d="M8 8.05571C8 8.05571 54.9009 18.1782 57.8687 30.062C60.8365 41.9458 9.05432 57.4696 9.05432 57.4696"
+				stroke="currentColor"
+				strokeWidth="15"
+				strokeMiterlimit="3.86874"
+				strokeLinecap="round"
+				style={{ mixBlendMode: "darken" }}
+			/>
+		</svg>
+	);
+};
+
+export const Icon = ({ className, ...rest }: any) => {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			strokeWidth="1.5"
+			stroke="currentColor"
+			className={className}
+			{...rest}
+		>
+			<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m6-6H6" />
+		</svg>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/globals.css
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 20 14.3% 4.1%;
+		--card: 0 0% 100%;
+		--card-foreground: 20 14.3% 4.1%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 20 14.3% 4.1%;
+		--primary: 24 9.8% 10%;
+		--primary-foreground: 60 9.1% 97.8%;
+		--secondary: 60 4.8% 95.9%;
+		--secondary-foreground: 24 9.8% 10%;
+		--muted: 60 4.8% 95.9%;
+		--muted-foreground: 25 5.3% 44.7%;
+		--accent: 60 4.8% 95.9%;
+		--accent-foreground: 24 9.8% 10%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 60 9.1% 97.8%;
+		--border: 20 5.9% 90%;
+		--input: 20 5.9% 90%;
+		--ring: 20 14.3% 4.1%;
+		--radius: 0rem;
+		--chart-1: 12 76% 61%;
+		--chart-2: 173 58% 39%;
+		--chart-3: 197 37% 24%;
+		--chart-4: 43 74% 66%;
+		--chart-5: 27 87% 67%;
+	}
+
+	.dark {
+		--background: 20 14.3% 4.1%;
+		--foreground: 60 9.1% 97.8%;
+		--card: 20 14.3% 4.1%;
+		--card-foreground: 60 9.1% 97.8%;
+		--popover: 20 14.3% 4.1%;
+		--popover-foreground: 60 9.1% 97.8%;
+		--primary: 60 9.1% 97.8%;
+		--primary-foreground: 24 9.8% 10%;
+		--secondary: 12 6.5% 15.1%;
+		--secondary-foreground: 60 9.1% 97.8%;
+		--muted: 12 6.5% 15.1%;
+		--muted-foreground: 24 5.4% 63.9%;
+		--accent: 12 6.5% 15.1%;
+		--accent-foreground: 60 9.1% 97.8%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 60 9.1% 97.8%;
+		--border: 12 6.5% 15.1%;
+		--input: 12 6.5% 15.1%;
+		--ring: 24 5.7% 82.9%;
+		--chart-1: 220 70% 50%;
+		--chart-2: 160 60% 45%;
+		--chart-3: 30 80% 55%;
+		--chart-4: 280 65% 60%;
+		--chart-5: 340 75% 55%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+.no-visible-scrollbar {
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+.no-visible-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/layout.tsx
+```
+import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
+import { GeistMono } from "geist/font/mono";
+import { GeistSans } from "geist/font/sans";
+import { Wrapper, WrapperWithQuery } from "@/components/wrapper";
+import { createMetadata } from "@/lib/metadata";
+
+export const metadata = createMetadata({
+	title: {
+		template: "%s | Better Auth",
+		default: "Better Auth",
+	},
+	description: "The most comprehensive authentication library for typescript",
+	metadataBase: new URL("https://demo.better-auth.com"),
+});
+
+export default function RootLayout({
+	children,
+}: Readonly<{
+	children: React.ReactNode;
+}>) {
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<head>
+				<link rel="icon" href="/favicon/favicon.ico" sizes="any" />
+			</head>
+			<body className={`${GeistSans.variable} ${GeistMono.variable} font-sans`}>
+				<ThemeProvider attribute="class" defaultTheme="dark">
+					<Wrapper>
+						<WrapperWithQuery>{children}</WrapperWithQuery>
+					</Wrapper>
+					<Toaster richColors closeButton />
+				</ThemeProvider>
+			</body>
+		</html>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/page.tsx
+```
+import { SignInButton, SignInFallback } from "@/components/sign-in-btn";
+import { Suspense } from "react";
+
+export default async function Home() {
+	const features = [
+		"Email & Password",
+		"Organization | Teams",
+		"Passkeys",
+		"Multi Factor",
+		"Password Reset",
+		"Email Verification",
+		"Roles & Permissions",
+		"Rate Limiting",
+		"Session Management",
+	];
+	return (
+		<div className="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+			<main className="flex flex-col gap-4 row-start-2 items-center justify-center">
+				<div className="flex flex-col gap-1">
+					<h3 className="font-bold text-4xl text-black dark:text-white text-center">
+						Better Auth.
+					</h3>
+					<p className="text-center break-words text-sm md:text-base">
+						Official demo to showcase{" "}
+						<a
+							href="https://better-auth.com"
+							target="_blank"
+							className="italic underline"
+						>
+							better-auth.
+						</a>{" "}
+						features and capabilities. <br />
+					</p>
+				</div>
+				<div className="md:w-10/12 w-full flex flex-col gap-4">
+					<div className="flex flex-col gap-3 pt-2 flex-wrap">
+						<div className="border-y py-2 border-dotted bg-secondary/60 opacity-80">
+							<div className="text-xs flex items-center gap-2 justify-center text-muted-foreground ">
+								<span className="text-center">
+									All features on this demo are Implemented with better auth
+									without any custom backend code
+								</span>
+							</div>
+						</div>
+						<div className="flex gap-2 justify-center flex-wrap">
+							{features.map((feature) => (
+								<span
+									className="border-b pb-1 text-muted-foreground text-xs cursor-pointer hover:text-foreground duration-150 ease-in-out transition-all hover:border-foreground flex items-center gap-1"
+									key={feature}
+								>
+									{feature}.
+								</span>
+							))}
+						</div>
+					</div>
+					{/* @ts-ignore */}
+					<Suspense fallback={<SignInFallback />}>
+						{/* @ts-ignore */}
+						<SignInButton />
+					</Suspense>
+				</div>
+			</main>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/oauth/authorize/concet-buttons.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { CardFooter } from "@/components/ui/card";
+import { client } from "@/lib/auth-client";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+export function ConsentBtns() {
+	const [loading, setLoading] = useState(false);
+	return (
+		<CardFooter className="flex items-center gap-2">
+			<Button
+				onClick={async () => {
+					setLoading(true);
+					const res = await client.oauth2.consent({
+						accept: true,
+					});
+					setLoading(false);
+					if (res.data?.redirectURI) {
+						window.location.href = res.data.redirectURI;
+						return;
+					}
+					toast.error("Failed to authorize");
+				}}
+			>
+				{loading ? <Loader2 size={15} className="animate-spin" /> : "Authorize"}
+			</Button>
+			<Button
+				variant="outline"
+				onClick={async () => {
+					const res = await client.oauth2.consent({
+						accept: false,
+					});
+					if (res.data?.redirectURI) {
+						window.location.href = res.data.redirectURI;
+						return;
+					}
+					toast.error("Failed to cancel");
+				}}
+			>
+				Cancel
+			</Button>
+		</CardFooter>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/oauth/authorize/page.tsx
+```
+import { Metadata } from "next";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { ArrowLeftRight, ArrowUpRight, Mail, Users } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Logo } from "@/components/logo";
+import Image from "next/image";
+import { ConsentBtns } from "./concet-buttons";
+
+export const metadata: Metadata = {
+	title: "Authorize Application",
+	description: "Grant access to your account",
+};
+
+interface AuthorizePageProps {
+	searchParams: Promise<{
+		redirect_uri: string;
+		scope: string;
+		cancel_uri: string;
+		client_id: string;
+	}>;
+}
+
+export default async function AuthorizePage({
+	searchParams,
+}: AuthorizePageProps) {
+	const { redirect_uri, scope, client_id, cancel_uri } = await searchParams;
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+	const clientDetails = await auth.api.getOAuthClient({
+		params: {
+			id: client_id,
+		},
+		headers: await headers(),
+	});
+
+	return (
+		<div className="container mx-auto py-10">
+			<h1 className="text-2xl font-bold mb-6 text-center">
+				Authorize Application
+			</h1>
+			<div className="min-h-screen bg-black text-white flex flex-col">
+				<div className="flex flex-col items-center justify-center max-w-2xl mx-auto px-4">
+					<div className="flex items-center gap-8 mb-8">
+						<div className="w-16 h-16 border rounded-full flex items-center justify-center">
+							{clientDetails.icon ? (
+								<Image
+									src={clientDetails.icon}
+									alt="App Logo"
+									className="object-cover"
+									width={64}
+									height={64}
+								/>
+							) : (
+								<Logo />
+							)}
+						</div>
+						<ArrowLeftRight className="h-6 w-6" />
+						<div className="w-16 h-16 rounded-full overflow-hidden">
+							<Avatar className="hidden h-16 w-16 sm:flex ">
+								<AvatarImage
+									src={session?.user.image || "#"}
+									alt="Avatar"
+									className="object-cover"
+								/>
+								<AvatarFallback>{session?.user.name.charAt(0)}</AvatarFallback>
+							</Avatar>
+						</div>
+					</div>
+
+					<h1 className="text-3xl font-semibold text-center mb-8">
+						{clientDetails.name} is requesting access to your Better Auth
+						account
+					</h1>
+
+					<Card className="w-full bg-zinc-900 border-zinc-800 rounded-none">
+						<CardContent className="p-6">
+							<div className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg mb-6">
+								<div>
+									<div className="font-medium">{session?.user.name}</div>
+									<div className="text-zinc-400">{session?.user.email}</div>
+								</div>
+								<ArrowUpRight className="h-5 w-5 text-zinc-400" />
+							</div>
+							<div className="flex flex-col gap-1">
+								<div className="text-lg mb-4">
+									Continuing will allow Sign in with {clientDetails.name} to:
+								</div>
+								{scope.includes("profile") && (
+									<div className="flex items-center gap-3 text-zinc-300">
+										<Users className="h-5 w-5" />
+										<span>Read your Better Auth user data.</span>
+									</div>
+								)}
+
+								{scope.includes("email") && (
+									<div className="flex items-center gap-3 text-zinc-300">
+										<Mail className="h-5 w-5" />
+										<span>Read your email address.</span>
+									</div>
+								)}
+							</div>
+						</CardContent>
+						<ConsentBtns />
+					</Card>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/client-test/page.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { signIn, client } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+	CardFooter,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+
+export default function ClientTest() {
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [loading, setLoading] = useState(false);
+
+	// Get the session data using the useSession hook
+	const { data: session, isPending, error } = client.useSession();
+
+	const handleLogin = async () => {
+		setLoading(true);
+		await signIn.email(
+			{
+				email,
+				password,
+				callbackURL: "/client-test",
+			},
+			{
+				onResponse: () => {
+					setLoading(false);
+				},
+				onError: (ctx) => {
+					toast.error(ctx.error.message);
+				},
+				onSuccess: () => {
+					toast.success("Successfully logged in!");
+					setEmail("");
+					setPassword("");
+				},
+			},
+		);
+	};
+
+	return (
+		<div className="container mx-auto py-10 space-y-8">
+			<h1 className="text-2xl font-bold text-center">
+				Client Authentication Test
+			</h1>
+
+			<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+				{/* Login Form */}
+				<Card>
+					<CardHeader>
+						<CardTitle>Sign In</CardTitle>
+						<CardDescription>
+							Enter your email and password to sign in
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="grid gap-4">
+							<div className="grid gap-2">
+								<Label htmlFor="email">Email</Label>
+								<Input
+									id="email"
+									type="email"
+									placeholder="m@example.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+								/>
+							</div>
+							<div className="grid gap-2">
+								<Label htmlFor="password">Password</Label>
+								<Input
+									id="password"
+									type="password"
+									placeholder="••••••••"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+								/>
+							</div>
+						</div>
+					</CardContent>
+					<CardFooter>
+						<Button className="w-full" onClick={handleLogin} disabled={loading}>
+							{loading ? (
+								<>
+									<Loader2 size={16} className="mr-2 animate-spin" />
+									Signing in...
+								</>
+							) : (
+								"Sign In"
+							)}
+						</Button>
+					</CardFooter>
+				</Card>
+
+				{/* Session Display */}
+				<Card>
+					<CardHeader>
+						<CardTitle>Session Information</CardTitle>
+						<CardDescription>
+							{isPending
+								? "Loading session..."
+								: session
+									? "You are currently logged in"
+									: "You are not logged in"}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{isPending ? (
+							<div className="flex justify-center py-4">
+								<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+							</div>
+						) : error ? (
+							<div className="p-4 bg-destructive/10 text-destructive rounded-md">
+								Error: {error.message}
+							</div>
+						) : session ? (
+							<div className="space-y-4">
+								<div className="flex items-center gap-4">
+									{session.user.image ? (
+										<img
+											src={session.user.image}
+											alt="Profile"
+											className="h-12 w-12 rounded-full object-cover"
+										/>
+									) : (
+										<div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+											<span className="text-lg font-medium">
+												{session.user.name?.charAt(0) ||
+													session.user.email?.charAt(0)}
+											</span>
+										</div>
+									)}
+									<div>
+										<p className="font-medium">{session.user.name}</p>
+										<p className="text-sm text-muted-foreground">
+											{session.user.email}
+										</p>
+									</div>
+								</div>
+
+								<div className="rounded-md bg-muted p-4">
+									<p className="text-sm font-medium mb-2">Session Details:</p>
+									<pre className="text-xs overflow-auto max-h-40">
+										{JSON.stringify(session, null, 2)}
+									</pre>
+								</div>
+							</div>
+						) : (
+							<div className="py-8 text-center text-muted-foreground">
+								<p>Sign in to view your session information</p>
+							</div>
+						)}
+					</CardContent>
+					{session && (
+						<CardFooter>
+							<Button
+								variant="outline"
+								className="w-full"
+								onClick={() =>
+									client.signOut({
+										fetchOptions: {
+											onSuccess: () => {
+												toast.success("Successfully signed out!");
+											},
+										},
+									})
+								}
+							>
+								Sign Out
+							</Button>
+						</CardFooter>
+					)}
+				</Card>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/admin/page.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { toast, Toaster } from "sonner";
+import { client } from "@/lib/auth-client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import {
+	Loader2,
+	Plus,
+	Trash,
+	RefreshCw,
+	UserCircle,
+	Calendar as CalendarIcon,
+} from "lucide-react";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+
+type User = {
+	id: string;
+	email: string;
+	name: string;
+	role: "admin" | "user";
+};
+
+export default function AdminDashboard() {
+	const queryClient = useQueryClient();
+	const router = useRouter();
+	const [isDialogOpen, setIsDialogOpen] = useState(false);
+	const [newUser, setNewUser] = useState({
+		email: "",
+		password: "",
+		name: "",
+		role: "user" as const,
+	});
+	const [isLoading, setIsLoading] = useState<string | undefined>();
+	const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
+	const [banForm, setBanForm] = useState({
+		userId: "",
+		reason: "",
+		expirationDate: undefined as Date | undefined,
+	});
+
+	const { data: users, isLoading: isUsersLoading } = useQuery({
+		queryKey: ["users"],
+		queryFn: async () => {
+			const data = await client.admin.listUsers(
+				{
+					query: {
+						limit: 10,
+						sortBy: "createdAt",
+						sortDirection: "desc",
+					},
+				},
+				{
+					throw: true,
+				},
+			);
+			return data?.users || [];
+		},
+	});
+
+	const handleCreateUser = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsLoading("create");
+		try {
+			await client.admin.createUser({
+				email: newUser.email,
+				password: newUser.password,
+				name: newUser.name,
+				role: newUser.role,
+			});
+			toast.success("User created successfully");
+			setNewUser({ email: "", password: "", name: "", role: "user" });
+			setIsDialogOpen(false);
+			queryClient.invalidateQueries({
+				queryKey: ["users"],
+			});
+		} catch (error: any) {
+			toast.error(error.message || "Failed to create user");
+		} finally {
+			setIsLoading(undefined);
+		}
+	};
+
+	const handleDeleteUser = async (id: string) => {
+		setIsLoading(`delete-${id}`);
+		try {
+			await client.admin.removeUser({ userId: id });
+			toast.success("User deleted successfully");
+			queryClient.invalidateQueries({
+				queryKey: ["users"],
+			});
+		} catch (error: any) {
+			toast.error(error.message || "Failed to delete user");
+		} finally {
+			setIsLoading(undefined);
+		}
+	};
+
+	const handleRevokeSessions = async (id: string) => {
+		setIsLoading(`revoke-${id}`);
+		try {
+			await client.admin.revokeUserSessions({ userId: id });
+			toast.success("Sessions revoked for user");
+		} catch (error: any) {
+			toast.error(error.message || "Failed to revoke sessions");
+		} finally {
+			setIsLoading(undefined);
+		}
+	};
+
+	const handleImpersonateUser = async (id: string) => {
+		setIsLoading(`impersonate-${id}`);
+		try {
+			await client.admin.impersonateUser({ userId: id });
+			toast.success("Impersonated user");
+			router.push("/dashboard");
+		} catch (error: any) {
+			toast.error(error.message || "Failed to impersonate user");
+		} finally {
+			setIsLoading(undefined);
+		}
+	};
+
+	const handleBanUser = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsLoading(`ban-${banForm.userId}`);
+		try {
+			if (!banForm.expirationDate) {
+				throw new Error("Expiration date is required");
+			}
+			await client.admin.banUser({
+				userId: banForm.userId,
+				banReason: banForm.reason,
+				banExpiresIn: banForm.expirationDate.getTime() - new Date().getTime(),
+			});
+			toast.success("User banned successfully");
+			setIsBanDialogOpen(false);
+			queryClient.invalidateQueries({
+				queryKey: ["users"],
+			});
+		} catch (error: any) {
+			toast.error(error.message || "Failed to ban user");
+		} finally {
+			setIsLoading(undefined);
+		}
+	};
+
+	return (
+		<div className="container mx-auto p-4 space-y-8">
+			<Toaster richColors />
+			<Card>
+				<CardHeader className="flex flex-row items-center justify-between">
+					<CardTitle className="text-2xl">Admin Dashboard</CardTitle>
+					<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+						<DialogTrigger asChild>
+							<Button>
+								<Plus className="mr-2 h-4 w-4" /> Create User
+							</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Create New User</DialogTitle>
+							</DialogHeader>
+							<form onSubmit={handleCreateUser} className="space-y-4">
+								<div>
+									<Label htmlFor="email">Email</Label>
+									<Input
+										id="email"
+										type="email"
+										value={newUser.email}
+										onChange={(e) =>
+											setNewUser({ ...newUser, email: e.target.value })
+										}
+										required
+									/>
+								</div>
+								<div>
+									<Label htmlFor="password">Password</Label>
+									<Input
+										id="password"
+										type="password"
+										value={newUser.password}
+										onChange={(e) =>
+											setNewUser({ ...newUser, password: e.target.value })
+										}
+										required
+									/>
+								</div>
+								<div>
+									<Label htmlFor="name">Name</Label>
+									<Input
+										id="name"
+										value={newUser.name}
+										onChange={(e) =>
+											setNewUser({ ...newUser, name: e.target.value })
+										}
+										required
+									/>
+								</div>
+								<div>
+									<Label htmlFor="role">Role</Label>
+									<Select
+										value={newUser.role}
+										onValueChange={(value: "admin" | "user") =>
+											setNewUser({ ...newUser, role: value as "user" })
+										}
+									>
+										<SelectTrigger>
+											<SelectValue placeholder="Select role" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="admin">Admin</SelectItem>
+											<SelectItem value="user">User</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+								<Button
+									type="submit"
+									className="w-full"
+									disabled={isLoading === "create"}
+								>
+									{isLoading === "create" ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Creating...
+										</>
+									) : (
+										"Create User"
+									)}
+								</Button>
+							</form>
+						</DialogContent>
+					</Dialog>
+					<Dialog open={isBanDialogOpen} onOpenChange={setIsBanDialogOpen}>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Ban User</DialogTitle>
+							</DialogHeader>
+							<form onSubmit={handleBanUser} className="space-y-4">
+								<div>
+									<Label htmlFor="reason">Reason</Label>
+									<Input
+										id="reason"
+										value={banForm.reason}
+										onChange={(e) =>
+											setBanForm({ ...banForm, reason: e.target.value })
+										}
+										required
+									/>
+								</div>
+								<div className="flex flex-col space-y-1.5">
+									<Label htmlFor="expirationDate">Expiration Date</Label>
+									<Popover>
+										<PopoverTrigger asChild>
+											<Button
+												id="expirationDate"
+												variant={"outline"}
+												className={cn(
+													"w-full justify-start text-left font-normal",
+													!banForm.expirationDate && "text-muted-foreground",
+												)}
+											>
+												<CalendarIcon className="mr-2 h-4 w-4" />
+												{banForm.expirationDate ? (
+													format(banForm.expirationDate, "PPP")
+												) : (
+													<span>Pick a date</span>
+												)}
+											</Button>
+										</PopoverTrigger>
+										<PopoverContent className="w-auto p-0">
+											<Calendar
+												mode="single"
+												selected={banForm.expirationDate}
+												onSelect={(date) =>
+													setBanForm({ ...banForm, expirationDate: date })
+												}
+												initialFocus
+											/>
+										</PopoverContent>
+									</Popover>
+								</div>
+								<Button
+									type="submit"
+									className="w-full"
+									disabled={isLoading === `ban-${banForm.userId}`}
+								>
+									{isLoading === `ban-${banForm.userId}` ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Banning...
+										</>
+									) : (
+										"Ban User"
+									)}
+								</Button>
+							</form>
+						</DialogContent>
+					</Dialog>
+				</CardHeader>
+				<CardContent>
+					{isUsersLoading ? (
+						<div className="flex justify-center items-center h-64">
+							<Loader2 className="h-8 w-8 animate-spin" />
+						</div>
+					) : (
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>Email</TableHead>
+									<TableHead>Name</TableHead>
+									<TableHead>Role</TableHead>
+									<TableHead>Banned</TableHead>
+									<TableHead>Actions</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{users?.map((user) => (
+									<TableRow key={user.id}>
+										<TableCell>{user.email}</TableCell>
+										<TableCell>{user.name}</TableCell>
+										<TableCell>{user.role || "user"}</TableCell>
+										<TableCell>
+											{user.banned ? (
+												<Badge variant="destructive">Yes</Badge>
+											) : (
+												<Badge variant="outline">No</Badge>
+											)}
+										</TableCell>
+										<TableCell>
+											<div className="flex space-x-2">
+												<Button
+													variant="destructive"
+													size="sm"
+													onClick={() => handleDeleteUser(user.id)}
+													disabled={isLoading?.startsWith("delete")}
+												>
+													{isLoading === `delete-${user.id}` ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : (
+														<Trash className="h-4 w-4" />
+													)}
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={() => handleRevokeSessions(user.id)}
+													disabled={isLoading?.startsWith("revoke")}
+												>
+													{isLoading === `revoke-${user.id}` ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : (
+														<RefreshCw className="h-4 w-4" />
+													)}
+												</Button>
+												<Button
+													variant="secondary"
+													size="sm"
+													onClick={() => handleImpersonateUser(user.id)}
+													disabled={isLoading?.startsWith("impersonate")}
+												>
+													{isLoading === `impersonate-${user.id}` ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : (
+														<>
+															<UserCircle className="h-4 w-4 mr-2" />
+															Impersonate
+														</>
+													)}
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													onClick={async () => {
+														setBanForm({
+															userId: user.id,
+															reason: "",
+															expirationDate: undefined,
+														});
+														if (user.banned) {
+															setIsLoading(`ban-${user.id}`);
+															await client.admin.unbanUser(
+																{
+																	userId: user.id,
+																},
+																{
+																	onError(context) {
+																		toast.error(
+																			context.error.message ||
+																				"Failed to unban user",
+																		);
+																		setIsLoading(undefined);
+																	},
+																	onSuccess() {
+																		queryClient.invalidateQueries({
+																			queryKey: ["users"],
+																		});
+																		toast.success("User unbanned successfully");
+																	},
+																},
+															);
+															queryClient.invalidateQueries({
+																queryKey: ["users"],
+															});
+														} else {
+															setIsBanDialogOpen(true);
+														}
+													}}
+													disabled={isLoading?.startsWith("ban")}
+												>
+													{isLoading === `ban-${user.id}` ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : user.banned ? (
+														"Unban"
+													) : (
+														"Ban"
+													)}
+												</Button>
+											</div>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/accept-invitation/[id]/invitation-error.tsx
+```
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+	CardContent,
+	CardFooter,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { AlertCircle } from "lucide-react";
+import Link from "next/link";
+
+export function InvitationError() {
+	return (
+		<Card className="w-full max-w-md mx-auto">
+			<CardHeader>
+				<div className="flex items-center space-x-2">
+					<AlertCircle className="w-6 h-6 text-destructive" />
+					<CardTitle className="text-xl text-destructive">
+						Invitation Error
+					</CardTitle>
+				</div>
+				<CardDescription>
+					There was an issue with your invitation.
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<p className="mb-4 text-sm text-muted-foreground">
+					The invitation you're trying to access is either invalid or you don't
+					have the correct permissions. Please check your email for a valid
+					invitation or contact the person who sent it.
+				</p>
+			</CardContent>
+			<CardFooter>
+				<Link href="/" className="w-full">
+					<Button variant="outline" className="w-full">
+						Go back to home
+					</Button>
+				</Link>
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/accept-invitation/[id]/page.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { CheckIcon, XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { client, organization } from "@/lib/auth-client";
+import { InvitationError } from "./invitation-error";
+
+export default function InvitationPage() {
+	const params = useParams<{
+		id: string;
+	}>();
+	const router = useRouter();
+	const [invitationStatus, setInvitationStatus] = useState<
+		"pending" | "accepted" | "rejected"
+	>("pending");
+
+	const handleAccept = async () => {
+		await organization
+			.acceptInvitation({
+				invitationId: params.id,
+			})
+			.then((res) => {
+				if (res.error) {
+					setError(res.error.message || "An error occurred");
+				} else {
+					setInvitationStatus("accepted");
+					router.push(`/dashboard`);
+				}
+			});
+	};
+
+	const handleReject = async () => {
+		await organization
+			.rejectInvitation({
+				invitationId: params.id,
+			})
+			.then((res) => {
+				if (res.error) {
+					setError(res.error.message || "An error occurred");
+				} else {
+					setInvitationStatus("rejected");
+				}
+			});
+	};
+
+	const [invitation, setInvitation] = useState<{
+		organizationName: string;
+		organizationSlug: string;
+		inviterEmail: string;
+		id: string;
+		status: "pending" | "accepted" | "rejected" | "canceled";
+		email: string;
+		expiresAt: Date;
+		organizationId: string;
+		role: string;
+		inviterId: string;
+	} | null>(null);
+
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		client.organization
+			.getInvitation({
+				query: {
+					id: params.id,
+				},
+			})
+			.then((res) => {
+				if (res.error) {
+					setError(res.error.message || "An error occurred");
+				} else {
+					setInvitation(res.data);
+				}
+			});
+	}, []);
+
+	return (
+		<div className="min-h-[80vh] flex items-center justify-center">
+			<div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+			{invitation ? (
+				<Card className="w-full max-w-md">
+					<CardHeader>
+						<CardTitle>Organization Invitation</CardTitle>
+						<CardDescription>
+							You've been invited to join an organization
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{invitationStatus === "pending" && (
+							<div className="space-y-4">
+								<p>
+									<strong>{invitation?.inviterEmail}</strong> has invited you to
+									join <strong>{invitation?.organizationName}</strong>.
+								</p>
+								<p>
+									This invitation was sent to{" "}
+									<strong>{invitation?.email}</strong>.
+								</p>
+							</div>
+						)}
+						{invitationStatus === "accepted" && (
+							<div className="space-y-4">
+								<div className="flex items-center justify-center w-16 h-16 mx-auto bg-green-100 rounded-full">
+									<CheckIcon className="w-8 h-8 text-green-600" />
+								</div>
+								<h2 className="text-2xl font-bold text-center">
+									Welcome to {invitation?.organizationName}!
+								</h2>
+								<p className="text-center">
+									You've successfully joined the organization. We're excited to
+									have you on board!
+								</p>
+							</div>
+						)}
+						{invitationStatus === "rejected" && (
+							<div className="space-y-4">
+								<div className="flex items-center justify-center w-16 h-16 mx-auto bg-red-100 rounded-full">
+									<XIcon className="w-8 h-8 text-red-600" />
+								</div>
+								<h2 className="text-2xl font-bold text-center">
+									Invitation Declined
+								</h2>
+								<p className="text-center">
+									You&lsquo;ve declined the invitation to join{" "}
+									{invitation?.organizationName}.
+								</p>
+							</div>
+						)}
+					</CardContent>
+					{invitationStatus === "pending" && (
+						<CardFooter className="flex justify-between">
+							<Button variant="outline" onClick={handleReject}>
+								Decline
+							</Button>
+							<Button onClick={handleAccept}>Accept Invitation</Button>
+						</CardFooter>
+					)}
+				</Card>
+			) : error ? (
+				<InvitationError />
+			) : (
+				<InvitationSkeleton />
+			)}
+		</div>
+	);
+}
+
+function InvitationSkeleton() {
+	return (
+		<Card className="w-full max-w-md mx-auto">
+			<CardHeader>
+				<div className="flex items-center space-x-2">
+					<Skeleton className="w-6 h-6 rounded-full" />
+					<Skeleton className="h-6 w-24" />
+				</div>
+				<Skeleton className="h-4 w-full mt-2" />
+				<Skeleton className="h-4 w-2/3 mt-2" />
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-2">
+					<Skeleton className="h-4 w-full" />
+					<Skeleton className="h-4 w-full" />
+					<Skeleton className="h-4 w-2/3" />
+				</div>
+			</CardContent>
+			<CardFooter className="flex justify-end">
+				<Skeleton className="h-10 w-24" />
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/change-plan.tsx
+```
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { client } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+import { ArrowUpFromLine, CreditCard, RefreshCcw } from "lucide-react";
+import { useId, useState } from "react";
+import { toast } from "sonner";
+
+function Component(props: {
+	currentPlan?: string;
+	isTrial?: boolean;
+}) {
+	const [selectedPlan, setSelectedPlan] = useState("starter");
+	const id = useId();
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button
+					variant={!props.currentPlan ? "default" : "outline"}
+					size="sm"
+					className={cn(
+						"gap-2",
+						!props.currentPlan &&
+							" bg-gradient-to-br from-purple-100 to-stone-300",
+					)}
+				>
+					{props.currentPlan ? (
+						<RefreshCcw className="opacity-80" size={14} strokeWidth={2} />
+					) : (
+						<ArrowUpFromLine className="opacity-80" size={14} strokeWidth={2} />
+					)}
+					{props.currentPlan ? "Change Plan" : "Upgrade Plan"}
+				</Button>
+			</DialogTrigger>
+			<DialogContent>
+				<div className="mb-2 flex flex-col gap-2">
+					<div
+						className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border"
+						aria-hidden="true"
+					>
+						{props.currentPlan ? (
+							<RefreshCcw className="opacity-80" size={16} strokeWidth={2} />
+						) : (
+							<CreditCard className="opacity-80" size={16} strokeWidth={2} />
+						)}
+					</div>
+					<DialogHeader>
+						<DialogTitle className="text-left">
+							{!props.currentPlan ? "Upgrade" : "Change"} your plan
+						</DialogTitle>
+						<DialogDescription className="text-left">
+							Pick one of the following plans.
+						</DialogDescription>
+					</DialogHeader>
+				</div>
+
+				<form className="space-y-5">
+					<RadioGroup
+						className="gap-2"
+						defaultValue="2"
+						value={selectedPlan}
+						onValueChange={(value) => setSelectedPlan(value)}
+					>
+						<div className="relative flex w-full items-center gap-2 rounded-lg border border-input px-4 py-3 shadow-sm shadow-black/5 has-[[data-state=checked]]:border-ring has-[[data-state=checked]]:bg-accent">
+							<RadioGroupItem
+								value="starter"
+								id={`${id}-1`}
+								aria-describedby={`${id}-1-description`}
+								className="order-1 after:absolute after:inset-0"
+							/>
+							<div className="grid grow gap-1">
+								<Label htmlFor={`${id}-1`}>Starter</Label>
+								<p
+									id={`${id}-1-description`}
+									className="text-xs text-muted-foreground"
+								>
+									$50/month
+								</p>
+							</div>
+						</div>
+						<div className="relative flex w-full items-center gap-2 rounded-lg border border-input px-4 py-3 shadow-sm shadow-black/5 has-[[data-state=checked]]:border-ring has-[[data-state=checked]]:bg-accent">
+							<RadioGroupItem
+								value="professional"
+								id={`${id}-2`}
+								aria-describedby={`${id}-2-description`}
+								className="order-1 after:absolute after:inset-0"
+							/>
+							<div className="grid grow gap-1">
+								<Label htmlFor={`${id}-2`}>Professional</Label>
+								<p
+									id={`${id}-2-description`}
+									className="text-xs text-muted-foreground"
+								>
+									$99/month
+								</p>
+							</div>
+						</div>
+						<div className="relative flex w-full items-center gap-2 rounded-lg border border-input px-4 py-3 shadow-sm shadow-black/5 has-[[data-state=checked]]:border-ring has-[[data-state=checked]]:bg-accent">
+							<RadioGroupItem
+								value="enterprise"
+								id={`${id}-3`}
+								aria-describedby={`${id}-3-description`}
+								className="order-1 after:absolute after:inset-0"
+							/>
+							<div className="grid grow gap-1">
+								<Label htmlFor={`${id}-3`}>Enterprise</Label>
+								<p
+									id={`${id}-3-description`}
+									className="text-xs text-muted-foreground"
+								>
+									Contact our sales team
+								</p>
+							</div>
+						</div>
+					</RadioGroup>
+
+					<div className="space-y-3">
+						<p className="text-xs text-white/70 text-center">
+							note: all upgrades takes effect immediately and you'll be charged
+							the new amount on your next billing cycle.
+						</p>
+					</div>
+
+					<div className="grid gap-2">
+						<Button
+							type="button"
+							className="w-full"
+							disabled={
+								selectedPlan === props.currentPlan?.toLowerCase() &&
+								!props.isTrial
+							}
+							onClick={async () => {
+								if (selectedPlan === "enterprise") {
+									return;
+								}
+								await client.subscription.upgrade(
+									{
+										plan: selectedPlan,
+									},
+									{
+										onError: (ctx) => {
+											toast.error(ctx.error.message);
+										},
+									},
+								);
+							}}
+						>
+							{selectedPlan === props.currentPlan?.toLowerCase()
+								? props.isTrial
+									? "Upgrade"
+									: "Current Plan"
+								: selectedPlan === "starter"
+									? !props.currentPlan
+										? "Upgrade"
+										: "Downgrade"
+									: selectedPlan === "professional"
+										? "Upgrade"
+										: "Contact us"}
+						</Button>
+						{props.currentPlan && (
+							<Button
+								type="button"
+								variant="destructive"
+								className="w-full"
+								onClick={async () => {
+									await client.subscription.cancel(
+										{
+											returnUrl: "/dashboard",
+										},
+										{
+											onError: (ctx) => {
+												toast.error(ctx.error.message);
+											},
+										},
+									);
+								}}
+							>
+								Cancel Plan
+							</Button>
+						)}
+					</div>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+export { Component };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/client.tsx
+```
+"use client";
+
+export function ManageAccount() {
+	return (
+		<div className="flex items-center gap-2">
+			<p>Manage Account</p>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/organization-card.tsx
+```
+"use client";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
+	organization,
+	useListOrganizations,
+	useSession,
+} from "@/lib/auth-client";
+import { ActiveOrganization, Session } from "@/lib/auth-types";
+import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
+import { Loader2, MailPlus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import CopyButton from "@/components/ui/copy-button";
+import Image from "next/image";
+
+export function OrganizationCard(props: {
+	session: Session | null;
+	activeOrganization: ActiveOrganization | null;
+}) {
+	const organizations = useListOrganizations();
+	const [optimisticOrg, setOptimisticOrg] = useState<ActiveOrganization | null>(
+		props.activeOrganization,
+	);
+	const [isRevoking, setIsRevoking] = useState<string[]>([]);
+	const inviteVariants = {
+		hidden: { opacity: 0, height: 0 },
+		visible: { opacity: 1, height: "auto" },
+		exit: { opacity: 0, height: 0 },
+	};
+
+	const { data } = useSession();
+	const session = data || props.session;
+
+	const currentMember = optimisticOrg?.members.find(
+		(member) => member.userId === session?.user.id,
+	);
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>Organization</CardTitle>
+				<div className="flex justify-between">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<div className="flex items-center gap-1 cursor-pointer">
+								<p className="text-sm">
+									<span className="font-bold"></span>{" "}
+									{optimisticOrg?.name || "Personal"}
+								</p>
+
+								<ChevronDownIcon />
+							</div>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="start">
+							<DropdownMenuItem
+								className=" py-1"
+								onClick={async () => {
+									organization.setActive({
+										organizationId: null,
+									});
+									setOptimisticOrg(null);
+								}}
+							>
+								<p className="text-sm sm">Personal</p>
+							</DropdownMenuItem>
+							{organizations.data?.map((org) => (
+								<DropdownMenuItem
+									className=" py-1"
+									key={org.id}
+									onClick={async () => {
+										if (org.id === optimisticOrg?.id) {
+											return;
+										}
+										setOptimisticOrg({
+											members: [],
+											invitations: [],
+											...org,
+										});
+										const { data } = await organization.setActive({
+											organizationId: org.id,
+										});
+										setOptimisticOrg(data);
+									}}
+								>
+									<p className="text-sm sm">{org.name}</p>
+								</DropdownMenuItem>
+							))}
+						</DropdownMenuContent>
+					</DropdownMenu>
+					<div>
+						<CreateOrganizationDialog />
+					</div>
+				</div>
+				<div className="flex items-center gap-2">
+					<Avatar className="rounded-none">
+						<AvatarImage
+							className="object-cover w-full h-full rounded-none"
+							src={optimisticOrg?.logo || undefined}
+						/>
+						<AvatarFallback className="rounded-none">
+							{optimisticOrg?.name?.charAt(0) || "P"}
+						</AvatarFallback>
+					</Avatar>
+					<div>
+						<p>{optimisticOrg?.name || "Personal"}</p>
+						<p className="text-xs text-muted-foreground">
+							{optimisticOrg?.members.length || 1} members
+						</p>
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent>
+				<div className="flex gap-8 flex-col md:flex-row">
+					<div className="flex flex-col gap-2 flex-grow">
+						<p className="font-medium border-b-2 border-b-foreground/10">
+							Members
+						</p>
+						<div className="flex flex-col gap-2">
+							{optimisticOrg?.members.map((member) => (
+								<div
+									key={member.id}
+									className="flex justify-between items-center"
+								>
+									<div className="flex items-center gap-2">
+										<Avatar className="sm:flex w-9 h-9">
+											<AvatarImage
+												src={member.user.image || undefined}
+												className="object-cover"
+											/>
+											<AvatarFallback>
+												{member.user.name?.charAt(0)}
+											</AvatarFallback>
+										</Avatar>
+										<div>
+											<p className="text-sm">{member.user.name}</p>
+											<p className="text-xs text-muted-foreground">
+												{member.role}
+											</p>
+										</div>
+									</div>
+									{member.role !== "owner" &&
+										(currentMember?.role === "owner" ||
+											currentMember?.role === "admin") && (
+											<Button
+												size="sm"
+												variant="destructive"
+												onClick={() => {
+													organization.removeMember({
+														memberIdOrEmail: member.id,
+													});
+												}}
+											>
+												{currentMember?.id === member.id ? "Leave" : "Remove"}
+											</Button>
+										)}
+								</div>
+							))}
+							{!optimisticOrg?.id && (
+								<div>
+									<div className="flex items-center gap-2">
+										<Avatar>
+											<AvatarImage src={session?.user.image || undefined} />
+											<AvatarFallback>
+												{session?.user.name?.charAt(0)}
+											</AvatarFallback>
+										</Avatar>
+										<div>
+											<p className="text-sm">{session?.user.name}</p>
+											<p className="text-xs text-muted-foreground">Owner</p>
+										</div>
+									</div>
+								</div>
+							)}
+						</div>
+					</div>
+					<div className="flex flex-col gap-2 flex-grow">
+						<p className="font-medium border-b-2 border-b-foreground/10">
+							Invites
+						</p>
+						<div className="flex flex-col gap-2">
+							<AnimatePresence>
+								{optimisticOrg?.invitations
+									.filter((invitation) => invitation.status === "pending")
+									.map((invitation) => (
+										<motion.div
+											key={invitation.id}
+											className="flex items-center justify-between"
+											variants={inviteVariants}
+											initial="hidden"
+											animate="visible"
+											exit="exit"
+											layout
+										>
+											<div>
+												<p className="text-sm">{invitation.email}</p>
+												<p className="text-xs text-muted-foreground">
+													{invitation.role}
+												</p>
+											</div>
+											<div className="flex items-center gap-2">
+												<Button
+													disabled={isRevoking.includes(invitation.id)}
+													size="sm"
+													variant="destructive"
+													onClick={() => {
+														organization.cancelInvitation(
+															{
+																invitationId: invitation.id,
+															},
+															{
+																onRequest: () => {
+																	setIsRevoking([...isRevoking, invitation.id]);
+																},
+																onSuccess: () => {
+																	toast.message(
+																		"Invitation revoked successfully",
+																	);
+																	setIsRevoking(
+																		isRevoking.filter(
+																			(id) => id !== invitation.id,
+																		),
+																	);
+																	setOptimisticOrg({
+																		...optimisticOrg,
+																		invitations:
+																			optimisticOrg?.invitations.filter(
+																				(inv) => inv.id !== invitation.id,
+																			),
+																	});
+																},
+																onError: (ctx) => {
+																	toast.error(ctx.error.message);
+																	setIsRevoking(
+																		isRevoking.filter(
+																			(id) => id !== invitation.id,
+																		),
+																	);
+																},
+															},
+														);
+													}}
+												>
+													{isRevoking.includes(invitation.id) ? (
+														<Loader2 className="animate-spin" size={16} />
+													) : (
+														"Revoke"
+													)}
+												</Button>
+												<div>
+													<CopyButton
+														textToCopy={`${window.location.origin}/accept-invitation/${invitation.id}`}
+													/>
+												</div>
+											</div>
+										</motion.div>
+									))}
+							</AnimatePresence>
+							{optimisticOrg?.invitations.length === 0 && (
+								<motion.p
+									className="text-sm text-muted-foreground"
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									exit={{ opacity: 0 }}
+								>
+									No Active Invitations
+								</motion.p>
+							)}
+							{!optimisticOrg?.id && (
+								<Label className="text-xs text-muted-foreground">
+									You can&apos;t invite members to your personal workspace.
+								</Label>
+							)}
+						</div>
+					</div>
+				</div>
+				<div className="flex justify-end w-full mt-4">
+					<div>
+						<div>
+							{optimisticOrg?.id && (
+								<InviteMemberDialog
+									setOptimisticOrg={setOptimisticOrg}
+									optimisticOrg={optimisticOrg}
+								/>
+							)}
+						</div>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function CreateOrganizationDialog() {
+	const [name, setName] = useState("");
+	const [slug, setSlug] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [open, setOpen] = useState(false);
+	const [isSlugEdited, setIsSlugEdited] = useState(false);
+	const [logo, setLogo] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!isSlugEdited) {
+			const generatedSlug = name.trim().toLowerCase().replace(/\s+/g, "-");
+			setSlug(generatedSlug);
+		}
+	}, [name, isSlugEdited]);
+
+	useEffect(() => {
+		if (open) {
+			setName("");
+			setSlug("");
+			setIsSlugEdited(false);
+			setLogo(null);
+		}
+	}, [open]);
+
+	const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files && e.target.files[0]) {
+			const file = e.target.files[0];
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setLogo(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<Button size="sm" className="w-full gap-2" variant="default">
+					<PlusIcon />
+					<p>New Organization</p>
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>New Organization</DialogTitle>
+					<DialogDescription>
+						Create a new organization to collaborate with your team.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="flex flex-col gap-4">
+					<div className="flex flex-col gap-2">
+						<Label>Organization Name</Label>
+						<Input
+							placeholder="Name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+						/>
+					</div>
+					<div className="flex flex-col gap-2">
+						<Label>Organization Slug</Label>
+						<Input
+							value={slug}
+							onChange={(e) => {
+								setSlug(e.target.value);
+								setIsSlugEdited(true);
+							}}
+							placeholder="Slug"
+						/>
+					</div>
+					<div className="flex flex-col gap-2">
+						<Label>Logo</Label>
+						<Input type="file" accept="image/*" onChange={handleLogoChange} />
+						{logo && (
+							<div className="mt-2">
+								<Image
+									src={logo}
+									alt="Logo preview"
+									className="w-16 h-16 object-cover"
+									width={16}
+									height={16}
+								/>
+							</div>
+						)}
+					</div>
+				</div>
+				<DialogFooter>
+					<Button
+						disabled={loading}
+						onClick={async () => {
+							setLoading(true);
+							await organization.create(
+								{
+									name: name,
+									slug: slug,
+									logo: logo || undefined,
+								},
+								{
+									onResponse: () => {
+										setLoading(false);
+									},
+									onSuccess: () => {
+										toast.success("Organization created successfully");
+										setOpen(false);
+									},
+									onError: (error) => {
+										toast.error(error.error.message);
+										setLoading(false);
+									},
+								},
+							);
+						}}
+					>
+						{loading ? (
+							<Loader2 className="animate-spin" size={16} />
+						) : (
+							"Create"
+						)}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function InviteMemberDialog({
+	setOptimisticOrg,
+	optimisticOrg,
+}: {
+	setOptimisticOrg: (org: ActiveOrganization | null) => void;
+	optimisticOrg: ActiveOrganization | null;
+}) {
+	const [open, setOpen] = useState(false);
+	const [email, setEmail] = useState("");
+	const [role, setRole] = useState("member");
+	const [loading, setLoading] = useState(false);
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<Button size="sm" className="w-full gap-2" variant="secondary">
+					<MailPlus size={16} />
+					<p>Invite Member</p>
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>Invite Member</DialogTitle>
+					<DialogDescription>
+						Invite a member to your organization.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="flex flex-col gap-2">
+					<Label>Email</Label>
+					<Input
+						placeholder="Email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+					/>
+					<Label>Role</Label>
+					<Select value={role} onValueChange={setRole}>
+						<SelectTrigger>
+							<SelectValue placeholder="Select a role" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="admin">Admin</SelectItem>
+							<SelectItem value="member">Member</SelectItem>
+						</SelectContent>
+					</Select>
+				</div>
+				<DialogFooter>
+					<DialogClose>
+						<Button
+							disabled={loading}
+							onClick={async () => {
+								const invite = organization.inviteMember({
+									email: email,
+									role: role as "member",
+									fetchOptions: {
+										throw: true,
+										onSuccess: (ctx) => {
+											if (optimisticOrg) {
+												setOptimisticOrg({
+													...optimisticOrg,
+													invitations: [
+														...(optimisticOrg?.invitations || []),
+														ctx.data,
+													],
+												});
+											}
+										},
+									},
+								});
+								toast.promise(invite, {
+									loading: "Inviting member...",
+									success: "Member invited successfully",
+									error: (error) => error.error.message,
+								});
+							}}
+						>
+							Invite
+						</Button>
+					</DialogClose>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/page.tsx
+```
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import UserCard from "./user-card";
+import { OrganizationCard } from "./organization-card";
+import AccountSwitcher from "@/components/account-switch";
+
+export default async function DashboardPage() {
+	const [session, activeSessions, deviceSessions, organization, subscriptions] =
+		await Promise.all([
+			auth.api.getSession({
+				headers: await headers(),
+			}),
+			auth.api.listSessions({
+				headers: await headers(),
+			}),
+			auth.api.listDeviceSessions({
+				headers: await headers(),
+			}),
+			auth.api.getFullOrganization({
+				headers: await headers(),
+			}),
+			auth.api.listActiveSubscriptions({
+				headers: await headers(),
+			}),
+		]).catch((e) => {
+			console.log(e);
+			throw redirect("/sign-in");
+		});
+	return (
+		<div className="w-full">
+			<div className="flex gap-4 flex-col">
+				<AccountSwitcher
+					sessions={JSON.parse(JSON.stringify(deviceSessions))}
+				/>
+				<UserCard
+					session={JSON.parse(JSON.stringify(session))}
+					activeSessions={JSON.parse(JSON.stringify(activeSessions))}
+					subscription={subscriptions.find(
+						(sub) => sub.status === "active" || sub.status === "trialing",
+					)}
+				/>
+				<OrganizationCard
+					session={JSON.parse(JSON.stringify(session))}
+					activeOrganization={JSON.parse(JSON.stringify(organization))}
+				/>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/upgrade-button.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Sparkles } from "lucide-react";
+
+export default function UpgradeButton() {
+	const [isHovered, setIsHovered] = useState(false);
+
+	return (
+		<motion.button
+			className="relative overflow-hidden px-6 py-3 rounded-md bg-gradient-to-r from-gray-900 to-black text-white font-bold text-lg shadow-lg transition-all duration-300 ease-out transform hover:scale-105 hover:shadow-xl"
+			onHoverStart={() => setIsHovered(true)}
+			onHoverEnd={() => setIsHovered(false)}
+			whileHover={{ scale: 1.05 }}
+			whileTap={{ scale: 0.95 }}
+		>
+			<span className="relative z-10 flex items-center justify-center">
+				<Sparkles className="w-5 h-5 mr-2" />
+				Upgrade to Pro
+			</span>
+			<motion.div
+				className="absolute inset-0 bg-gradient-to-r from-gray-800 to-gray-700"
+				initial={{ opacity: 0 }}
+				animate={{ opacity: isHovered ? 1 : 0 }}
+				transition={{ duration: 0.3 }}
+			/>
+			<motion.div
+				className="absolute inset-0 bg-white opacity-10"
+				initial={{ scale: 0, x: "100%", y: "100%" }}
+				animate={{ scale: isHovered ? 2 : 0, x: "0%", y: "0%" }}
+				transition={{ duration: 0.4, ease: "easeOut" }}
+				style={{ borderRadius: "2px" }}
+			/>
+		</motion.button>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/dashboard/user-card.tsx
+```
+"use client";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { client, signOut, useSession } from "@/lib/auth-client";
+import { Session } from "@/lib/auth-types";
+import { MobileIcon } from "@radix-ui/react-icons";
+import {
+	Edit,
+	Fingerprint,
+	Laptop,
+	Loader2,
+	LogOut,
+	Plus,
+	QrCode,
+	ShieldCheck,
+	ShieldOff,
+	StopCircle,
+	Trash,
+	X,
+} from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { UAParser } from "ua-parser-js";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import QRCode from "react-qr-code";
+import CopyButton from "@/components/ui/copy-button";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { SubscriptionTierLabel } from "@/components/tier-labels";
+import { Component } from "./change-plan";
+import { Subscription } from "@better-auth/stripe";
+
+export default function UserCard(props: {
+	session: Session | null;
+	activeSessions: Session["session"][];
+	subscription?: Subscription;
+}) {
+	const router = useRouter();
+	const { data, isPending } = useSession();
+	const session = data || props.session;
+	const [isTerminating, setIsTerminating] = useState<string>();
+	const [isPendingTwoFa, setIsPendingTwoFa] = useState<boolean>(false);
+	const [twoFaPassword, setTwoFaPassword] = useState<string>("");
+	const [twoFactorDialog, setTwoFactorDialog] = useState<boolean>(false);
+	const [twoFactorVerifyURI, setTwoFactorVerifyURI] = useState<string>("");
+	const [isSignOut, setIsSignOut] = useState<boolean>(false);
+	const [emailVerificationPending, setEmailVerificationPending] =
+		useState<boolean>(false);
+	const { data: subscription } = useQuery({
+		queryKey: ["subscriptions"],
+		initialData: props.subscription ? props.subscription : null,
+		queryFn: async () => {
+			const res = await client.subscription.list({
+				fetchOptions: {
+					throw: true,
+				},
+			});
+			return res.length ? res[0] : null;
+		},
+	});
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>User</CardTitle>
+			</CardHeader>
+			<CardContent className="grid gap-8 grid-cols-1">
+				<div className="flex flex-col gap-2">
+					<div className="flex items-start justify-between">
+						<div className="flex items-center gap-4">
+							<Avatar className="hidden h-9 w-9 sm:flex ">
+								<AvatarImage
+									src={session?.user.image || undefined}
+									alt="Avatar"
+									className="object-cover"
+								/>
+								<AvatarFallback>{session?.user.name.charAt(0)}</AvatarFallback>
+							</Avatar>
+							<div className="grid">
+								<div className="flex items-center gap-1">
+									<p className="text-sm font-medium leading-none">
+										{session?.user.name}
+									</p>
+									{!!subscription && (
+										<Badge
+											className="w-min p-px rounded-full"
+											variant="outline"
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="1.2em"
+												height="1.2em"
+												viewBox="0 0 24 24"
+											>
+												<path
+													fill="currentColor"
+													d="m9.023 21.23l-1.67-2.814l-3.176-.685l.312-3.277L2.346 12L4.49 9.546L4.177 6.27l3.177-.685L9.023 2.77L12 4.027l2.977-1.258l1.67 2.816l3.176.684l-.312 3.277L21.655 12l-2.142 2.454l.311 3.277l-3.177.684l-1.669 2.816L12 19.973zm1.927-6.372L15.908 9.9l-.708-.72l-4.25 4.25l-2.15-2.138l-.708.708z"
+												></path>
+											</svg>
+										</Badge>
+									)}
+								</div>
+								<p className="text-sm">{session?.user.email}</p>
+							</div>
+						</div>
+						<EditUserDialog />
+					</div>
+					<div className="flex items-center justify-between">
+						<div>
+							<SubscriptionTierLabel
+								tier={subscription?.plan?.toLowerCase() as "starter"}
+							/>
+						</div>
+						<Component
+							currentPlan={subscription?.plan?.toLowerCase() as "starter"}
+							isTrial={subscription?.status === "trialing"}
+						/>
+					</div>
+				</div>
+
+				{session?.user.emailVerified ? null : (
+					<Alert>
+						<AlertTitle>Verify Your Email Address</AlertTitle>
+						<AlertDescription className="text-muted-foreground">
+							Please verify your email address. Check your inbox for the
+							verification email. If you haven't received the email, click the
+							button below to resend.
+						</AlertDescription>
+						<Button
+							size="sm"
+							variant="secondary"
+							className="mt-2"
+							onClick={async () => {
+								await client.sendVerificationEmail(
+									{
+										email: session?.user.email || "",
+									},
+									{
+										onRequest(context) {
+											setEmailVerificationPending(true);
+										},
+										onError(context) {
+											toast.error(context.error.message);
+											setEmailVerificationPending(false);
+										},
+										onSuccess() {
+											toast.success("Verification email sent successfully");
+											setEmailVerificationPending(false);
+										},
+									},
+								);
+							}}
+						>
+							{emailVerificationPending ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								"Resend Verification Email"
+							)}
+						</Button>
+					</Alert>
+				)}
+
+				<div className="border-l-2 px-2 w-max gap-1 flex flex-col">
+					<p className="text-xs font-medium ">Active Sessions</p>
+					{props.activeSessions
+						.filter((session) => session.userAgent)
+						.map((session) => {
+							return (
+								<div key={session.id}>
+									<div className="flex items-center gap-2 text-sm  text-black font-medium dark:text-white">
+										{new UAParser(session.userAgent || "").getDevice().type ===
+										"mobile" ? (
+											<MobileIcon />
+										) : (
+											<Laptop size={16} />
+										)}
+										{new UAParser(session.userAgent || "").getOS().name},{" "}
+										{new UAParser(session.userAgent || "").getBrowser().name}
+										<button
+											className="text-red-500 opacity-80  cursor-pointer text-xs border-muted-foreground border-red-600  underline "
+											onClick={async () => {
+												setIsTerminating(session.id);
+												const res = await client.revokeSession({
+													token: session.token,
+												});
+
+												if (res.error) {
+													toast.error(res.error.message);
+												} else {
+													toast.success("Session terminated successfully");
+												}
+												router.refresh();
+												setIsTerminating(undefined);
+											}}
+										>
+											{isTerminating === session.id ? (
+												<Loader2 size={15} className="animate-spin" />
+											) : session.id === props.session?.session.id ? (
+												"Sign Out"
+											) : (
+												"Terminate"
+											)}
+										</button>
+									</div>
+								</div>
+							);
+						})}
+				</div>
+				<div className="border-y py-4 flex items-center flex-wrap justify-between gap-2">
+					<div className="flex flex-col gap-2">
+						<p className="text-sm">Passkeys</p>
+						<div className="flex gap-2 flex-wrap">
+							<AddPasskey />
+							<ListPasskeys />
+						</div>
+					</div>
+					<div className="flex flex-col gap-2">
+						<p className="text-sm">Two Factor</p>
+						<div className="flex gap-2">
+							{!!session?.user.twoFactorEnabled && (
+								<Dialog>
+									<DialogTrigger asChild>
+										<Button variant="outline" className="gap-2">
+											<QrCode size={16} />
+											<span className="md:text-sm text-xs">Scan QR Code</span>
+										</Button>
+									</DialogTrigger>
+									<DialogContent className="sm:max-w-[425px] w-11/12">
+										<DialogHeader>
+											<DialogTitle>Scan QR Code</DialogTitle>
+											<DialogDescription>
+												Scan the QR code with your TOTP app
+											</DialogDescription>
+										</DialogHeader>
+
+										{twoFactorVerifyURI ? (
+											<>
+												<div className="flex items-center justify-center">
+													<QRCode value={twoFactorVerifyURI} />
+												</div>
+												<div className="flex gap-2 items-center justify-center">
+													<p className="text-sm text-muted-foreground">
+														Copy URI to clipboard
+													</p>
+													<CopyButton textToCopy={twoFactorVerifyURI} />
+												</div>
+											</>
+										) : (
+											<div className="flex flex-col gap-2">
+												<PasswordInput
+													value={twoFaPassword}
+													onChange={(e) => setTwoFaPassword(e.target.value)}
+													placeholder="Enter Password"
+												/>
+												<Button
+													onClick={async () => {
+														if (twoFaPassword.length < 8) {
+															toast.error(
+																"Password must be at least 8 characters",
+															);
+															return;
+														}
+														await client.twoFactor.getTotpUri(
+															{
+																password: twoFaPassword,
+															},
+															{
+																onSuccess(context) {
+																	setTwoFactorVerifyURI(context.data.totpURI);
+																},
+															},
+														);
+														setTwoFaPassword("");
+													}}
+												>
+													Show QR Code
+												</Button>
+											</div>
+										)}
+									</DialogContent>
+								</Dialog>
+							)}
+							<Dialog open={twoFactorDialog} onOpenChange={setTwoFactorDialog}>
+								<DialogTrigger asChild>
+									<Button
+										variant={
+											session?.user.twoFactorEnabled ? "destructive" : "outline"
+										}
+										className="gap-2"
+									>
+										{session?.user.twoFactorEnabled ? (
+											<ShieldOff size={16} />
+										) : (
+											<ShieldCheck size={16} />
+										)}
+										<span className="md:text-sm text-xs">
+											{session?.user.twoFactorEnabled
+												? "Disable 2FA"
+												: "Enable 2FA"}
+										</span>
+									</Button>
+								</DialogTrigger>
+								<DialogContent className="sm:max-w-[425px] w-11/12">
+									<DialogHeader>
+										<DialogTitle>
+											{session?.user.twoFactorEnabled
+												? "Disable 2FA"
+												: "Enable 2FA"}
+										</DialogTitle>
+										<DialogDescription>
+											{session?.user.twoFactorEnabled
+												? "Disable the second factor authentication from your account"
+												: "Enable 2FA to secure your account"}
+										</DialogDescription>
+									</DialogHeader>
+
+									{twoFactorVerifyURI ? (
+										<div className="flex flex-col gap-2">
+											<div className="flex items-center justify-center">
+												<QRCode value={twoFactorVerifyURI} />
+											</div>
+											<Label htmlFor="password">
+												Scan the QR code with your TOTP app
+											</Label>
+											<Input
+												value={twoFaPassword}
+												onChange={(e) => setTwoFaPassword(e.target.value)}
+												placeholder="Enter OTP"
+											/>
+										</div>
+									) : (
+										<div className="flex flex-col gap-2">
+											<Label htmlFor="password">Password</Label>
+											<PasswordInput
+												id="password"
+												placeholder="Password"
+												value={twoFaPassword}
+												onChange={(e) => setTwoFaPassword(e.target.value)}
+											/>
+										</div>
+									)}
+									<DialogFooter>
+										<Button
+											disabled={isPendingTwoFa}
+											onClick={async () => {
+												if (twoFaPassword.length < 8 && !twoFactorVerifyURI) {
+													toast.error("Password must be at least 8 characters");
+													return;
+												}
+												setIsPendingTwoFa(true);
+												if (session?.user.twoFactorEnabled) {
+													const res = await client.twoFactor.disable({
+														//@ts-ignore
+														password: twoFaPassword,
+														fetchOptions: {
+															onError(context) {
+																toast.error(context.error.message);
+															},
+															onSuccess() {
+																toast("2FA disabled successfully");
+																setTwoFactorDialog(false);
+															},
+														},
+													});
+												} else {
+													if (twoFactorVerifyURI) {
+														await client.twoFactor.verifyTotp({
+															code: twoFaPassword,
+															fetchOptions: {
+																onError(context) {
+																	setIsPendingTwoFa(false);
+																	setTwoFaPassword("");
+																	toast.error(context.error.message);
+																},
+																onSuccess() {
+																	toast("2FA enabled successfully");
+																	setTwoFactorVerifyURI("");
+																	setIsPendingTwoFa(false);
+																	setTwoFaPassword("");
+																	setTwoFactorDialog(false);
+																},
+															},
+														});
+														return;
+													}
+													const res = await client.twoFactor.enable({
+														password: twoFaPassword,
+														fetchOptions: {
+															onError(context) {
+																toast.error(context.error.message);
+															},
+															onSuccess(ctx) {
+																setTwoFactorVerifyURI(ctx.data.totpURI);
+																// toast.success("2FA enabled successfully");
+																// setTwoFactorDialog(false);
+															},
+														},
+													});
+												}
+												setIsPendingTwoFa(false);
+												setTwoFaPassword("");
+											}}
+										>
+											{isPendingTwoFa ? (
+												<Loader2 size={15} className="animate-spin" />
+											) : session?.user.twoFactorEnabled ? (
+												"Disable 2FA"
+											) : (
+												"Enable 2FA"
+											)}
+										</Button>
+									</DialogFooter>
+								</DialogContent>
+							</Dialog>
+						</div>
+					</div>
+				</div>
+			</CardContent>
+			<CardFooter className="gap-2 justify-between items-center">
+				<ChangePassword />
+				{session?.session.impersonatedBy ? (
+					<Button
+						className="gap-2 z-10"
+						variant="secondary"
+						onClick={async () => {
+							setIsSignOut(true);
+							await client.admin.stopImpersonating();
+							setIsSignOut(false);
+							toast.info("Impersonation stopped successfully");
+							router.push("/admin");
+						}}
+						disabled={isSignOut}
+					>
+						<span className="text-sm">
+							{isSignOut ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								<div className="flex items-center gap-2">
+									<StopCircle size={16} color="red" />
+									Stop Impersonation
+								</div>
+							)}
+						</span>
+					</Button>
+				) : (
+					<Button
+						className="gap-2 z-10"
+						variant="secondary"
+						onClick={async () => {
+							setIsSignOut(true);
+							await signOut({
+								fetchOptions: {
+									onSuccess() {
+										router.push("/");
+									},
+								},
+							});
+							setIsSignOut(false);
+						}}
+						disabled={isSignOut}
+					>
+						<span className="text-sm">
+							{isSignOut ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								<div className="flex items-center gap-2">
+									<LogOut size={16} />
+									Sign Out
+								</div>
+							)}
+						</span>
+					</Button>
+				)}
+			</CardFooter>
+		</Card>
+	);
+}
+
+async function convertImageToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+}
+
+function ChangePassword() {
+	const [currentPassword, setCurrentPassword] = useState<string>("");
+	const [newPassword, setNewPassword] = useState<string>("");
+	const [confirmPassword, setConfirmPassword] = useState<string>("");
+	const [loading, setLoading] = useState<boolean>(false);
+	const [open, setOpen] = useState<boolean>(false);
+	const [signOutDevices, setSignOutDevices] = useState<boolean>(false);
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<Button className="gap-2 z-10" variant="outline" size="sm">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M2.5 18.5v-1h19v1zm.535-5.973l-.762-.442l.965-1.693h-1.93v-.884h1.93l-.965-1.642l.762-.443L4 9.066l.966-1.643l.761.443l-.965 1.642h1.93v.884h-1.93l.965 1.693l-.762.442L4 10.835zm8 0l-.762-.442l.966-1.693H9.308v-.884h1.93l-.965-1.642l.762-.443L12 9.066l.966-1.643l.761.443l-.965 1.642h1.93v.884h-1.93l.965 1.693l-.762.442L12 10.835zm8 0l-.762-.442l.966-1.693h-1.931v-.884h1.93l-.965-1.642l.762-.443L20 9.066l.966-1.643l.761.443l-.965 1.642h1.93v.884h-1.93l.965 1.693l-.762.442L20 10.835z"
+						></path>
+					</svg>
+					<span className="text-sm text-muted-foreground">Change Password</span>
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>Change Password</DialogTitle>
+					<DialogDescription>Change your password</DialogDescription>
+				</DialogHeader>
+				<div className="grid gap-2">
+					<Label htmlFor="current-password">Current Password</Label>
+					<PasswordInput
+						id="current-password"
+						value={currentPassword}
+						onChange={(e) => setCurrentPassword(e.target.value)}
+						autoComplete="new-password"
+						placeholder="Password"
+					/>
+					<Label htmlFor="new-password">New Password</Label>
+					<PasswordInput
+						value={newPassword}
+						onChange={(e) => setNewPassword(e.target.value)}
+						autoComplete="new-password"
+						placeholder="New Password"
+					/>
+					<Label htmlFor="password">Confirm Password</Label>
+					<PasswordInput
+						value={confirmPassword}
+						onChange={(e) => setConfirmPassword(e.target.value)}
+						autoComplete="new-password"
+						placeholder="Confirm Password"
+					/>
+					<div className="flex gap-2 items-center">
+						<Checkbox
+							onCheckedChange={(checked) =>
+								checked ? setSignOutDevices(true) : setSignOutDevices(false)
+							}
+						/>
+						<p className="text-sm">Sign out from other devices</p>
+					</div>
+				</div>
+				<DialogFooter>
+					<Button
+						onClick={async () => {
+							if (newPassword !== confirmPassword) {
+								toast.error("Passwords do not match");
+								return;
+							}
+							if (newPassword.length < 8) {
+								toast.error("Password must be at least 8 characters");
+								return;
+							}
+							setLoading(true);
+							const res = await client.changePassword({
+								newPassword: newPassword,
+								currentPassword: currentPassword,
+								revokeOtherSessions: signOutDevices,
+							});
+							setLoading(false);
+							if (res.error) {
+								toast.error(
+									res.error.message ||
+										"Couldn't change your password! Make sure it's correct",
+								);
+							} else {
+								setOpen(false);
+								toast.success("Password changed successfully");
+								setCurrentPassword("");
+								setNewPassword("");
+								setConfirmPassword("");
+							}
+						}}
+					>
+						{loading ? (
+							<Loader2 size={15} className="animate-spin" />
+						) : (
+							"Change Password"
+						)}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function EditUserDialog() {
+	const { data, isPending, error } = useSession();
+	const [name, setName] = useState<string>();
+	const router = useRouter();
+	const [image, setImage] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			setImage(file);
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setImagePreview(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+	const [open, setOpen] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	return (
+		<Dialog open={open} onOpenChange={setOpen}>
+			<DialogTrigger asChild>
+				<Button size="sm" className="gap-2" variant="secondary">
+					<Edit size={13} />
+					Edit User
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>Edit User</DialogTitle>
+					<DialogDescription>Edit user information</DialogDescription>
+				</DialogHeader>
+				<div className="grid gap-2">
+					<Label htmlFor="name">Full Name</Label>
+					<Input
+						id="name"
+						type="name"
+						placeholder={data?.user.name}
+						required
+						onChange={(e) => {
+							setName(e.target.value);
+						}}
+					/>
+					<div className="grid gap-2">
+						<Label htmlFor="image">Profile Image</Label>
+						<div className="flex items-end gap-4">
+							{imagePreview && (
+								<div className="relative w-16 h-16 rounded-sm overflow-hidden">
+									<Image
+										src={imagePreview}
+										alt="Profile preview"
+										layout="fill"
+										objectFit="cover"
+									/>
+								</div>
+							)}
+							<div className="flex items-center gap-2 w-full">
+								<Input
+									id="image"
+									type="file"
+									accept="image/*"
+									onChange={handleImageChange}
+									className="w-full text-muted-foreground"
+								/>
+								{imagePreview && (
+									<X
+										className="cursor-pointer"
+										onClick={() => {
+											setImage(null);
+											setImagePreview(null);
+										}}
+									/>
+								)}
+							</div>
+						</div>
+					</div>
+				</div>
+				<DialogFooter>
+					<Button
+						disabled={isLoading}
+						onClick={async () => {
+							setIsLoading(true);
+							await client.updateUser({
+								image: image ? await convertImageToBase64(image) : undefined,
+								name: name ? name : undefined,
+								fetchOptions: {
+									onSuccess: () => {
+										toast.success("User updated successfully");
+									},
+									onError: (error) => {
+										toast.error(error.error.message);
+									},
+								},
+							});
+							setName("");
+							router.refresh();
+							setImage(null);
+							setImagePreview(null);
+							setIsLoading(false);
+							setOpen(false);
+						}}
+					>
+						{isLoading ? (
+							<Loader2 size={15} className="animate-spin" />
+						) : (
+							"Update"
+						)}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function AddPasskey() {
+	const [isOpen, setIsOpen] = useState(false);
+	const [passkeyName, setPasskeyName] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
+
+	const handleAddPasskey = async () => {
+		if (!passkeyName) {
+			toast.error("Passkey name is required");
+			return;
+		}
+		setIsLoading(true);
+		const res = await client.passkey.addPasskey({
+			name: passkeyName,
+		});
+		if (res?.error) {
+			toast.error(res?.error.message);
+		} else {
+			setIsOpen(false);
+			toast.success("Passkey added successfully. You can now use it to login.");
+		}
+		setIsLoading(false);
+	};
+	return (
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<Button variant="outline" className="gap-2 text-xs md:text-sm">
+					<Plus size={15} />
+					Add New Passkey
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>Add New Passkey</DialogTitle>
+					<DialogDescription>
+						Create a new passkey to securely access your account without a
+						password.
+					</DialogDescription>
+				</DialogHeader>
+				<div className="grid gap-2">
+					<Label htmlFor="passkey-name">Passkey Name</Label>
+					<Input
+						id="passkey-name"
+						value={passkeyName}
+						onChange={(e) => setPasskeyName(e.target.value)}
+					/>
+				</div>
+				<DialogFooter>
+					<Button
+						disabled={isLoading}
+						type="submit"
+						onClick={handleAddPasskey}
+						className="w-full"
+					>
+						{isLoading ? (
+							<Loader2 size={15} className="animate-spin" />
+						) : (
+							<>
+								<Fingerprint className="mr-2 h-4 w-4" />
+								Create Passkey
+							</>
+						)}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function ListPasskeys() {
+	const { data } = client.useListPasskeys();
+	const [isOpen, setIsOpen] = useState(false);
+	const [passkeyName, setPasskeyName] = useState("");
+
+	const handleAddPasskey = async () => {
+		if (!passkeyName) {
+			toast.error("Passkey name is required");
+			return;
+		}
+		setIsLoading(true);
+		const res = await client.passkey.addPasskey({
+			name: passkeyName,
+		});
+		setIsLoading(false);
+		if (res?.error) {
+			toast.error(res?.error.message);
+		} else {
+			toast.success("Passkey added successfully. You can now use it to login.");
+		}
+	};
+	const [isLoading, setIsLoading] = useState(false);
+	const [isDeletePasskey, setIsDeletePasskey] = useState<boolean>(false);
+	return (
+		<Dialog open={isOpen} onOpenChange={setIsOpen}>
+			<DialogTrigger asChild>
+				<Button variant="outline" className="text-xs md:text-sm">
+					<Fingerprint className="mr-2 h-4 w-4" />
+					<span>Passkeys {data?.length ? `[${data?.length}]` : ""}</span>
+				</Button>
+			</DialogTrigger>
+			<DialogContent className="sm:max-w-[425px] w-11/12">
+				<DialogHeader>
+					<DialogTitle>Passkeys</DialogTitle>
+					<DialogDescription>List of passkeys</DialogDescription>
+				</DialogHeader>
+				{data?.length ? (
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>Name</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{data.map((passkey) => (
+								<TableRow
+									key={passkey.id}
+									className="flex  justify-between items-center"
+								>
+									<TableCell>{passkey.name || "My Passkey"}</TableCell>
+									<TableCell className="text-right">
+										<button
+											onClick={async () => {
+												const res = await client.passkey.deletePasskey({
+													id: passkey.id,
+													fetchOptions: {
+														onRequest: () => {
+															setIsDeletePasskey(true);
+														},
+														onSuccess: () => {
+															toast("Passkey deleted successfully");
+															setIsDeletePasskey(false);
+														},
+														onError: (error) => {
+															toast.error(error.error.message);
+															setIsDeletePasskey(false);
+														},
+													},
+												});
+											}}
+										>
+											{isDeletePasskey ? (
+												<Loader2 size={15} className="animate-spin" />
+											) : (
+												<Trash
+													size={15}
+													className="cursor-pointer text-red-600"
+												/>
+											)}
+										</button>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				) : (
+					<p className="text-sm text-muted-foreground">No passkeys found</p>
+				)}
+				{!data?.length && (
+					<div className="flex flex-col gap-2">
+						<div className="flex flex-col gap-2">
+							<Label htmlFor="passkey-name" className="text-sm">
+								New Passkey
+							</Label>
+							<Input
+								id="passkey-name"
+								value={passkeyName}
+								onChange={(e) => setPasskeyName(e.target.value)}
+								placeholder="My Passkey"
+							/>
+						</div>
+						<Button type="submit" onClick={handleAddPasskey} className="w-full">
+							{isLoading ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								<>
+									<Fingerprint className="mr-2 h-4 w-4" />
+									Create Passkey
+								</>
+							)}
+						</Button>
+					</div>
+				)}
+				<DialogFooter>
+					<Button onClick={() => setIsOpen(false)}>Close</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/api/auth/[...all]/route.ts
+```typescript
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+import { NextRequest } from "next/server";
+
+export const { GET } = toNextJsHandler(auth);
+
+export const POST = async (req: NextRequest) => {
+	const res = await auth.handler(req);
+	return res;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/(auth)/reset-password/page.tsx
+```
+"use client";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { client } from "@/lib/auth-client";
+import { AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+
+export default function ResetPassword() {
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [error, setError] = useState("");
+	const router = useRouter();
+	async function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		setIsSubmitting(true);
+		setError("");
+		const res = await client.resetPassword({
+			newPassword: password,
+			token: new URLSearchParams(window.location.search).get("token")!,
+		});
+		if (res.error) {
+			toast.error(res.error.message);
+		}
+		setIsSubmitting(false);
+		router.push("/sign-in");
+	}
+	return (
+		<div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>Reset password</CardTitle>
+					<CardDescription>
+						Enter new password and confirm it to reset your password
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<form onSubmit={handleSubmit}>
+						<div className="grid w-full items-center gap-2">
+							<div className="flex flex-col space-y-1.5">
+								<Label htmlFor="email">New password</Label>
+								<PasswordInput
+									id="password"
+									value={password}
+									onChange={(e) => setPassword(e.target.value)}
+									autoComplete="password"
+									placeholder="Password"
+								/>
+							</div>
+							<div className="flex flex-col space-y-1.5">
+								<Label htmlFor="email">Confirm password</Label>
+								<PasswordInput
+									id="password"
+									value={confirmPassword}
+									onChange={(e) => setConfirmPassword(e.target.value)}
+									autoComplete="password"
+									placeholder="Password"
+								/>
+							</div>
+						</div>
+						{error && (
+							<Alert variant="destructive" className="mt-4">
+								<AlertCircle className="h-4 w-4" />
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						)}
+						<Button
+							className="w-full mt-4"
+							type="submit"
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? "Resetting..." : "Reset password"}
+						</Button>
+					</form>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/(auth)/sign-in/page.tsx
+```
+"use client";
+
+import SignIn from "@/components/sign-in";
+import { SignUp } from "@/components/sign-up";
+import { Tabs } from "@/components/ui/tabs2";
+import { client } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "sonner";
+
+export default function Page() {
+	const router = useRouter();
+	useEffect(() => {
+		client.oneTap({
+			fetchOptions: {
+				onError: ({ error }) => {
+					toast.error(error.message || "An error occurred");
+				},
+				onSuccess: () => {
+					toast.success("Successfully signed in");
+					router.push("/dashboard");
+				},
+			},
+		});
+	}, []);
+
+	return (
+		<div className="w-full">
+			<div className="flex items-center flex-col justify-center w-full md:py-10">
+				<div className="md:w-[400px]">
+					<Tabs
+						tabs={[
+							{
+								title: "Sign In",
+								value: "sign-in",
+								content: <SignIn />,
+							},
+							{
+								title: "Sign Up",
+								value: "sign-up",
+								content: <SignUp />,
+							},
+						]}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/(auth)/forget-password/page.tsx
+```
+"use client";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { client } from "@/lib/auth-client";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+export default function Component() {
+	const [email, setEmail] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isSubmitted, setIsSubmitted] = useState(false);
+	const [error, setError] = useState("");
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+		setError("");
+
+		try {
+			const res = await client.forgetPassword({
+				email,
+				redirectTo: "/reset-password",
+			});
+			setIsSubmitted(true);
+		} catch (err) {
+			setError("An error occurred. Please try again.");
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	if (isSubmitted) {
+		return (
+			<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+				<Card className="w-[350px]">
+					<CardHeader>
+						<CardTitle>Check your email</CardTitle>
+						<CardDescription>
+							We've sent a password reset link to your email.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<Alert variant="default">
+							<CheckCircle2 className="h-4 w-4" />
+							<AlertDescription>
+								If you don't see the email, check your spam folder.
+							</AlertDescription>
+						</Alert>
+					</CardContent>
+					<CardFooter>
+						<Button
+							variant="outline"
+							className="w-full"
+							onClick={() => setIsSubmitted(false)}
+						>
+							<ArrowLeft className="mr-2 h-4 w-4" /> Back to reset password
+						</Button>
+					</CardFooter>
+				</Card>
+			</main>
+		);
+	}
+
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			{/* Radial gradient for the container to give a faded look */}
+			<div className="absolute pointer-events-none inset-0 flex items-center justify-center dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>Forgot password</CardTitle>
+					<CardDescription>
+						Enter your email to reset your password
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<form onSubmit={handleSubmit}>
+						<div className="grid w-full items-center gap-4">
+							<div className="flex flex-col space-y-1.5">
+								<Label htmlFor="email">Email</Label>
+								<Input
+									id="email"
+									type="email"
+									placeholder="Enter your email"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									required
+								/>
+							</div>
+						</div>
+						{error && (
+							<Alert variant="destructive" className="mt-4">
+								<AlertCircle className="h-4 w-4" />
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						)}
+						<Button
+							className="w-full mt-4"
+							type="submit"
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? "Sending..." : "Send reset link"}
+						</Button>
+					</form>
+				</CardContent>
+				<CardFooter className="flex justify-center">
+					<Link href="/sign-in">
+						<Button variant="link" className="px-0">
+							Back to sign in
+						</Button>
+					</Link>
+				</CardFooter>
+			</Card>
+		</main>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/(auth)/two-factor/page.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { client } from "@/lib/auth-client";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+
+export default function Component() {
+	const [totpCode, setTotpCode] = useState("");
+	const [error, setError] = useState("");
+	const [success, setSuccess] = useState(false);
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (totpCode.length !== 6 || !/^\d+$/.test(totpCode)) {
+			setError("TOTP code must be 6 digits");
+			return;
+		}
+		client.twoFactor
+			.verifyTotp({
+				code: totpCode,
+			})
+			.then((res) => {
+				if (res.data?.token) {
+					setSuccess(true);
+					setError("");
+				} else {
+					setError("Invalid TOTP code");
+				}
+			});
+	};
+
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>TOTP Verification</CardTitle>
+					<CardDescription>
+						Enter your 6-digit TOTP code to authenticate
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{!success ? (
+						<form onSubmit={handleSubmit}>
+							<div className="space-y-2">
+								<Label htmlFor="totp">TOTP Code</Label>
+								<Input
+									id="totp"
+									type="text"
+									inputMode="numeric"
+									pattern="\d{6}"
+									maxLength={6}
+									value={totpCode}
+									onChange={(e) => setTotpCode(e.target.value)}
+									placeholder="Enter 6-digit code"
+									required
+								/>
+							</div>
+							{error && (
+								<div className="flex items-center mt-2 text-red-500">
+									<AlertCircle className="w-4 h-4 mr-2" />
+									<span className="text-sm">{error}</span>
+								</div>
+							)}
+							<Button type="submit" className="w-full mt-4">
+								Verify
+							</Button>
+						</form>
+					) : (
+						<div className="flex flex-col items-center justify-center space-y-2">
+							<CheckCircle2 className="w-12 h-12 text-green-500" />
+							<p className="text-lg font-semibold">Verification Successful</p>
+						</div>
+					)}
+				</CardContent>
+				<CardFooter className="text-sm text-muted-foreground gap-2">
+					<Link href="/two-factor/otp">
+						<Button variant="link" size="sm">
+							Switch to Email Verification
+						</Button>
+					</Link>
+				</CardFooter>
+			</Card>
+		</main>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/(auth)/two-factor/otp/page.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { client } from "@/lib/auth-client";
+import { AlertCircle, CheckCircle2, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+export default function Component() {
+	const [otp, setOtp] = useState("");
+	const [isOtpSent, setIsOtpSent] = useState(false);
+	const [message, setMessage] = useState("");
+	const [isError, setIsError] = useState(false);
+	const [isValidated, setIsValidated] = useState(false);
+
+	// In a real app, this email would come from your authentication context
+	const userEmail = "user@example.com";
+
+	const requestOTP = async () => {
+		const res = await client.twoFactor.sendOtp();
+		// In a real app, this would call your backend API to send the OTP
+		setMessage("OTP sent to your email");
+		setIsError(false);
+		setIsOtpSent(true);
+	};
+	const router = useRouter();
+
+	const validateOTP = async () => {
+		const res = await client.twoFactor.verifyOtp({
+			code: otp,
+		});
+		if (res.data) {
+			setMessage("OTP validated successfully");
+			setIsError(false);
+			setIsValidated(true);
+			router.push("/");
+		} else {
+			setIsError(true);
+			setMessage("Invalid OTP");
+		}
+	};
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>Two-Factor Authentication</CardTitle>
+					<CardDescription>
+						Verify your identity with a one-time password
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="grid w-full items-center gap-4">
+						{!isOtpSent ? (
+							<Button onClick={requestOTP} className="w-full">
+								<Mail className="mr-2 h-4 w-4" /> Send OTP to Email
+							</Button>
+						) : (
+							<>
+								<div className="flex flex-col space-y-1.5">
+									<Label htmlFor="otp">One-Time Password</Label>
+									<Label className="py-2">
+										Check your email at {userEmail} for the OTP
+									</Label>
+									<Input
+										id="otp"
+										placeholder="Enter 6-digit OTP"
+										value={otp}
+										onChange={(e) => setOtp(e.target.value)}
+										maxLength={6}
+									/>
+								</div>
+								<Button
+									onClick={validateOTP}
+									disabled={otp.length !== 6 || isValidated}
+								>
+									Validate OTP
+								</Button>
+							</>
+						)}
+					</div>
+					{message && (
+						<div
+							className={`flex items-center gap-2 mt-4 ${
+								isError ? "text-red-500" : "text-primary"
+							}`}
+						>
+							{isError ? (
+								<AlertCircle className="h-4 w-4" />
+							) : (
+								<CheckCircle2 className="h-4 w-4" />
+							)}
+							<p className="text-sm">{message}</p>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</main>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/apps/register/page.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { client } from "@/lib/auth-client";
+
+export default function RegisterOAuthClient() {
+	const [name, setName] = useState("");
+	const [logo, setLogo] = useState<File | null>(null);
+	const [redirectUri, setRedirectUri] = useState("");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const router = useRouter();
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setIsSubmitting(true);
+		setError(null);
+
+		if (!name || !logo || !redirectUri) {
+			setError("All fields are required");
+			setIsSubmitting(false);
+			return;
+		}
+		const res = await client.oauth2.register({
+			name,
+			icon: await convertImageToBase64(logo),
+			redirectURLs: [redirectUri],
+		});
+		setIsSubmitting(false);
+	};
+
+	return (
+		<div className="container mx-auto py-10">
+			<Card className="max-w-md mx-auto">
+				<CardHeader>
+					<CardTitle>Register OAuth Client</CardTitle>
+					<CardDescription>
+						Provide details to register a new OAuth client as a provider.
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<form onSubmit={handleSubmit} className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="name">Name</Label>
+							<Input
+								id="name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								placeholder="Enter client name"
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="logo">Logo</Label>
+							<Input
+								id="logo"
+								type="file"
+								onChange={(e) => setLogo(e.target.files?.[0] || null)}
+								accept="image/*"
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="redirectUri">Redirect URI</Label>
+							<Input
+								id="redirectUri"
+								value={redirectUri}
+								onChange={(e) => setRedirectUri(e.target.value)}
+								placeholder="https://your-app.com/callback"
+							/>
+						</div>
+						{error && (
+							<Alert variant="destructive">
+								<AlertCircle className="h-4 w-4" />
+								<AlertTitle>Error</AlertTitle>
+								<AlertDescription>{error}</AlertDescription>
+							</Alert>
+						)}
+						<Button type="submit" className="w-full" disabled={isSubmitting}>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+									Registering...
+								</>
+							) : (
+								"Register Client"
+							)}
+						</Button>
+					</form>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
+
+async function convertImageToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/demo/nextjs/app/pricing/page.tsx
+```
+import { Pricing } from "@/components/blocks/pricing";
+
+const demoPlans = [
+	{
+		name: "STARTER",
+		price: "50",
+		yearlyPrice: "40",
+		period: "per month",
+		features: [
+			"Up to 10 projects",
+			"Basic analytics",
+			"48-hour support response time",
+			"Limited API access",
+		],
+		description: "Perfect for individuals and small projects",
+		buttonText: "Start Free Trial",
+		href: "/sign-up",
+		isPopular: false,
+	},
+	{
+		name: "PROFESSIONAL",
+		price: "99",
+		yearlyPrice: "79",
+		period: "per month",
+		features: [
+			"Unlimited projects",
+			"Advanced analytics",
+			"24-hour support response time",
+			"Full API access",
+			"Priority support",
+		],
+		description: "Ideal for growing teams and businesses",
+		buttonText: "Get Started",
+		href: "/sign-up",
+		isPopular: true,
+	},
+	{
+		name: "ENTERPRISE",
+		price: "299",
+		yearlyPrice: "239",
+		period: "per month",
+		features: [
+			"Everything in Professional",
+			"Custom solutions",
+			"Dedicated account manager",
+			"1-hour support response time",
+			"SSO Authentication",
+			"Advanced security",
+		],
+		description: "For large organizations with specific needs",
+		buttonText: "Contact Sales",
+		href: "/contact",
+		isPopular: false,
+	},
+];
+
+export default function Page() {
+	return <Pricing plans={demoPlans} />;
+}
+
+```

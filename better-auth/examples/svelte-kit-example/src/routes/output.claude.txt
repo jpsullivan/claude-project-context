@@ -1,0 +1,461 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/+layout.svelte</source>
+<document_content>
+<script>
+import "../app.css";
+</script>
+
+<div class="centered-container">
+  <slot></slot>
+</div>
+
+<style>
+  .centered-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Full viewport height */
+  }
+</style>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/+page.svelte</source>
+<document_content>
+<script>
+import { client } from "$lib/auth-client";
+const features = [
+	"social sign-in",
+	"email and password",
+	"two-factor",
+	"password-rest",
+	"email-verification",
+];
+
+const session = client.useSession();
+$: to = $session.data ? "/dashboard" : "/sign-in";
+</script>
+
+<div
+  class="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0"
+>
+  <main class="flex flex-col gap-4 row-start-2 items-center justify-center">
+    <div class="flex flex-col gap-1">
+      <h3 class="font-bold text-4xl text-black dark:text-white text-center">
+        Better Auth.
+      </h3>
+
+      <p class="text-center">
+        Official <span class="italic underline">better-auth</span> Svelte-Kit demo
+      </p>
+
+      <div class="flex flex-col gap-3 pt-2 flex-wrap">
+        <div class="border-y py-2 border-dotted bg-secondary/60 opacity-80">
+          <div
+            class="text-xs flex items-center gap-2 justify-center text-muted-foreground"
+          >
+            <span class="text-center">
+              All features on this demo are Implemented with better auth without
+              any custom backend code
+            </span>
+          </div>
+        </div>
+        <div class="flex gap-2 justify-center flex-wrap">
+          {#each features as feature}
+            <span
+              class="border-b pb-1 text-muted-foreground text-xs cursor-pointer hover:text-foreground duration-150 ease-in-out transition-all hover:border-foreground flex items-center gap-1"
+              >{feature}</span
+            >
+          {/each}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2 mx-auto">
+        <a href={to} class="">
+          <Button class="rounded-none gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="1.2em"
+              height="1.2em"
+              viewBox="0 0 24 24"
+              ><path
+                fill="currentColor"
+                d="M5 3H3v4h2V5h14v14H5v-2H3v4h18V3zm12 8h-2V9h-2V7h-2v2h2v2H3v2h10v2h-2v2h2v-2h2v-2h2z"
+              ></path></svg
+            >
+            {#if $session.data}
+              Dashboard
+            {:else}
+              Sign In
+            {/if}
+          </Button>
+        </a>
+        {#if $session.data}
+          <Button
+            class="rounded-none"
+            on:click={async () => {
+              await client.signOut();
+            }}
+            variant="outline">Sign Out</Button
+          >
+        {/if}
+      </div>
+    </div>
+  </main>
+</div>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/sign-up/+page.svelte</source>
+<document_content>
+<script lang="ts">
+import { signUp } from "$lib/auth-client";
+import { writable } from "svelte/store";
+
+// Create writable stores for form fields
+const firstName = writable("");
+const lastName = writable("");
+const email = writable("");
+const password = writable("");
+
+// Function to handle form submission
+const handleSignUp = async () => {
+	const user = {
+		firstName: $firstName,
+		lastName: $lastName,
+		email: $email,
+		password: $password,
+	};
+	await signUp.email({
+		email: user.email,
+		password: user.password,
+		name: `${user.firstName} ${user.lastName}`,
+		callbackURL: "/",
+		fetchOptions: {
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	});
+};
+</script>
+
+<Card.Root class="mx-auto max-w-sm">
+  <Card.Header>
+    <Card.Title class="text-xl">Sign Up</Card.Title>
+    <Card.Description>
+      Enter your information to create an account
+    </Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <div class="grid gap-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="grid gap-2">
+          <Label for="first-name">First name</Label>
+          <Input
+            id="first-name"
+            placeholder="Max"
+            required
+            bind:value={$firstName}
+          />
+        </div>
+        <div class="grid gap-2">
+          <Label for="last-name">Last name</Label>
+          <Input
+            id="last-name"
+            placeholder="Robinson"
+            required
+            bind:value={$lastName}
+          />
+        </div>
+      </div>
+      <div class="grid gap-2">
+        <Label for="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="m@example.com"
+          required
+          bind:value={$email}
+        />
+      </div>
+      <div class="grid gap-2">
+        <Label for="password">Password</Label>
+        <Input id="password" type="password" bind:value={$password} />
+      </div>
+      <Button type="button" class="w-full" on:click={handleSignUp}
+        >Create an account</Button
+      >
+      <Button variant="outline" class="w-full">Sign up with GitHub</Button>
+    </div>
+    <div class="mt-4 text-center text-sm">
+      Already have an account?
+      <a href="/sign-in" class="underline"> Sign in </a>
+    </div>
+  </Card.Content>
+</Card.Root>
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/dashboard/+page.svelte</source>
+<document_content>
+<script>
+import { client } from "$lib/auth-client";
+
+const session = client.useSession();
+</script>
+
+<Card.Root class="w-[350px]">
+  <Card.Header>
+    <Card.Title>User</Card.Title>
+    <Card.Description>Welcome to the dashboard</Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <div class="flex items-center gap-2">
+      <Avatar.Root>
+        <Avatar.Image src={$session.data?.user.image} />
+        <Avatar.Fallback>
+          {$session.data?.user.name[0]}
+        </Avatar.Fallback>
+      </Avatar.Root>
+      <div class="">
+        <h3 class="text-sm">
+          {$session.data?.user.name}
+        </h3>
+        <p class="text-xs text-muted-foreground">
+          {$session.data?.user.email}
+        </p>
+      </div>
+    </div>
+  </Card.Content>
+  <Card.Footer>
+    <Button
+      variant="outline"
+      on:click={() => {
+        client.signOut({
+          fetchOptions: {
+            body: {
+              callbackURL: "/",
+            },
+          },
+        });
+      }}>Sign Out</Button
+    >
+  </Card.Footer>
+</Card.Root>
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/reset-password/+page.svelte</source>
+<document_content>
+<script>
+import { writable } from "svelte/store";
+
+const confirmPassword = writable("");
+const password = writable("");
+</script>
+
+<Card.Root class="mx-auto ">
+  <Card.Header>
+    <Card.Title class="text-2xl">Reset Password</Card.Title>
+    <Card.Description>Enter your new password below</Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <div class="grid gap-4">
+      <div class="grid gap-2">
+        <Label for="password">New Password</Label>
+        <Input
+          id="password"
+          type="password"
+          required
+          bind:value={$password}
+          placeholder="New Password"
+        />
+      </div>
+      <div class="grid gap-2">
+        <Label for="password">Confirm Password</Label>
+        <Input
+          id="password"
+          type="password"
+          required
+          placeholder="Confirm Password"
+          bind:value={$confirmPassword}
+        />
+      </div>
+      <Button
+        type="button"
+        class="w-full"
+        on:click={async () => {
+          await client.resetPassword({
+            newPassword: $password,
+            fetchOptions: {
+              onSuccess(context) {
+                window.location.href = "/sign-in";
+              },
+              onError(context) {
+                alert(context.error.message);
+              },
+            },
+          });
+        }}>Reset</Button
+      >
+    </div>
+  </Card.Content>
+</Card.Root>
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/sign-in/+page.svelte</source>
+<document_content>
+<script lang="ts">
+import { signIn } from "$lib/auth-client";
+import { writable } from "svelte/store";
+
+const email = writable("");
+const password = writable("");
+
+const handleSignIn = async () => {
+	await signIn.email(
+		{
+			email: $email,
+			password: $password,
+			callbackURL: "/",
+		},
+		{
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	);
+};
+</script>
+
+<Card.Root class="mx-auto max-w-sm">
+  <Card.Header>
+    <Card.Title class="text-2xl">Login</Card.Title>
+    <Card.Description>
+      Enter your email below to login to your account
+    </Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <div class="grid gap-4">
+      <div class="grid gap-2">
+        <Label for="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="m@example.com"
+          required
+          bind:value={$email}
+        />
+      </div>
+      <div class="grid gap-2">
+        <div class="flex items-center">
+          <Label for="password">Password</Label>
+          <a
+            href="/forget-password"
+            class="ml-auto inline-block text-sm underline"
+          >
+            Forgot your password?
+          </a>
+        </div>
+        <Input id="password" type="password" required bind:value={$password} />
+      </div>
+      <Button type="button" class="w-full" on:click={handleSignIn}>Login</Button
+      >
+      <Button
+        variant="outline"
+        class="w-full"
+        on:click={async () => {
+          await signIn.social({
+            provider: "google",
+            callbackURL: "/",
+          });
+        }}>Login with Google</Button
+      >
+    </div>
+    <div class="mt-4 text-center text-sm">
+      Don&apos;t have an account?
+      <a href="/sign-up" class="underline">Sign up</a>
+    </div>
+  </Card.Content>
+</Card.Root>
+
+
+
+
+   
+  
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/routes/forget-password/+page.svelte</source>
+<document_content>
+<script lang="ts">
+import { writable } from "svelte/store";
+
+const email = writable("");
+</script>
+
+<Card.Root class="mx-auto max-w-sm">
+  <Card.Header>
+    <Card.Title class="text-2xl">Reset Password</Card.Title>
+    <Card.Description>
+      Enter your email below to reset your password
+    </Card.Description>
+  </Card.Header>
+  <Card.Content>
+    <div class="grid gap-4">
+      <div class="grid gap-2">
+        <Label for="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="m@example.com"
+          required
+          bind:value={$email}
+        />
+      </div>
+      <Button
+        type="button"
+        class="w-full"
+        on:click={async () => {
+          if (!$email) {
+            alert("Please enter your email address");
+            return;
+          }
+          await client.forgetPassword(
+            {
+              email: $email,
+              redirectTo: "/reset-password",
+            },
+            {
+              onSuccess() {
+                alert("Password reset link sent to your email");
+                window.location.href = "/sign-in";
+              },
+              onError(context) {
+                alert(context.error.message);
+              },
+            }
+          );
+        }}
+      >
+        Reset Password
+      </Button>
+    </div>
+    <div class="mt-4 text-center text-sm">
+      <a href="/sign-in" class="underline"> Back to Sign In </a>
+    </div>
+  </Card.Content>
+</Card.Root>
+
+</document_content>
+</document>
+</documents>

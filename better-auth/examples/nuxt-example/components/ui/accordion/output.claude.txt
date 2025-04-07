@@ -1,0 +1,139 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/Accordion.vue</source>
+<document_content>
+<script setup lang="ts">
+import {
+	type AccordionRootEmits,
+	type AccordionRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<AccordionRootProps>();
+const emits = defineEmits<AccordionRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <AccordionRoot v-bind="forwarded">
+    <slot />
+  </AccordionRoot>
+</template>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionContent.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionContentProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionContentProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AccordionContent
+    v-bind="delegatedProps"
+    class="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+  >
+    <div :class="cn('pb-4 pt-0', props.class)">
+      <slot />
+    </div>
+  </AccordionContent>
+</template>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionItem.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <AccordionItem
+    v-bind="forwardedProps"
+    :class="cn('border-b', props.class)"
+  >
+    <slot />
+  </AccordionItem>
+</template>
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionTrigger.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionTriggerProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AccordionHeader class="flex">
+    <AccordionTrigger
+      v-bind="delegatedProps"
+      :class="
+        cn(
+          'flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
+          props.class,
+        )
+      "
+    >
+      <slot />
+      <slot name="icon">
+        <ChevronDownIcon
+          class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+        />
+      </slot>
+    </AccordionTrigger>
+  </AccordionHeader>
+</template>
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/index.ts</source>
+<document_content>
+export { default as Accordion } from "./Accordion.vue";
+export { default as AccordionContent } from "./AccordionContent.vue";
+export { default as AccordionItem } from "./AccordionItem.vue";
+export { default as AccordionTrigger } from "./AccordionTrigger.vue";
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,355 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/index.ts
+```typescript
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+import Root from "./menubar.svelte";
+import CheckboxItem from "./menubar-checkbox-item.svelte";
+import Content from "./menubar-content.svelte";
+import Item from "./menubar-item.svelte";
+import Label from "./menubar-label.svelte";
+import RadioItem from "./menubar-radio-item.svelte";
+import Separator from "./menubar-separator.svelte";
+import Shortcut from "./menubar-shortcut.svelte";
+import SubContent from "./menubar-sub-content.svelte";
+import SubTrigger from "./menubar-sub-trigger.svelte";
+import Trigger from "./menubar-trigger.svelte";
+
+const Menu = MenubarPrimitive.Menu;
+const Group = MenubarPrimitive.Group;
+const Sub = MenubarPrimitive.Sub;
+const RadioGroup = MenubarPrimitive.RadioGroup;
+
+export {
+	Root,
+	CheckboxItem,
+	Content,
+	Item,
+	Label,
+	RadioItem,
+	Separator,
+	Shortcut,
+	SubContent,
+	SubTrigger,
+	Trigger,
+	Menu,
+	Group,
+	Sub,
+	RadioGroup,
+	//
+	Root as Menubar,
+	CheckboxItem as MenubarCheckboxItem,
+	Content as MenubarContent,
+	Item as MenubarItem,
+	Label as MenubarLabel,
+	RadioItem as MenubarRadioItem,
+	Separator as MenubarSeparator,
+	Shortcut as MenubarShortcut,
+	SubContent as MenubarSubContent,
+	SubTrigger as MenubarSubTrigger,
+	Trigger as MenubarTrigger,
+	Menu as MenubarMenu,
+	Group as MenubarGroup,
+	Sub as MenubarSub,
+	RadioGroup as MenubarRadioGroup,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-checkbox-item.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.CheckboxItemProps;
+let className: $$Props["class"] = undefined;
+export { className as class };
+export let checked: $$Props["checked"] = undefined;
+</script>
+
+<MenubarPrimitive.CheckboxItem
+	bind:checked
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerleave
+	on:pointermove
+	on:pointerdown
+>
+	<span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+		<MenubarPrimitive.CheckboxIndicator>
+			<Check class="h-4 w-4" />
+		</MenubarPrimitive.CheckboxIndicator>
+	</span>
+	<slot />
+</MenubarPrimitive.CheckboxItem>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-content.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+import { flyAndScale } from "$lib/utils.js";
+
+type $$Props = MenubarPrimitive.ContentProps;
+let className: $$Props["class"] = undefined;
+export let align: $$Props["align"] = "start";
+export let alignOffset: $$Props["alignOffset"] = -4;
+export let sideOffset: $$Props["sideOffset"] = 8;
+export let transition: $$Props["transition"] = flyAndScale;
+export let transitionConfig: $$Props["transitionConfig"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Content
+	{transition}
+	{transitionConfig}
+	{sideOffset}
+	{align}
+	{alignOffset}
+	class={cn(
+		"bg-popover text-popover-foreground z-50 min-w-[12rem] rounded-md border p-1 shadow-md focus:outline-none",
+		className
+	)}
+	{...$$restProps}
+>
+	<slot />
+</MenubarPrimitive.Content>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-item.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.ItemProps & {
+	inset?: boolean;
+};
+type $$Events = MenubarPrimitive.ItemEvents;
+
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Item
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		inset && "pl-8",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerleave
+	on:pointermove
+	on:pointerdown
+>
+	<slot />
+</MenubarPrimitive.Item>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-label.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.LabelProps & {
+	inset?: boolean;
+};
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Label
+	class={cn("px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+	{...$$restProps}
+>
+	<slot />
+</MenubarPrimitive.Label>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-radio-item.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.RadioItemProps;
+type $$Events = MenubarPrimitive.RadioItemEvents;
+let className: $$Props["class"] = undefined;
+export let value: $$Props["value"];
+export { className as class };
+</script>
+
+<MenubarPrimitive.RadioItem
+	{value}
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerleave
+	on:pointermove
+	on:pointerdown
+>
+	<span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+		<MenubarPrimitive.RadioIndicator>
+			<DotFilled class="h-4 w-4 fill-current" />
+		</MenubarPrimitive.RadioIndicator>
+	</span>
+	<slot />
+</MenubarPrimitive.RadioItem>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-separator.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.SeparatorProps;
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Separator class={cn("bg-muted -mx-1 my-1 h-px", className)} {...$$restProps} />
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-shortcut.svelte
+```
+<script lang="ts">
+import type { HTMLAttributes } from "svelte/elements";
+
+type $$Props = HTMLAttributes<HTMLSpanElement>;
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<span
+	class={cn("text-muted-foreground ml-auto text-xs tracking-widest", className)}
+	{...$$restProps}
+>
+	<slot />
+</span>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-sub-content.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+import { flyAndScale } from "$lib/utils.js";
+
+type $$Props = MenubarPrimitive.SubContentProps;
+let className: $$Props["class"] = undefined;
+export let transition: $$Props["transition"] = flyAndScale;
+export let transitionConfig: $$Props["transitionConfig"] = {
+	x: -10,
+	y: 0,
+};
+export { className as class };
+</script>
+
+<MenubarPrimitive.SubContent
+	{transition}
+	{transitionConfig}
+	class={cn(
+		"bg-popover text-popover-foreground z-50 min-w-max rounded-md border p-1 shadow-lg focus:outline-none",
+		className
+	)}
+	{...$$restProps}
+>
+	<slot />
+</MenubarPrimitive.SubContent>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-sub-trigger.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.SubTriggerProps & {
+	inset?: boolean;
+};
+type $$Events = MenubarPrimitive.SubTriggerEvents;
+
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.SubTrigger
+	class={cn(
+		"data-[highlighted]:bg-accent data-[state=open]:bg-accent data-[highlighted]:text-accent-foreground data-[state=open]:text-accent-foreground flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		inset && "pl-8",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerleave
+	on:pointermove
+>
+	<slot />
+	<ChevronRight class="ml-auto h-4 w-4" />
+</MenubarPrimitive.SubTrigger>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar-trigger.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.TriggerProps;
+type $$Events = MenubarPrimitive.TriggerEvents;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Trigger
+	class={cn(
+		"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:pointerenter
+>
+	<slot />
+</MenubarPrimitive.Trigger>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/menubar/menubar.svelte
+```
+<script lang="ts">
+import { Menubar as MenubarPrimitive } from "bits-ui";
+
+type $$Props = MenubarPrimitive.Props;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<MenubarPrimitive.Root
+	class={cn(
+		"bg-background flex h-9 items-center space-x-1 rounded-md border p-1 shadow-sm",
+		className
+	)}
+>
+	<slot />
+</MenubarPrimitive.Root>
+
+```

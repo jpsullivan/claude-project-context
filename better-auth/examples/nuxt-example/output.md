@@ -1,0 +1,11004 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/README.md
+````
+# Nuxt Better Auth Example
+
+This is an example of how to use Better Auth with Nuxt.
+
+**Implements the following features:**
+Email & Password . Social Sign-in with Google 
+
+## How to run
+
+1. Clone the code sandbox (or the repo) and open it in your code editor
+2. Move .env.example to .env and provide necessary variables
+3. Run the following commands
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
+4. Open the browser and navigate to `http://localhost:3000`
+
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/app.vue
+```
+<script setup lang="ts">
+const router = useRouter();
+</script>
+
+<template>
+  <NuxtLoadingIndicator />
+  <NuxtPage />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components.json
+```json
+{
+	"$schema": "https://shadcn-vue.com/schema.json",
+	"style": "new-york",
+	"typescript": true,
+	"tsConfigPath": ".nuxt/tsconfig.json",
+	"tailwind": {
+		"config": "tailwind.config.js",
+		"css": "assets/css/tailwind.css",
+		"baseColor": "stone",
+		"cssVariables": true
+	},
+	"framework": "nuxt",
+	"aliases": {
+		"components": "@/components",
+		"utils": "@/lib/utils"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/nuxt.config.ts
+```typescript
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+	compatibilityDate: "2024-04-03",
+	devtools: { enabled: true },
+	modules: ["@nuxtjs/tailwindcss", "shadcn-nuxt"],
+	shadcn: {
+		/**
+		 * Prefix for all the imported component
+		 */
+		prefix: "",
+		/**
+		 * Directory that the component lives in.
+		 * @default "./components/ui"
+		 */
+		componentDir: "./components/ui",
+	},
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/package.json
+```json
+{
+  "name": "@examples/nuxt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "pnpx @better-auth/cli migrate && nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@radix-icons/vue": "^1.0.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "@unovis/ts": "1.4.3-beta.0",
+    "@unovis/vue": "1.4.3-beta.0",
+    "@vee-validate/zod": "^4.14.7",
+    "@vueuse/core": "^11.3.0",
+    "better-auth": "workspace:*",
+    "better-sqlite3": "^11.6.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "embla-carousel-vue": "^8.5.1",
+    "nuxt": "^3.14.1592",
+    "radix-vue": "^1.9.11",
+    "shadcn-nuxt": "^0.10.4",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
+    "v-calendar": "^3.1.2",
+    "vaul-vue": "^0.2.0",
+    "vee-validate": "^4.14.7",
+    "vue": "latest",
+    "vue-router": "latest",
+    "vue-sonner": "^1.3.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.12.2"
+  }
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/tailwind.config.js
+```javascript
+const animate = require("tailwindcss-animate");
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+	darkMode: ["class"],
+	safelist: ["dark"],
+	prefix: "",
+
+	theme: {
+		container: {
+			center: true,
+			padding: "2rem",
+			screens: {
+				"2xl": "1400px",
+			},
+		},
+		extend: {
+			colors: {
+				border: "hsl(var(--border))",
+				input: "hsl(var(--input))",
+				ring: "hsl(var(--ring))",
+				background: "hsl(var(--background))",
+				foreground: "hsl(var(--foreground))",
+				primary: {
+					DEFAULT: "hsl(var(--primary))",
+					foreground: "hsl(var(--primary-foreground))",
+				},
+				secondary: {
+					DEFAULT: "hsl(var(--secondary))",
+					foreground: "hsl(var(--secondary-foreground))",
+				},
+				destructive: {
+					DEFAULT: "hsl(var(--destructive))",
+					foreground: "hsl(var(--destructive-foreground))",
+				},
+				muted: {
+					DEFAULT: "hsl(var(--muted))",
+					foreground: "hsl(var(--muted-foreground))",
+				},
+				accent: {
+					DEFAULT: "hsl(var(--accent))",
+					foreground: "hsl(var(--accent-foreground))",
+				},
+				popover: {
+					DEFAULT: "hsl(var(--popover))",
+					foreground: "hsl(var(--popover-foreground))",
+				},
+				card: {
+					DEFAULT: "hsl(var(--card))",
+					foreground: "hsl(var(--card-foreground))",
+				},
+			},
+			borderRadius: {
+				xl: "calc(var(--radius) + 4px)",
+				lg: "var(--radius)",
+				md: "calc(var(--radius) - 2px)",
+				sm: "calc(var(--radius) - 4px)",
+			},
+			keyframes: {
+				"accordion-down": {
+					from: { height: 0 },
+					to: { height: "var(--radix-accordion-content-height)" },
+				},
+				"accordion-up": {
+					from: { height: "var(--radix-accordion-content-height)" },
+					to: { height: 0 },
+				},
+				"collapsible-down": {
+					from: { height: 0 },
+					to: { height: "var(--radix-collapsible-content-height)" },
+				},
+				"collapsible-up": {
+					from: { height: "var(--radix-collapsible-content-height)" },
+					to: { height: 0 },
+				},
+			},
+			animation: {
+				"accordion-down": "accordion-down 0.2s ease-out",
+				"accordion-up": "accordion-up 0.2s ease-out",
+				"collapsible-down": "collapsible-down 0.2s ease-in-out",
+				"collapsible-up": "collapsible-up 0.2s ease-in-out",
+			},
+		},
+	},
+	plugins: [animate],
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/tsconfig.json
+```json
+{
+	// https://nuxt.com/docs/guide/concepts/typescript
+	"extends": "./.nuxt/tsconfig.json"
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/middleware/auth.global.ts
+```typescript
+import { authClient } from "~/lib/auth-client";
+
+export default defineNuxtRouteMiddleware(async (to, from) => {
+	const { data: session } = await authClient.useSession(useFetch);
+	if (!session.value) {
+		if (to.path === "/dashboard") {
+			return navigateTo("/");
+		}
+	}
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/server/tsconfig.json
+```json
+{
+	"extends": "../.nuxt/tsconfig.server.json"
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/server/api/auth/[...all].ts
+```typescript
+import { auth } from "~/lib/auth";
+
+export default defineEventHandler((event) => {
+	return auth.handler(toWebRequest(event));
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tabs/Tabs.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { TabsRootEmits, TabsRootProps } from "radix-vue";
+
+const props = defineProps<TabsRootProps>();
+const emits = defineEmits<TabsRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <TabsRoot v-bind="forwarded">
+    <slot />
+  </TabsRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tabs/TabsContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TabsContentProps } from "radix-vue";
+
+const props = defineProps<
+	TabsContentProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <TabsContent
+    :class="cn('mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2', props.class)"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </TabsContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tabs/TabsList.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TabsListProps } from "radix-vue";
+
+const props = defineProps<
+	TabsListProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <TabsList
+    v-bind="delegatedProps"
+    :class="cn(
+      'inline-flex items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground',
+      props.class,
+    )"
+  >
+    <slot />
+  </TabsList>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tabs/TabsTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TabsTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	TabsTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <TabsTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow',
+      props.class,
+    )"
+  >
+    <span class="truncate">
+      <slot />
+    </span>
+  </TabsTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tabs/index.ts
+```typescript
+export { default as Tabs } from "./Tabs.vue";
+export { default as TabsTrigger } from "./TabsTrigger.vue";
+export { default as TabsList } from "./TabsList.vue";
+export { default as TabsContent } from "./TabsContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/Drawer.vue
+```
+<script lang="ts" setup>
+import type { DrawerRootEmits, DrawerRootProps } from "vaul-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = withDefaults(defineProps<DrawerRootProps>(), {
+	shouldScaleBackground: true,
+});
+
+const emits = defineEmits<DrawerRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DrawerRoot v-bind="forwarded">
+    <slot />
+  </DrawerRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerContent.vue
+```
+<script lang="ts" setup>
+import type { DialogContentEmits, DialogContentProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DrawerContent
+      v-bind="forwarded" :class="cn(
+        'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background',
+        props.class,
+      )"
+    >
+      <div class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <slot />
+    </DrawerContent>
+  </DrawerPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerDescription.vue
+```
+<script lang="ts" setup>
+import type { DrawerDescriptionProps } from "vaul-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DrawerDescriptionProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerDescription v-bind="delegatedProps" :class="cn('text-sm text-muted-foreground', props.class)">
+    <slot />
+  </DrawerDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerFooter.vue
+```
+<script lang="ts" setup>
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HtmlHTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('mt-auto flex flex-col gap-2 p-4', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerHeader.vue
+```
+<script lang="ts" setup>
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HtmlHTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('grid gap-1.5 p-4 text-center sm:text-left', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerOverlay.vue
+```
+<script lang="ts" setup>
+import type { DialogOverlayProps } from "radix-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DialogOverlayProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerOverlay v-bind="delegatedProps" :class="cn('fixed inset-0 z-50 bg-black/80', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerTitle.vue
+```
+<script lang="ts" setup>
+import type { DrawerTitleProps } from "vaul-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DrawerTitleProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerTitle v-bind="delegatedProps" :class="cn('text-lg font-semibold leading-none tracking-tight', props.class)">
+    <slot />
+  </DrawerTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/index.ts
+```typescript
+export { DrawerPortal, DrawerTrigger, DrawerClose } from "vaul-vue";
+export { default as Drawer } from "./Drawer.vue";
+export { default as DrawerOverlay } from "./DrawerOverlay.vue";
+export { default as DrawerContent } from "./DrawerContent.vue";
+export { default as DrawerHeader } from "./DrawerHeader.vue";
+export { default as DrawerFooter } from "./DrawerFooter.vue";
+export { default as DrawerTitle } from "./DrawerTitle.vue";
+export { default as DrawerDescription } from "./DrawerDescription.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/PaginationEllipsis.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PaginationEllipsisProps } from "radix-vue";
+
+const props = defineProps<
+	PaginationEllipsisProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <PaginationEllipsis v-bind="delegatedProps" :class="cn('w-9 h-9 flex items-center justify-center', props.class)">
+    <slot>
+      <DotsHorizontalIcon />
+    </slot>
+  </PaginationEllipsis>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/PaginationFirst.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PaginationFirstProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PaginationFirstProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		asChild: true,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <PaginationFirst v-bind="delegatedProps">
+    <Button :class="cn('w-9 h-9 p-0', props.class)" variant="outline">
+      <slot>
+        <DoubleArrowLeftIcon />
+      </slot>
+    </Button>
+  </PaginationFirst>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/PaginationLast.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PaginationLastProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PaginationLastProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		asChild: true,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <PaginationLast v-bind="delegatedProps">
+    <Button :class="cn('w-9 h-9 p-0', props.class)" variant="outline">
+      <slot>
+        <DoubleArrowRightIcon />
+      </slot>
+    </Button>
+  </PaginationLast>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/PaginationNext.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PaginationNextProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PaginationNextProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		asChild: true,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <PaginationNext v-bind="delegatedProps">
+    <Button :class="cn('w-9 h-9 p-0', props.class)" variant="outline">
+      <slot>
+        <ChevronRightIcon />
+      </slot>
+    </Button>
+  </PaginationNext>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/PaginationPrev.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PaginationPrevProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PaginationPrevProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		asChild: true,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <PaginationPrev v-bind="delegatedProps">
+    <Button :class="cn('w-9 h-9 p-0', props.class)" variant="outline">
+      <slot>
+        <ChevronLeftIcon />
+      </slot>
+    </Button>
+  </PaginationPrev>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pagination/index.ts
+```typescript
+export {
+	PaginationRoot as Pagination,
+	PaginationList,
+	PaginationListItem,
+} from "radix-vue";
+export { default as PaginationEllipsis } from "./PaginationEllipsis.vue";
+export { default as PaginationFirst } from "./PaginationFirst.vue";
+export { default as PaginationLast } from "./PaginationLast.vue";
+export { default as PaginationNext } from "./PaginationNext.vue";
+export { default as PaginationPrev } from "./PaginationPrev.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/FormControl.vue
+```
+<script lang="ts" setup>
+import { useFormField } from "./useFormField";
+
+const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
+</script>
+
+<template>
+  <Slot
+    :id="formItemId"
+    :aria-describedby="!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`"
+    :aria-invalid="!!error"
+  >
+    <slot />
+  </Slot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/FormDescription.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+import { useFormField } from "./useFormField";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+
+const { formDescriptionId } = useFormField();
+</script>
+
+<template>
+  <p
+    :id="formDescriptionId"
+    :class="cn('text-sm text-muted-foreground', props.class)"
+  >
+    <slot />
+  </p>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/FormItem.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, provide } from "vue";
+import { useId } from "radix-vue";
+import { FORM_ITEM_INJECTION_KEY } from "./injectionKeys";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+
+const id = useId();
+provide(FORM_ITEM_INJECTION_KEY, id);
+</script>
+
+<template>
+  <div :class="cn('space-y-2', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/FormLabel.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+import type { LabelProps } from "radix-vue";
+import { useFormField } from "./useFormField";
+
+const props = defineProps<LabelProps & { class?: HTMLAttributes["class"] }>();
+
+const { error, formItemId } = useFormField();
+</script>
+
+<template>
+  <Label
+    :class="cn(
+      error && 'text-destructive',
+      props.class,
+    )"
+    :for="formItemId"
+  >
+    <slot />
+  </Label>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/FormMessage.vue
+```
+<script lang="ts" setup>
+import { useFormField } from "./useFormField";
+
+const { name, formMessageId } = useFormField();
+</script>
+
+<template>
+  <ErrorMessage
+    :id="formMessageId"
+    as="p"
+    :name="toValue(name)"
+    class="text-[0.8rem] font-medium text-destructive"
+  />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/index.ts
+```typescript
+export {
+	Form,
+	Field as FormField,
+	FieldArray as FormFieldArray,
+} from "vee-validate";
+export { default as FormItem } from "./FormItem.vue";
+export { default as FormLabel } from "./FormLabel.vue";
+export { default as FormControl } from "./FormControl.vue";
+export { default as FormMessage } from "./FormMessage.vue";
+export { default as FormDescription } from "./FormDescription.vue";
+export { FORM_ITEM_INJECTION_KEY } from "./injectionKeys";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/injectionKeys.ts
+```typescript
+import type { InjectionKey } from "vue";
+
+export const FORM_ITEM_INJECTION_KEY = Symbol() as InjectionKey<string>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/form/useFormField.ts
+```typescript
+import {
+	FieldContextKey,
+	useFieldError,
+	useIsFieldDirty,
+	useIsFieldTouched,
+	useIsFieldValid,
+} from "vee-validate";
+import { inject } from "vue";
+import { FORM_ITEM_INJECTION_KEY } from "./injectionKeys";
+
+export function useFormField() {
+	const fieldContext = inject(FieldContextKey);
+	const fieldItemContext = inject(FORM_ITEM_INJECTION_KEY);
+
+	if (!fieldContext)
+		throw new Error("useFormField should be used within <FormField>");
+
+	const { name } = fieldContext;
+	const id = fieldItemContext;
+
+	const fieldState = {
+		valid: useIsFieldValid(name),
+		isDirty: useIsFieldDirty(name),
+		isTouched: useIsFieldTouched(name),
+		error: useFieldError(name),
+	};
+
+	return {
+		id,
+		name,
+		formItemId: `${id}-form-item`,
+		formDescriptionId: `${id}-form-item-description`,
+		formMessageId: `${id}-form-item-message`,
+		...fieldState,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tooltip/Tooltip.vue
+```
+<script setup lang="ts">
+import {
+	type TooltipRootEmits,
+	type TooltipRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<TooltipRootProps>();
+const emits = defineEmits<TooltipRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <TooltipRoot v-bind="forwarded">
+    <slot />
+  </TooltipRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tooltip/TooltipContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type TooltipContentEmits,
+	type TooltipContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = withDefaults(
+	defineProps<TooltipContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		sideOffset: 4,
+	},
+);
+
+const emits = defineEmits<TooltipContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <TooltipPortal>
+    <TooltipContent v-bind="{ ...forwarded, ...$attrs }" :class="cn('z-50 overflow-hidden rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', props.class)">
+      <slot />
+    </TooltipContent>
+  </TooltipPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tooltip/TooltipProvider.vue
+```
+<script setup lang="ts">
+import { type TooltipProviderProps } from "radix-vue";
+
+const props = defineProps<TooltipProviderProps>();
+</script>
+
+<template>
+  <TooltipProvider v-bind="props">
+    <slot />
+  </TooltipProvider>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tooltip/TooltipTrigger.vue
+```
+<script setup lang="ts">
+import { type TooltipTriggerProps } from "radix-vue";
+
+const props = defineProps<TooltipTriggerProps>();
+</script>
+
+<template>
+  <TooltipTrigger v-bind="props">
+    <slot />
+  </TooltipTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tooltip/index.ts
+```typescript
+export { default as Tooltip } from "./Tooltip.vue";
+export { default as TooltipContent } from "./TooltipContent.vue";
+export { default as TooltipTrigger } from "./TooltipTrigger.vue";
+export { default as TooltipProvider } from "./TooltipProvider.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-bar/BarChart.vue
+```
+<script setup lang="ts" generic="T extends Record<string, any>">
+import type { BulletLegendItemInterface } from "@unovis/ts";
+import { VisGroupedBar, VisStackedBar } from "@unovis/vue";
+import { GroupedBar, StackedBar } from "@unovis/ts";
+import { type Component, computed, ref } from "vue";
+import { useMounted } from "@vueuse/core";
+import type { BaseChartProps } from ".";
+import { defaultColors } from "@/components/ui/chart";
+
+const props = withDefaults(
+	defineProps<
+		BaseChartProps<T> & {
+			/**
+			 * Render custom tooltip component.
+			 */
+			customTooltip?: Component;
+			/**
+			 * Change the type of the chart
+			 * @default "grouped"
+			 */
+			type?: "stacked" | "grouped";
+			/**
+			 * Rounded bar corners
+			 * @default 0
+			 */
+			roundedCorners?: number;
+		}
+	>(),
+	{
+		type: "grouped",
+		margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+		filterOpacity: 0.2,
+		roundedCorners: 0,
+		showXAxis: true,
+		showYAxis: true,
+		showTooltip: true,
+		showLegend: true,
+		showGridLine: true,
+	},
+);
+const emits = defineEmits<{
+	legendItemClick: [d: BulletLegendItemInterface, i: number];
+}>();
+
+type KeyOfT = Extract<keyof T, string>;
+type Data = (typeof props.data)[number];
+
+const index = computed(() => props.index as KeyOfT);
+const colors = computed(() =>
+	props.colors?.length ? props.colors : defaultColors(props.categories.length),
+);
+const legendItems = ref<BulletLegendItemInterface[]>(
+	props.categories.map((category, i) => ({
+		name: category,
+		color: colors.value[i],
+		inactive: false,
+	})),
+);
+
+const isMounted = useMounted();
+
+function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
+	emits("legendItemClick", d, i);
+}
+
+const VisBarComponent = computed(() =>
+	props.type === "grouped" ? VisGroupedBar : VisStackedBar,
+);
+const selectorsBar = computed(() =>
+	props.type === "grouped"
+		? GroupedBar.selectors.bar
+		: StackedBar.selectors.bar,
+);
+</script>
+
+<template>
+  <div :class="cn('w-full h-[400px] flex flex-col items-end', $attrs.class ?? '')">
+    <ChartLegend v-if="showLegend" v-model:items="legendItems" @legend-item-click="handleLegendItemClick" />
+
+    <VisXYContainer
+      :data="data"
+      :style="{ height: isMounted ? '100%' : 'auto' }"
+      :margin="margin"
+    >
+      <ChartCrosshair v-if="showTooltip" :colors="colors" :items="legendItems" :custom-tooltip="customTooltip" :index="index" />
+
+      <VisBarComponent
+        :x="(d: Data, i: number) => i"
+        :y="categories.map(category => (d: Data) => d[category]) "
+        :color="colors"
+        :rounded-corners="roundedCorners"
+        :bar-padding="0.05"
+        :attributes="{
+          [selectorsBar]: {
+            opacity: (d: Data, i:number) => {
+              const pos = i % categories.length
+              return legendItems[pos]?.inactive ? filterOpacity : 1
+            },
+          },
+        }"
+      />
+
+      <VisAxis
+        v-if="showXAxis"
+        type="x"
+        :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
+        :grid-line="false"
+        :tick-line="false"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+      <VisAxis
+        v-if="showYAxis"
+        type="y"
+        :tick-line="false"
+        :tick-format="yFormatter"
+        :domain-line="false"
+        :grid-line="showGridLine"
+        :attributes="{
+          [Axis.selectors.grid]: {
+            class: 'text-muted',
+          },
+        }"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+
+      <slot />
+    </VisXYContainer>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-bar/index.ts
+```typescript
+export { default as BarChart } from "./BarChart.vue";
+
+import type { Spacing } from "@unovis/ts";
+
+type KeyOf<T extends Record<string, any>> = Extract<keyof T, string>;
+
+export interface BaseChartProps<T extends Record<string, any>> {
+	/**
+	 * The source data, in which each entry is a dictionary.
+	 */
+	data: T[];
+	/**
+	 * Select the categories from your data. Used to populate the legend and toolip.
+	 */
+	categories: KeyOf<T>[];
+	/**
+	 * Sets the key to map the data to the axis.
+	 */
+	index: KeyOf<T>;
+	/**
+	 * Change the default colors.
+	 */
+	colors?: string[];
+	/**
+	 * Margin of each the container
+	 */
+	margin?: Spacing;
+	/**
+	 * Change the opacity of the non-selected field
+	 * @default 0.2
+	 */
+	filterOpacity?: number;
+	/**
+	 * Function to format X label
+	 */
+	xFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Function to format Y label
+	 */
+	yFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Controls the visibility of the X axis.
+	 * @default true
+	 */
+	showXAxis?: boolean;
+	/**
+	 * Controls the visibility of the Y axis.
+	 * @default true
+	 */
+	showYAxis?: boolean;
+	/**
+	 * Controls the visibility of tooltip.
+	 * @default true
+	 */
+	showTooltip?: boolean;
+	/**
+	 * Controls the visibility of legend.
+	 * @default true
+	 */
+	showLegend?: boolean;
+	/**
+	 * Controls the visibility of gridline.
+	 * @default true
+	 */
+	showGridLine?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/Calendar.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type CalendarRootEmits,
+	type CalendarRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	CalendarRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<CalendarRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <CalendarRoot
+    v-slot="{ grid, weekDays }"
+    :class="cn('p-3', props.class)"
+    v-bind="forwarded"
+  >
+    <CalendarHeader>
+      <CalendarPrevButton />
+      <CalendarHeading />
+      <CalendarNextButton />
+    </CalendarHeader>
+
+    <div class="flex flex-col gap-y-4 mt-4 sm:flex-row sm:gap-x-4 sm:gap-y-0">
+      <CalendarGrid v-for="month in grid" :key="month.value.toString()">
+        <CalendarGridHead>
+          <CalendarGridRow>
+            <CalendarHeadCell
+              v-for="day in weekDays" :key="day"
+            >
+              {{ day }}
+            </CalendarHeadCell>
+          </CalendarGridRow>
+        </CalendarGridHead>
+        <CalendarGridBody>
+          <CalendarGridRow v-for="(weekDates, index) in month.rows" :key="`weekDate-${index}`" class="mt-2 w-full">
+            <CalendarCell
+              v-for="weekDate in weekDates"
+              :key="weekDate.toString()"
+              :date="weekDate"
+            >
+              <CalendarCellTrigger
+                :day="weekDate"
+                :month="month.value"
+              />
+            </CalendarCell>
+          </CalendarGridRow>
+        </CalendarGridBody>
+      </CalendarGrid>
+    </div>
+  </CalendarRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarCell.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarCell
+    :class="cn('relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([data-selected])]:rounded-md [&:has([data-selected])]:bg-accent [&:has([data-selected][data-outside-view])]:bg-accent/50', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarCell>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarCellTrigger.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarCellTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarCellTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarCellTrigger
+    :class="cn(
+      buttonVariants({ variant: 'ghost' }),
+      'h-8 w-8 p-0 font-normal',
+      '[&[data-today]:not([data-selected])]:bg-accent [&[data-today]:not([data-selected])]:text-accent-foreground',
+      // Selected
+      'data-[selected]:bg-primary data-[selected]:text-primary-foreground data-[selected]:opacity-100 data-[selected]:hover:bg-primary data-[selected]:hover:text-primary-foreground data-[selected]:focus:bg-primary data-[selected]:focus:text-primary-foreground',
+      // Disabled
+      'data-[disabled]:text-muted-foreground data-[disabled]:opacity-50',
+      // Unavailable
+      'data-[unavailable]:text-destructive-foreground data-[unavailable]:line-through',
+      // Outside months
+      'data-[outside-view]:text-muted-foreground data-[outside-view]:opacity-50 [&[data-outside-view][data-selected]]:bg-accent/50 [&[data-outside-view][data-selected]]:text-muted-foreground [&[data-outside-view][data-selected]]:opacity-30',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarCellTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGrid.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarGridProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarGrid
+    :class="cn('w-full border-collapse space-y-1', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </CalendarGrid>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridBody.vue
+```
+<script lang="ts" setup>
+import { type CalendarGridBodyProps } from "radix-vue";
+
+const props = defineProps<CalendarGridBodyProps>();
+</script>
+
+<template>
+  <CalendarGridBody v-bind="props">
+    <slot />
+  </CalendarGridBody>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridHead.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+import { type CalendarGridHeadProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridHeadProps & { class?: HTMLAttributes["class"] }
+>();
+</script>
+
+<template>
+  <CalendarGridHead v-bind="props">
+    <slot />
+  </CalendarGridHead>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarGridRow.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarGridRowProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarGridRowProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarGridRow :class="cn('flex', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarGridRow>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeadCell.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeadCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeadCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeadCell :class="cn('w-8 rounded-md text-[0.8rem] font-normal text-muted-foreground', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarHeadCell>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeader.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeaderProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeaderProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeader :class="cn('relative flex w-full items-center justify-between pt-1', props.class)" v-bind="forwardedProps">
+    <slot />
+  </CalendarHeader>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarHeading.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarHeadingProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarHeadingProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarHeading
+    v-slot="{ headingValue }"
+    :class="cn('text-sm font-medium', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot :heading-value>
+      {{ headingValue }}
+    </slot>
+  </CalendarHeading>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarNextButton.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarNextProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarNextProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarNext
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronRightIcon class="h-4 w-4" />
+    </slot>
+  </CalendarNext>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/CalendarPrevButton.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type CalendarPrevProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	CalendarPrevProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <CalendarPrev
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronLeftIcon class="h-4 w-4" />
+    </slot>
+  </CalendarPrev>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/calendar/index.ts
+```typescript
+export { default as Calendar } from "./Calendar.vue";
+export { default as CalendarCell } from "./CalendarCell.vue";
+export { default as CalendarCellTrigger } from "./CalendarCellTrigger.vue";
+export { default as CalendarGrid } from "./CalendarGrid.vue";
+export { default as CalendarGridBody } from "./CalendarGridBody.vue";
+export { default as CalendarGridHead } from "./CalendarGridHead.vue";
+export { default as CalendarGridRow } from "./CalendarGridRow.vue";
+export { default as CalendarHeadCell } from "./CalendarHeadCell.vue";
+export { default as CalendarHeader } from "./CalendarHeader.vue";
+export { default as CalendarHeading } from "./CalendarHeading.vue";
+export { default as CalendarNextButton } from "./CalendarNextButton.vue";
+export { default as CalendarPrevButton } from "./CalendarPrevButton.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/Card.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'rounded-xl border bg-card text-card-foreground shadow',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/CardContent.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('p-6 pt-0', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/CardDescription.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <p :class="cn('text-sm text-muted-foreground', props.class)">
+    <slot />
+  </p>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/CardFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('flex items-center p-6 pt-0', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/CardHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('flex flex-col gap-y-1.5 p-6', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/CardTitle.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <h3
+    :class="
+      cn('font-semibold leading-none tracking-tight', props.class)
+    "
+  >
+    <slot />
+  </h3>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/card/index.ts
+```typescript
+export { default as Card } from "./Card.vue";
+export { default as CardHeader } from "./CardHeader.vue";
+export { default as CardTitle } from "./CardTitle.vue";
+export { default as CardDescription } from "./CardDescription.vue";
+export { default as CardContent } from "./CardContent.vue";
+export { default as CardFooter } from "./CardFooter.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenu.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type NavigationMenuRootEmits,
+	type NavigationMenuRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<NavigationMenuRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <NavigationMenuRoot
+    v-bind="forwarded"
+    :class="cn('relative z-10 flex max-w-max flex-1 items-center justify-center', props.class)"
+  >
+    <slot />
+    <NavigationMenuViewport />
+  </NavigationMenuRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type NavigationMenuContentEmits,
+	type NavigationMenuContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuContentProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<NavigationMenuContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <NavigationMenuContent
+    v-bind="forwarded"
+    :class="cn(
+      'left-0 top-0 w-full data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 md:absolute md:w-auto',
+      props.class,
+    )"
+  >
+    <slot />
+  </NavigationMenuContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuIndicator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type NavigationMenuIndicatorProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuIndicatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <NavigationMenuIndicator
+    v-bind="forwardedProps"
+    :class="cn('top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in', props.class)"
+  >
+    <div class="relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md" />
+  </NavigationMenuIndicator>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuItem.vue
+```
+<script setup lang="ts">
+import { type NavigationMenuItemProps } from "radix-vue";
+
+const props = defineProps<NavigationMenuItemProps>();
+</script>
+
+<template>
+  <NavigationMenuItem v-bind="props">
+    <slot />
+  </NavigationMenuItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuLink.vue
+```
+<script setup lang="ts">
+import {
+	type NavigationMenuLinkEmits,
+	type NavigationMenuLinkProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<NavigationMenuLinkProps>();
+const emits = defineEmits<NavigationMenuLinkEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <NavigationMenuLink v-bind="forwarded">
+    <slot />
+  </NavigationMenuLink>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuList.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type NavigationMenuListProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuListProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <NavigationMenuList
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'group flex flex-1 list-none items-center justify-center gap-x-1',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </NavigationMenuList>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type NavigationMenuTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <NavigationMenuTrigger
+    v-bind="forwardedProps"
+    :class="cn(navigationMenuTriggerStyle(), 'group', props.class)"
+  >
+    <slot />
+    <ChevronDownIcon
+      class="relative top-px ml-1 h-3 w-3 transition duration-300 group-data-[state=open]:rotate-180"
+      aria-hidden="true"
+    />
+  </NavigationMenuTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/NavigationMenuViewport.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type NavigationMenuViewportProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	NavigationMenuViewportProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <div class="absolute left-0 top-full flex justify-center">
+    <NavigationMenuViewport
+      v-bind="forwardedProps"
+      :class="
+        cn(
+          'origin-top-center relative mt-1.5 h-[--radix-navigation-menu-viewport-height] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 md:w-[--radix-navigation-menu-viewport-width]',
+          props.class,
+        )
+      "
+    />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/navigation-menu/index.ts
+```typescript
+import { cva } from "class-variance-authority";
+
+export { default as NavigationMenu } from "./NavigationMenu.vue";
+export { default as NavigationMenuList } from "./NavigationMenuList.vue";
+export { default as NavigationMenuItem } from "./NavigationMenuItem.vue";
+export { default as NavigationMenuTrigger } from "./NavigationMenuTrigger.vue";
+export { default as NavigationMenuContent } from "./NavigationMenuContent.vue";
+export { default as NavigationMenuLink } from "./NavigationMenuLink.vue";
+
+export const navigationMenuTriggerStyle = cva(
+	"group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50",
+);
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoForm.vue
+```
+<script setup lang="ts" generic="T extends ZodObjectOrWrapped">
+import { computed, toRefs } from "vue";
+import type { ZodAny, z } from "zod";
+import { toTypedSchema } from "@vee-validate/zod";
+import type { FormContext, GenericObject } from "vee-validate";
+import {
+	getBaseSchema,
+	getBaseType,
+	getDefaultValueInZodStack,
+	getObjectFormSchema,
+} from "./utils";
+import type { Config, ConfigItem, Dependency, Shape } from "./interface";
+import { provideDependencies } from "./dependencies";
+import { Form } from "@/components/ui/form";
+
+const props = defineProps<{
+	schema: T;
+	form?: FormContext<GenericObject>;
+	fieldConfig?: Config<z.infer<T>>;
+	dependencies?: Dependency<z.infer<T>>[];
+}>();
+
+const emits = defineEmits<{
+	submit: [event: z.infer<T>];
+}>();
+
+const { dependencies } = toRefs(props);
+provideDependencies(dependencies);
+
+const shapes = computed(() => {
+	// @ts-expect-error ignore {} not assignable to object
+	const val: { [key in keyof T]: Shape } = {};
+	const baseSchema = getObjectFormSchema(props.schema);
+	const shape = baseSchema.shape;
+	Object.keys(shape).forEach((name) => {
+		const item = shape[name] as ZodAny;
+		const baseItem = getBaseSchema(item) as ZodAny;
+		let options =
+			baseItem && "values" in baseItem._def
+				? (baseItem._def.values as string[])
+				: undefined;
+		if (!Array.isArray(options) && typeof options === "object")
+			options = Object.values(options);
+
+		val[name as keyof T] = {
+			type: getBaseType(item),
+			default: getDefaultValueInZodStack(item),
+			options,
+			required: !["ZodOptional", "ZodNullable"].includes(item._def.typeName),
+			schema: baseItem,
+		};
+	});
+	return val;
+});
+
+const fields = computed(() => {
+	// @ts-expect-error ignore {} not assignable to object
+	const val: {
+		[key in keyof z.infer<T>]: {
+			shape: Shape;
+			fieldName: string;
+			config: ConfigItem;
+		};
+	} = {};
+	for (const key in shapes.value) {
+		const shape = shapes.value[key];
+		val[key as keyof z.infer<T>] = {
+			shape,
+			config: props.fieldConfig?.[key] as ConfigItem,
+			fieldName: key,
+		};
+	}
+	return val;
+});
+
+const formComponent = computed(() => (props.form ? "form" : Form));
+const formComponentProps = computed(() => {
+	if (props.form) {
+		return {
+			onSubmit: props.form.handleSubmit((val) => emits("submit", val)),
+		};
+	} else {
+		const formSchema = toTypedSchema(props.schema);
+		return {
+			keepValues: true,
+			validationSchema: formSchema,
+			onSubmit: (val: GenericObject) => emits("submit", val),
+		};
+	}
+});
+</script>
+
+<template>
+  <component
+    :is="formComponent"
+    v-bind="formComponentProps"
+  >
+    <slot name="customAutoForm" :fields="fields">
+      <template v-for="(shape, key) of shapes" :key="key">
+        <slot
+          :shape="shape"
+          :name="key.toString() as keyof z.infer<T>"
+          :field-name="key.toString()"
+          :config="fieldConfig?.[key as keyof typeof fieldConfig] as ConfigItem"
+        >
+          <AutoFormField
+            :config="fieldConfig?.[key as keyof typeof fieldConfig] as ConfigItem"
+            :field-name="key.toString()"
+            :shape="shape"
+          />
+        </slot>
+      </template>
+    </slot>
+
+    <slot :shapes="shapes" />
+  </component>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormField.vue
+```
+<script setup lang="ts" generic="U extends ZodAny">
+import { computed } from "vue";
+import type { Config, ConfigItem, Shape } from "./interface";
+import useDependencies from "./dependencies";
+
+const props = defineProps<{
+	fieldName: string;
+	shape: Shape;
+	config?: ConfigItem | Config<U>;
+}>();
+
+function isValidConfig(config: any): config is ConfigItem {
+	return !!config?.component;
+}
+
+const delegatedProps = computed(() => {
+	if (["ZodObject", "ZodArray"].includes(props.shape?.type))
+		return { schema: props.shape?.schema };
+	return undefined;
+});
+
+const { isDisabled, isHidden, isRequired, overrideOptions } = useDependencies(
+	props.fieldName,
+);
+</script>
+
+<template>
+  <component
+    :is="isValidConfig(config)
+      ? typeof config.component === 'string'
+        ? INPUT_COMPONENTS[config.component!]
+        : config.component
+      : INPUT_COMPONENTS[DEFAULT_ZOD_HANDLERS[shape.type]] "
+    v-if="!isHidden"
+    :field-name="fieldName"
+    :label="shape.schema?.description"
+    :required="isRequired || shape.required"
+    :options="overrideOptions || shape.options"
+    :disabled="isDisabled"
+    :config="config"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </component>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldArray.vue
+```
+<script setup lang="ts" generic="T extends z.ZodAny">
+import * as z from "zod";
+import { computed, provide } from "vue";
+import { FieldContextKey, useField } from "vee-validate";
+import type { Config } from "./interface";
+import { getBaseType } from "./utils";
+
+const props = defineProps<{
+	fieldName: string;
+	required?: boolean;
+	config?: Config<T>;
+	schema?: z.ZodArray<T>;
+	disabled?: boolean;
+}>();
+
+function isZodArray(
+	item: z.ZodArray<any> | z.ZodDefault<any>,
+): item is z.ZodArray<any> {
+	return item instanceof z.ZodArray;
+}
+
+function isZodDefault(
+	item: z.ZodArray<any> | z.ZodDefault<any>,
+): item is z.ZodDefault<any> {
+	return item instanceof z.ZodDefault;
+}
+
+const itemShape = computed(() => {
+	if (!props.schema) return;
+
+	const schema: z.ZodAny = isZodArray(props.schema)
+		? props.schema._def.type
+		: isZodDefault(props.schema)
+			? // @ts-expect-error missing schema
+				props.schema._def.innerType._def.type
+			: null;
+
+	return {
+		type: getBaseType(schema),
+		schema,
+	};
+});
+
+const fieldContext = useField(props.fieldName);
+// @ts-expect-error ignore missing `id`
+provide(FieldContextKey, fieldContext);
+</script>
+
+<template>
+  <FieldArray v-slot="{ fields, remove, push }" as="section" :name="fieldName">
+    <slot v-bind="props">
+      <Accordion type="multiple" class="w-full" collapsible :disabled="disabled" as-child>
+        <FormItem>
+          <AccordionItem :value="fieldName" class="border-none">
+            <AccordionTrigger>
+              <AutoFormLabel class="text-base" :required="required">
+                {{ schema?.description || beautifyObjectName(fieldName) }}
+              </AutoFormLabel>
+            </AccordionTrigger>
+
+            <AccordionContent>
+              <template v-for="(field, index) of fields" :key="field.key">
+                <div class="mb-4 p-1">
+                  <AutoFormField
+                    :field-name="`${fieldName}[${index}]`"
+                    :label="fieldName"
+                    :shape="itemShape!"
+                    :config="config as ConfigItem"
+                  />
+
+                  <div class="!my-4 flex justify-end">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
+                      @click="remove(index)"
+                    >
+                      <TrashIcon :size="16" />
+                    </Button>
+                  </div>
+                  <Separator v-if="!field.isLast" />
+                </div>
+              </template>
+
+              <Button
+                type="button"
+                variant="secondary"
+                class="mt-4 flex items-center"
+                @click="push(null)"
+              >
+                <PlusIcon class="mr-2" :size="16" />
+                Add
+              </Button>
+            </AccordionContent>
+
+            <FormMessage />
+          </AccordionItem>
+        </FormItem>
+      </Accordion>
+    </slot>
+  </FieldArray>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldBoolean.vue
+```
+<script setup lang="ts">
+import { computed } from "vue";
+import type { FieldProps } from "./interface";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const props = defineProps<FieldProps>();
+
+const booleanComponent = computed(() =>
+	props.config?.component === "switch" ? Switch : Checkbox,
+);
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem>
+      <div class="space-y-0 mb-3 flex items-center gap-3">
+        <FormControl>
+          <slot v-bind="slotProps">
+            <component
+              :is="booleanComponent"
+              v-bind="{ ...slotProps.componentField }"
+              :disabled="disabled"
+              :checked="slotProps.componentField.modelValue"
+              @update:checked="slotProps.componentField['onUpdate:modelValue']"
+            />
+          </slot>
+        </FormControl>
+        <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+          {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+        </AutoFormLabel>
+      </div>
+
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldDate.vue
+```
+<script setup lang="ts">
+import { DateFormatter } from "@internationalized/date";
+import type { FieldProps } from "./interface";
+
+defineProps<FieldProps>();
+
+const df = new DateFormatter("en-US", {
+	dateStyle: "long",
+});
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem>
+      <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+        {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+      </AutoFormLabel>
+      <FormControl>
+        <slot v-bind="slotProps">
+          <div>
+            <Popover>
+              <PopoverTrigger as-child :disabled="disabled">
+                <Button
+                  variant="outline"
+                  :class="cn(
+                    'w-full justify-start text-left font-normal',
+                    !slotProps.componentField.modelValue && 'text-muted-foreground',
+                  )"
+                >
+                  <CalendarIcon class="mr-2 h-4 w-4" />
+                  {{ slotProps.componentField.modelValue ? df.format(slotProps.componentField.modelValue.toDate(getLocalTimeZone())) : "Pick a date" }}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent class="w-auto p-0">
+                <Calendar initial-focus v-bind="slotProps.componentField" />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </slot>
+      </FormControl>
+
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldEnum.vue
+```
+<script setup lang="ts">
+import type { FieldProps } from "./interface";
+
+defineProps<
+	FieldProps & {
+		options?: string[];
+	}
+>();
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem>
+      <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+        {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+      </AutoFormLabel>
+      <FormControl>
+        <slot v-bind="slotProps">
+          <RadioGroup v-if="config?.component === 'radio'" :disabled="disabled" :orientation="'vertical'" v-bind="{ ...slotProps.componentField }">
+            <div v-for="(option, index) in options" :key="option" class="mb-2 flex items-center gap-3 space-y-0">
+              <RadioGroupItem :id="`${option}-${index}`" :value="option" />
+              <Label :for="`${option}-${index}`">{{ beautifyObjectName(option) }}</Label>
+            </div>
+          </RadioGroup>
+
+          <Select v-else :disabled="disabled" v-bind="{ ...slotProps.componentField }">
+            <SelectTrigger class="w-full">
+              <SelectValue :placeholder="config?.inputProps?.placeholder" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem v-for="option in options" :key="option" :value="option">
+                {{ beautifyObjectName(option) }}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </slot>
+      </FormControl>
+
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldFile.vue
+```
+<script setup lang="ts">
+import { ref } from "vue";
+import type { FieldProps } from "./interface";
+
+defineProps<FieldProps>();
+
+const inputFile = ref<File>();
+async function parseFileAsString(file: File | undefined): Promise<string> {
+	return new Promise((resolve, reject) => {
+		if (file) {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				resolve(reader.result as string);
+			};
+			reader.onerror = (err) => {
+				reject(err);
+			};
+			reader.readAsDataURL(file);
+		}
+	});
+}
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem v-bind="$attrs">
+      <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+        {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+      </AutoFormLabel>
+      <FormControl>
+        <slot v-bind="slotProps">
+          <Input
+            v-if="!inputFile"
+            type="file"
+            v-bind="{ ...config?.inputProps }"
+            :disabled="disabled"
+            @change="async (ev: InputEvent) => {
+              const file = (ev.target as HTMLInputElement).files?.[0]
+              inputFile = file
+              const parsed = await parseFileAsString(file)
+              slotProps.componentField.onInput(parsed)
+            }"
+          />
+          <div v-else class="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent pl-3 pr-1 py-1 text-sm shadow-sm transition-colors">
+            <p>{{ inputFile?.name }}</p>
+            <Button
+              :size="'icon'"
+              :variant="'ghost'"
+              class="h-[26px] w-[26px]"
+              aria-label="Remove file"
+              type="button"
+              @click="() => {
+                inputFile = undefined
+                slotProps.componentField.onInput(undefined)
+              }"
+            >
+              <TrashIcon />
+            </Button>
+          </div>
+        </slot>
+      </FormControl>
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldInput.vue
+```
+<script setup lang="ts">
+import { computed } from "vue";
+import type { FieldProps } from "./interface";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+const props = defineProps<FieldProps>();
+const inputComponent = computed(() =>
+	props.config?.component === "textarea" ? Textarea : Input,
+);
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem v-bind="$attrs">
+      <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+        {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+      </AutoFormLabel>
+      <FormControl>
+        <slot v-bind="slotProps">
+          <component
+            :is="inputComponent"
+            type="text"
+            v-bind="{ ...slotProps.componentField, ...config?.inputProps }"
+            :disabled="disabled"
+          />
+        </slot>
+      </FormControl>
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldNumber.vue
+```
+<script setup lang="ts">
+import type { FieldProps } from "./interface";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+defineProps<FieldProps>();
+</script>
+
+<template>
+  <FormField v-slot="slotProps" :name="fieldName">
+    <FormItem>
+      <AutoFormLabel v-if="!config?.hideLabel" :required="required">
+        {{ config?.label || beautifyObjectName(label ?? fieldName) }}
+      </AutoFormLabel>
+      <FormControl>
+        <slot v-bind="slotProps">
+          <Input type="number" v-bind="{ ...slotProps.componentField, ...config?.inputProps }" :disabled="disabled" />
+        </slot>
+      </FormControl>
+      <FormDescription v-if="config?.description">
+        {{ config.description }}
+      </FormDescription>
+      <FormMessage />
+    </FormItem>
+  </FormField>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormFieldObject.vue
+```
+<script setup lang="ts" generic="T extends ZodRawShape">
+import type { ZodAny, ZodObject } from "zod";
+import { computed, provide } from "vue";
+import { FieldContextKey, useField } from "vee-validate";
+import type { Config, Shape } from "./interface";
+import { getBaseSchema, getBaseType, getDefaultValueInZodStack } from "./utils";
+
+const props = defineProps<{
+	fieldName: string;
+	required?: boolean;
+	config?: Config<T>;
+	schema?: ZodObject<T>;
+	disabled?: boolean;
+}>();
+
+const shapes = computed(() => {
+	// @ts-expect-error ignore {} not assignable to object
+	const val: { [key in keyof T]: Shape } = {};
+
+	if (!props.schema) return;
+	const shape = getBaseSchema(props.schema)?.shape;
+	if (!shape) return;
+	Object.keys(shape).forEach((name) => {
+		const item = shape[name] as ZodAny;
+		const baseItem = getBaseSchema(item) as ZodAny;
+		let options =
+			baseItem && "values" in baseItem._def
+				? (baseItem._def.values as string[])
+				: undefined;
+		if (!Array.isArray(options) && typeof options === "object")
+			options = Object.values(options);
+
+		val[name as keyof T] = {
+			type: getBaseType(item),
+			default: getDefaultValueInZodStack(item),
+			options,
+			required: !["ZodOptional", "ZodNullable"].includes(item._def.typeName),
+			schema: item,
+		};
+	});
+	return val;
+});
+
+const fieldContext = useField(props.fieldName);
+// @ts-expect-error ignore missing `id`
+provide(FieldContextKey, fieldContext);
+</script>
+
+<template>
+  <section>
+    <slot v-bind="props">
+      <Accordion type="single" as-child class="w-full" collapsible :disabled="disabled">
+        <FormItem>
+          <AccordionItem :value="fieldName" class="border-none">
+            <AccordionTrigger>
+              <AutoFormLabel class="text-base" :required="required">
+                {{ schema?.description || beautifyObjectName(fieldName) }}
+              </AutoFormLabel>
+            </AccordionTrigger>
+            <AccordionContent class="p-1 space-y-5">
+              <template v-for="(shape, key) in shapes" :key="key">
+                <AutoFormField
+                  :config="config?.[key as keyof typeof config] as ConfigItem"
+                  :field-name="`${fieldName}.${key.toString()}`"
+                  :label="key.toString()"
+                  :shape="shape"
+                />
+              </template>
+            </AccordionContent>
+          </AccordionItem>
+        </FormItem>
+      </Accordion>
+    </slot>
+  </section>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/AutoFormLabel.vue
+```
+<script setup lang="ts">
+defineProps<{
+	required?: boolean;
+}>();
+</script>
+
+<template>
+  <FormLabel>
+    <slot />
+    <span v-if="required" class="text-destructive"> *</span>
+  </FormLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/constant.ts
+```typescript
+import AutoFormFieldArray from "./AutoFormFieldArray.vue";
+import AutoFormFieldBoolean from "./AutoFormFieldBoolean.vue";
+import AutoFormFieldDate from "./AutoFormFieldDate.vue";
+import AutoFormFieldEnum from "./AutoFormFieldEnum.vue";
+import AutoFormFieldFile from "./AutoFormFieldFile.vue";
+import AutoFormFieldInput from "./AutoFormFieldInput.vue";
+import AutoFormFieldNumber from "./AutoFormFieldNumber.vue";
+import AutoFormFieldObject from "./AutoFormFieldObject.vue";
+
+export const INPUT_COMPONENTS = {
+	date: AutoFormFieldDate,
+	select: AutoFormFieldEnum,
+	radio: AutoFormFieldEnum,
+	checkbox: AutoFormFieldBoolean,
+	switch: AutoFormFieldBoolean,
+	textarea: AutoFormFieldInput,
+	number: AutoFormFieldNumber,
+	string: AutoFormFieldInput,
+	file: AutoFormFieldFile,
+	array: AutoFormFieldArray,
+	object: AutoFormFieldObject,
+};
+
+/**
+ * Define handlers for specific Zod types.
+ * You can expand this object to support more types.
+ */
+export const DEFAULT_ZOD_HANDLERS: {
+	[key: string]: keyof typeof INPUT_COMPONENTS;
+} = {
+	ZodString: "string",
+	ZodBoolean: "checkbox",
+	ZodDate: "date",
+	ZodEnum: "select",
+	ZodNativeEnum: "select",
+	ZodNumber: "number",
+	ZodArray: "array",
+	ZodObject: "object",
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/dependencies.ts
+```typescript
+import type * as z from "zod";
+import type { Ref } from "vue";
+import { computed, ref, watch } from "vue";
+import { useFieldValue, useFormValues } from "vee-validate";
+import { createContext } from "radix-vue";
+import { type Dependency, DependencyType, type EnumValues } from "./interface";
+import { getFromPath, getIndexIfArray } from "./utils";
+
+export const [injectDependencies, provideDependencies] = createContext<
+	Ref<Dependency<z.infer<z.ZodObject<any>>>[] | undefined>
+>("AutoFormDependencies");
+
+export default function useDependencies(fieldName: string) {
+	const form = useFormValues();
+	// parsed test[0].age => test.age
+	const currentFieldName = fieldName.replace(/\[\d+\]/g, "");
+	const currentFieldValue = useFieldValue<any>(fieldName);
+
+	if (!form)
+		throw new Error("useDependencies should be used within <AutoForm>");
+
+	const dependencies = injectDependencies();
+	const isDisabled = ref(false);
+	const isHidden = ref(false);
+	const isRequired = ref(false);
+	const overrideOptions = ref<EnumValues | undefined>();
+
+	const currentFieldDependencies = computed(() =>
+		dependencies.value?.filter(
+			(dependency) => dependency.targetField === currentFieldName,
+		),
+	);
+
+	function getSourceValue(dep: Dependency<any>) {
+		const source = dep.sourceField as string;
+		const index = getIndexIfArray(fieldName) ?? -1;
+		const [sourceLast, ...sourceInitial] = source.split(".").toReversed();
+		const [_targetLast, ...targetInitial] = (dep.targetField as string)
+			.split(".")
+			.toReversed();
+
+		if (index >= 0 && sourceInitial.join(",") === targetInitial.join(",")) {
+			const [_currentLast, ...currentInitial] = fieldName
+				.split(".")
+				.toReversed();
+			return getFromPath(form.value, currentInitial.join(".") + sourceLast);
+		}
+
+		return getFromPath(form.value, source);
+	}
+
+	const sourceFieldValues = computed(() =>
+		currentFieldDependencies.value?.map((dep) => getSourceValue(dep)),
+	);
+
+	const resetConditionState = () => {
+		isDisabled.value = false;
+		isHidden.value = false;
+		isRequired.value = false;
+		overrideOptions.value = undefined;
+	};
+
+	watch(
+		[sourceFieldValues, dependencies],
+		() => {
+			resetConditionState();
+			currentFieldDependencies.value?.forEach((dep) => {
+				const sourceValue = getSourceValue(dep);
+				const conditionMet = dep.when(sourceValue, currentFieldValue.value);
+
+				switch (dep.type) {
+					case DependencyType.DISABLES:
+						if (conditionMet) isDisabled.value = true;
+
+						break;
+					case DependencyType.REQUIRES:
+						if (conditionMet) isRequired.value = true;
+
+						break;
+					case DependencyType.HIDES:
+						if (conditionMet) isHidden.value = true;
+
+						break;
+					case DependencyType.SETS_OPTIONS:
+						if (conditionMet) overrideOptions.value = dep.options;
+
+						break;
+				}
+			});
+		},
+		{ immediate: true, deep: true },
+	);
+
+	return {
+		isDisabled,
+		isHidden,
+		isRequired,
+		overrideOptions,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/index.ts
+```typescript
+export { getObjectFormSchema, getBaseSchema, getBaseType } from "./utils";
+export type { Config, ConfigItem, FieldProps } from "./interface";
+
+export { default as AutoForm } from "./AutoForm.vue";
+export { default as AutoFormField } from "./AutoFormField.vue";
+export { default as AutoFormLabel } from "./AutoFormLabel.vue";
+
+export { default as AutoFormFieldArray } from "./AutoFormFieldArray.vue";
+export { default as AutoFormFieldBoolean } from "./AutoFormFieldBoolean.vue";
+export { default as AutoFormFieldDate } from "./AutoFormFieldDate.vue";
+export { default as AutoFormFieldEnum } from "./AutoFormFieldEnum.vue";
+export { default as AutoFormFieldFile } from "./AutoFormFieldFile.vue";
+export { default as AutoFormFieldInput } from "./AutoFormFieldInput.vue";
+export { default as AutoFormFieldNumber } from "./AutoFormFieldNumber.vue";
+export { default as AutoFormFieldObject } from "./AutoFormFieldObject.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/interface.ts
+```typescript
+import type { Component, InputHTMLAttributes } from "vue";
+import type { ZodAny, z } from "zod";
+import type { INPUT_COMPONENTS } from "./constant";
+
+export interface FieldProps {
+	fieldName: string;
+	label?: string;
+	required?: boolean;
+	config?: ConfigItem;
+	disabled?: boolean;
+}
+
+export interface Shape {
+	type: string;
+	default?: any;
+	required?: boolean;
+	options?: string[];
+	schema?: ZodAny;
+}
+
+export interface ConfigItem {
+	/** Value for the `FormLabel` */
+	label?: string;
+	/** Value for the `FormDescription` */
+	description?: string;
+	/** Pick which component to be rendered. */
+	component?: keyof typeof INPUT_COMPONENTS | Component;
+	/** Hide `FormLabel`. */
+	hideLabel?: boolean;
+	inputProps?: InputHTMLAttributes;
+}
+
+// Define a type to unwrap an array
+type UnwrapArray<T> = T extends (infer U)[] ? U : never;
+
+export type Config<SchemaType extends object> = {
+	// If SchemaType.key is an object, create a nested Config, otherwise ConfigItem
+	[Key in keyof SchemaType]?: SchemaType[Key] extends any[]
+		? UnwrapArray<Config<SchemaType[Key]>>
+		: SchemaType[Key] extends object
+			? Config<SchemaType[Key]>
+			: ConfigItem;
+};
+
+export enum DependencyType {
+	DISABLES,
+	REQUIRES,
+	HIDES,
+	SETS_OPTIONS,
+}
+
+interface BaseDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> {
+	sourceField: keyof SchemaType;
+	type: DependencyType;
+	targetField: keyof SchemaType;
+	when: (sourceFieldValue: any, targetFieldValue: any) => boolean;
+}
+
+export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
+	BaseDependency<SchemaType> & {
+		type:
+			| DependencyType.DISABLES
+			| DependencyType.REQUIRES
+			| DependencyType.HIDES;
+	};
+
+export type EnumValues = readonly [string, ...string[]];
+
+export type OptionsDependency<
+	SchemaType extends z.infer<z.ZodObject<any, any>>,
+> = BaseDependency<SchemaType> & {
+	type: DependencyType.SETS_OPTIONS;
+
+	// Partial array of values from sourceField that will trigger the dependency
+	options: EnumValues;
+};
+
+export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
+	| ValueDependency<SchemaType>
+	| OptionsDependency<SchemaType>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/auto-form/utils.ts
+```typescript
+import type { z } from "zod";
+
+// TODO: This should support recursive ZodEffects but TypeScript doesn't allow circular type definitions.
+export type ZodObjectOrWrapped =
+	| z.ZodObject<any, any>
+	| z.ZodEffects<z.ZodObject<any, any>>;
+
+/**
+ * Beautify a camelCase string.
+ * e.g. "myString" -> "My String"
+ */
+export function beautifyObjectName(string: string) {
+	// Remove bracketed indices
+	// if numbers only return the string
+	let output = string.replace(/\[\d+\]/g, "").replace(/([A-Z])/g, " $1");
+	output = output.charAt(0).toUpperCase() + output.slice(1);
+	return output;
+}
+
+/**
+ * Parse string and extract the index
+ * @param string
+ * @returns index or undefined
+ */
+export function getIndexIfArray(string: string) {
+	const indexRegex = /\[(\d+)\]/;
+	// Match the index
+	const match = string.match(indexRegex);
+	// Extract the index (number)
+	const index = match ? Number.parseInt(match[1]) : undefined;
+	return index;
+}
+
+/**
+ * Get the lowest level Zod type.
+ * This will unpack optionals, refinements, etc.
+ */
+export function getBaseSchema<
+	ChildType extends z.ZodAny | z.AnyZodObject = z.ZodAny,
+>(schema: ChildType | z.ZodEffects<ChildType>): ChildType | null {
+	if (!schema) return null;
+	if ("innerType" in schema._def)
+		return getBaseSchema(schema._def.innerType as ChildType);
+
+	if ("schema" in schema._def)
+		return getBaseSchema(schema._def.schema as ChildType);
+
+	return schema as ChildType;
+}
+
+/**
+ * Get the type name of the lowest level Zod type.
+ * This will unpack optionals, refinements, etc.
+ */
+export function getBaseType(schema: z.ZodAny) {
+	const baseSchema = getBaseSchema(schema);
+	return baseSchema ? baseSchema._def.typeName : "";
+}
+
+/**
+ * Search for a "ZodDefault" in the Zod stack and return its value.
+ */
+export function getDefaultValueInZodStack(schema: z.ZodAny): any {
+	const typedSchema = schema as unknown as z.ZodDefault<
+		z.ZodNumber | z.ZodString
+	>;
+
+	if (typedSchema._def.typeName === "ZodDefault")
+		return typedSchema._def.defaultValue();
+
+	if ("innerType" in typedSchema._def) {
+		return getDefaultValueInZodStack(
+			typedSchema._def.innerType as unknown as z.ZodAny,
+		);
+	}
+	if ("schema" in typedSchema._def) {
+		return getDefaultValueInZodStack(
+			(typedSchema._def as any).schema as z.ZodAny,
+		);
+	}
+
+	return undefined;
+}
+
+export function getObjectFormSchema(
+	schema: ZodObjectOrWrapped,
+): z.ZodObject<any, any> {
+	if (schema?._def.typeName === "ZodEffects") {
+		const typedSchema = schema as z.ZodEffects<z.ZodObject<any, any>>;
+		return getObjectFormSchema(typedSchema._def.schema);
+	}
+	return schema as z.ZodObject<any, any>;
+}
+
+function isIndex(value: unknown): value is number {
+	return Number(value) >= 0;
+}
+/**
+ * Constructs a path with dot paths for arrays to use brackets to be compatible with vee-validate path syntax
+ */
+export function normalizeFormPath(path: string): string {
+	const pathArr = path.split(".");
+	if (!pathArr.length) return "";
+
+	let fullPath = String(pathArr[0]);
+	for (let i = 1; i < pathArr.length; i++) {
+		if (isIndex(pathArr[i])) {
+			fullPath += `[${pathArr[i]}]`;
+			continue;
+		}
+
+		fullPath += `.${pathArr[i]}`;
+	}
+
+	return fullPath;
+}
+
+type NestedRecord = Record<string, unknown> | { [k: string]: NestedRecord };
+/**
+ * Checks if the path opted out of nested fields using `[fieldName]` syntax
+ */
+export function isNotNestedPath(path: string) {
+	return /^\[.+\]$/.test(path);
+}
+function isObject(obj: unknown): obj is Record<string, unknown> {
+	return (
+		obj !== null && !!obj && typeof obj === "object" && !Array.isArray(obj)
+	);
+}
+function isContainerValue(value: unknown): value is Record<string, unknown> {
+	return isObject(value) || Array.isArray(value);
+}
+function cleanupNonNestedPath(path: string) {
+	if (isNotNestedPath(path)) return path.replace(/\[|\]/g, "");
+
+	return path;
+}
+
+/**
+ * Gets a nested property value from an object
+ */
+export function getFromPath<TValue = unknown>(
+	object: NestedRecord | undefined,
+	path: string,
+): TValue | undefined;
+export function getFromPath<TValue = unknown, TFallback = TValue>(
+	object: NestedRecord | undefined,
+	path: string,
+	fallback?: TFallback,
+): TValue | TFallback;
+export function getFromPath<TValue = unknown, TFallback = TValue>(
+	object: NestedRecord | undefined,
+	path: string,
+	fallback?: TFallback,
+): TValue | TFallback | undefined {
+	if (!object) return fallback;
+
+	if (isNotNestedPath(path))
+		return object[cleanupNonNestedPath(path)] as TValue | undefined;
+
+	const resolvedValue = (path || "")
+		.split(/\.|\[(\d+)\]/)
+		.filter(Boolean)
+		.reduce((acc, propKey) => {
+			if (isContainerValue(acc) && propKey in acc) return acc[propKey];
+
+			return fallback;
+		}, object as unknown);
+
+	return resolvedValue as TValue | undefined;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/Menubar.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type MenubarRootEmits,
+	type MenubarRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	MenubarRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<MenubarRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <MenubarRoot
+    v-bind="forwarded"
+    :class="
+      cn(
+        'flex h-9 items-center space-x-1 rounded-md border bg-background p-1 shadow-sm',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </MenubarRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarCheckboxItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type MenubarCheckboxItemEmits,
+	type MenubarCheckboxItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	MenubarCheckboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<MenubarCheckboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <MenubarCheckboxItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <MenubarItemIndicator>
+        <CheckIcon class="w-4 h-4" />
+      </MenubarItemIndicator>
+    </span>
+    <slot />
+  </MenubarCheckboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type MenubarContentProps, useForwardProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<MenubarContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		align: "start",
+		alignOffset: -4,
+		sideOffset: 8,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <MenubarPortal>
+    <MenubarContent
+      v-bind="forwardedProps"
+      :class="
+        cn(
+          'z-50 min-w-48 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          props.class,
+        )
+      "
+    >
+      <slot />
+    </MenubarContent>
+  </MenubarPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarGroup.vue
+```
+<script setup lang="ts">
+import { type MenubarGroupProps } from "radix-vue";
+
+const props = defineProps<MenubarGroupProps>();
+</script>
+
+<template>
+  <MenubarGroup v-bind="props">
+    <slot />
+  </MenubarGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type MenubarItemEmits,
+	type MenubarItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	MenubarItemProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const emits = defineEmits<MenubarItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <MenubarItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+  </MenubarItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarLabel.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type MenubarLabelProps } from "radix-vue";
+
+const props = defineProps<
+	MenubarLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+</script>
+
+<template>
+  <MenubarLabel :class="cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', props.class)">
+    <slot />
+  </MenubarLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarMenu.vue
+```
+<script setup lang="ts">
+import { type MenubarMenuProps } from "radix-vue";
+
+const props = defineProps<MenubarMenuProps>();
+</script>
+
+<template>
+  <MenubarMenu v-bind="props">
+    <slot />
+  </MenubarMenu>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarRadioGroup.vue
+```
+<script setup lang="ts">
+import {
+	type MenubarRadioGroupEmits,
+	type MenubarRadioGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<MenubarRadioGroupProps>();
+
+const emits = defineEmits<MenubarRadioGroupEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <MenubarRadioGroup v-bind="forwarded">
+    <slot />
+  </MenubarRadioGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarRadioItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type MenubarRadioItemEmits,
+	type MenubarRadioItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	MenubarRadioItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<MenubarRadioItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <MenubarRadioItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <MenubarItemIndicator>
+        <DotFilledIcon class="h-4 w-4 fill-current" />
+      </MenubarItemIndicator>
+    </span>
+    <slot />
+  </MenubarRadioItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type MenubarSeparatorProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	MenubarSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <MenubarSeparator :class=" cn('-mx-1 my-1 h-px bg-muted', props.class)" v-bind="forwardedProps" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest text-muted-foreground', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarSub.vue
+```
+<script setup lang="ts">
+import { type MenubarSubEmits, useForwardPropsEmits } from "radix-vue";
+
+interface MenubarSubRootProps {
+	defaultOpen?: boolean;
+	open?: boolean;
+}
+
+const props = defineProps<MenubarSubRootProps>();
+const emits = defineEmits<MenubarSubEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <MenubarSub v-bind="forwarded">
+    <slot />
+  </MenubarSub>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarSubContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type MenubarSubContentEmits,
+	type MenubarSubContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	MenubarSubContentProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<MenubarSubContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <MenubarPortal>
+    <MenubarSubContent
+      v-bind="forwarded"
+      :class="
+        cn(
+          'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          props.class,
+        )
+      "
+    >
+      <slot />
+    </MenubarSubContent>
+  </MenubarPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarSubTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type MenubarSubTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	MenubarSubTriggerProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <MenubarSubTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+    <ChevronRightIcon class="ml-auto h-4 w-4" />
+  </MenubarSubTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/MenubarTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type MenubarTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	MenubarTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <MenubarTrigger
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'flex cursor-default select-none items-center rounded-sm px-3 py-1 text-sm font-medium outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </MenubarTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/menubar/index.ts
+```typescript
+export { default as Menubar } from "./Menubar.vue";
+export { default as MenubarItem } from "./MenubarItem.vue";
+export { default as MenubarContent } from "./MenubarContent.vue";
+export { default as MenubarGroup } from "./MenubarGroup.vue";
+export { default as MenubarMenu } from "./MenubarMenu.vue";
+export { default as MenubarRadioGroup } from "./MenubarRadioGroup.vue";
+export { default as MenubarRadioItem } from "./MenubarRadioItem.vue";
+export { default as MenubarCheckboxItem } from "./MenubarCheckboxItem.vue";
+export { default as MenubarSeparator } from "./MenubarSeparator.vue";
+export { default as MenubarSub } from "./MenubarSub.vue";
+export { default as MenubarSubContent } from "./MenubarSubContent.vue";
+export { default as MenubarSubTrigger } from "./MenubarSubTrigger.vue";
+export { default as MenubarTrigger } from "./MenubarTrigger.vue";
+export { default as MenubarShortcut } from "./MenubarShortcut.vue";
+export { default as MenubarLabel } from "./MenubarLabel.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/progress/Progress.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ProgressRootProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<ProgressRootProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		modelValue: 0,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ProgressRoot
+    v-bind="delegatedProps"
+    :class="
+      cn(
+        'relative h-2 w-full overflow-hidden rounded-full bg-primary/20',
+        props.class,
+      )
+    "
+  >
+    <ProgressIndicator
+      class="h-full w-full flex-1 bg-primary transition-all"
+      :style="`transform: translateX(-${100 - (props.modelValue ?? 0)}%);`"
+    />
+  </ProgressRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/progress/index.ts
+```typescript
+export { default as Progress } from "./Progress.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialog.vue
+```
+<script setup lang="ts">
+import {
+	type AlertDialogEmits,
+	type AlertDialogProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<AlertDialogProps>();
+const emits = defineEmits<AlertDialogEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <AlertDialogRoot v-bind="forwarded">
+    <slot />
+  </AlertDialogRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogAction.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AlertDialogActionProps } from "radix-vue";
+
+const props = defineProps<
+	AlertDialogActionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AlertDialogAction v-bind="delegatedProps" :class="cn(buttonVariants(), props.class)">
+    <slot />
+  </AlertDialogAction>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogCancel.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AlertDialogCancelProps } from "radix-vue";
+
+const props = defineProps<
+	AlertDialogCancelProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AlertDialogCancel v-bind="delegatedProps" :class="cn(buttonVariants({ variant: 'outline' }), 'mt-2 sm:mt-0', props.class)">
+    <slot />
+  </AlertDialogCancel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type AlertDialogContentEmits,
+	type AlertDialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	AlertDialogContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<AlertDialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <AlertDialogPortal>
+    <AlertDialogOverlay
+      class="fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    />
+    <AlertDialogContent
+      v-bind="forwarded"
+      :class="
+        cn(
+          'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+          props.class,
+        )
+      "
+    >
+      <slot />
+    </AlertDialogContent>
+  </AlertDialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AlertDialogDescriptionProps } from "radix-vue";
+
+const props = defineProps<
+	AlertDialogDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AlertDialogDescription
+    v-bind="delegatedProps"
+    :class="cn('text-sm text-muted-foreground', props.class)"
+  >
+    <slot />
+  </AlertDialogDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-x-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div
+    :class="cn('flex flex-col gap-y-2 text-center sm:text-left', props.class)"
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AlertDialogTitleProps } from "radix-vue";
+
+const props = defineProps<
+	AlertDialogTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AlertDialogTitle
+    v-bind="delegatedProps"
+    :class="cn('text-lg font-semibold', props.class)"
+  >
+    <slot />
+  </AlertDialogTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/AlertDialogTrigger.vue
+```
+<script setup lang="ts">
+import { type AlertDialogTriggerProps } from "radix-vue";
+
+const props = defineProps<AlertDialogTriggerProps>();
+</script>
+
+<template>
+  <AlertDialogTrigger v-bind="props">
+    <slot />
+  </AlertDialogTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert-dialog/index.ts
+```typescript
+export { default as AlertDialog } from "./AlertDialog.vue";
+export { default as AlertDialogTrigger } from "./AlertDialogTrigger.vue";
+export { default as AlertDialogContent } from "./AlertDialogContent.vue";
+export { default as AlertDialogHeader } from "./AlertDialogHeader.vue";
+export { default as AlertDialogTitle } from "./AlertDialogTitle.vue";
+export { default as AlertDialogDescription } from "./AlertDialogDescription.vue";
+export { default as AlertDialogFooter } from "./AlertDialogFooter.vue";
+export { default as AlertDialogAction } from "./AlertDialogAction.vue";
+export { default as AlertDialogCancel } from "./AlertDialogCancel.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/input/Input.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { useVModel } from "@vueuse/core";
+
+const props = defineProps<{
+	defaultValue?: string | number;
+	modelValue?: string | number;
+	class?: HTMLAttributes["class"];
+}>();
+
+const emits = defineEmits<{
+	(e: "update:modelValue", payload: string | number): void;
+}>();
+
+const modelValue = useVModel(props, "modelValue", emits, {
+	passive: true,
+	defaultValue: props.defaultValue,
+});
+</script>
+
+<template>
+  <input v-model="modelValue" :class="cn('flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', props.class)">
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/input/index.ts
+```typescript
+export { default as Input } from "./Input.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert/Alert.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type AlertVariants } from ".";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+	variant?: AlertVariants["variant"];
+}>();
+</script>
+
+<template>
+  <div :class="cn(alertVariants({ variant }), props.class)" role="alert">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert/AlertDescription.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('text-sm [&_p]:leading-relaxed', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert/AlertTitle.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <h5 :class="cn('mb-1 font-medium leading-none tracking-tight', props.class)">
+    <slot />
+  </h5>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/alert/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Alert } from "./Alert.vue";
+export { default as AlertTitle } from "./AlertTitle.vue";
+export { default as AlertDescription } from "./AlertDescription.vue";
+
+export const alertVariants = cva(
+	"relative w-full rounded-lg border px-4 py-3 text-sm [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+	{
+		variants: {
+			variant: {
+				default: "bg-background text-foreground",
+				destructive:
+					"border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
+
+export type AlertVariants = VariantProps<typeof alertVariants>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/Accordion.vue
+```
+<script setup lang="ts">
+import {
+	type AccordionRootEmits,
+	type AccordionRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<AccordionRootProps>();
+const emits = defineEmits<AccordionRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <AccordionRoot v-bind="forwarded">
+    <slot />
+  </AccordionRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionContentProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionContentProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AccordionContent
+    v-bind="delegatedProps"
+    class="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+  >
+    <div :class="cn('pb-4 pt-0', props.class)">
+      <slot />
+    </div>
+  </AccordionContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <AccordionItem
+    v-bind="forwardedProps"
+    :class="cn('border-b', props.class)"
+  >
+    <slot />
+  </AccordionItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/AccordionTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type AccordionTriggerProps } from "radix-vue";
+
+const props = defineProps<
+	AccordionTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <AccordionHeader class="flex">
+    <AccordionTrigger
+      v-bind="delegatedProps"
+      :class="
+        cn(
+          'flex flex-1 items-center justify-between py-4 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
+          props.class,
+        )
+      "
+    >
+      <slot />
+      <slot name="icon">
+        <ChevronDownIcon
+          class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+        />
+      </slot>
+    </AccordionTrigger>
+  </AccordionHeader>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/accordion/index.ts
+```typescript
+export { default as Accordion } from "./Accordion.vue";
+export { default as AccordionContent } from "./AccordionContent.vue";
+export { default as AccordionItem } from "./AccordionItem.vue";
+export { default as AccordionTrigger } from "./AccordionTrigger.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/skeleton/Skeleton.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+interface SkeletonProps {
+	class?: HTMLAttributes["class"];
+}
+
+const props = defineProps<SkeletonProps>();
+</script>
+
+<template>
+  <div :class="cn('animate-pulse rounded-md bg-primary/10', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/skeleton/index.ts
+```typescript
+export { default as Skeleton } from "./Skeleton.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/separator/Separator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	SeparatorProps & { class?: HTMLAttributes["class"]; label?: string }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <Separator
+    v-bind="delegatedProps"
+    :class="
+      cn(
+        'shrink-0 bg-border relative',
+        props.orientation === 'vertical' ? 'w-px h-full' : 'h-px w-full',
+        props.class,
+      )
+    "
+  >
+    <span
+      v-if="props.label"
+      :class="
+        cn(
+          'text-xs text-muted-foreground bg-background absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center',
+          props.orientation === 'vertical' ? 'w-[1px] px-1 py-2' : 'h-[1px] py-1 px-2',
+        )
+      "
+    >{{ props.label }}</span>
+  </Separator>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/separator/index.ts
+```typescript
+export { default as Separator } from "./Separator.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/Toast.vue
+```
+<script setup lang="ts">
+import { computed } from "vue";
+import { type ToastRootEmits, useForwardPropsEmits } from "radix-vue";
+import { type ToastProps } from ".";
+
+const props = defineProps<ToastProps>();
+
+const emits = defineEmits<ToastRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ToastRoot
+    v-bind="forwarded"
+    :class="cn(toastVariants({ variant }), props.class)"
+    @update:open="onOpenChange"
+  >
+    <slot />
+  </ToastRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastAction.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ToastActionProps } from "radix-vue";
+
+const props = defineProps<
+	ToastActionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ToastAction v-bind="delegatedProps" :class="cn('inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-secondary focus:outline-none focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 group-[.destructive]:hover:border-destructive/30 group-[.destructive]:hover:bg-destructive group-[.destructive]:hover:text-destructive-foreground group-[.destructive]:focus:ring-destructive', props.class)">
+    <slot />
+  </ToastAction>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastClose.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ToastCloseProps } from "radix-vue";
+
+const props = defineProps<
+	ToastCloseProps & {
+		class?: HTMLAttributes["class"];
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ToastClose v-bind="delegatedProps" :class="cn('absolute right-1 top-1 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600', props.class)">
+    <Cross2Icon class="h-4 w-4" />
+  </ToastClose>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ToastDescriptionProps } from "radix-vue";
+
+const props = defineProps<
+	ToastDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ToastDescription :class="cn('text-sm opacity-90', props.class)" v-bind="delegatedProps">
+    <slot />
+  </ToastDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastProvider.vue
+```
+<script setup lang="ts">
+import { type ToastProviderProps } from "radix-vue";
+
+const props = defineProps<ToastProviderProps>();
+</script>
+
+<template>
+  <ToastProvider v-bind="props">
+    <slot />
+  </ToastProvider>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ToastTitleProps } from "radix-vue";
+
+const props = defineProps<
+	ToastTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ToastTitle v-bind="delegatedProps" :class="cn('text-sm font-semibold [&+div]:text-xs', props.class)">
+    <slot />
+  </ToastTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/ToastViewport.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ToastViewportProps } from "radix-vue";
+
+const props = defineProps<
+	ToastViewportProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ToastViewport v-bind="delegatedProps" :class="cn('fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/Toaster.vue
+```
+<script setup lang="ts">
+import { useToast } from "./use-toast";
+
+const { toasts } = useToast();
+</script>
+
+<template>
+  <ToastProvider>
+    <Toast v-for="toast in toasts" :key="toast.id" v-bind="toast">
+      <div class="grid gap-1">
+        <ToastTitle v-if="toast.title">
+          {{ toast.title }}
+        </ToastTitle>
+        <template v-if="toast.description">
+          <ToastDescription v-if="isVNode(toast.description)">
+            <component :is="toast.description" />
+          </ToastDescription>
+          <ToastDescription v-else>
+            {{ toast.description }}
+          </ToastDescription>
+        </template>
+        <ToastClose />
+      </div>
+      <component :is="toast.action" />
+    </Toast>
+    <ToastViewport />
+  </ToastProvider>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/index.ts
+```typescript
+import type { ToastRootProps } from "radix-vue";
+import type { HTMLAttributes } from "vue";
+
+export { default as Toaster } from "./Toaster.vue";
+export { default as Toast } from "./Toast.vue";
+export { default as ToastViewport } from "./ToastViewport.vue";
+export { default as ToastAction } from "./ToastAction.vue";
+export { default as ToastClose } from "./ToastClose.vue";
+export { default as ToastTitle } from "./ToastTitle.vue";
+export { default as ToastDescription } from "./ToastDescription.vue";
+export { default as ToastProvider } from "./ToastProvider.vue";
+export { toast, useToast } from "./use-toast";
+
+import { type VariantProps, cva } from "class-variance-authority";
+
+export const toastVariants = cva(
+	"group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+	{
+		variants: {
+			variant: {
+				default: "border bg-background text-foreground",
+				destructive:
+					"destructive group border-destructive bg-destructive text-destructive-foreground",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
+
+type ToastVariants = VariantProps<typeof toastVariants>;
+
+export interface ToastProps extends ToastRootProps {
+	class?: HTMLAttributes["class"];
+	variant?: ToastVariants["variant"];
+	onOpenChange?: ((value: boolean) => void) | undefined;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toast/use-toast.ts
+```typescript
+import { computed, ref } from "vue";
+import type { Component, VNode } from "vue";
+import type { ToastProps } from ".";
+
+const TOAST_LIMIT = 1;
+const TOAST_REMOVE_DELAY = 1000000;
+
+export type StringOrVNode = string | VNode | (() => VNode);
+
+type ToasterToast = ToastProps & {
+	id: string;
+	title?: string;
+	description?: StringOrVNode;
+	action?: Component;
+};
+
+const actionTypes = {
+	ADD_TOAST: "ADD_TOAST",
+	UPDATE_TOAST: "UPDATE_TOAST",
+	DISMISS_TOAST: "DISMISS_TOAST",
+	REMOVE_TOAST: "REMOVE_TOAST",
+} as const;
+
+let count = 0;
+
+function genId() {
+	count = (count + 1) % Number.MAX_VALUE;
+	return count.toString();
+}
+
+type ActionType = typeof actionTypes;
+
+type Action =
+	| {
+			type: ActionType["ADD_TOAST"];
+			toast: ToasterToast;
+	  }
+	| {
+			type: ActionType["UPDATE_TOAST"];
+			toast: Partial<ToasterToast>;
+	  }
+	| {
+			type: ActionType["DISMISS_TOAST"];
+			toastId?: ToasterToast["id"];
+	  }
+	| {
+			type: ActionType["REMOVE_TOAST"];
+			toastId?: ToasterToast["id"];
+	  };
+
+interface State {
+	toasts: ToasterToast[];
+}
+
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+function addToRemoveQueue(toastId: string) {
+	if (toastTimeouts.has(toastId)) return;
+
+	const timeout = setTimeout(() => {
+		toastTimeouts.delete(toastId);
+		dispatch({
+			type: actionTypes.REMOVE_TOAST,
+			toastId,
+		});
+	}, TOAST_REMOVE_DELAY);
+
+	toastTimeouts.set(toastId, timeout);
+}
+
+const state = ref<State>({
+	toasts: [],
+});
+
+function dispatch(action: Action) {
+	switch (action.type) {
+		case actionTypes.ADD_TOAST:
+			state.value.toasts = [action.toast, ...state.value.toasts].slice(
+				0,
+				TOAST_LIMIT,
+			);
+			break;
+
+		case actionTypes.UPDATE_TOAST:
+			state.value.toasts = state.value.toasts.map((t) =>
+				t.id === action.toast.id ? { ...t, ...action.toast } : t,
+			);
+			break;
+
+		case actionTypes.DISMISS_TOAST: {
+			const { toastId } = action;
+
+			if (toastId) {
+				addToRemoveQueue(toastId);
+			} else {
+				state.value.toasts.forEach((toast) => {
+					addToRemoveQueue(toast.id);
+				});
+			}
+
+			state.value.toasts = state.value.toasts.map((t) =>
+				t.id === toastId || toastId === undefined
+					? {
+							...t,
+							open: false,
+						}
+					: t,
+			);
+			break;
+		}
+
+		case actionTypes.REMOVE_TOAST:
+			if (action.toastId === undefined) state.value.toasts = [];
+			else
+				state.value.toasts = state.value.toasts.filter(
+					(t) => t.id !== action.toastId,
+				);
+
+			break;
+	}
+}
+
+function useToast() {
+	return {
+		toasts: computed(() => state.value.toasts),
+		toast,
+		dismiss: (toastId?: string) =>
+			dispatch({ type: actionTypes.DISMISS_TOAST, toastId }),
+	};
+}
+
+type Toast = Omit<ToasterToast, "id">;
+
+function toast(props: Toast) {
+	const id = genId();
+
+	const update = (props: ToasterToast) =>
+		dispatch({
+			type: actionTypes.UPDATE_TOAST,
+			toast: { ...props, id },
+		});
+
+	const dismiss = () =>
+		dispatch({ type: actionTypes.DISMISS_TOAST, toastId: id });
+
+	dispatch({
+		type: actionTypes.ADD_TOAST,
+		toast: {
+			...props,
+			id,
+			open: true,
+			onOpenChange: (open: boolean) => {
+				if (!open) dismiss();
+			},
+		},
+	});
+
+	return {
+		id,
+		dismiss,
+		update,
+	};
+}
+
+export { toast, useToast };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/NumberField.vue
+```
+<script setup lang="ts">
+import type { NumberFieldRootEmits, NumberFieldRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+import { type HTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	NumberFieldRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<NumberFieldRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <NumberFieldRoot v-bind="forwarded" :class="cn('grid gap-1.5', props.class)">
+    <slot />
+  </NumberFieldRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/NumberFieldContent.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('relative [&>[data-slot=input]]:has-[[data-slot=increment]]:pr-5 [&>[data-slot=input]]:has-[[data-slot=decrement]]:pl-5', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/NumberFieldDecrement.vue
+```
+<script setup lang="ts">
+import type { NumberFieldDecrementProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+import { type HTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	NumberFieldDecrementProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <NumberFieldDecrement data-slot="decrement" v-bind="forwarded" :class="cn('absolute top-1/2 -translate-y-1/2 left-0 p-3 disabled:cursor-not-allowed disabled:opacity-20', props.class)">
+    <slot>
+      <Minus class="h-4 w-4" />
+    </slot>
+  </NumberFieldDecrement>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/NumberFieldIncrement.vue
+```
+<script setup lang="ts">
+import type { NumberFieldIncrementProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+import { type HTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	NumberFieldIncrementProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <NumberFieldIncrement data-slot="increment" v-bind="forwarded" :class="cn('absolute top-1/2 -translate-y-1/2 right-0 disabled:cursor-not-allowed disabled:opacity-20 p-3', props.class)">
+    <slot>
+      <Plus class="h-4 w-4" />
+    </slot>
+  </NumberFieldIncrement>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/NumberFieldInput.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <NumberFieldInput
+    data-slot="input"
+    :class="cn('flex h-9 w-full rounded-md border border-input bg-transparent py-1 text-sm text-center shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', props.class)"
+  />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/number-field/index.ts
+```typescript
+export { default as NumberField } from "./NumberField.vue";
+export { default as NumberFieldInput } from "./NumberFieldInput.vue";
+export { default as NumberFieldIncrement } from "./NumberFieldIncrement.vue";
+export { default as NumberFieldDecrement } from "./NumberFieldDecrement.vue";
+export { default as NumberFieldContent } from "./NumberFieldContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/ChartCrosshair.vue
+```
+<script setup lang="ts">
+import type { BulletLegendItemInterface } from "@unovis/ts";
+import { omit } from "@unovis/ts";
+import { type Component, createApp } from "vue";
+import { ChartTooltip } from ".";
+
+const props = withDefaults(
+	defineProps<{
+		colors: string[];
+		index: string;
+		items: BulletLegendItemInterface[];
+		customTooltip?: Component;
+	}>(),
+	{
+		colors: () => [],
+	},
+);
+
+// Use weakmap to store reference to each datapoint for Tooltip
+const wm = new WeakMap();
+function template(d: any) {
+	if (wm.has(d)) {
+		return wm.get(d);
+	} else {
+		const componentDiv = document.createElement("div");
+		const omittedData = Object.entries(omit(d, [props.index])).map(
+			([key, value]) => {
+				const legendReference = props.items.find((i) => i.name === key);
+				return { ...legendReference, value };
+			},
+		);
+		const TooltipComponent = props.customTooltip ?? ChartTooltip;
+		createApp(TooltipComponent, {
+			title: d[props.index].toString(),
+			data: omittedData,
+		}).mount(componentDiv);
+		wm.set(d, componentDiv.innerHTML);
+		return componentDiv.innerHTML;
+	}
+}
+
+function color(d: unknown, i: number) {
+	return props.colors[i] ?? "transparent";
+}
+</script>
+
+<template>
+  <VisTooltip :horizontal-shift="20" :vertical-shift="20" />
+  <VisCrosshair :template="template" :color="color" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/ChartLegend.vue
+```
+<script setup lang="ts">
+import type { BulletLegendItemInterface } from "@unovis/ts";
+import { BulletLegend } from "@unovis/ts";
+import { nextTick, onMounted, ref } from "vue";
+import { buttonVariants } from "@/components/ui/button";
+
+const props = withDefaults(
+	defineProps<{ items: BulletLegendItemInterface[] }>(),
+	{
+		items: () => [],
+	},
+);
+
+const emits = defineEmits<{
+	legendItemClick: [d: BulletLegendItemInterface, i: number];
+	"update:items": [payload: BulletLegendItemInterface[]];
+}>();
+
+const elRef = ref<HTMLElement>();
+
+onMounted(() => {
+	const selector = `.${BulletLegend.selectors.item}`;
+	nextTick(() => {
+		const elements = elRef.value?.querySelectorAll(selector);
+		const classes = buttonVariants({ variant: "ghost", size: "xs" }).split(" ");
+		elements?.forEach((el) =>
+			el.classList.add(...classes, "!inline-flex", "!mr-2"),
+		);
+	});
+});
+
+function onLegendItemClick(d: BulletLegendItemInterface, i: number) {
+	emits("legendItemClick", d, i);
+	const isBulletActive = !props.items[i].inactive;
+	const isFilterApplied = props.items.some((i) => i.inactive);
+	if (isFilterApplied && isBulletActive) {
+		// reset filter
+		emits(
+			"update:items",
+			props.items.map((item) => ({ ...item, inactive: false })),
+		);
+	} else {
+		// apply selection, set other item as inactive
+		emits(
+			"update:items",
+			props.items.map((item) =>
+				item.name === d.name
+					? { ...d, inactive: false }
+					: { ...item, inactive: true },
+			),
+		);
+	}
+}
+</script>
+
+<template>
+  <div ref="elRef" class="w-max">
+    <VisBulletLegend
+      :items="items"
+      :on-legend-item-click="onLegendItemClick"
+    />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/ChartSingleTooltip.vue
+```
+<script setup lang="ts">
+import type { BulletLegendItemInterface } from "@unovis/ts";
+import { omit } from "@unovis/ts";
+import { type Component, createApp } from "vue";
+import { ChartTooltip } from ".";
+
+const props = withDefaults(
+	defineProps<{
+		selector: string;
+		index: string;
+		items?: BulletLegendItemInterface[];
+		valueFormatter?: (tick: number, i?: number, ticks?: number[]) => string;
+		customTooltip?: Component;
+	}>(),
+	{
+		valueFormatter: (tick: number) => `${tick}`,
+	},
+);
+
+// Use weakmap to store reference to each datapoint for Tooltip
+const wm = new WeakMap();
+function template(d: any, i: number, elements: (HTMLElement | SVGElement)[]) {
+	if (props.index in d) {
+		if (wm.has(d)) {
+			return wm.get(d);
+		} else {
+			const componentDiv = document.createElement("div");
+			const omittedData = Object.entries(omit(d, [props.index])).map(
+				([key, value]) => {
+					const legendReference = props.items?.find((i) => i.name === key);
+					return { ...legendReference, value: props.valueFormatter(value) };
+				},
+			);
+			const TooltipComponent = props.customTooltip ?? ChartTooltip;
+			createApp(TooltipComponent, {
+				title: d[props.index],
+				data: omittedData,
+			}).mount(componentDiv);
+			wm.set(d, componentDiv.innerHTML);
+			return componentDiv.innerHTML;
+		}
+	} else {
+		const data = d.data;
+
+		if (wm.has(data)) {
+			return wm.get(data);
+		} else {
+			const style = getComputedStyle(elements[i]);
+			const omittedData = [
+				{
+					name: data.name,
+					value: props.valueFormatter(data[props.index]),
+					color: style.fill,
+				},
+			];
+			const componentDiv = document.createElement("div");
+			const TooltipComponent = props.customTooltip ?? ChartTooltip;
+			createApp(TooltipComponent, {
+				title: d[props.index],
+				data: omittedData,
+			}).mount(componentDiv);
+			wm.set(d, componentDiv.innerHTML);
+			return componentDiv.innerHTML;
+		}
+	}
+}
+</script>
+
+<template>
+  <VisTooltip
+    :horizontal-shift="20" :vertical-shift="20" :triggers="{
+      [selector]: template,
+    }"
+  />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/ChartTooltip.vue
+```
+<script setup lang="ts">
+defineProps<{
+	title?: string;
+	data: {
+		name: string;
+		color: string;
+		value: any;
+	}[];
+}>();
+</script>
+
+<template>
+  <Card class="text-sm">
+    <CardHeader v-if="title" class="p-3 border-b">
+      <CardTitle>
+        {{ title }}
+      </CardTitle>
+    </CardHeader>
+    <CardContent class="p-3 min-w-[180px] flex flex-col gap-1">
+      <div v-for="(item, key) in data" :key="key" class="flex justify-between">
+        <div class="flex items-center">
+          <span class="w-2.5 h-2.5 mr-2">
+            <svg width="100%" height="100%" viewBox="0 0 30 30">
+              <path
+                d=" M 15 15 m -14, 0 a 14,14 0 1,1 28,0 a 14,14 0 1,1 -28,0"
+                :stroke="item.color"
+                :fill="item.color"
+                stroke-width="1"
+              />
+            </svg>
+          </span>
+          <span>{{ item.name }}</span>
+        </div>
+        <span class="ml-4 font-semibold">{{ item.value }}</span>
+      </div>
+    </CardContent>
+  </Card>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/index.ts
+```typescript
+export { default as ChartTooltip } from "./ChartTooltip.vue";
+export { default as ChartSingleTooltip } from "./ChartSingleTooltip.vue";
+export { default as ChartLegend } from "./ChartLegend.vue";
+export { default as ChartCrosshair } from "./ChartCrosshair.vue";
+
+export function defaultColors(count: number = 3) {
+	const quotient = Math.floor(count / 2);
+	const remainder = count % 2;
+
+	const primaryCount = quotient + remainder;
+	const secondaryCount = quotient;
+	return [
+		...Array.from(Array(primaryCount).keys()).map(
+			(i) => `hsl(var(--vis-primary-color) / ${1 - (1 / primaryCount) * i})`,
+		),
+		...Array.from(Array(secondaryCount).keys()).map(
+			(i) =>
+				`hsl(var(--vis-secondary-color) / ${1 - (1 / secondaryCount) * i})`,
+		),
+	];
+}
+
+export * from "./interface";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart/interface.ts
+```typescript
+import type { Spacing } from "@unovis/ts";
+
+type KeyOf<T extends Record<string, any>> = Extract<keyof T, string>;
+
+export interface BaseChartProps<T extends Record<string, any>> {
+	/**
+	 * The source data, in which each entry is a dictionary.
+	 */
+	data: T[];
+	/**
+	 * Select the categories from your data. Used to populate the legend and toolip.
+	 */
+	categories: KeyOf<T>[];
+	/**
+	 * Sets the key to map the data to the axis.
+	 */
+	index: KeyOf<T>;
+	/**
+	 * Change the default colors.
+	 */
+	colors?: string[];
+	/**
+	 * Margin of each the container
+	 */
+	margin?: Spacing;
+	/**
+	 * Change the opacity of the non-selected field
+	 * @default 0.2
+	 */
+	filterOpacity?: number;
+	/**
+	 * Function to format X label
+	 */
+	xFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Function to format Y label
+	 */
+	yFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Controls the visibility of the X axis.
+	 * @default true
+	 */
+	showXAxis?: boolean;
+	/**
+	 * Controls the visibility of the Y axis.
+	 * @default true
+	 */
+	showYAxis?: boolean;
+	/**
+	 * Controls the visibility of tooltip.
+	 * @default true
+	 */
+	showTooltip?: boolean;
+	/**
+	 * Controls the visibility of legend.
+	 * @default true
+	 */
+	showLegend?: boolean;
+	/**
+	 * Controls the visibility of gridline.
+	 * @default true
+	 */
+	showGridLine?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/hover-card/HoverCard.vue
+```
+<script setup lang="ts">
+import {
+	type HoverCardRootEmits,
+	type HoverCardRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<HoverCardRootProps>();
+const emits = defineEmits<HoverCardRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <HoverCardRoot v-bind="forwarded">
+    <slot />
+  </HoverCardRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/hover-card/HoverCardContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type HoverCardContentProps, useForwardProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<HoverCardContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		sideOffset: 4,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <HoverCardPortal>
+    <HoverCardContent
+      v-bind="forwardedProps"
+      :class="
+        cn(
+          'z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          props.class,
+        )
+      "
+    >
+      <slot />
+    </HoverCardContent>
+  </HoverCardPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/hover-card/HoverCardTrigger.vue
+```
+<script setup lang="ts">
+import { type HoverCardTriggerProps } from "radix-vue";
+
+const props = defineProps<HoverCardTriggerProps>();
+</script>
+
+<template>
+  <HoverCardTrigger v-bind="props">
+    <slot />
+  </HoverCardTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/hover-card/index.ts
+```typescript
+export { default as HoverCard } from "./HoverCard.vue";
+export { default as HoverCardTrigger } from "./HoverCardTrigger.vue";
+export { default as HoverCardContent } from "./HoverCardContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/checkbox/Checkbox.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { CheckboxRootEmits, CheckboxRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = defineProps<
+	CheckboxRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<CheckboxRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <CheckboxRoot
+    v-bind="forwarded"
+    :class="
+      cn('peer h-4 w-4 shrink-0 rounded-sm border border-primary shadow focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
+         props.class)"
+  >
+    <CheckboxIndicator class="flex h-full w-full items-center justify-center text-current">
+      <slot>
+        <CheckIcon class="h-4 w-4" />
+      </slot>
+    </CheckboxIndicator>
+  </CheckboxRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/checkbox/index.ts
+```typescript
+export { default as Checkbox } from "./Checkbox.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/label/Label.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type LabelProps } from "radix-vue";
+
+const props = defineProps<LabelProps & { class?: HTMLAttributes["class"] }>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <Label
+    v-bind="delegatedProps"
+    :class="
+      cn(
+        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </Label>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/label/index.ts
+```typescript
+export { default as Label } from "./Label.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-line/LineChart.vue
+```
+<script setup lang="ts" generic="T extends Record<string, any>">
+import { type BulletLegendItemInterface, CurveType } from "@unovis/ts";
+import { type Component, computed, ref } from "vue";
+import { useMounted } from "@vueuse/core";
+import type { BaseChartProps } from ".";
+import { defaultColors } from "@/components/ui/chart";
+
+const props = withDefaults(
+	defineProps<
+		BaseChartProps<T> & {
+			/**
+			 * Render custom tooltip component.
+			 */
+			customTooltip?: Component;
+			/**
+			 * Type of curve
+			 */
+			curveType?: CurveType;
+		}
+	>(),
+	{
+		curveType: CurveType.MonotoneX,
+		filterOpacity: 0.2,
+		margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+		showXAxis: true,
+		showYAxis: true,
+		showTooltip: true,
+		showLegend: true,
+		showGridLine: true,
+	},
+);
+
+const emits = defineEmits<{
+	legendItemClick: [d: BulletLegendItemInterface, i: number];
+}>();
+
+type KeyOfT = Extract<keyof T, string>;
+type Data = (typeof props.data)[number];
+
+const index = computed(() => props.index as KeyOfT);
+const colors = computed(() =>
+	props.colors?.length ? props.colors : defaultColors(props.categories.length),
+);
+
+const legendItems = ref<BulletLegendItemInterface[]>(
+	props.categories.map((category, i) => ({
+		name: category,
+		color: colors.value[i],
+		inactive: false,
+	})),
+);
+
+const isMounted = useMounted();
+
+function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
+	emits("legendItemClick", d, i);
+}
+</script>
+
+<template>
+  <div :class="cn('w-full h-[400px] flex flex-col items-end', $attrs.class ?? '')">
+    <ChartLegend v-if="showLegend" v-model:items="legendItems" @legend-item-click="handleLegendItemClick" />
+
+    <VisXYContainer
+      :margin="{ left: 20, right: 20 }"
+      :data="data"
+      :style="{ height: isMounted ? '100%' : 'auto' }"
+    >
+      <ChartCrosshair v-if="showTooltip" :colors="colors" :items="legendItems" :index="index" :custom-tooltip="customTooltip" />
+
+      <template v-for="(category, i) in categories" :key="category">
+        <VisLine
+          :x="(d: Data, i: number) => i"
+          :y="(d: Data) => d[category]"
+          :curve-type="curveType"
+          :color="colors[i]"
+          :attributes="{
+            [Line.selectors.line]: {
+              opacity: legendItems.find(item => item.name === category)?.inactive ? filterOpacity : 1,
+            },
+          }"
+        />
+      </template>
+
+      <VisAxis
+        v-if="showXAxis"
+        type="x"
+        :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
+        :grid-line="false"
+        :tick-line="false"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+      <VisAxis
+        v-if="showYAxis"
+        type="y"
+        :tick-line="false"
+        :tick-format="yFormatter"
+        :domain-line="false"
+        :grid-line="showGridLine"
+        :attributes="{
+          [Axis.selectors.grid]: {
+            class: 'text-muted',
+          },
+        }"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+
+      <slot />
+    </VisXYContainer>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-line/index.ts
+```typescript
+export { default as LineChart } from "./LineChart.vue";
+
+import type { Spacing } from "@unovis/ts";
+
+type KeyOf<T extends Record<string, any>> = Extract<keyof T, string>;
+
+export interface BaseChartProps<T extends Record<string, any>> {
+	/**
+	 * The source data, in which each entry is a dictionary.
+	 */
+	data: T[];
+	/**
+	 * Select the categories from your data. Used to populate the legend and toolip.
+	 */
+	categories: KeyOf<T>[];
+	/**
+	 * Sets the key to map the data to the axis.
+	 */
+	index: KeyOf<T>;
+	/**
+	 * Change the default colors.
+	 */
+	colors?: string[];
+	/**
+	 * Margin of each the container
+	 */
+	margin?: Spacing;
+	/**
+	 * Change the opacity of the non-selected field
+	 * @default 0.2
+	 */
+	filterOpacity?: number;
+	/**
+	 * Function to format X label
+	 */
+	xFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Function to format Y label
+	 */
+	yFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Controls the visibility of the X axis.
+	 * @default true
+	 */
+	showXAxis?: boolean;
+	/**
+	 * Controls the visibility of the Y axis.
+	 * @default true
+	 */
+	showYAxis?: boolean;
+	/**
+	 * Controls the visibility of tooltip.
+	 * @default true
+	 */
+	showTooltip?: boolean;
+	/**
+	 * Controls the visibility of legend.
+	 * @default true
+	 */
+	showLegend?: boolean;
+	/**
+	 * Controls the visibility of gridline.
+	 * @default true
+	 */
+	showGridLine?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenu.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuRootEmits,
+	type DropdownMenuRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuRootProps>();
+const emits = defineEmits<DropdownMenuRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuRoot v-bind="forwarded">
+    <slot />
+  </DropdownMenuRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuCheckboxItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuCheckboxItemEmits,
+	type DropdownMenuCheckboxItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuCheckboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuCheckboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuCheckboxItem
+    v-bind="forwarded"
+    :class=" cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuItemIndicator>
+        <CheckIcon class="w-4 h-4" />
+      </DropdownMenuItemIndicator>
+    </span>
+    <slot />
+  </DropdownMenuCheckboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuContentEmits,
+	type DropdownMenuContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = withDefaults(
+	defineProps<DropdownMenuContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		sideOffset: 4,
+	},
+);
+const emits = defineEmits<DropdownMenuContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuPortal>
+    <DropdownMenuContent
+      v-bind="forwarded"
+      :class="cn('z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', props.class)"
+    >
+      <slot />
+    </DropdownMenuContent>
+  </DropdownMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuGroup.vue
+```
+<script setup lang="ts">
+import { type DropdownMenuGroupProps } from "radix-vue";
+
+const props = defineProps<DropdownMenuGroupProps>();
+</script>
+
+<template>
+  <DropdownMenuGroup v-bind="props">
+    <slot />
+  </DropdownMenuGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuItemProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuItem
+    v-bind="forwardedProps"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+  </DropdownMenuItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuLabel.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuLabelProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuLabel
+    v-bind="forwardedProps"
+    :class="cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', props.class)"
+  >
+    <slot />
+  </DropdownMenuLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuRadioGroup.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuRadioGroupEmits,
+	type DropdownMenuRadioGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuRadioGroupProps>();
+const emits = defineEmits<DropdownMenuRadioGroupEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuRadioGroup v-bind="forwarded">
+    <slot />
+  </DropdownMenuRadioGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuRadioItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuRadioItemEmits,
+	type DropdownMenuRadioItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuRadioItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<DropdownMenuRadioItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuRadioItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuItemIndicator>
+        <DotFilledIcon class="h-4 w-4 fill-current" />
+      </DropdownMenuItemIndicator>
+    </span>
+    <slot />
+  </DropdownMenuRadioItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSeparatorProps & {
+		class?: HTMLAttributes["class"];
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DropdownMenuSeparator v-bind="delegatedProps" :class="cn('-mx-1 my-1 h-px bg-muted', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest opacity-60', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSub.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuSubEmits,
+	type DropdownMenuSubProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuSubProps>();
+const emits = defineEmits<DropdownMenuSubEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuSub v-bind="forwarded">
+    <slot />
+  </DropdownMenuSub>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSubContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuSubContentEmits,
+	type DropdownMenuSubContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuSubContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuSubContent
+    v-bind="forwarded"
+    :class="cn('z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', props.class)"
+  >
+    <slot />
+  </DropdownMenuSubContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuSubTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuSubTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent',
+      props.class,
+    )"
+  >
+    <slot />
+    <ChevronRightIcon class="ml-auto h-4 w-4" />
+  </DropdownMenuSubTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuTrigger.vue
+```
+<script setup lang="ts">
+import { type DropdownMenuTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<DropdownMenuTriggerProps>();
+
+const forwardedProps = useForwardProps(props);
+</script>
+
+<template>
+  <DropdownMenuTrigger class="outline-none" v-bind="forwardedProps">
+    <slot />
+  </DropdownMenuTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/index.ts
+```typescript
+export { DropdownMenuPortal } from "radix-vue";
+
+export { default as DropdownMenu } from "./DropdownMenu.vue";
+export { default as DropdownMenuTrigger } from "./DropdownMenuTrigger.vue";
+export { default as DropdownMenuContent } from "./DropdownMenuContent.vue";
+export { default as DropdownMenuGroup } from "./DropdownMenuGroup.vue";
+export { default as DropdownMenuRadioGroup } from "./DropdownMenuRadioGroup.vue";
+export { default as DropdownMenuItem } from "./DropdownMenuItem.vue";
+export { default as DropdownMenuCheckboxItem } from "./DropdownMenuCheckboxItem.vue";
+export { default as DropdownMenuRadioItem } from "./DropdownMenuRadioItem.vue";
+export { default as DropdownMenuShortcut } from "./DropdownMenuShortcut.vue";
+export { default as DropdownMenuSeparator } from "./DropdownMenuSeparator.vue";
+export { default as DropdownMenuLabel } from "./DropdownMenuLabel.vue";
+export { default as DropdownMenuSub } from "./DropdownMenuSub.vue";
+export { default as DropdownMenuSubTrigger } from "./DropdownMenuSubTrigger.vue";
+export { default as DropdownMenuSubContent } from "./DropdownMenuSubContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/slider/Slider.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { SliderRootEmits, SliderRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = defineProps<
+	SliderRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<SliderRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <SliderRoot
+    :class="cn(
+      'relative flex w-full touch-none select-none items-center',
+      props.class,
+    )"
+    v-bind="forwarded"
+  >
+    <SliderTrack class="relative h-1.5 w-full grow overflow-hidden rounded-full bg-primary/20">
+      <SliderRange class="absolute h-full bg-primary" />
+    </SliderTrack>
+    <SliderThumb
+      v-for="(_, key) in modelValue"
+      :key="key"
+      class="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+    />
+  </SliderRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/slider/index.ts
+```typescript
+export { default as Slider } from "./Slider.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/Stepper.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperRootEmits, StepperRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = defineProps<
+	StepperRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<StepperRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <StepperRoot
+    v-slot="slotProps"
+    :class="cn(
+      'flex gap-2',
+      props.class,
+    )"
+    v-bind="forwarded"
+  >
+    <slot v-bind="slotProps" />
+  </StepperRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperDescription.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperDescriptionProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperDescription v-slot="slotProps" v-bind="forwarded" :class="cn('text-xs text-muted-foreground', props.class)">
+    <slot v-bind="slotProps" />
+  </StepperDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperIndicator.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperIndicatorProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperIndicatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperIndicator
+    v-bind="forwarded"
+    :class="cn(
+      'inline-flex items-center justify-center rounded-full text-muted-foreground/50 w-8 h-8',
+      // Disabled
+      'group-data-[disabled]:text-muted-foreground group-data-[disabled]:opacity-50',
+      // Active
+      'group-data-[state=active]:bg-primary group-data-[state=active]:text-primary-foreground',
+      // Completed
+      'group-data-[state=completed]:bg-accent group-data-[state=completed]:text-accent-foreground',
+      props.class,
+    )"
+  >
+    <slot />
+  </StepperIndicator>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperItem.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperItemProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperItem
+    v-slot="slotProps"
+    v-bind="forwarded"
+    :class="cn('flex items-center gap-2 group data-[disabled]:pointer-events-none', props.class)"
+  >
+    <slot v-bind="slotProps" />
+  </StepperItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperSeparator.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperSeparatorProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperSeparator
+    v-bind="forwarded"
+    :class="cn(
+      'bg-muted',
+      // Disabled
+      'group-data-[disabled]:bg-muted group-data-[disabled]:opacity-50',
+      // Completed
+      'group-data-[state=completed]:bg-accent-foreground',
+      props.class,
+    )"
+  />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperTitle.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperTitleProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperTitle v-bind="forwarded" :class="cn('text-md font-semibold whitespace-nowrap', props.class)">
+    <slot />
+  </StepperTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/StepperTrigger.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import type { StepperTriggerProps } from "radix-vue";
+import { useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	StepperTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <StepperTrigger
+    v-bind="forwarded"
+    :class="cn('p-1 flex flex-col items-center text-center gap-1 rounded-md', props.class)"
+  >
+    <slot />
+  </StepperTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/stepper/index.ts
+```typescript
+export { default as Stepper } from "./Stepper.vue";
+export { default as StepperItem } from "./StepperItem.vue";
+export { default as StepperIndicator } from "./StepperIndicator.vue";
+export { default as StepperTrigger } from "./StepperTrigger.vue";
+export { default as StepperTitle } from "./StepperTitle.vue";
+export { default as StepperDescription } from "./StepperDescription.vue";
+export { default as StepperSeparator } from "./StepperSeparator.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/Carousel.vue
+```
+<script setup lang="ts">
+import { useProvideCarousel } from "./useCarousel";
+import type {
+	CarouselEmits,
+	CarouselProps,
+	WithClassAsProps,
+} from "./interface";
+
+const props = withDefaults(defineProps<CarouselProps & WithClassAsProps>(), {
+	orientation: "horizontal",
+});
+
+const emits = defineEmits<CarouselEmits>();
+
+const {
+	canScrollNext,
+	canScrollPrev,
+	carouselApi,
+	carouselRef,
+	orientation,
+	scrollNext,
+	scrollPrev,
+} = useProvideCarousel(props, emits);
+
+defineExpose({
+	canScrollNext,
+	canScrollPrev,
+	carouselApi,
+	carouselRef,
+	orientation,
+	scrollNext,
+	scrollPrev,
+});
+
+function onKeyDown(event: KeyboardEvent) {
+	const prevKey = props.orientation === "vertical" ? "ArrowUp" : "ArrowLeft";
+	const nextKey = props.orientation === "vertical" ? "ArrowDown" : "ArrowRight";
+
+	if (event.key === prevKey) {
+		event.preventDefault();
+		scrollPrev();
+
+		return;
+	}
+
+	if (event.key === nextKey) {
+		event.preventDefault();
+		scrollNext();
+	}
+}
+</script>
+
+<template>
+  <div
+    :class="cn('relative', props.class)"
+    role="region"
+    aria-roledescription="carousel"
+    tabindex="0"
+    @keydown="onKeyDown"
+  >
+    <slot :can-scroll-next :can-scroll-prev :carousel-api :carousel-ref :orientation :scroll-next :scroll-prev />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/CarouselContent.vue
+```
+<script setup lang="ts">
+import { useCarousel } from "./useCarousel";
+import type { WithClassAsProps } from "./interface";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = defineProps<WithClassAsProps>();
+
+const { carouselRef, orientation } = useCarousel();
+</script>
+
+<template>
+  <div ref="carouselRef" class="overflow-hidden">
+    <div
+      :class="
+        cn(
+          'flex',
+          orientation === 'horizontal' ? '-ml-4' : '-mt-4 flex-col',
+          props.class,
+        )"
+      v-bind="$attrs"
+    >
+      <slot />
+    </div>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/CarouselItem.vue
+```
+<script setup lang="ts">
+import { useCarousel } from "./useCarousel";
+import type { WithClassAsProps } from "./interface";
+
+const props = defineProps<WithClassAsProps>();
+
+const { orientation } = useCarousel();
+</script>
+
+<template>
+  <div
+    role="group"
+    aria-roledescription="slide"
+    :class="cn(
+      'min-w-0 shrink-0 grow-0 basis-full',
+      orientation === 'horizontal' ? 'pl-4' : 'pt-4',
+      props.class,
+    )"
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/CarouselNext.vue
+```
+<script setup lang="ts">
+import { useCarousel } from "./useCarousel";
+import type { WithClassAsProps } from "./interface";
+
+const props = defineProps<WithClassAsProps>();
+
+const { orientation, canScrollNext, scrollNext } = useCarousel();
+</script>
+
+<template>
+  <Button
+    :disabled="!canScrollNext"
+    :class="cn(
+      'touch-manipulation absolute h-8 w-8 rounded-full p-0',
+      orientation === 'horizontal'
+        ? '-right-12 top-1/2 -translate-y-1/2'
+        : '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
+      props.class,
+    )"
+    variant="outline"
+    @click="scrollNext"
+  >
+    <slot>
+      <ArrowRightIcon class="h-4 w-4 text-current" />
+      <span class="sr-only">Next Slide</span>
+    </slot>
+  </Button>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/CarouselPrevious.vue
+```
+<script setup lang="ts">
+import { useCarousel } from "./useCarousel";
+import type { WithClassAsProps } from "./interface";
+
+const props = defineProps<WithClassAsProps>();
+
+const { orientation, canScrollPrev, scrollPrev } = useCarousel();
+</script>
+
+<template>
+  <Button
+    :disabled="!canScrollPrev"
+    :class="cn(
+      'touch-manipulation absolute h-8 w-8 rounded-full p-0',
+      orientation === 'horizontal'
+        ? '-left-12 top-1/2 -translate-y-1/2'
+        : '-top-12 left-1/2 -translate-x-1/2 rotate-90',
+      props.class,
+    )"
+    variant="outline"
+    @click="scrollPrev"
+  >
+    <slot>
+      <ArrowLeftIcon class="h-4 w-4 text-current" />
+      <span class="sr-only">Previous Slide</span>
+    </slot>
+  </Button>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/index.ts
+```typescript
+export { default as Carousel } from "./Carousel.vue";
+export { default as CarouselContent } from "./CarouselContent.vue";
+export { default as CarouselItem } from "./CarouselItem.vue";
+export { default as CarouselPrevious } from "./CarouselPrevious.vue";
+export { default as CarouselNext } from "./CarouselNext.vue";
+export { useCarousel } from "./useCarousel";
+
+export type { UnwrapRefCarouselApi as CarouselApi } from "./interface";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/interface.ts
+```typescript
+import type { HTMLAttributes, UnwrapRef } from "vue";
+import type useEmblaCarousel from "embla-carousel-vue";
+import type { EmblaCarouselVueType } from "embla-carousel-vue";
+
+type CarouselApi = EmblaCarouselVueType[1];
+type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
+type CarouselOptions = UseCarouselParameters[0];
+type CarouselPlugin = UseCarouselParameters[1];
+
+export type UnwrapRefCarouselApi = UnwrapRef<CarouselApi>;
+
+export interface CarouselProps {
+	opts?: CarouselOptions;
+	plugins?: CarouselPlugin;
+	orientation?: "horizontal" | "vertical";
+}
+
+export interface CarouselEmits {
+	(e: "init-api", payload: UnwrapRefCarouselApi): void;
+}
+
+export interface WithClassAsProps {
+	class?: HTMLAttributes["class"];
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/carousel/useCarousel.ts
+```typescript
+import { createInjectionState } from "@vueuse/core";
+import emblaCarouselVue from "embla-carousel-vue";
+import { onMounted, ref } from "vue";
+import type {
+	UnwrapRefCarouselApi as CarouselApi,
+	CarouselEmits,
+	CarouselProps,
+} from "./interface";
+
+const [useProvideCarousel, useInjectCarousel] = createInjectionState(
+	({ opts, orientation, plugins }: CarouselProps, emits: CarouselEmits) => {
+		const [emblaNode, emblaApi] = emblaCarouselVue(
+			{
+				...opts,
+				axis: orientation === "horizontal" ? "x" : "y",
+			},
+			plugins,
+		);
+
+		function scrollPrev() {
+			emblaApi.value?.scrollPrev();
+		}
+		function scrollNext() {
+			emblaApi.value?.scrollNext();
+		}
+
+		const canScrollNext = ref(false);
+		const canScrollPrev = ref(false);
+
+		function onSelect(api: CarouselApi) {
+			canScrollNext.value = api?.canScrollNext() || false;
+			canScrollPrev.value = api?.canScrollPrev() || false;
+		}
+
+		onMounted(() => {
+			if (!emblaApi.value) return;
+
+			emblaApi.value?.on("init", onSelect);
+			emblaApi.value?.on("reInit", onSelect);
+			emblaApi.value?.on("select", onSelect);
+
+			emits("init-api", emblaApi.value);
+		});
+
+		return {
+			carouselRef: emblaNode,
+			carouselApi: emblaApi,
+			canScrollPrev,
+			canScrollNext,
+			scrollPrev,
+			scrollNext,
+			orientation,
+		};
+	},
+);
+
+function useCarousel() {
+	const carouselState = useInjectCarousel();
+
+	if (!carouselState)
+		throw new Error("useCarousel must be used within a <Carousel />");
+
+	return carouselState;
+}
+
+export { useCarousel, useProvideCarousel };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle-group/ToggleGroup.vue
+```
+<script setup lang="ts">
+import type { VariantProps } from "class-variance-authority";
+import { type HTMLAttributes, computed, provide } from "vue";
+import {
+	type ToggleGroupRootEmits,
+	type ToggleGroupRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+import type { toggleVariants } from "@/components/ui/toggle";
+
+type ToggleGroupVariants = VariantProps<typeof toggleVariants>;
+
+const props = defineProps<
+	ToggleGroupRootProps & {
+		class?: HTMLAttributes["class"];
+		variant?: ToggleGroupVariants["variant"];
+		size?: ToggleGroupVariants["size"];
+	}
+>();
+const emits = defineEmits<ToggleGroupRootEmits>();
+
+provide("toggleGroup", {
+	variant: props.variant,
+	size: props.size,
+});
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ToggleGroupRoot v-bind="forwarded" :class="cn('flex items-center justify-center gap-1', props.class)">
+    <slot />
+  </ToggleGroupRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle-group/ToggleGroupItem.vue
+```
+<script setup lang="ts">
+import type { VariantProps } from "class-variance-authority";
+import { type HTMLAttributes, computed, inject } from "vue";
+import { type ToggleGroupItemProps, useForwardProps } from "radix-vue";
+import { toggleVariants } from "@/components/ui/toggle";
+
+type ToggleGroupVariants = VariantProps<typeof toggleVariants>;
+
+const props = defineProps<
+	ToggleGroupItemProps & {
+		class?: HTMLAttributes["class"];
+		variant?: ToggleGroupVariants["variant"];
+		size?: ToggleGroupVariants["size"];
+	}
+>();
+
+const context = inject<ToggleGroupVariants>("toggleGroup");
+
+const delegatedProps = computed(() => {
+	const { class: _, variant, size, ...delegated } = props;
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <ToggleGroupItem
+    v-bind="forwardedProps" :class="cn(toggleVariants({
+      variant: context?.variant || variant,
+      size: context?.size || size,
+    }), props.class)"
+  >
+    <slot />
+  </ToggleGroupItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle-group/index.ts
+```typescript
+export { default as ToggleGroup } from "./ToggleGroup.vue";
+export { default as ToggleGroupItem } from "./ToggleGroupItem.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenu.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { ContextMenuRootEmits, ContextMenuRootProps } from "radix-vue";
+
+const props = defineProps<ContextMenuRootProps>();
+const emits = defineEmits<ContextMenuRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuRoot v-bind="forwarded">
+    <slot />
+  </ContextMenuRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuCheckboxItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuCheckboxItemEmits,
+	type ContextMenuCheckboxItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuCheckboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuCheckboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuCheckboxItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <ContextMenuItemIndicator>
+        <CheckIcon class="h-4 w-4" />
+      </ContextMenuItemIndicator>
+    </span>
+    <slot />
+  </ContextMenuCheckboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuContentEmits,
+	type ContextMenuContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuPortal>
+    <ContextMenuContent
+      v-bind="forwarded"
+      :class="cn(
+        'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        props.class,
+      )"
+    >
+      <slot />
+    </ContextMenuContent>
+  </ContextMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuGroup.vue
+```
+<script setup lang="ts">
+import { type ContextMenuGroupProps } from "radix-vue";
+
+const props = defineProps<ContextMenuGroupProps>();
+</script>
+
+<template>
+  <ContextMenuGroup v-bind="props">
+    <slot />
+  </ContextMenuGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuItemEmits,
+	type ContextMenuItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuItemProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+const emits = defineEmits<ContextMenuItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+  </ContextMenuItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuLabel.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuLabelProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ContextMenuLabel
+    v-bind="delegatedProps"
+    :class="
+      cn('px-2 py-1.5 text-sm font-semibold text-foreground',
+         inset && 'pl-8', props.class,
+      )"
+  >
+    <slot />
+  </ContextMenuLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuPortal.vue
+```
+<script setup lang="ts">
+import { type ContextMenuPortalProps } from "radix-vue";
+
+const props = defineProps<ContextMenuPortalProps>();
+</script>
+
+<template>
+  <ContextMenuPortal v-bind="props">
+    <slot />
+  </ContextMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuRadioGroup.vue
+```
+<script setup lang="ts">
+import {
+	type ContextMenuRadioGroupEmits,
+	type ContextMenuRadioGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<ContextMenuRadioGroupProps>();
+const emits = defineEmits<ContextMenuRadioGroupEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuRadioGroup v-bind="forwarded">
+    <slot />
+  </ContextMenuRadioGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuRadioItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuRadioItemEmits,
+	type ContextMenuRadioItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuRadioItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuRadioItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuRadioItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <ContextMenuItemIndicator>
+        <DotFilledIcon class="h-4 w-4 fill-current" />
+      </ContextMenuItemIndicator>
+    </span>
+    <slot />
+  </ContextMenuRadioItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ContextMenuSeparator v-bind="delegatedProps" :class="cn('-mx-1 my-1 h-px bg-border', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest text-muted-foreground', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSub.vue
+```
+<script setup lang="ts">
+import {
+	type ContextMenuSubEmits,
+	type ContextMenuSubProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<ContextMenuSubProps>();
+const emits = defineEmits<ContextMenuSubEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuSub v-bind="forwarded">
+    <slot />
+  </ContextMenuSub>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSubContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuSubContentEmits,
+	type DropdownMenuSubContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuSubContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuSubContent
+    v-bind="forwarded"
+    :class="
+      cn(
+        'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </ContextMenuSubContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSubTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuSubTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuSubTriggerProps & {
+		class?: HTMLAttributes["class"];
+		inset?: boolean;
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <ContextMenuSubTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+    <ChevronRightIcon class="ml-auto h-4 w-4" />
+  </ContextMenuSubTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuTrigger.vue
+```
+<script setup lang="ts">
+import { type ContextMenuTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<ContextMenuTriggerProps>();
+
+const forwardedProps = useForwardProps(props);
+</script>
+
+<template>
+  <ContextMenuTrigger v-bind="forwardedProps">
+    <slot />
+  </ContextMenuTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/index.ts
+```typescript
+export { default as ContextMenu } from "./ContextMenu.vue";
+export { default as ContextMenuTrigger } from "./ContextMenuTrigger.vue";
+export { default as ContextMenuContent } from "./ContextMenuContent.vue";
+export { default as ContextMenuGroup } from "./ContextMenuGroup.vue";
+export { default as ContextMenuRadioGroup } from "./ContextMenuRadioGroup.vue";
+export { default as ContextMenuItem } from "./ContextMenuItem.vue";
+export { default as ContextMenuCheckboxItem } from "./ContextMenuCheckboxItem.vue";
+export { default as ContextMenuRadioItem } from "./ContextMenuRadioItem.vue";
+export { default as ContextMenuShortcut } from "./ContextMenuShortcut.vue";
+export { default as ContextMenuSeparator } from "./ContextMenuSeparator.vue";
+export { default as ContextMenuLabel } from "./ContextMenuLabel.vue";
+export { default as ContextMenuSub } from "./ContextMenuSub.vue";
+export { default as ContextMenuSubTrigger } from "./ContextMenuSubTrigger.vue";
+export { default as ContextMenuSubContent } from "./ContextMenuSubContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/TagsInput.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type TagsInputRootEmits,
+	type TagsInputRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	TagsInputRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<TagsInputRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <TagsInputRoot v-bind="forwarded" :class="cn('flex flex-wrap gap-2 items-center rounded-md border border-input bg-background px-3 py-1.5 text-sm', props.class)">
+    <slot />
+  </TagsInputRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/TagsInputInput.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TagsInputInputProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	TagsInputInputProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <TagsInputInput v-bind="forwardedProps" :class="cn('text-sm min-h-5 focus:outline-none flex-1 bg-transparent px-1', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/TagsInputItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TagsInputItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	TagsInputItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <TagsInputItem v-bind="forwardedProps" :class="cn('flex h-5 items-center rounded-md bg-secondary data-[state=active]:ring-ring data-[state=active]:ring-2 data-[state=active]:ring-offset-2 ring-offset-background', props.class)">
+    <slot />
+  </TagsInputItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/TagsInputItemDelete.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TagsInputItemDeleteProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	TagsInputItemDeleteProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <TagsInputItemDelete v-bind="forwardedProps" :class="cn('flex rounded bg-transparent mr-1', props.class)">
+    <slot>
+      <Cross2Icon class="w-4 h-4" />
+    </slot>
+  </TagsInputItemDelete>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/TagsInputItemText.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type TagsInputItemTextProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	TagsInputItemTextProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <TagsInputItemText v-bind="forwardedProps" :class="cn('py-0.5 px-2 text-sm rounded bg-transparent', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/tags-input/index.ts
+```typescript
+export { default as TagsInput } from "./TagsInput.vue";
+export { default as TagsInputInput } from "./TagsInputInput.vue";
+export { default as TagsInputItem } from "./TagsInputItem.vue";
+export { default as TagsInputItemDelete } from "./TagsInputItemDelete.vue";
+export { default as TagsInputItemText } from "./TagsInputItemText.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle/Toggle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ToggleEmits,
+	type ToggleProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+import { type ToggleVariants } from ".";
+
+const props = withDefaults(
+	defineProps<
+		ToggleProps & {
+			class?: HTMLAttributes["class"];
+			variant?: ToggleVariants["variant"];
+			size?: ToggleVariants["size"];
+		}
+	>(),
+	{
+		variant: "default",
+		size: "default",
+		disabled: false,
+	},
+);
+
+const emits = defineEmits<ToggleEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, size, variant, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <Toggle
+    v-bind="forwarded"
+    :class="cn(toggleVariants({ variant, size }), props.class)"
+  >
+    <slot />
+  </Toggle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Toggle } from "./Toggle.vue";
+
+export const toggleVariants = cva(
+	"inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
+	{
+		variants: {
+			variant: {
+				default: "bg-transparent",
+				outline:
+					"border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground",
+			},
+			size: {
+				default: "h-9 px-3",
+				sm: "h-8 px-2",
+				lg: "h-10 px-3",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+export type ToggleVariants = VariantProps<typeof toggleVariants>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/Dialog.vue
+```
+<script setup lang="ts">
+import {
+	type DialogRootEmits,
+	type DialogRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DialogRootProps>();
+const emits = defineEmits<DialogRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DialogRoot v-bind="forwarded">
+    <slot />
+  </DialogRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogClose.vue
+```
+<script setup lang="ts">
+import { type DialogCloseProps } from "radix-vue";
+
+const props = defineProps<DialogCloseProps>();
+</script>
+
+<template>
+  <DialogClose v-bind="props">
+    <slot />
+  </DialogClose>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    />
+    <DialogContent
+      v-bind="forwarded"
+      :class="
+        cn(
+          'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+          props.class,
+        )"
+    >
+      <slot />
+
+      <DialogClose
+        class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+      >
+        <Cross2Icon class="w-4 h-4" />
+        <span class="sr-only">Close</span>
+      </DialogClose>
+    </DialogContent>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogDescriptionProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DialogDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DialogDescription
+    v-bind="forwardedProps"
+    :class="cn('text-sm text-muted-foreground', props.class)"
+  >
+    <slot />
+  </DialogDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-x-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div
+    :class="cn('flex flex-col gap-y-1.5 text-center sm:text-left', props.class)"
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogScrollContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    >
+      <DialogContent
+        :class="
+          cn(
+            'relative z-50 grid w-full max-w-lg my-8 gap-4 border border-border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full',
+            props.class,
+          )
+        "
+        v-bind="forwarded"
+        @pointer-down-outside="(event) => {
+          const originalEvent = event.detail.originalEvent;
+          const target = originalEvent.target as HTMLElement;
+          if (originalEvent.offsetX > target.clientWidth || originalEvent.offsetY > target.clientHeight) {
+            event.preventDefault();
+          }
+        }"
+      >
+        <slot />
+
+        <DialogClose
+          class="absolute top-4 right-4 p-0.5 transition-colors rounded-md hover:bg-secondary"
+        >
+          <Cross2Icon class="w-4 h-4" />
+          <span class="sr-only">Close</span>
+        </DialogClose>
+      </DialogContent>
+    </DialogOverlay>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogTitleProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DialogTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DialogTitle
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'text-lg font-semibold leading-none tracking-tight',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </DialogTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogTrigger.vue
+```
+<script setup lang="ts">
+import { type DialogTriggerProps } from "radix-vue";
+
+const props = defineProps<DialogTriggerProps>();
+</script>
+
+<template>
+  <DialogTrigger v-bind="props">
+    <slot />
+  </DialogTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/index.ts
+```typescript
+export { default as Dialog } from "./Dialog.vue";
+export { default as DialogClose } from "./DialogClose.vue";
+export { default as DialogTrigger } from "./DialogTrigger.vue";
+export { default as DialogHeader } from "./DialogHeader.vue";
+export { default as DialogTitle } from "./DialogTitle.vue";
+export { default as DialogDescription } from "./DialogDescription.vue";
+export { default as DialogContent } from "./DialogContent.vue";
+export { default as DialogScrollContent } from "./DialogScrollContent.vue";
+export { default as DialogFooter } from "./DialogFooter.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/popover/Popover.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { PopoverRootEmits, PopoverRootProps } from "radix-vue";
+
+const props = defineProps<PopoverRootProps>();
+const emits = defineEmits<PopoverRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <PopoverRoot v-bind="forwarded">
+    <slot />
+  </PopoverRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/popover/PopoverContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type PopoverContentEmits,
+	type PopoverContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = withDefaults(
+	defineProps<PopoverContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		align: "center",
+		sideOffset: 4,
+	},
+);
+const emits = defineEmits<PopoverContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <PopoverPortal>
+    <PopoverContent
+      v-bind="{ ...forwarded, ...$attrs }"
+      :class="
+        cn(
+          'z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+          props.class,
+        )
+      "
+    >
+      <slot />
+    </PopoverContent>
+  </PopoverPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/popover/PopoverTrigger.vue
+```
+<script setup lang="ts">
+import { type PopoverTriggerProps } from "radix-vue";
+
+const props = defineProps<PopoverTriggerProps>();
+</script>
+
+<template>
+  <PopoverTrigger v-bind="props">
+    <slot />
+  </PopoverTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/popover/index.ts
+```typescript
+export { PopoverAnchor } from "radix-vue";
+export { default as Popover } from "./Popover.vue";
+export { default as PopoverTrigger } from "./PopoverTrigger.vue";
+export { default as PopoverContent } from "./PopoverContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sonner/Sonner.vue
+```
+<script lang="ts" setup>
+import { type ToasterProps } from "vue-sonner";
+
+const props = defineProps<ToasterProps>();
+</script>
+
+<template>
+  <Sonner
+    class="toaster group"
+    v-bind="props"
+    :toast-options="{
+      classes: {
+        toast: 'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
+        description: 'group-[.toast]:text-muted-foreground',
+        actionButton:
+          'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+        cancelButton:
+          'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+      },
+    }"
+  />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sonner/index.ts
+```typescript
+export { default as Toaster } from "./Sonner.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/textarea/Textarea.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { useVModel } from "@vueuse/core";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+	defaultValue?: string | number;
+	modelValue?: string | number;
+}>();
+
+const emits = defineEmits<{
+	(e: "update:modelValue", payload: string | number): void;
+}>();
+
+const modelValue = useVModel(props, "modelValue", emits, {
+	passive: true,
+	defaultValue: props.defaultValue,
+});
+</script>
+
+<template>
+  <textarea v-model="modelValue" :class="cn('flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/textarea/index.ts
+```typescript
+export { default as Textarea } from "./Textarea.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/button/Button.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type PrimitiveProps } from "radix-vue";
+import { type ButtonVariants } from ".";
+
+interface Props extends PrimitiveProps {
+	variant?: ButtonVariants["variant"];
+	size?: ButtonVariants["size"];
+	class?: HTMLAttributes["class"];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+	as: "button",
+});
+</script>
+
+<template>
+  <Primitive
+    :as="as"
+    :as-child="asChild"
+    :class="cn(buttonVariants({ variant, size }), props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/button/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Button } from "./Button.vue";
+
+export const buttonVariants = cva(
+	"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+	{
+		variants: {
+			variant: {
+				default:
+					"bg-primary text-primary-foreground shadow hover:bg-primary/90",
+				destructive:
+					"bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+				outline:
+					"border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+				secondary:
+					"bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+				ghost: "hover:bg-accent hover:text-accent-foreground",
+				link: "text-primary underline-offset-4 hover:underline",
+			},
+			size: {
+				default: "h-9 px-4 py-2",
+				xs: "h-7 rounded px-2",
+				sm: "h-8 rounded-md px-3 text-xs",
+				lg: "h-10 rounded-md px-8",
+				icon: "h-9 w-9",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+export type ButtonVariants = VariantProps<typeof buttonVariants>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/ScrollArea.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ScrollAreaRootProps } from "radix-vue";
+
+const props = defineProps<
+	ScrollAreaRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ScrollAreaRoot v-bind="delegatedProps" :class="cn('relative overflow-hidden', props.class)">
+    <ScrollAreaViewport class="h-full w-full rounded-[inherit]">
+      <slot />
+    </ScrollAreaViewport>
+    <ScrollBar />
+    <ScrollAreaCorner />
+  </ScrollAreaRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/ScrollBar.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ScrollAreaScrollbarProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<ScrollAreaScrollbarProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		orientation: "vertical",
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ScrollAreaScrollbar
+    v-bind="delegatedProps"
+    :class="
+      cn('flex touch-none select-none transition-colors',
+         orientation === 'vertical'
+           && 'h-full w-2.5 border-l border-l-transparent p-px',
+         orientation === 'horizontal'
+           && 'h-2.5 flex-col border-t border-t-transparent p-px',
+         props.class)"
+  >
+    <ScrollAreaThumb class="relative flex-1 rounded-full bg-border" />
+  </ScrollAreaScrollbar>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/index.ts
+```typescript
+export { default as ScrollArea } from "./ScrollArea.vue";
+export { default as ScrollBar } from "./ScrollBar.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/Table.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div class="relative w-full overflow-auto">
+    <table :class="cn('w-full caption-bottom text-sm', props.class)">
+      <slot />
+    </table>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableBody.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <tbody :class="cn('[&_tr:last-child]:border-0', props.class)">
+    <slot />
+  </tbody>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableCaption.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <caption :class="cn('mt-4 text-sm text-muted-foreground', props.class)">
+    <slot />
+  </caption>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableCell.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <td
+    :class="
+      cn(
+        'p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </td>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableEmpty.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+
+const props = withDefaults(
+	defineProps<{
+		class?: HTMLAttributes["class"];
+		colspan?: number;
+	}>(),
+	{
+		colspan: 1,
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <TableRow>
+    <TableCell
+      :class="
+        cn(
+          'p-4 whitespace-nowrap align-middle text-sm text-foreground',
+          props.class,
+        )
+      "
+      v-bind="delegatedProps"
+    >
+      <div class="flex items-center justify-center py-10">
+        <slot />
+      </div>
+    </TableCell>
+  </TableRow>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <tfoot :class="cn('border-t bg-muted/50 font-medium [&>tr]:last:border-b-0', props.class)">
+    <slot />
+  </tfoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableHead.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <th :class="cn('h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-0.5', props.class)">
+    <slot />
+  </th>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <thead :class="cn('[&_tr]:border-b', props.class)">
+    <slot />
+  </thead>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/TableRow.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <tr :class="cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', props.class)">
+    <slot />
+  </tr>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/table/index.ts
+```typescript
+export { default as Table } from "./Table.vue";
+export { default as TableBody } from "./TableBody.vue";
+export { default as TableCell } from "./TableCell.vue";
+export { default as TableHead } from "./TableHead.vue";
+export { default as TableHeader } from "./TableHeader.vue";
+export { default as TableFooter } from "./TableFooter.vue";
+export { default as TableRow } from "./TableRow.vue";
+export { default as TableCaption } from "./TableCaption.vue";
+export { default as TableEmpty } from "./TableEmpty.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendar.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type RangeCalendarRootEmits,
+	type RangeCalendarRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<RangeCalendarRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <RangeCalendarRoot
+    v-slot="{ grid, weekDays }"
+    :class="cn('p-3', props.class)"
+    v-bind="forwarded"
+  >
+    <RangeCalendarHeader>
+      <RangeCalendarPrevButton />
+      <RangeCalendarHeading />
+      <RangeCalendarNextButton />
+    </RangeCalendarHeader>
+
+    <div class="flex flex-col gap-y-4 mt-4 sm:flex-row sm:gap-x-4 sm:gap-y-0">
+      <RangeCalendarGrid v-for="month in grid" :key="month.value.toString()">
+        <RangeCalendarGridHead>
+          <RangeCalendarGridRow>
+            <RangeCalendarHeadCell
+              v-for="day in weekDays" :key="day"
+            >
+              {{ day }}
+            </RangeCalendarHeadCell>
+          </RangeCalendarGridRow>
+        </RangeCalendarGridHead>
+        <RangeCalendarGridBody>
+          <RangeCalendarGridRow v-for="(weekDates, index) in month.rows" :key="`weekDate-${index}`" class="mt-2 w-full">
+            <RangeCalendarCell
+              v-for="weekDate in weekDates"
+              :key="weekDate.toString()"
+              :date="weekDate"
+            >
+              <RangeCalendarCellTrigger
+                :day="weekDate"
+                :month="month.value"
+              />
+            </RangeCalendarCell>
+          </RangeCalendarGridRow>
+        </RangeCalendarGridBody>
+      </RangeCalendarGrid>
+    </div>
+  </RangeCalendarRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarCell.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarCell
+    :class="cn('relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([data-selected])]:bg-accent first:[&:has([data-selected])]:rounded-l-md last:[&:has([data-selected])]:rounded-r-md [&:has([data-selected][data-outside-view])]:bg-accent/50 [&:has([data-selected][data-selection-end])]:rounded-r-md [&:has([data-selected][data-selection-start])]:rounded-l-md', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </RangeCalendarCell>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarCellTrigger.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarCellTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarCellTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarCellTrigger
+    :class="cn(
+      buttonVariants({ variant: 'ghost' }),
+      'h-8 w-8 p-0 font-normal data-[selected]:opacity-100',
+      '[&[data-today]:not([data-selected])]:bg-accent [&[data-today]:not([data-selected])]:text-accent-foreground',
+      // Selection Start
+      'data-[selection-start]:bg-primary data-[selection-start]:text-primary-foreground data-[selection-start]:hover:bg-primary data-[selection-start]:hover:text-primary-foreground data-[selection-start]:focus:bg-primary data-[selection-start]:focus:text-primary-foreground',
+      // Selection End
+      'data-[selection-end]:bg-primary data-[selection-end]:text-primary-foreground data-[selection-end]:hover:bg-primary data-[selection-end]:hover:text-primary-foreground data-[selection-end]:focus:bg-primary data-[selection-end]:focus:text-primary-foreground',
+      // Outside months
+      'data-[outside-view]:text-muted-foreground data-[outside-view]:opacity-50 [&[data-outside-view][data-selected]]:text-muted-foreground [&[data-outside-view][data-selected]]:opacity-30',
+      // Disabled
+      'data-[disabled]:text-muted-foreground data-[disabled]:opacity-50',
+      // Unavailable
+      'data-[unavailable]:text-destructive-foreground data-[unavailable]:line-through',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </RangeCalendarCellTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarGrid.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarGridProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarGridProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarGrid
+    :class="cn('w-full border-collapse space-y-1', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </RangeCalendarGrid>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarGridBody.vue
+```
+<script lang="ts" setup>
+import { type RangeCalendarGridBodyProps } from "radix-vue";
+
+const props = defineProps<RangeCalendarGridBodyProps>();
+</script>
+
+<template>
+  <RangeCalendarGridBody v-bind="props">
+    <slot />
+  </RangeCalendarGridBody>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarGridHead.vue
+```
+<script lang="ts" setup>
+import { type RangeCalendarGridHeadProps } from "radix-vue";
+
+const props = defineProps<RangeCalendarGridHeadProps>();
+</script>
+
+<template>
+  <RangeCalendarGridHead v-bind="props">
+    <slot />
+  </RangeCalendarGridHead>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarGridRow.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarGridRowProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarGridRowProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarGridRow :class="cn('flex', props.class)" v-bind="forwardedProps">
+    <slot />
+  </RangeCalendarGridRow>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarHeadCell.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarHeadCellProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarHeadCellProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarHeadCell
+    :class="cn('w-8 rounded-md text-[0.8rem] font-normal text-muted-foreground', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot />
+  </RangeCalendarHeadCell>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarHeader.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarHeaderProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarHeaderProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarHeader :class="cn('relative flex w-full items-center justify-between pt-1', props.class)" v-bind="forwardedProps">
+    <slot />
+  </RangeCalendarHeader>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarHeading.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarHeadingProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarHeadingProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarHeading
+    v-slot="{ headingValue }"
+    :class="cn('text-sm font-medium', props.class)"
+    v-bind="forwardedProps"
+  >
+    <slot :heading-value>
+      {{ headingValue }}
+    </slot>
+  </RangeCalendarHeading>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarNextButton.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarNextProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarNextProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarNext
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronRightIcon class="h-4 w-4" />
+    </slot>
+  </RangeCalendarNext>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/RangeCalendarPrevButton.vue
+```
+<script lang="ts" setup>
+import { type HTMLAttributes, computed } from "vue";
+import { type RangeCalendarPrevProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RangeCalendarPrevProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RangeCalendarPrev
+    :class="cn(
+      buttonVariants({ variant: 'outline' }),
+      'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100',
+      props.class,
+    )"
+    v-bind="forwardedProps"
+  >
+    <slot>
+      <ChevronLeftIcon class="h-4 w-4" />
+    </slot>
+  </RangeCalendarPrev>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/range-calendar/index.ts
+```typescript
+export { default as RangeCalendar } from "./RangeCalendar.vue";
+export { default as RangeCalendarCell } from "./RangeCalendarCell.vue";
+export { default as RangeCalendarCellTrigger } from "./RangeCalendarCellTrigger.vue";
+export { default as RangeCalendarGrid } from "./RangeCalendarGrid.vue";
+export { default as RangeCalendarGridBody } from "./RangeCalendarGridBody.vue";
+export { default as RangeCalendarGridHead } from "./RangeCalendarGridHead.vue";
+export { default as RangeCalendarGridRow } from "./RangeCalendarGridRow.vue";
+export { default as RangeCalendarHeadCell } from "./RangeCalendarHeadCell.vue";
+export { default as RangeCalendarHeader } from "./RangeCalendarHeader.vue";
+export { default as RangeCalendarHeading } from "./RangeCalendarHeading.vue";
+export { default as RangeCalendarNextButton } from "./RangeCalendarNextButton.vue";
+export { default as RangeCalendarPrevButton } from "./RangeCalendarPrevButton.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/collapsible/Collapsible.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { CollapsibleRootEmits, CollapsibleRootProps } from "radix-vue";
+
+const props = defineProps<CollapsibleRootProps>();
+const emits = defineEmits<CollapsibleRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <CollapsibleRoot v-slot="{ open }" v-bind="forwarded">
+    <slot :open="open" />
+  </CollapsibleRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/collapsible/CollapsibleContent.vue
+```
+<script setup lang="ts">
+import { type CollapsibleContentProps } from "radix-vue";
+
+const props = defineProps<CollapsibleContentProps>();
+</script>
+
+<template>
+  <CollapsibleContent v-bind="props" class="overflow-hidden transition-all data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+    <slot />
+  </CollapsibleContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/collapsible/CollapsibleTrigger.vue
+```
+<script setup lang="ts">
+import { type CollapsibleTriggerProps } from "radix-vue";
+
+const props = defineProps<CollapsibleTriggerProps>();
+</script>
+
+<template>
+  <CollapsibleTrigger v-bind="props">
+    <slot />
+  </CollapsibleTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/collapsible/index.ts
+```typescript
+export { default as Collapsible } from "./Collapsible.vue";
+export { default as CollapsibleTrigger } from "./CollapsibleTrigger.vue";
+export { default as CollapsibleContent } from "./CollapsibleContent.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/avatar/Avatar.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type AvatarVariants } from ".";
+
+const props = withDefaults(
+	defineProps<{
+		class?: HTMLAttributes["class"];
+		size?: AvatarVariants["size"];
+		shape?: AvatarVariants["shape"];
+	}>(),
+	{
+		size: "sm",
+		shape: "circle",
+	},
+);
+</script>
+
+<template>
+  <AvatarRoot :class="cn(avatarVariant({ size, shape }), props.class)">
+    <slot />
+  </AvatarRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/avatar/AvatarFallback.vue
+```
+<script setup lang="ts">
+import { type AvatarFallbackProps } from "radix-vue";
+
+const props = defineProps<AvatarFallbackProps>();
+</script>
+
+<template>
+  <AvatarFallback v-bind="props">
+    <slot />
+  </AvatarFallback>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/avatar/AvatarImage.vue
+```
+<script setup lang="ts">
+import { type AvatarImageProps } from "radix-vue";
+
+const props = defineProps<AvatarImageProps>();
+</script>
+
+<template>
+  <AvatarImage v-bind="props" class="h-full w-full object-cover" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/avatar/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Avatar } from "./Avatar.vue";
+export { default as AvatarImage } from "./AvatarImage.vue";
+export { default as AvatarFallback } from "./AvatarFallback.vue";
+
+export const avatarVariant = cva(
+	"inline-flex items-center justify-center font-normal text-foreground select-none shrink-0 bg-secondary overflow-hidden",
+	{
+		variants: {
+			size: {
+				sm: "h-10 w-10 text-xs",
+				base: "h-16 w-16 text-2xl",
+				lg: "h-32 w-32 text-5xl",
+			},
+			shape: {
+				circle: "rounded-full",
+				square: "rounded-md",
+			},
+		},
+	},
+);
+
+export type AvatarVariants = VariantProps<typeof avatarVariant>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/aspect-ratio/AspectRatio.vue
+```
+<script setup lang="ts">
+import { type AspectRatioProps } from "radix-vue";
+
+const props = defineProps<AspectRatioProps>();
+</script>
+
+<template>
+  <AspectRatio v-bind="props">
+    <slot />
+  </AspectRatio>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/aspect-ratio/index.ts
+```typescript
+export { default as AspectRatio } from "./AspectRatio.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/switch/Switch.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type SwitchRootEmits,
+	type SwitchRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	SwitchRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<SwitchRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <SwitchRoot
+    v-bind="forwarded"
+    :class="cn(
+      'peer inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input',
+      props.class,
+    )"
+  >
+    <SwitchThumb
+      :class="cn('pointer-events-none block h-4 w-4 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0')"
+    />
+  </SwitchRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/switch/index.ts
+```typescript
+export { default as Switch } from "./Switch.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-area/AreaChart.vue
+```
+<script setup lang="ts" generic="T extends Record<string, any>">
+import { type BulletLegendItemInterface, CurveType } from "@unovis/ts";
+import { type Component, computed, ref } from "vue";
+import { useMounted } from "@vueuse/core";
+import { useId } from "radix-vue";
+import type { BaseChartProps } from ".";
+import { defaultColors } from "@/components/ui/chart";
+
+const props = withDefaults(
+	defineProps<
+		BaseChartProps<T> & {
+			/**
+			 * Render custom tooltip component.
+			 */
+			customTooltip?: Component;
+			/**
+			 * Type of curve
+			 */
+			curveType?: CurveType;
+			/**
+			 * Controls the visibility of gradient.
+			 * @default true
+			 */
+			showGradiant?: boolean;
+		}
+	>(),
+	{
+		curveType: CurveType.MonotoneX,
+		filterOpacity: 0.2,
+		margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+		showXAxis: true,
+		showYAxis: true,
+		showTooltip: true,
+		showLegend: true,
+		showGridLine: true,
+		showGradiant: true,
+	},
+);
+
+const emits = defineEmits<{
+	legendItemClick: [d: BulletLegendItemInterface, i: number];
+}>();
+
+type KeyOfT = Extract<keyof T, string>;
+type Data = (typeof props.data)[number];
+
+const chartRef = useId();
+
+const index = computed(() => props.index as KeyOfT);
+const colors = computed(() =>
+	props.colors?.length ? props.colors : defaultColors(props.categories.length),
+);
+
+const legendItems = ref<BulletLegendItemInterface[]>(
+	props.categories.map((category, i) => ({
+		name: category,
+		color: colors.value[i],
+		inactive: false,
+	})),
+);
+
+const isMounted = useMounted();
+
+function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
+	emits("legendItemClick", d, i);
+}
+</script>
+
+<template>
+  <div :class="cn('w-full h-[400px] flex flex-col items-end', $attrs.class ?? '')">
+    <ChartLegend v-if="showLegend" v-model:items="legendItems" @legend-item-click="handleLegendItemClick" />
+
+    <VisXYContainer :style="{ height: isMounted ? '100%' : 'auto' }" :margin="{ left: 20, right: 20 }" :data="data">
+      <svg width="0" height="0">
+        <defs>
+          <linearGradient v-for="(color, i) in colors" :id="`${chartRef}-color-${i}`" :key="i" x1="0" y1="0" x2="0" y2="1">
+            <template v-if="showGradiant">
+              <stop offset="5%" :stop-color="color" stop-opacity="0.4" />
+              <stop offset="95%" :stop-color="color" stop-opacity="0" />
+            </template>
+            <template v-else>
+              <stop offset="0%" :stop-color="color" />
+            </template>
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <ChartCrosshair v-if="showTooltip" :colors="colors" :items="legendItems" :index="index" :custom-tooltip="customTooltip" />
+
+      <template v-for="(category, i) in categories" :key="category">
+        <VisArea
+          :x="(d: Data, i: number) => i"
+          :y="(d: Data) => d[category]"
+          color="auto"
+          :curve-type="curveType"
+          :attributes="{
+            [Area.selectors.area]: {
+              fill: `url(#${chartRef}-color-${i})`,
+            },
+          }"
+          :opacity="legendItems.find(item => item.name === category)?.inactive ? filterOpacity : 1"
+        />
+      </template>
+
+      <template v-for="(category, i) in categories" :key="category">
+        <VisLine
+          :x="(d: Data, i: number) => i"
+          :y="(d: Data) => d[category]"
+          :color="colors[i]"
+          :curve-type="curveType"
+          :attributes="{
+            [Line.selectors.line]: {
+              opacity: legendItems.find(item => item.name === category)?.inactive ? filterOpacity : 1,
+            },
+          }"
+        />
+      </template>
+
+      <VisAxis
+        v-if="showXAxis"
+        type="x"
+        :tick-format="xFormatter ?? ((v: number) => data[v]?.[index])"
+        :grid-line="false"
+        :tick-line="false"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+      <VisAxis
+        v-if="showYAxis"
+        type="y"
+        :tick-line="false"
+        :tick-format="yFormatter"
+        :domain-line="false"
+        :grid-line="showGridLine"
+        :attributes="{
+          [Axis.selectors.grid]: {
+            class: 'text-muted',
+          },
+        }"
+        tick-text-color="hsl(var(--vis-text-color))"
+      />
+
+      <slot />
+    </VisXYContainer>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-area/index.ts
+```typescript
+export { default as AreaChart } from "./AreaChart.vue";
+
+import type { Spacing } from "@unovis/ts";
+
+type KeyOf<T extends Record<string, any>> = Extract<keyof T, string>;
+
+export interface BaseChartProps<T extends Record<string, any>> {
+	/**
+	 * The source data, in which each entry is a dictionary.
+	 */
+	data: T[];
+	/**
+	 * Select the categories from your data. Used to populate the legend and toolip.
+	 */
+	categories: KeyOf<T>[];
+	/**
+	 * Sets the key to map the data to the axis.
+	 */
+	index: KeyOf<T>;
+	/**
+	 * Change the default colors.
+	 */
+	colors?: string[];
+	/**
+	 * Margin of each the container
+	 */
+	margin?: Spacing;
+	/**
+	 * Change the opacity of the non-selected field
+	 * @default 0.2
+	 */
+	filterOpacity?: number;
+	/**
+	 * Function to format X label
+	 */
+	xFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Function to format Y label
+	 */
+	yFormatter?: (
+		tick: number | Date,
+		i: number,
+		ticks: number[] | Date[],
+	) => string;
+	/**
+	 * Controls the visibility of the X axis.
+	 * @default true
+	 */
+	showXAxis?: boolean;
+	/**
+	 * Controls the visibility of the Y axis.
+	 * @default true
+	 */
+	showYAxis?: boolean;
+	/**
+	 * Controls the visibility of tooltip.
+	 * @default true
+	 */
+	showTooltip?: boolean;
+	/**
+	 * Controls the visibility of legend.
+	 * @default true
+	 */
+	showLegend?: boolean;
+	/**
+	 * Controls the visibility of gridline.
+	 * @default true
+	 */
+	showGridLine?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/resizable/ResizableHandle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type SplitterResizeHandleEmits,
+	type SplitterResizeHandleProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	SplitterResizeHandleProps & {
+		class?: HTMLAttributes["class"];
+		withHandle?: boolean;
+	}
+>();
+const emits = defineEmits<SplitterResizeHandleEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <SplitterResizeHandle v-bind="forwarded" :class="cn('relative flex w-px items-center justify-center bg-border after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1 [&[data-orientation=vertical]]:h-px [&[data-orientation=vertical]]:w-full [&[data-orientation=vertical]]:after:left-0 [&[data-orientation=vertical]]:after:h-1 [&[data-orientation=vertical]]:after:w-full [&[data-orientation=vertical]]:after:-translate-y-1/2 [&[data-orientation=vertical]]:after:translate-x-0 [&[data-orientation=vertical]>div]:rotate-90', props.class)">
+    <template v-if="props.withHandle">
+      <div class="z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border">
+        <DragHandleDots2Icon class="h-2.5 w-2.5" />
+      </div>
+    </template>
+  </SplitterResizeHandle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/resizable/ResizablePanelGroup.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type SplitterGroupEmits,
+	type SplitterGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	SplitterGroupProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<SplitterGroupEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <SplitterGroup v-bind="forwarded" :class="cn('flex h-full w-full data-[panel-group-direction=vertical]:flex-col', props.class)">
+    <slot />
+  </SplitterGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/resizable/index.ts
+```typescript
+export { default as ResizablePanelGroup } from "./ResizablePanelGroup.vue";
+export { default as ResizableHandle } from "./ResizableHandle.vue";
+export { SplitterPanel as ResizablePanel } from "radix-vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/v-calendar/Calendar.vue
+```
+<script setup lang="ts">
+import { useVModel } from "@vueuse/core";
+import type { Calendar } from "v-calendar";
+import { DatePicker } from "v-calendar";
+import { computed, nextTick, onMounted, ref, useSlots } from "vue";
+import { isVCalendarSlot } from ".";
+
+/* Extracted from v-calendar */
+type DatePickerModel = DatePickerDate | DatePickerRangeObject;
+type DateSource = Date | string | number;
+type DatePickerDate = DateSource | Partial<SimpleDateParts> | null;
+interface DatePickerRangeObject {
+	start: Exclude<DatePickerDate, null>;
+	end: Exclude<DatePickerDate, null>;
+}
+interface SimpleDateParts {
+	year: number;
+	month: number;
+	day: number;
+	hours: number;
+	minutes: number;
+	seconds: number;
+	milliseconds: number;
+}
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = withDefaults(
+	defineProps<{
+		modelValue?: string | number | Date | DatePickerModel;
+		modelModifiers?: object;
+		columns?: number;
+		type?: "single" | "range";
+	}>(),
+	{
+		type: "single",
+		columns: 1,
+	},
+);
+const emits = defineEmits<{
+	(e: "update:modelValue", payload: typeof props.modelValue): void;
+}>();
+
+const modelValue = useVModel(props, "modelValue", emits, {
+	passive: true,
+});
+
+const datePicker = ref<InstanceType<typeof DatePicker>>();
+// @ts-expect-error in this current version of v-calendar has the calendaRef instance, which is required to handle arrow nav.
+const calendarRef = computed<InstanceType<typeof Calendar>>(
+	() => datePicker.value.calendarRef,
+);
+
+function handleNav(direction: "prev" | "next") {
+	if (!calendarRef.value) return;
+
+	if (direction === "prev") calendarRef.value.movePrev();
+	else calendarRef.value.moveNext();
+}
+
+onMounted(async () => {
+	await nextTick();
+	if (modelValue.value instanceof Date && calendarRef.value)
+		calendarRef.value.focusDate(modelValue.value);
+});
+
+const $slots = useSlots();
+const vCalendarSlots = computed(() => {
+	return Object.keys($slots)
+		.filter((name) => isVCalendarSlot(name))
+		.reduce((obj: Record<string, any>, key: string) => {
+			obj[key] = $slots[key];
+			return obj;
+		}, {});
+});
+</script>
+
+<template>
+  <div class="relative">
+    <div v-if="$attrs.mode !== 'time'" class="absolute flex justify-between w-full px-4 top-3 z-[1]">
+      <button :class="cn(buttonVariants({ variant: 'outline' }), 'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100')" @click="handleNav('prev')">
+        <ChevronLeftIcon class="w-4 h-4" />
+      </button>
+      <button :class="cn(buttonVariants({ variant: 'outline' }), 'h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100')" @click="handleNav('next')">
+        <ChevronRightIcon class="w-4 h-4" />
+      </button>
+    </div>
+
+    <DatePicker
+      ref="datePicker"
+      v-model="modelValue"
+      v-bind="$attrs"
+      :model-modifiers="modelModifiers"
+      class="calendar"
+      trim-weeks
+      :transition="'none'"
+      :columns="columns"
+    >
+      <template v-for="(_, slot) of vCalendarSlots" #[slot]="scope">
+        <slot :name="slot" v-bind="scope" />
+      </template>
+
+      <template #nav-prev-button>
+        <ChevronLeftIcon />
+      </template>
+
+      <template #nav-next-button>
+        <ChevronRightIcon />
+      </template>
+    </DatePicker>
+  </div>
+</template>
+
+<style lang="css">
+.calendar {
+  @apply p-3 text-center;
+}
+.calendar .vc-pane-layout {
+  @apply grid gap-4 max-sm:!grid-cols-1;
+}
+.calendar .vc-title {
+  @apply text-sm font-medium relative z-20;
+}
+.vc-popover-content-wrapper .vc-popover-content {
+  @apply mt-3 rounded-md max-w-xs border bg-background;
+}
+.vc-popover-content-wrapper .vc-nav-header {
+  @apply flex justify-between items-center p-2;
+}
+.vc-popover-content-wrapper .vc-nav-items {
+  @apply grid grid-cols-4 gap-2 p-2;
+}
+.vc-popover-content-wrapper .vc-nav-items .vc-nav-item {
+  @apply rounded-md px-2 py-1;
+}
+.vc-popover-content-wrapper .vc-nav-items .vc-nav-item:hover {
+  @apply text-muted-foreground bg-muted;
+}
+.vc-popover-content-wrapper .vc-nav-items .vc-nav-item.is-active {
+  @apply bg-primary text-primary-foreground;
+}
+.calendar .vc-pane-header-wrapper {
+  @apply hidden;
+}
+.calendar .vc-weeks {
+  @apply mt-4;
+}
+.calendar .vc-weekdays {
+  @apply justify-items-center;
+}
+.calendar .vc-weekday {
+  @apply text-muted-foreground rounded-md font-normal text-[0.8rem];
+}
+.calendar .vc-weeks {
+  @apply w-full space-y-2 flex flex-col [&>_div]:grid [&>_div]:grid-cols-7;
+}
+.calendar .vc-day:has(.vc-highlights) {
+  @apply first:rounded-l-md last:rounded-r-md;
+}
+.calendar .vc-day.is-today:not(:has(.vc-day-layer)) .vc-day-content {
+  @apply bg-secondary text-primary rounded-md;
+}
+.calendar .vc-day:has(.vc-highlight-base-start) {
+  @apply rounded-l-md;
+}
+.calendar .vc-day:has(.vc-highlight-base-end) {
+  @apply rounded-r-md;
+}
+.calendar .vc-day:has(.vc-highlight-bg-outline):not(:has(.vc-highlight-base-start)):not(:has(.vc-highlight-base-end)) {
+  @apply rounded-md;
+}
+.calendar .vc-day-content  {
+  @apply text-center text-sm p-0 relative focus-within:relative focus-within:z-20 inline-flex items-center justify-center ring-offset-background hover:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-accent hover:text-accent-foreground h-9 w-9  font-normal aria-selected:opacity-100 select-none;
+}
+.calendar .vc-day-content:not(.vc-highlight-content-light) {
+  @apply rounded-md;
+}
+.calendar .is-not-in-month:not(:has(.vc-highlight-content-solid)):not(:has(.vc-highlight-content-light)):not(:has(.vc-highlight-content-outline)),
+.calendar .vc-disabled {
+  @apply text-muted-foreground opacity-50;
+}
+.calendar .vc-highlight-content-solid, .calendar .vc-highlight-content-outline {
+  @apply bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground;
+}
+.calendar .vc-highlight-content-light {
+  @apply bg-accent text-accent-foreground;
+}
+.calendar .vc-pane-container.in-transition {
+  @apply overflow-hidden;
+}
+.calendar .vc-pane-container {
+  @apply w-full relative;
+}
+:root {
+	--vc-slide-translate: 22px;
+	--vc-slide-duration: 0.15s;
+	--vc-slide-timing: ease;
+}
+.calendar .vc-fade-enter-active,
+.calendar .vc-fade-leave-active,
+.calendar .vc-slide-left-enter-active,
+.calendar .vc-slide-left-leave-active,
+.calendar .vc-slide-right-enter-active,
+.calendar .vc-slide-right-leave-active,
+.calendar .vc-slide-up-enter-active,
+.calendar .vc-slide-up-leave-active,
+.calendar .vc-slide-down-enter-active,
+.calendar .vc-slide-down-leave-active,
+.calendar .vc-slide-fade-enter-active,
+.calendar .vc-slide-fade-leave-active {
+	transition:
+		opacity var(--vc-slide-duration) var(--vc-slide-timing),
+		-webkit-transform var(--vc-slide-duration) var(--vc-slide-timing);
+	transition:
+		transform var(--vc-slide-duration) var(--vc-slide-timing),
+		opacity var(--vc-slide-duration) var(--vc-slide-timing);
+	transition:
+		transform var(--vc-slide-duration) var(--vc-slide-timing),
+		opacity var(--vc-slide-duration) var(--vc-slide-timing),
+		-webkit-transform var(--vc-slide-duration) var(--vc-slide-timing);
+	-webkit-backface-visibility: hidden;
+	backface-visibility: hidden;
+	pointer-events: none;
+}
+.calendar .vc-none-leave-active,
+.calendar .vc-fade-leave-active,
+.calendar .vc-slide-left-leave-active,
+.calendar .vc-slide-right-leave-active,
+.calendar .vc-slide-up-leave-active,
+.calendar .vc-slide-down-leave-active {
+	position: absolute !important;
+	width: 100%;
+}
+.calendar .vc-none-enter-from,
+.calendar .vc-none-leave-to,
+.calendar .vc-fade-enter-from,
+.calendar .vc-fade-leave-to,
+.calendar .vc-slide-left-enter-from,
+.calendar .vc-slide-left-leave-to,
+.calendar .vc-slide-right-enter-from,
+.calendar .vc-slide-right-leave-to,
+.calendar .vc-slide-up-enter-from,
+.calendar .vc-slide-up-leave-to,
+.calendar .vc-slide-down-enter-from,
+.calendar .vc-slide-down-leave-to,
+.calendar .vc-slide-fade-enter-from,
+.calendar .vc-slide-fade-leave-to {
+	opacity: 0;
+}
+.calendar .vc-slide-left-enter-from,
+.calendar .vc-slide-right-leave-to,
+.calendar .vc-slide-fade-enter-from.direction-left,
+.calendar .vc-slide-fade-leave-to.direction-left {
+	-webkit-transform: translateX(var(--vc-slide-translate));
+	transform: translateX(var(--vc-slide-translate));
+}
+.calendar .vc-slide-right-enter-from,
+.calendar .vc-slide-left-leave-to,
+.calendar .vc-slide-fade-enter-from.direction-right,
+.calendar .vc-slide-fade-leave-to.direction-right {
+	-webkit-transform: translateX(calc(-1 * var(--vc-slide-translate)));
+	transform: translateX(calc(-1 * var(--vc-slide-translate)));
+}
+.calendar .vc-slide-up-enter-from,
+.calendar .vc-slide-down-leave-to,
+.calendar .vc-slide-fade-enter-from.direction-top,
+.calendar .vc-slide-fade-leave-to.direction-top {
+	-webkit-transform: translateY(var(--vc-slide-translate));
+	transform: translateY(var(--vc-slide-translate));
+}
+.calendar .vc-slide-down-enter-from,
+.calendar .vc-slide-up-leave-to,
+.calendar .vc-slide-fade-enter-from.direction-bottom,
+.calendar .vc-slide-fade-leave-to.direction-bottom {
+	-webkit-transform: translateY(calc(-1 * var(--vc-slide-translate)));
+	transform: translateY(calc(-1 * var(--vc-slide-translate)));
+}
+/**
+ * Timepicker styles
+ */
+.vc-time-picker {
+  @apply flex flex-col items-center p-2;
+}
+.vc-time-picker.vc-invalid {
+  @apply pointer-events-none opacity-50;
+}
+.vc-time-picker.vc-attached {
+  @apply border-t border-solid border-secondary mt-2;
+}
+.vc-time-picker > * + * {
+  @apply mt-1;
+}
+.vc-time-header {
+  @apply flex items-center text-sm font-semibold uppercase mt-1 px-1 leading-6;
+}
+.vc-time-select-group {
+  @apply inline-flex items-center px-1 rounded-md bg-primary-foreground border border-solid border-secondary;
+}
+.vc-time-select-group .vc-base-icon {
+  @apply mr-1 text-primary stroke-primary;
+}
+.vc-time-select-group select {
+  @apply bg-primary-foreground p-1 appearance-none outline-none text-center;
+}
+.vc-time-weekday {
+  @apply text-muted-foreground tracking-wide;
+}
+.vc-time-month {
+  @apply text-primary ml-2;
+}
+.vc-time-day {
+  @apply text-primary ml-1;
+}
+.vc-time-year {
+  @apply text-muted-foreground ml-2;
+}
+.vc-time-colon {
+  @apply mb-0.5;
+}
+.vc-time-decimal {
+  @apply ml-0.5;
+}
+</style>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/v-calendar/index.ts
+```typescript
+export { default as Calendar } from "./Calendar.vue";
+import type { CalendarSlotName } from "v-calendar/dist/types/src/components/Calendar/CalendarSlot.vue.d.ts";
+
+export function isVCalendarSlot(
+	slotName: string,
+): slotName is CalendarSlotName {
+	const validSlots: CalendarSlotName[] = [
+		"day-content",
+		"day-popover",
+		"dp-footer",
+		"footer",
+		"header-title-wrapper",
+		"header-title",
+		"header-prev-button",
+		"header-next-button",
+		"nav",
+		"nav-prev-button",
+		"nav-next-button",
+		"page",
+		"time-header",
+	];
+
+	return validSlots.includes(slotName as CalendarSlotName);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/Command.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxRootEmits, ComboboxRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<ComboboxRootProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		open: true,
+		modelValue: "",
+	},
+);
+
+const emits = defineEmits<ComboboxRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ComboboxRoot
+    v-bind="forwarded"
+    :class="cn('flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground', props.class)"
+  >
+    <slot />
+  </ComboboxRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandDialog.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { DialogRootEmits, DialogRootProps } from "radix-vue";
+
+const props = defineProps<DialogRootProps>();
+const emits = defineEmits<DialogRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <Dialog v-bind="forwarded">
+    <DialogContent class="overflow-hidden p-0 shadow-lg">
+      <Command class="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+        <slot />
+      </Command>
+    </DialogContent>
+  </Dialog>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandEmpty.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxEmptyProps } from "radix-vue";
+
+const props = defineProps<
+	ComboboxEmptyProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ComboboxEmpty v-bind="delegatedProps" :class="cn('py-6 text-center text-sm', props.class)">
+    <slot />
+  </ComboboxEmpty>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandGroup.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxGroupProps } from "radix-vue";
+
+const props = defineProps<
+	ComboboxGroupProps & {
+		class?: HTMLAttributes["class"];
+		heading?: string;
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ComboboxGroup
+    v-bind="delegatedProps"
+    :class="cn('overflow-hidden p-1 text-foreground [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground', props.class)"
+  >
+    <ComboboxLabel v-if="heading" class="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+      {{ heading }}
+    </ComboboxLabel>
+    <slot />
+  </ComboboxGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandInput.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ComboboxInputProps, useForwardProps } from "radix-vue";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = defineProps<
+	ComboboxInputProps & {
+		class?: HTMLAttributes["class"];
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <div class="flex items-center border-b px-3" cmdk-input-wrapper>
+    <MagnifyingGlassIcon class="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <ComboboxInput
+      v-bind="{ ...forwardedProps, ...$attrs }"
+      auto-focus
+      :class="cn('flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50', props.class)"
+    />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxItemEmits, ComboboxItemProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = defineProps<
+	ComboboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ComboboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ComboboxItem
+    v-bind="forwarded"
+    :class="cn('relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50', props.class)"
+  >
+    <slot />
+  </ComboboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandList.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxContentEmits, ComboboxContentProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<ComboboxContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		dismissable: false,
+	},
+);
+const emits = defineEmits<ComboboxContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ComboboxContent v-bind="forwarded" :class="cn('max-h-[300px] overflow-y-auto overflow-x-hidden', props.class)">
+    <div role="presentation">
+      <slot />
+    </div>
+  </ComboboxContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import type { ComboboxSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	ComboboxSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ComboboxSeparator
+    v-bind="delegatedProps"
+    :class="cn('-mx-1 h-px bg-border', props.class)"
+  >
+    <slot />
+  </ComboboxSeparator>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/CommandShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest text-muted-foreground', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/command/index.ts
+```typescript
+export { default as Command } from "./Command.vue";
+export { default as CommandDialog } from "./CommandDialog.vue";
+export { default as CommandEmpty } from "./CommandEmpty.vue";
+export { default as CommandGroup } from "./CommandGroup.vue";
+export { default as CommandInput } from "./CommandInput.vue";
+export { default as CommandItem } from "./CommandItem.vue";
+export { default as CommandList } from "./CommandList.vue";
+export { default as CommandSeparator } from "./CommandSeparator.vue";
+export { default as CommandShortcut } from "./CommandShortcut.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/radio-group/RadioGroup.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type RadioGroupRootEmits,
+	type RadioGroupRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	RadioGroupRootProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<RadioGroupRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <RadioGroupRoot
+    :class="cn('grid gap-2', props.class)"
+    v-bind="forwarded"
+  >
+    <slot />
+  </RadioGroupRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/radio-group/RadioGroupItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type RadioGroupItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	RadioGroupItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <RadioGroupItem
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'aspect-square h-4 w-4 rounded-full border border-primary text-primary shadow focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+        props.class,
+      )
+    "
+  >
+    <RadioGroupIndicator class="flex items-center justify-center">
+      <CheckIcon class="h-3.5 w-3.5 fill-primary" />
+    </RadioGroupIndicator>
+  </RadioGroupItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/radio-group/index.ts
+```typescript
+export { default as RadioGroup } from "./RadioGroup.vue";
+export { default as RadioGroupItem } from "./RadioGroupItem.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/Select.vue
+```
+<script setup lang="ts">
+import type { SelectRootEmits, SelectRootProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = defineProps<SelectRootProps>();
+const emits = defineEmits<SelectRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <SelectRoot v-bind="forwarded">
+    <slot />
+  </SelectRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type SelectContentEmits,
+	type SelectContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = withDefaults(
+	defineProps<SelectContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		position: "popper",
+	},
+);
+const emits = defineEmits<SelectContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <SelectPortal>
+    <SelectContent
+      v-bind="{ ...forwarded, ...$attrs }" :class="cn(
+        'relative z-50 max-h-96 min-w-32 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        position === 'popper'
+          && 'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+        props.class,
+      )
+      "
+    >
+      <SelectScrollUpButton />
+      <SelectViewport :class="cn('p-1', position === 'popper' && 'h-[--radix-select-trigger-height] w-full min-w-[--radix-select-trigger-width]')">
+        <slot />
+      </SelectViewport>
+      <SelectScrollDownButton />
+    </SelectContent>
+  </SelectPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectGroup.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectGroupProps } from "radix-vue";
+
+const props = defineProps<
+	SelectGroupProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <SelectGroup :class="cn('p-1 w-full', props.class)" v-bind="delegatedProps">
+    <slot />
+  </SelectGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	SelectItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <SelectItem
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        props.class,
+      )
+    "
+  >
+    <span class="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+      <SelectItemIndicator>
+        <CheckIcon class="h-4 w-4" />
+      </SelectItemIndicator>
+    </span>
+
+    <SelectItemText>
+      <slot />
+    </SelectItemText>
+  </SelectItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectItemText.vue
+```
+<script setup lang="ts">
+import { type SelectItemTextProps } from "radix-vue";
+
+const props = defineProps<SelectItemTextProps>();
+</script>
+
+<template>
+  <SelectItemText v-bind="props">
+    <slot />
+  </SelectItemText>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectLabel.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type SelectLabelProps } from "radix-vue";
+
+const props = defineProps<
+	SelectLabelProps & { class?: HTMLAttributes["class"] }
+>();
+</script>
+
+<template>
+  <SelectLabel :class="cn('px-2 py-1.5 text-sm font-semibold', props.class)">
+    <slot />
+  </SelectLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectScrollDownButton.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectScrollDownButtonProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	SelectScrollDownButtonProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <SelectScrollDownButton v-bind="forwardedProps" :class="cn('flex cursor-default items-center justify-center py-1', props.class)">
+    <slot>
+      <ChevronDownIcon />
+    </slot>
+  </SelectScrollDownButton>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectScrollUpButton.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectScrollUpButtonProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	SelectScrollUpButtonProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <SelectScrollUpButton v-bind="forwardedProps" :class="cn('flex cursor-default items-center justify-center py-1', props.class)">
+    <slot>
+      <ChevronUpIcon />
+    </slot>
+  </SelectScrollUpButton>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	SelectSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <SelectSeparator v-bind="delegatedProps" :class="cn('-mx-1 my-1 h-px bg-muted', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type SelectTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	SelectTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <SelectTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:truncate text-start',
+      props.class,
+    )"
+  >
+    <slot />
+    <SelectIcon as-child>
+      <CaretSortIcon class="w-4 h-4 opacity-50 shrink-0" />
+    </SelectIcon>
+  </SelectTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/SelectValue.vue
+```
+<script setup lang="ts">
+import { type SelectValueProps } from "radix-vue";
+
+const props = defineProps<SelectValueProps>();
+</script>
+
+<template>
+  <SelectValue v-bind="props">
+    <slot />
+  </SelectValue>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/select/index.ts
+```typescript
+export { default as Select } from "./Select.vue";
+export { default as SelectValue } from "./SelectValue.vue";
+export { default as SelectTrigger } from "./SelectTrigger.vue";
+export { default as SelectContent } from "./SelectContent.vue";
+export { default as SelectGroup } from "./SelectGroup.vue";
+export { default as SelectItem } from "./SelectItem.vue";
+export { default as SelectItemText } from "./SelectItemText.vue";
+export { default as SelectLabel } from "./SelectLabel.vue";
+export { default as SelectSeparator } from "./SelectSeparator.vue";
+export { default as SelectScrollUpButton } from "./SelectScrollUpButton.vue";
+export { default as SelectScrollDownButton } from "./SelectScrollDownButton.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/Breadcrumb.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <nav aria-label="breadcrumb" :class="props.class">
+    <slot />
+  </nav>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbEllipsis.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span
+    role="presentation"
+    aria-hidden="true"
+    :class="cn('flex h-9 w-9 items-center justify-center', props.class)"
+  >
+    <slot>
+      <DotsHorizontalIcon class="h-4 w-4" />
+    </slot>
+    <span class="sr-only">More</span>
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbItem.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <li
+    :class="cn('inline-flex items-center gap-1.5', props.class)"
+  >
+    <slot />
+  </li>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbLink.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+import { type PrimitiveProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PrimitiveProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		as: "a",
+	},
+);
+</script>
+
+<template>
+  <Primitive
+    :as="as"
+    :as-child="asChild"
+    :class="cn('transition-colors hover:text-foreground', props.class)"
+  >
+    <slot />
+  </Primitive>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbList.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <ol
+    :class="cn('flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5', props.class)"
+  >
+    <slot />
+  </ol>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbPage.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span
+    role="link"
+    aria-disabled="true"
+    aria-current="page"
+    :class="cn('font-normal text-foreground', props.class)"
+  >
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/BreadcrumbSeparator.vue
+```
+<script lang="ts" setup>
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <li
+    role="presentation"
+    aria-hidden="true"
+    :class="cn('[&>svg]:size-3.5', props.class)"
+  >
+    <slot>
+      <ChevronRightIcon />
+    </slot>
+  </li>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/breadcrumb/index.ts
+```typescript
+export { default as Breadcrumb } from "./Breadcrumb.vue";
+export { default as BreadcrumbEllipsis } from "./BreadcrumbEllipsis.vue";
+export { default as BreadcrumbItem } from "./BreadcrumbItem.vue";
+export { default as BreadcrumbLink } from "./BreadcrumbLink.vue";
+export { default as BreadcrumbList } from "./BreadcrumbList.vue";
+export { default as BreadcrumbPage } from "./BreadcrumbPage.vue";
+export { default as BreadcrumbSeparator } from "./BreadcrumbSeparator.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/Sheet.vue
+```
+<script setup lang="ts">
+import {
+	type DialogRootEmits,
+	type DialogRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DialogRootProps>();
+const emits = defineEmits<DialogRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DialogRoot v-bind="forwarded">
+    <slot />
+  </DialogRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetClose.vue
+```
+<script setup lang="ts">
+import { type DialogCloseProps } from "radix-vue";
+
+const props = defineProps<DialogCloseProps>();
+</script>
+
+<template>
+  <DialogClose v-bind="props">
+    <slot />
+  </DialogClose>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+import { type SheetVariants } from ".";
+
+interface SheetContentProps extends DialogContentProps {
+	class?: HTMLAttributes["class"];
+	side?: SheetVariants["side"];
+}
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = defineProps<SheetContentProps>();
+
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, side, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    />
+    <DialogContent
+      :class="cn(sheetVariants({ side }), props.class)"
+      v-bind="{ ...forwarded, ...$attrs }"
+    >
+      <slot />
+
+      <DialogClose
+        class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+      >
+        <Cross2Icon class="w-4 h-4" />
+      </DialogClose>
+    </DialogContent>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogDescriptionProps } from "radix-vue";
+
+const props = defineProps<
+	DialogDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DialogDescription
+    :class="cn('text-sm text-muted-foreground', props.class)"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </DialogDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-x-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn('flex flex-col gap-y-2 text-center sm:text-left', props.class)
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogTitleProps } from "radix-vue";
+
+const props = defineProps<
+	DialogTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DialogTitle
+    :class="cn('text-lg font-semibold text-foreground', props.class)"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </DialogTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetTrigger.vue
+```
+<script setup lang="ts">
+import { type DialogTriggerProps } from "radix-vue";
+
+const props = defineProps<DialogTriggerProps>();
+</script>
+
+<template>
+  <DialogTrigger v-bind="props">
+    <slot />
+  </DialogTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Sheet } from "./Sheet.vue";
+export { default as SheetTrigger } from "./SheetTrigger.vue";
+export { default as SheetClose } from "./SheetClose.vue";
+export { default as SheetContent } from "./SheetContent.vue";
+export { default as SheetHeader } from "./SheetHeader.vue";
+export { default as SheetTitle } from "./SheetTitle.vue";
+export { default as SheetDescription } from "./SheetDescription.vue";
+export { default as SheetFooter } from "./SheetFooter.vue";
+
+export const sheetVariants = cva(
+	"fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+	{
+		variants: {
+			side: {
+				top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+				bottom:
+					"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+				left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+				right:
+					"inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+			},
+		},
+		defaultVariants: {
+			side: "right",
+		},
+	},
+);
+
+export type SheetVariants = VariantProps<typeof sheetVariants>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-donut/DonutChart.vue
+```
+<script setup lang="ts" generic="T extends Record<string, any>">
+import { type Component, computed, ref } from "vue";
+import { useMounted } from "@vueuse/core";
+import type { BaseChartProps } from ".";
+import { defaultColors } from "@/components/ui/chart";
+
+const props = withDefaults(
+	defineProps<
+		Pick<
+			BaseChartProps<T>,
+			| "data"
+			| "colors"
+			| "index"
+			| "margin"
+			| "showLegend"
+			| "showTooltip"
+			| "filterOpacity"
+		> & {
+			/**
+			 * Sets the name of the key containing the quantitative chart values.
+			 */
+			category: KeyOfT;
+			/**
+			 * Change the type of the chart
+			 * @default "donut"
+			 */
+			type?: "donut" | "pie";
+			/**
+			 * Function to sort the segment
+			 */
+			sortFunction?: (a: any, b: any) => number | undefined;
+			/**
+			 * Controls the formatting for the label.
+			 */
+			valueFormatter?: (tick: number, i?: number, ticks?: number[]) => string;
+			/**
+			 * Render custom tooltip component.
+			 */
+			customTooltip?: Component;
+		}
+	>(),
+	{
+		margin: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+		sortFunction: () => undefined,
+		valueFormatter: (tick: number) => `${tick}`,
+		type: "donut",
+		filterOpacity: 0.2,
+		showTooltip: true,
+		showLegend: true,
+	},
+);
+
+type KeyOfT = Extract<keyof T, string>;
+type Data = (typeof props.data)[number];
+
+const category = computed(() => props.category as KeyOfT);
+const index = computed(() => props.index as KeyOfT);
+
+const isMounted = useMounted();
+const activeSegmentKey = ref<string>();
+const colors = computed(() =>
+	props.colors?.length
+		? props.colors
+		: defaultColors(
+				props.data.filter((d) => d[props.category]).filter(Boolean).length,
+			),
+);
+const legendItems = computed(() =>
+	props.data.map((item, i) => ({
+		name: item[props.index],
+		color: colors.value[i],
+		inactive: false,
+	})),
+);
+
+const totalValue = computed(() =>
+	props.data.reduce((prev, curr) => {
+		return prev + curr[props.category];
+	}, 0),
+);
+</script>
+
+<template>
+  <div :class="cn('w-full h-48 flex flex-col items-end', $attrs.class ?? '')">
+    <VisSingleContainer :style="{ height: isMounted ? '100%' : 'auto' }" :margin="{ left: 20, right: 20 }" :data="data">
+      <ChartSingleTooltip
+        :selector="Donut.selectors.segment"
+        :index="category"
+        :items="legendItems"
+        :value-formatter="valueFormatter"
+        :custom-tooltip="customTooltip"
+      />
+
+      <VisDonut
+        :value="(d: Data) => d[category]"
+        :sort-function="sortFunction"
+        :color="colors"
+        :arc-width="type === 'donut' ? 20 : 0"
+        :show-background="false"
+        :central-label="type === 'donut' ? valueFormatter(totalValue) : ''"
+        :events="{
+          [Donut.selectors.segment]: {
+            click: (d: Data, ev: PointerEvent, i: number, elements: HTMLElement[]) => {
+              if (d?.data?.[index] === activeSegmentKey) {
+                activeSegmentKey = undefined
+                elements.forEach(el => el.style.opacity = '1')
+              }
+              else {
+                activeSegmentKey = d?.data?.[index]
+                elements.forEach(el => el.style.opacity = `${filterOpacity}`)
+                elements[i].style.opacity = '1'
+              }
+            },
+          },
+        }"
+      />
+
+      <slot />
+    </VisSingleContainer>
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/chart-donut/index.ts
+```typescript
+export { default as DonutChart } from "./DonutChart.vue";
+
+import type { Spacing } from "@unovis/ts";
+
+type KeyOf<T extends Record<string, any>> = Extract<keyof T, string>;
+
+export interface BaseChartProps<T extends Record<string, any>> {
+	/**
+	 * The source data, in which each entry is a dictionary.
+	 */
+	data: T[];
+	/**
+	 * Sets the key to map the data to the axis.
+	 */
+	index: KeyOf<T>;
+	/**
+	 * Change the default colors.
+	 */
+	colors?: string[];
+	/**
+	 * Margin of each the container
+	 */
+	margin?: Spacing;
+	/**
+	 * Change the opacity of the non-selected field
+	 * @default 0.2
+	 */
+	filterOpacity?: number;
+	/**
+	 * Controls the visibility of tooltip.
+	 * @default true
+	 */
+	showTooltip?: boolean;
+	/**
+	 * Controls the visibility of legend.
+	 * @default true
+	 */
+	showLegend?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pin-input/PinInput.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type PinInputRootEmits,
+	type PinInputRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = withDefaults(
+	defineProps<PinInputRootProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		modelValue: () => [],
+	},
+);
+const emits = defineEmits<PinInputRootEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <PinInputRoot v-bind="forwarded" :class="cn('flex gap-2 items-center', props.class)">
+    <slot />
+  </PinInputRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pin-input/PinInputGroup.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PrimitiveProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	PrimitiveProps & { class?: HTMLAttributes["class"] }
+>();
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <Primitive v-bind="forwardedProps" :class="cn('flex items-center', props.class)">
+    <slot />
+  </primitive>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pin-input/PinInputInput.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type PinInputInputProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	PinInputInputProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <PinInputInput v-bind="forwardedProps" :class="cn('relative text-center focus:outline-none focus:ring-2 focus:ring-ring focus:relative focus:z-10 flex h-9 w-9 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pin-input/PinInputSeparator.vue
+```
+<script setup lang="ts">
+import { type PrimitiveProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<PrimitiveProps>();
+const forwardedProps = useForwardProps(props);
+</script>
+
+<template>
+  <Primitive v-bind="forwardedProps">
+    <slot>
+      <DashIcon />
+    </slot>
+  </primitive>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/pin-input/index.ts
+```typescript
+export { default as PinInput } from "./PinInput.vue";
+export { default as PinInputGroup } from "./PinInputGroup.vue";
+export { default as PinInputSeparator } from "./PinInputSeparator.vue";
+export { default as PinInputInput } from "./PinInputInput.vue";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/badge/Badge.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+import { type BadgeVariants } from ".";
+
+const props = defineProps<{
+	variant?: BadgeVariants["variant"];
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn(badgeVariants({ variant }), props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/badge/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Badge } from "./Badge.vue";
+
+export const badgeVariants = cva(
+	"inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+	{
+		variants: {
+			variant: {
+				default:
+					"border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+				secondary:
+					"border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+				destructive:
+					"border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+				outline: "text-foreground",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
+
+export type BadgeVariants = VariantProps<typeof badgeVariants>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/public/robots.txt
+```
+
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/layouts/default.vue
+```
+<template>
+    <div>
+        <slot />
+    </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/auth-client.ts
+```typescript
+import { createAuthClient } from "better-auth/vue";
+
+export const authClient = createAuthClient();
+
+export const {
+	signIn,
+	signOut,
+	signUp,
+	useSession,
+	forgetPassword,
+	resetPassword,
+} = authClient;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/auth.ts
+```typescript
+import Database from "better-sqlite3";
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+	database: new Database("./db.sqlite"),
+	socialProviders: {
+		google: {
+			clientId: process.env.GOOGLE_CLIENT_ID || "",
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+		},
+	},
+	emailAndPassword: {
+		enabled: true,
+		async sendResetPassword(url, user) {
+			console.log("Reset password url:", url);
+		},
+	},
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/lib/utils.ts
+```typescript
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/assets/css/tailwind.css
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 20 14.3% 4.1%;
+
+		--muted: 60 4.8% 95.9%;
+		--muted-foreground: 25 5.3% 44.7%;
+
+		--popover: 0 0% 100%;
+		--popover-foreground: 20 14.3% 4.1%;
+
+		--card: 0 0% 100%;
+		--card-foreground: 20 14.3% 4.1%;
+
+		--border: 20 5.9% 90%;
+		--input: 20 5.9% 90%;
+
+		--primary: 24 9.8% 10%;
+		--primary-foreground: 60 9.1% 97.8%;
+
+		--secondary: 60 4.8% 95.9%;
+		--secondary-foreground: 24 9.8% 10%;
+
+		--accent: 60 4.8% 95.9%;
+		--accent-foreground: 24 9.8% 10%;
+
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 60 9.1% 97.8%;
+
+		--ring: 20 14.3% 4.1%;
+
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 20 14.3% 4.1%;
+		--foreground: 60 9.1% 97.8%;
+
+		--muted: 12 6.5% 15.1%;
+		--muted-foreground: 24 5.4% 63.9%;
+
+		--popover: 20 14.3% 4.1%;
+		--popover-foreground: 60 9.1% 97.8%;
+
+		--card: 20 14.3% 4.1%;
+		--card-foreground: 60 9.1% 97.8%;
+
+		--border: 12 6.5% 15.1%;
+		--input: 12 6.5% 15.1%;
+
+		--primary: 60 9.1% 97.8%;
+		--primary-foreground: 24 9.8% 10%;
+
+		--secondary: 12 6.5% 15.1%;
+		--secondary-foreground: 60 9.1% 97.8%;
+
+		--accent: 12 6.5% 15.1%;
+		--accent-foreground: 60 9.1% 97.8%;
+
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 60 9.1% 97.8%;
+
+		--ring: 24 5.7% 82.9%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/dashboard.vue
+```
+<script setup lang="ts">
+import { useSession } from "~/lib/auth-client";
+const { data: session } = await useSession(useFetch);
+</script>
+
+
+<template>
+    <div class="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+        <Card class="w-[350px]">
+            <CardHeader>
+                <CardTitle>
+                    User
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div class="flex gap-2 items-center">
+                    <Avatar>
+                        <AvatarImage :src="session?.user.image || ''" alt="User profile" />
+                        <AvatarFallback>{{ session?.user.name[0] }}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p class="text-sm">
+                            {{ session?.user?.name }}
+                        </p>
+                        <p class="text-xs">
+                            {{ session?.user?.email }}
+                        </p>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button @click="async () => {
+                    await signOut()
+                    // router.push('/')
+                }" variant="secondary">
+                    Sing Out
+                </Button>
+            </CardFooter>
+        </Card>
+    </div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/forget-password.vue
+```
+<script lang="ts" setup>
+import { forgetPassword } from "~/lib/auth-client.js";
+
+const email = ref("");
+
+const handleForgetPassword = async () => {
+	if (!email.value) {
+		alert("Please enter your email address");
+		return;
+	}
+	await forgetPassword(
+		{
+			email: email.value,
+			redirectTo: "/reset-password",
+		},
+		{
+			// onSuccess find the url with token in server console. For detail check forgetPassword section: https://www.better-auth.com/docs/authentication/email-password
+			onSuccess() {
+				alert("Password reset link sent to your email");
+				window.location.href = "/sign-in";
+			},
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	);
+};
+</script>
+
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<CardRoot class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-2xl">Reset Password</CardTitle>
+				<CardDescription>
+					Enter your email below to reset your password
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="email">Email</Label>
+						<Input id="email" type="email" placeholder="m@example.com" required v-model="email" />
+					</div>
+					<Button type="button" class="w-full" @click="handleForgetPassword">
+						Reset Password
+					</Button>
+				</div>
+				<div class="mt-4 text-center text-sm">
+					<a href="/sign-in" class="underline">Back to Sign In </a>
+				</div>
+			</CardContent>
+		</CardRoot>
+	</div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/index.vue
+```
+<script setup lang="ts">
+import { useSession } from "~/lib/auth-client";
+
+definePageMeta({
+	layout: "default",
+});
+
+const features = [
+	"Email & Password",
+	"Organization | Teams",
+	"Passkeys",
+	"Multi Factor",
+	"Password Reset",
+	"Email Verification",
+	"Roles & Permissions",
+	"Rate Limiting",
+	"Session Management",
+];
+const { data: session } = await useSession(useFetch);
+</script>
+
+<template>
+    <div class="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+        <main class="flex flex-col gap-4 row-start-2 items-center justify-center">
+            <div class="flex flex-col gap-1">
+                <h3 class="font-bold text-4xl text-black dark:text-white text-center">
+                    Better Auth.
+                </h3>
+
+                <p class="text-center break-words text-sm md:text-base">
+                    Official demo to showcase
+                    <a
+							href="https://better-auth.com"
+							target="_blank"
+							className="italic underline"
+						>better-auth
+                    </a>
+                    features and capabilities. <br />
+                </p>
+
+
+                <div class="flex flex-col gap-3 pt-2 flex-wrap">
+                    <div class="border-y py-2 border-dotted bg-secondary/60 opacity-80">
+                        <div class="text-xs flex items-center gap-2 justify-center text-muted-foreground">
+                            <span class="text-center">
+                                All features on this demo are Implemented with better auth without
+                                any custom backend code
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 justify-center flex-wrap">
+                        <div v-for="feature in features" :key="feature">
+                            <span
+                                class="border-b pb-1 text-muted-foreground text-xs cursor-pointer hover:text-foreground duration-150 ease-in-out transition-all hover:border-foreground flex items-center gap-1">{{
+                                    feature }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 mt-2 mx-auto">
+                    <NuxtLink to="/sign-in" v-if="!session">
+                        <Button variant="outline" class="rounded-none">
+                            Sign In
+                        </Button>
+                    </NuxtLink>
+                    <NuxtLink to="/dashboard" v-if="session">
+                        <Button variant="outline" class="rounded-none">
+                            Dashboard
+                        </Button>
+                    </NuxtLink>
+                </div>
+            </div>
+        </main>
+    </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/reset-password.vue
+```
+<script lang="ts" setup>
+import { resetPassword } from "~/lib/auth-client.js";
+
+const confirmPassword = ref("");
+const password = ref("");
+
+const handleResetPassword = async () => {
+	if (confirmPassword.value !== password.value) {
+		alert("Please enter same passwords");
+		return;
+	}
+
+	await resetPassword({
+		newPassword: password.value,
+		fetchOptions: {
+			onSuccess(context) {
+				window.location.href = "/sign-in";
+			},
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	});
+};
+</script>
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<CardRoot class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-2xl">Reset Password</CardTitle>
+				<CardDescription>Enter your new password below</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="password">New Password</Label>
+						<Input id="password" type="password" required v-model="password" placeholder="New Password" />
+					</div>
+					<div class="grid gap-2">
+						<Label for="password">Confirm Password</Label>
+						<Input id="password" type="password" required placeholder="Confirm Password"
+							v-model="confirmPassword" />
+					</div>
+					<Button type="button" class="w-full" @click="handleResetPassword">Reset</Button>
+				</div>
+			</CardContent>
+		</CardRoot>
+	</div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/sign-in.vue
+```
+<script setup lang="ts">
+import { signIn } from "~/lib/auth-client.js";
+
+const email = ref("");
+const password = ref("");
+
+const handleSignIn = async () => {
+	await signIn.email(
+		{
+			email: email.value,
+			password: password.value,
+			callbackURL: "/",
+		},
+		{
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	);
+};
+</script>
+
+<template>
+    <div class="h-screen flex justify-center items-center">
+        <Card class="mx-auto max-w-sm">
+            <CardHeader>
+                <CardTitle class="text-2xl">
+                    Login
+                </CardTitle>
+                <CardDescription>
+                    Enter your email below to login to your account
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label for="email">Email</Label>
+                        <Input id="email" type="email" placeholder="m@example.com" v-model="email" required />
+                    </div>
+                    <div class="grid gap-2">
+                        <div class="flex items-center">
+                            <Label for="password">Password</Label>
+                            <a href="/forget-password" class="ml-auto inline-block text-sm underline">
+                                Forgot your password?
+                            </a>
+                        </div>
+                        <Input id="password" type="password" placeholder="password" v-model="password" required />
+                    </div>
+                    <Button type="submit" class="w-full" @click="handleSignIn">
+                        Login
+                    </Button>
+                    <Button variant="outline" class="w-full" @click="async () => {
+                        await signIn.social({
+                            provider: 'google',
+                            callbackURL: '/'
+                        })
+                    }">
+                        Login with Google
+                    </Button>
+                </div>
+                <div class="mt-4 text-center text-sm">
+                    Don't have an account?
+                    <a href="/sign-up" class="underline">
+                        Sign up
+                    </a>
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/sign-up.vue
+```
+<script lang="ts" setup>
+import { signUp } from "~/lib/auth-client.js";
+
+const firstName = ref("");
+const lastName = ref("");
+const email = ref("");
+const password = ref("");
+
+const handleSignUp = async () => {
+	const user = {
+		firstName: firstName.value,
+		lastName: lastName.value,
+		email: email.value,
+		password: password.value,
+	};
+	await signUp.email({
+		email: user.email,
+		password: user.password,
+		name: `${user.firstName} ${user.lastName}`,
+		callbackURL: "/",
+		fetchOptions: {
+			onError(context) {
+				alert(context.error.message);
+			},
+			onSuccess() {
+				useRouter().push("/dashboard");
+			},
+		},
+	});
+};
+</script>
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<Card class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-xl">Sign Up</CardTitle>
+				<CardDescription>
+					Enter your information to create an account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid grid-cols-2 gap-4">
+						<div class="grid gap-2">
+							<Label for="first-name">First name</Label>
+							<Input id="first-name" placeholder="Max" required v-model="firstName" />
+						</div>
+						<div class="grid gap-2">
+							<Label for="last-name">Last name</Label>
+							<Input id="last-name" placeholder="Robinson" required v-model="lastName" />
+						</div>
+					</div>
+					<div class="grid gap-2">
+						<Label for="email">Email</Label>
+						<Input id="email" type="email" placeholder="m@example.com" required v-model="email" />
+					</div>
+					<div class="grid gap-2">
+						<Label for="password">Password</Label>
+						<Input id="password" type="password" v-model="password" />
+					</div>
+					<Button type="button" class="w-full" @click="handleSignUp">Create an account</Button>
+				</div>
+				<div class="mt-4 text-center text-sm">
+					Already have an account?
+					<a href="/sign-in" class="underline"> Sign in </a>
+				</div>
+			</CardContent>
+		</Card>
+	</div>
+</template>
+```

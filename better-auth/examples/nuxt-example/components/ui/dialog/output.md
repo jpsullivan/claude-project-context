@@ -1,0 +1,278 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/Dialog.vue
+```
+<script setup lang="ts">
+import {
+	type DialogRootEmits,
+	type DialogRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DialogRootProps>();
+const emits = defineEmits<DialogRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DialogRoot v-bind="forwarded">
+    <slot />
+  </DialogRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogClose.vue
+```
+<script setup lang="ts">
+import { type DialogCloseProps } from "radix-vue";
+
+const props = defineProps<DialogCloseProps>();
+</script>
+
+<template>
+  <DialogClose v-bind="props">
+    <slot />
+  </DialogClose>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    />
+    <DialogContent
+      v-bind="forwarded"
+      :class="
+        cn(
+          'fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+          props.class,
+        )"
+    >
+      <slot />
+
+      <DialogClose
+        class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+      >
+        <Cross2Icon class="w-4 h-4" />
+        <span class="sr-only">Close</span>
+      </DialogClose>
+    </DialogContent>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogDescriptionProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DialogDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DialogDescription
+    v-bind="forwardedProps"
+    :class="cn('text-sm text-muted-foreground', props.class)"
+  >
+    <slot />
+  </DialogDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-x-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div
+    :class="cn('flex flex-col gap-y-1.5 text-center sm:text-left', props.class)"
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogScrollContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    >
+      <DialogContent
+        :class="
+          cn(
+            'relative z-50 grid w-full max-w-lg my-8 gap-4 border border-border bg-background p-6 shadow-lg duration-200 sm:rounded-lg md:w-full',
+            props.class,
+          )
+        "
+        v-bind="forwarded"
+        @pointer-down-outside="(event) => {
+          const originalEvent = event.detail.originalEvent;
+          const target = originalEvent.target as HTMLElement;
+          if (originalEvent.offsetX > target.clientWidth || originalEvent.offsetY > target.clientHeight) {
+            event.preventDefault();
+          }
+        }"
+      >
+        <slot />
+
+        <DialogClose
+          class="absolute top-4 right-4 p-0.5 transition-colors rounded-md hover:bg-secondary"
+        >
+          <Cross2Icon class="w-4 h-4" />
+          <span class="sr-only">Close</span>
+        </DialogClose>
+      </DialogContent>
+    </DialogOverlay>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogTitleProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DialogTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DialogTitle
+    v-bind="forwardedProps"
+    :class="
+      cn(
+        'text-lg font-semibold leading-none tracking-tight',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </DialogTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/DialogTrigger.vue
+```
+<script setup lang="ts">
+import { type DialogTriggerProps } from "radix-vue";
+
+const props = defineProps<DialogTriggerProps>();
+</script>
+
+<template>
+  <DialogTrigger v-bind="props">
+    <slot />
+  </DialogTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dialog/index.ts
+```typescript
+export { default as Dialog } from "./Dialog.vue";
+export { default as DialogClose } from "./DialogClose.vue";
+export { default as DialogTrigger } from "./DialogTrigger.vue";
+export { default as DialogHeader } from "./DialogHeader.vue";
+export { default as DialogTitle } from "./DialogTitle.vue";
+export { default as DialogDescription } from "./DialogDescription.vue";
+export { default as DialogContent } from "./DialogContent.vue";
+export { default as DialogScrollContent } from "./DialogScrollContent.vue";
+export { default as DialogFooter } from "./DialogFooter.vue";
+
+```

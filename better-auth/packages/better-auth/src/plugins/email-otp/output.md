@@ -1,0 +1,1205 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/email-otp/client.ts
+```typescript
+import type { emailOTP } from ".";
+import type { BetterAuthClientPlugin } from "../../client/types";
+
+export const emailOTPClient = () => {
+	return {
+		id: "email-otp",
+		$InferServerPlugin: {} as ReturnType<typeof emailOTP>,
+	} satisfies BetterAuthClientPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/email-otp/email-otp.test.ts
+```typescript
+import { describe, it, expect, vi } from "vitest";
+import { getTestInstance } from "../../test-utils/test-instance";
+import { emailOTP } from ".";
+import { emailOTPClient } from "./client";
+import { bearer } from "../bearer";
+
+describe("email-otp", async () => {
+	const otpFn = vi.fn();
+	let otp = "";
+	const { client, testUser, auth } = await getTestInstance(
+		{
+			plugins: [
+				bearer(),
+				emailOTP({
+					async sendVerificationOTP({ email, otp: _otp, type }) {
+						otp = _otp;
+						otpFn(email, _otp, type);
+					},
+					sendVerificationOnSignUp: true,
+				}),
+			],
+			emailVerification: {
+				autoSignInAfterVerification: true,
+			},
+		},
+		{
+			clientOptions: {
+				plugins: [emailOTPClient()],
+			},
+		},
+	);
+
+	it("should verify email with otp", async () => {
+		const res = await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		expect(res.data?.success).toBe(true);
+		expect(otp.length).toBe(6);
+		expect(otpFn).toHaveBeenCalledWith(
+			testUser.email,
+			otp,
+			"email-verification",
+		);
+		const verifiedUser = await client.emailOtp.verifyEmail({
+			email: testUser.email,
+			otp,
+		});
+		expect(verifiedUser.data?.status).toBe(true);
+	});
+
+	it("should sign-in with otp", async () => {
+		const res = await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "sign-in",
+		});
+		expect(res.data?.success).toBe(true);
+		expect(otp.length).toBe(6);
+		expect(otpFn).toHaveBeenCalledWith(testUser.email, otp, "sign-in");
+		const verifiedUser = await client.signIn.emailOtp(
+			{
+				email: testUser.email,
+				otp,
+			},
+			{
+				onSuccess: (ctx) => {
+					const header = ctx.response.headers.get("set-cookie");
+					expect(header).toContain("better-auth.session_token");
+				},
+			},
+		);
+
+		expect(verifiedUser.data?.token).toBeDefined();
+	});
+
+	it("should sign-up with otp", async () => {
+		const testUser2 = {
+			email: "test-email@domain.com",
+		};
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser2.email,
+			type: "sign-in",
+		});
+		const newUser = await client.signIn.emailOtp(
+			{
+				email: testUser2.email,
+				otp,
+			},
+			{
+				onSuccess: (ctx) => {
+					const header = ctx.response.headers.get("set-cookie");
+					expect(header).toContain("better-auth.session_token");
+				},
+			},
+		);
+		expect(newUser.data?.token).toBeDefined();
+	});
+
+	it("should send verification otp on sign-up", async () => {
+		const testUser2 = {
+			email: "test8@email.com",
+			password: "password",
+			name: "test",
+		};
+		await client.signUp.email(testUser2);
+		expect(otpFn).toHaveBeenCalledWith(
+			testUser2.email,
+			otp,
+			"email-verification",
+		);
+	});
+
+	it("should send forget password otp", async () => {
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "forget-password",
+		});
+	});
+
+	it("should reset password", async () => {
+		await client.emailOtp.resetPassword({
+			email: testUser.email,
+			otp,
+			password: "changed-password",
+		});
+		const { data } = await client.signIn.email({
+			email: testUser.email,
+			password: "changed-password",
+		});
+		expect(data?.user).toBeDefined();
+	});
+
+	it("should reset password and create credential account", async () => {
+		const testUser2 = {
+			email: "test-email@domain.com",
+		};
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser2.email,
+			type: "sign-in",
+		});
+		await client.signIn.emailOtp(
+			{
+				email: testUser2.email,
+				otp,
+			},
+			{
+				onSuccess: (ctx) => {
+					const header = ctx.response.headers.get("set-cookie");
+					expect(header).toContain("better-auth.session_token");
+				},
+			},
+		);
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser2.email,
+			type: "forget-password",
+		});
+		await client.emailOtp.resetPassword({
+			email: testUser2.email,
+			otp,
+			password: "password",
+		});
+		const res = await client.signIn.email({
+			email: testUser2.email,
+			password: "password",
+		});
+		expect(res.data?.token).toBeDefined();
+	});
+
+	it("should fail on invalid email", async () => {
+		const res = await client.emailOtp.sendVerificationOtp({
+			email: "invalid-email",
+			type: "email-verification",
+		});
+		expect(res.error?.status).toBe(400);
+		expect(res.error?.code).toBe("INVALID_EMAIL");
+	});
+
+	it("should fail on expired otp", async () => {
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(1000 * 60 * 5);
+		const res = await client.emailOtp.verifyEmail({
+			email: testUser.email,
+			otp,
+		});
+		expect(res.error?.status).toBe(400);
+		expect(res.error?.code).toBe("OTP_EXPIRED");
+	});
+
+	it("should not fail on time elapsed", async () => {
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(1000 * 60 * 4);
+		const res = await client.emailOtp.verifyEmail({
+			email: testUser.email,
+			otp,
+		});
+		const session = await client.getSession({
+			fetchOptions: {
+				headers: {
+					Authorization: `Bearer ${res.data?.token}`,
+				},
+			},
+		});
+		expect(res.data?.status).toBe(true);
+		expect(session.data?.user.emailVerified).toBe(true);
+	});
+
+	it("should create verification otp on server", async () => {
+		otp = await auth.api.createVerificationOTP({
+			body: {
+				type: "sign-in",
+				email: "test@email.com",
+			},
+		});
+		otp = await auth.api.createVerificationOTP({
+			body: {
+				type: "sign-in",
+				email: "test@email.com",
+			},
+		});
+		expect(otp.length).toBe(6);
+	});
+
+	it("should get verification otp on server", async () => {
+		const res = await auth.api.getVerificationOTP({
+			query: {
+				email: "test@email.com",
+				type: "sign-in",
+			},
+		});
+	});
+
+	it("should work with custom options", async () => {
+		const { client, testUser, auth } = await getTestInstance(
+			{
+				plugins: [
+					bearer(),
+					emailOTP({
+						async sendVerificationOTP({ email, otp: _otp, type }) {
+							otp = _otp;
+							otpFn(email, _otp, type);
+						},
+						sendVerificationOnSignUp: true,
+						expiresIn: 10,
+						otpLength: 8,
+					}),
+				],
+				emailVerification: {
+					autoSignInAfterVerification: true,
+				},
+			},
+			{
+				clientOptions: {
+					plugins: [emailOTPClient()],
+				},
+			},
+		);
+		await client.emailOtp.sendVerificationOtp({
+			type: "email-verification",
+			email: testUser.email,
+		});
+		expect(otp.length).toBe(8);
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(11 * 1000);
+		const verifyRes = await client.emailOtp.verifyEmail({
+			email: testUser.email,
+			otp,
+		});
+		expect(verifyRes.error?.code).toBe("OTP_EXPIRED");
+	});
+});
+
+describe("email-otp-verify", async () => {
+	const otpFn = vi.fn();
+	const otp = [""];
+	const { client, testUser, auth } = await getTestInstance(
+		{
+			plugins: [
+				emailOTP({
+					async sendVerificationOTP({ email, otp: _otp, type }) {
+						otp.push(_otp);
+						otpFn(email, _otp, type);
+					},
+					sendVerificationOnSignUp: true,
+					disableSignUp: true,
+				}),
+			],
+		},
+		{
+			clientOptions: {
+				plugins: [emailOTPClient()],
+			},
+		},
+	);
+
+	it("should not create verification otp when disableSignUp and user not registered", async () => {
+		for (let param of [
+			{
+				email: "test-email@domain.com",
+				isNull: true,
+			},
+			{
+				email: testUser.email,
+				isNull: false,
+			},
+		]) {
+			await client.emailOtp.sendVerificationOtp({
+				email: param.email,
+				type: "email-verification",
+			});
+			const res = await auth.api.getVerificationOTP({
+				query: {
+					email: param.email,
+					type: "email-verification",
+				},
+			});
+			if (param.isNull) {
+				expect(res.otp).toBeNull();
+			} else {
+				expect(res.otp).not.toBeNull();
+			}
+		}
+	});
+
+	it("should verify email with last otp", async () => {
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+	});
+});
+
+describe("custom rate limiting storage", async () => {
+	const { client, testUser } = await getTestInstance({
+		rateLimit: {
+			enabled: true,
+		},
+		plugins: [
+			emailOTP({
+				async sendVerificationOTP(data, request) {},
+			}),
+		],
+	});
+
+	it.each([
+		{
+			path: "/email-otp/send-verification-otp",
+			body: {
+				email: "test@email.com",
+				type: "sign-in",
+			},
+		},
+		{
+			path: "/sign-in/email-otp",
+			body: {
+				email: "test@email.com",
+				otp: "12312",
+			},
+		},
+		{
+			path: "/email-otp/verify-email",
+			body: {
+				email: "test@email.com",
+				otp: "12312",
+			},
+		},
+	])("should rate limit send verification endpoint", async ({ path, body }) => {
+		for (let i = 0; i < 10; i++) {
+			const response = await client.$fetch(path, {
+				method: "POST",
+				body,
+			});
+			if (i >= 3) {
+				expect(response.error?.status).toBe(429);
+			}
+		}
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(60 * 1000);
+		const response = await client.$fetch(path, {
+			method: "POST",
+			body,
+		});
+		expect(response.error?.status).not.toBe(429);
+	});
+});
+
+describe("custom generate otpFn", async () => {
+	const { client, testUser } = await getTestInstance(
+		{
+			plugins: [
+				emailOTP({
+					async sendVerificationOTP(data, request) {},
+					generateOTP(data, request) {
+						return "123456";
+					},
+				}),
+			],
+		},
+		{
+			clientOptions: {
+				plugins: [emailOTPClient()],
+			},
+		},
+	);
+
+	it("should generate otp", async () => {
+		const res = await client.emailOtp.sendVerificationOtp({
+			email: testUser.email,
+			type: "email-verification",
+		});
+		expect(res.data?.success).toBe(true);
+	});
+
+	it("should verify email with otp", async () => {
+		const res = await client.emailOtp.verifyEmail({
+			email: testUser.email,
+			otp: "123456",
+		});
+		expect(res.data?.status).toBe(true);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/email-otp/index.ts
+```typescript
+import { z } from "zod";
+import { APIError, createAuthEndpoint, createAuthMiddleware } from "../../api";
+import type { BetterAuthPlugin } from "../../types";
+import { generateRandomString } from "../../crypto";
+import { getDate } from "../../utils/date";
+import { setSessionCookie } from "../../cookies";
+import { getEndpointResponse } from "../../utils/plugin-helper";
+
+export interface EmailOTPOptions {
+	/**
+	 * Function to send email verification
+	 */
+	sendVerificationOTP: (
+		data: {
+			email: string;
+			otp: string;
+			type: "sign-in" | "email-verification" | "forget-password";
+		},
+		request?: Request,
+	) => Promise<void>;
+	/**
+	 * Length of the OTP
+	 *
+	 * @default 6
+	 */
+	otpLength?: number;
+	/**
+	 * Expiry time of the OTP in seconds
+	 *
+	 * @default 300 (5 minutes)
+	 */
+	expiresIn?: number;
+	/**
+	 * Custom function to generate otp
+	 */
+	generateOTP?: (
+		data: {
+			email: string;
+			type: "sign-in" | "email-verification" | "forget-password";
+		},
+		request?: Request,
+	) => string;
+	/**
+	 * Send email verification on sign-up
+	 *
+	 * @Default false
+	 */
+	sendVerificationOnSignUp?: boolean;
+	/**
+	 * A boolean value that determines whether to prevent
+	 * automatic sign-up when the user is not registered.
+	 *
+	 * @Default false
+	 */
+	disableSignUp?: boolean;
+}
+
+const types = ["email-verification", "sign-in", "forget-password"] as const;
+
+export const emailOTP = (options: EmailOTPOptions) => {
+	const opts = {
+		expiresIn: 5 * 60,
+		generateOTP: () => generateRandomString(options.otpLength ?? 6, "0-9"),
+		...options,
+	} satisfies EmailOTPOptions;
+	const ERROR_CODES = {
+		OTP_EXPIRED: "otp expired",
+		INVALID_OTP: "invalid otp",
+		INVALID_EMAIL: "invalid email",
+		USER_NOT_FOUND: "user not found",
+	} as const;
+	return {
+		id: "email-otp",
+		endpoints: {
+			sendVerificationOTP: createAuthEndpoint(
+				"/email-otp/send-verification-otp",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to send the OTP",
+						}),
+						type: z.enum(types, {
+							description: "Type of the OTP",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							description: "Send verification OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													success: {
+														type: "boolean",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					if (!options?.sendVerificationOTP) {
+						ctx.context.logger.error(
+							"send email verification is not implemented",
+						);
+						throw new APIError("BAD_REQUEST", {
+							message: "send email verification is not implemented",
+						});
+					}
+					const email = ctx.body.email;
+					const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+					if (!emailRegex.test(email)) {
+						throw ctx.error("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_EMAIL,
+						});
+					}
+					if (ctx.body.type === "forget-password" || opts.disableSignUp) {
+						const user =
+							await ctx.context.internalAdapter.findUserByEmail(email);
+						if (!user) {
+							return ctx.json({
+								success: true,
+							});
+						}
+					}
+					const otp = opts.generateOTP(
+						{ email, type: ctx.body.type },
+						ctx.request,
+					);
+					await ctx.context.internalAdapter
+						.createVerificationValue({
+							value: otp,
+							identifier: `${ctx.body.type}-otp-${email}`,
+							expiresAt: getDate(opts.expiresIn, "sec"),
+						})
+						.catch(async (error) => {
+							// might be duplicate key error
+							await ctx.context.internalAdapter.deleteVerificationByIdentifier(
+								`${ctx.body.type}-otp-${email}`,
+							);
+							//try again
+							await ctx.context.internalAdapter.createVerificationValue({
+								value: otp,
+								identifier: `${ctx.body.type}-otp-${email}`,
+								expiresAt: getDate(opts.expiresIn, "sec"),
+							});
+						});
+					await options.sendVerificationOTP(
+						{
+							email,
+							otp,
+							type: ctx.body.type,
+						},
+						ctx.request,
+					);
+					return ctx.json({
+						success: true,
+					});
+				},
+			),
+			createVerificationOTP: createAuthEndpoint(
+				"/email-otp/create-verification-otp",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to send the OTP",
+						}),
+						type: z.enum(types, {
+							description: "Type of the OTP",
+						}),
+					}),
+					metadata: {
+						SERVER_ONLY: true,
+						openapi: {
+							description: "Create verification OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "string",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.body.email;
+					const otp = opts.generateOTP(
+						{ email, type: ctx.body.type },
+						ctx.request,
+					);
+					await ctx.context.internalAdapter.createVerificationValue({
+						value: otp,
+						identifier: `${ctx.body.type}-otp-${email}`,
+						expiresAt: getDate(opts.expiresIn, "sec"),
+					});
+					return otp;
+				},
+			),
+			getVerificationOTP: createAuthEndpoint(
+				"/email-otp/get-verification-otp",
+				{
+					method: "GET",
+					query: z.object({
+						email: z.string({
+							description: "Email address to get the OTP",
+						}),
+						type: z.enum(types),
+					}),
+					metadata: {
+						SERVER_ONLY: true,
+						openapi: {
+							description: "Get verification OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													otp: {
+														type: "string",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.query.email;
+					const verificationValue =
+						await ctx.context.internalAdapter.findVerificationValue(
+							`${ctx.query.type}-otp-${email}`,
+						);
+					if (!verificationValue || verificationValue.expiresAt < new Date()) {
+						return ctx.json({
+							otp: null,
+						});
+					}
+					return ctx.json({
+						otp: verificationValue.value,
+					});
+				},
+			),
+			verifyEmailOTP: createAuthEndpoint(
+				"/email-otp/verify-email",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to verify",
+						}),
+						otp: z.string({
+							description: "OTP to verify",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							description: "Verify email OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													user: {
+														$ref: "#/components/schemas/User",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.body.email;
+					const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+					if (!emailRegex.test(email)) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_EMAIL,
+						});
+					}
+					const verificationValue =
+						await ctx.context.internalAdapter.findVerificationValue(
+							`email-verification-otp-${email}`,
+						);
+
+					if (!verificationValue) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					if (verificationValue.expiresAt < new Date()) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.OTP_EXPIRED,
+						});
+					}
+					const otp = ctx.body.otp;
+					if (verificationValue.value !== otp) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					await ctx.context.internalAdapter.deleteVerificationValue(
+						verificationValue.id,
+					);
+					const user = await ctx.context.internalAdapter.findUserByEmail(email);
+					if (!user) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.USER_NOT_FOUND,
+						});
+					}
+					const updatedUser = await ctx.context.internalAdapter.updateUser(
+						user.user.id,
+						{
+							email,
+							emailVerified: true,
+						},
+						ctx,
+					);
+
+					if (
+						ctx.context.options.emailVerification?.autoSignInAfterVerification
+					) {
+						const session = await ctx.context.internalAdapter.createSession(
+							updatedUser.id,
+							ctx.request,
+						);
+						await setSessionCookie(ctx, {
+							session,
+							user: updatedUser,
+						});
+						return ctx.json({
+							status: true,
+							token: session.token,
+							user: {
+								id: updatedUser.id,
+								email: updatedUser.email,
+								emailVerified: updatedUser.emailVerified,
+								name: updatedUser.name,
+								image: updatedUser.image,
+								createdAt: updatedUser.createdAt,
+								updatedAt: updatedUser.updatedAt,
+							},
+						});
+					}
+
+					return ctx.json({
+						status: true,
+						token: null,
+						user: {
+							id: updatedUser.id,
+							email: updatedUser.email,
+							emailVerified: updatedUser.emailVerified,
+							name: updatedUser.name,
+							image: updatedUser.image,
+							createdAt: updatedUser.createdAt,
+							updatedAt: updatedUser.updatedAt,
+						},
+					});
+				},
+			),
+			signInEmailOTP: createAuthEndpoint(
+				"/sign-in/email-otp",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to sign in",
+						}),
+						otp: z.string({
+							description: "OTP sent to the email",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							description: "Sign in with email OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													user: {
+														$ref: "#/components/schemas/User",
+													},
+													session: {
+														$ref: "#/components/schemas/Session",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.body.email;
+					const verificationValue =
+						await ctx.context.internalAdapter.findVerificationValue(
+							`sign-in-otp-${email}`,
+						);
+					if (!verificationValue) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					if (verificationValue.expiresAt < new Date()) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.OTP_EXPIRED,
+						});
+					}
+					const otp = ctx.body.otp;
+					if (verificationValue.value !== otp) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					await ctx.context.internalAdapter.deleteVerificationValue(
+						verificationValue.id,
+					);
+					const user = await ctx.context.internalAdapter.findUserByEmail(email);
+					if (!user) {
+						if (opts.disableSignUp) {
+							throw new APIError("BAD_REQUEST", {
+								message: ERROR_CODES.USER_NOT_FOUND,
+							});
+						}
+						const newUser = await ctx.context.internalAdapter.createUser(
+							{
+								email,
+								emailVerified: true,
+								name: "",
+							},
+							ctx,
+						);
+						const session = await ctx.context.internalAdapter.createSession(
+							newUser.id,
+							ctx.request,
+						);
+						await setSessionCookie(ctx, {
+							session,
+							user: newUser,
+						});
+						return ctx.json({
+							token: session.token,
+							user: {
+								id: newUser.id,
+								email: newUser.email,
+								emailVerified: newUser.emailVerified,
+								name: newUser.name,
+								image: newUser.image,
+								createdAt: newUser.createdAt,
+								updatedAt: newUser.updatedAt,
+							},
+						});
+					}
+
+					if (!user.user.emailVerified) {
+						await ctx.context.internalAdapter.updateUser(
+							user.user.id,
+							{
+								emailVerified: true,
+							},
+							ctx,
+						);
+					}
+
+					const session = await ctx.context.internalAdapter.createSession(
+						user.user.id,
+						ctx.request,
+					);
+					await setSessionCookie(ctx, {
+						session,
+						user: user.user,
+					});
+					return ctx.json({
+						token: session.token,
+						user: {
+							id: user.user.id,
+							email: user.user.email,
+							emailVerified: user.user.emailVerified,
+							name: user.user.name,
+							image: user.user.image,
+							createdAt: user.user.createdAt,
+							updatedAt: user.user.updatedAt,
+						},
+					});
+				},
+			),
+			forgetPasswordEmailOTP: createAuthEndpoint(
+				"/forget-password/email-otp",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to send the OTP",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							description: "Forget password with email OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													success: {
+														type: "boolean",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.body.email;
+					const user = await ctx.context.internalAdapter.findUserByEmail(email);
+					if (!user) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.USER_NOT_FOUND,
+						});
+					}
+					const otp = opts.generateOTP(
+						{ email, type: "forget-password" },
+						ctx.request,
+					);
+					await ctx.context.internalAdapter.createVerificationValue({
+						value: otp,
+						identifier: `forget-password-otp-${email}`,
+						expiresAt: getDate(opts.expiresIn, "sec"),
+					});
+					await options.sendVerificationOTP(
+						{
+							email,
+							otp,
+							type: "forget-password",
+						},
+						ctx.request,
+					);
+					return ctx.json({
+						success: true,
+					});
+				},
+			),
+			resetPasswordEmailOTP: createAuthEndpoint(
+				"/email-otp/reset-password",
+				{
+					method: "POST",
+					body: z.object({
+						email: z.string({
+							description: "Email address to reset the password",
+						}),
+						otp: z.string({
+							description: "OTP sent to the email",
+						}),
+						password: z.string({
+							description: "New password",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							description: "Reset password with email OTP",
+							responses: {
+								200: {
+									description: "Success",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													success: {
+														type: "boolean",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const email = ctx.body.email;
+					const user = await ctx.context.internalAdapter.findUserByEmail(
+						email,
+						{
+							includeAccounts: true,
+						},
+					);
+					if (!user) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.USER_NOT_FOUND,
+						});
+					}
+					const verificationValue =
+						await ctx.context.internalAdapter.findVerificationValue(
+							`forget-password-otp-${email}`,
+						);
+					if (!verificationValue) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					if (verificationValue.expiresAt < new Date()) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.OTP_EXPIRED,
+						});
+					}
+					const otp = ctx.body.otp;
+					if (verificationValue.value !== otp) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.INVALID_OTP,
+						});
+					}
+					await ctx.context.internalAdapter.deleteVerificationValue(
+						verificationValue.id,
+					);
+					const passwordHash = await ctx.context.password.hash(
+						ctx.body.password,
+					);
+					const account = user.accounts.find(
+						(account) => account.providerId === "credential",
+					);
+					if (!account) {
+						await ctx.context.internalAdapter.createAccount(
+							{
+								userId: user.user.id,
+								providerId: "credential",
+								accountId: user.user.id,
+								password: passwordHash,
+							},
+							ctx,
+						);
+					} else {
+						await ctx.context.internalAdapter.updatePassword(
+							user.user.id,
+							passwordHash,
+							ctx,
+						);
+					}
+
+					return ctx.json({
+						success: true,
+					});
+				},
+			),
+		},
+		hooks: {
+			after: [
+				{
+					matcher(context) {
+						return !!(
+							context.path?.startsWith("/sign-up") &&
+							opts.sendVerificationOnSignUp
+						);
+					},
+					handler: createAuthMiddleware(async (ctx) => {
+						const response = await getEndpointResponse<{
+							user: { email: string };
+						}>(ctx);
+						const email = response?.user.email;
+						if (email) {
+							const otp = opts.generateOTP(
+								{ email, type: ctx.body.type },
+								ctx.request,
+							);
+							await ctx.context.internalAdapter.createVerificationValue({
+								value: otp,
+								identifier: `email-verification-otp-${email}`,
+								expiresAt: getDate(opts.expiresIn, "sec"),
+							});
+							await options.sendVerificationOTP(
+								{
+									email,
+									otp,
+									type: "email-verification",
+								},
+								ctx.request,
+							);
+						}
+					}),
+				},
+			],
+		},
+		$ERROR_CODES: ERROR_CODES,
+		rateLimit: [
+			{
+				pathMatcher(path) {
+					return path === "/email-otp/send-verification-otp";
+				},
+				window: 60,
+				max: 3,
+			},
+			{
+				pathMatcher(path) {
+					return path === "/email-otp/verify-email";
+				},
+				window: 60,
+				max: 3,
+			},
+			{
+				pathMatcher(path) {
+					return path === "/sign-in/email-otp";
+				},
+				window: 60,
+				max: 3,
+			},
+		],
+	} satisfies BetterAuthPlugin;
+};
+
+```

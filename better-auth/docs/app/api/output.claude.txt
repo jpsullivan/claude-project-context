@@ -1,0 +1,403 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/app/api/search/route.ts</source>
+<document_content>
+import { source } from "@/lib/source";
+import { createFromSource } from "fumadocs-core/search/server";
+
+export const { GET } = createFromSource(source);
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/app/api/og/route.tsx</source>
+<document_content>
+import { ImageResponse } from "@vercel/og";
+import { z } from "zod";
+export const runtime = "edge";
+
+const ogSchema = z.object({
+	heading: z.string(),
+	mode: z.string(),
+	type: z.string(),
+});
+export async function GET(req: Request) {
+	try {
+		const geist = await fetch(
+			new URL("../../../assets/Geist.ttf", import.meta.url),
+		).then((res) => res.arrayBuffer());
+		const geistMono = await fetch(
+			new URL("../../../assets/GeistMono.ttf", import.meta.url),
+		).then((res) => res.arrayBuffer());
+		const url = new URL(req.url);
+		const urlParamsValues = Object.fromEntries(url.searchParams);
+		const validParams = ogSchema.parse(urlParamsValues);
+		const { heading, type } = validParams;
+		const trueHeading =
+			heading.length > 140 ? `${heading.substring(0, 140)}...` : heading;
+
+		const paint = "#fff";
+
+		const fontSize = trueHeading.length > 100 ? "30px" : "60px";
+		return new ImageResponse(
+			<div
+				tw="flex w-full relative flex-col p-12"
+				style={{
+					color: paint,
+					backgroundColor: "transparent",
+					border: "1px solid rgba(255, 255, 255, 0.1)",
+					boxShadow: "0 -20px 80px -20px rgba(28, 12, 12, 0.1) inset",
+					background: "#0a0505",
+				}}
+			>
+				<div
+					tw={`relative flex flex-col w-full h-full border-2 border-[${paint}]/20 p-10}`}
+				>
+					<svg
+						style={{
+							position: "absolute",
+							top: "-9px",
+							right: "-9px",
+						}}
+						width="17"
+						height="17"
+						fill="none"
+					>
+						<path
+							d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+							fill="#d0cfd1d3"
+						/>
+					</svg>
+
+					<svg
+						style={{
+							position: "absolute",
+							top: "-9px",
+							left: "-9px",
+						}}
+						width="17"
+						height="17"
+						fill="none"
+					>
+						<path
+							d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+							fill="#cacaca"
+						/>
+					</svg>
+					<svg
+						style={{
+							position: "absolute",
+							bottom: "-9px",
+							left: "-9px",
+						}}
+						width="17"
+						height="17"
+						fill="none"
+					>
+						<path
+							d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+							fill="#cacaca"
+						/>
+					</svg>
+					<svg
+						style={{
+							position: "absolute",
+							bottom: "-9px",
+							right: "-9px",
+						}}
+						width="17"
+						height="17"
+						fill="none"
+					>
+						<path
+							d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+							fill="#cacaca"
+						/>
+					</svg>
+					<div tw="flex flex-col flex-1 py-10">
+						<svg
+							width="100"
+							height="95"
+							viewBox="0 0 60 45"
+							fill="none"
+							className="mb-10"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path
+								fillRule="evenodd"
+								stroke={paint}
+								clipRule="evenodd"
+								d="M0 0H15V15H30V30H15V45H0V30V15V0ZM45 30V15H30V0H45H60V15V30V45H45H30V30H45Z"
+								fill="white"
+							/>
+						</svg>
+						<div
+							style={{ fontFamily: "GeistMono", fontWeight: "normal" }}
+							tw="relative flex mt-10 text-xl uppercase font-bold gap-2 items-center"
+						>
+							{type === "documentaiton" ? (
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="1.2em"
+									height="1.2em"
+									viewBox="0 0 24 24"
+								>
+									<path
+										fill="currentColor"
+										fillRule="evenodd"
+										d="M4.172 3.172C3 4.343 3 6.229 3 10v4c0 3.771 0 5.657 1.172 6.828S7.229 22 11 22h2c3.771 0 5.657 0 6.828-1.172S21 17.771 21 14v-4c0-3.771 0-5.657-1.172-6.828S16.771 2 13 2h-2C7.229 2 5.343 2 4.172 3.172M8 9.25a.75.75 0 0 0 0 1.5h8a.75.75 0 0 0 0-1.5zm0 4a.75.75 0 0 0 0 1.5h5a.75.75 0 0 0 0-1.5z"
+										clipRule="evenodd"
+									></path>
+								</svg>
+							) : null}
+							{type}
+						</div>
+						<div
+							tw="flex max-w-[70%] mt-5 tracking-tighter leading-[1.1] text-[30px] font-bold"
+							style={{
+								fontWeight: "bold",
+								marginLeft: "-3px",
+								fontSize,
+
+								fontFamily: "GeistMono",
+							}}
+						>
+							{trueHeading}
+						</div>
+					</div>
+					<div tw="flex items-center w-full justify-between">
+						<div
+							tw="flex text-xl"
+							style={{ fontFamily: "GeistSans", fontWeight: "semibold" }}
+						>
+							Better Auth.
+						</div>
+						<div tw="flex gap-2 items-center text-xl">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="1.2em"
+								height="1.2em"
+								viewBox="0 0 24 24"
+							>
+								<path
+									fill="currentColor"
+									d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"
+								></path>
+							</svg>
+							<span
+								style={{
+									fontFamily: "GeistSans",
+								}}
+								tw="flex ml-2"
+							>
+								github.com/better-auth/better-auth
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>,
+			{
+				width: 1200,
+				height: 630,
+				fonts: [
+					{
+						name: "Geist",
+						data: geist,
+						weight: 400,
+						style: "normal",
+					},
+					{
+						name: "GeistMono",
+						data: geistMono,
+						weight: 700,
+						style: "normal",
+					},
+				],
+			},
+		);
+	} catch (err) {
+		console.log({ err });
+		return new Response("Failed to generate the og image", { status: 500 });
+	}
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/app/api/og-release/route.tsx</source>
+<document_content>
+import { ImageResponse } from "@vercel/og";
+import { z } from "zod";
+export const runtime = "edge";
+
+const ogSchema = z.object({
+	heading: z.string(),
+	description: z.string().optional(),
+	date: z.string().optional(),
+});
+
+export async function GET(req: Request) {
+	try {
+		const geist = await fetch(
+			new URL("../../../assets/Geist.ttf", import.meta.url),
+		).then((res) => res.arrayBuffer());
+
+		const url = new URL(req.url);
+		const urlParamsValues = Object.fromEntries(url.searchParams);
+		const validParams = ogSchema.parse(urlParamsValues);
+
+		const { heading, description, date } = validParams;
+		const trueHeading =
+			heading.length > 140 ? `${heading.substring(0, 140)}...` : heading;
+
+		return new ImageResponse(
+			<div
+				tw="flex w-full h-full relative flex-col"
+				style={{
+					background:
+						"radial-gradient(circle 230px at 0% 0%, #000000, #000000)",
+					fontFamily: "Geist",
+					color: "white",
+				}}
+			>
+				<div
+					tw="flex w-full h-full relative"
+					style={{
+						borderRadius: "10px",
+						border: "1px solid rgba(32, 34, 34, 0.5)",
+					}}
+				>
+					<div
+						tw="absolute"
+						style={{
+							width: "350px",
+							height: "120px",
+							borderRadius: "100px",
+							background: "#c7c7c7",
+							opacity: 0.21,
+							filter: "blur(35px)",
+							transform: "rotate(50deg)",
+							top: "18%",
+							left: "0%",
+						}}
+					/>
+
+					<div
+						tw="flex flex-col w-full relative h-full p-8"
+						style={{
+							gap: "14px",
+							position: "relative",
+							zIndex: 999,
+						}}
+					>
+						<div
+							tw="absolute bg-repeat w-full h-full"
+							style={{
+								width: "100%",
+								height: "100%",
+								zIndex: 999,
+
+								background:
+									"url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHhtbG5zOnN2Z2pzPSJodHRwOi8vc3ZnanMuZGV2L3N2Z2pzIiB2aWV3Qm94PSIwIDAgODAwIDgwMCIgd2lkdGg9IjgwMCIgaGVpZ2h0PSI4MDAiPjxnIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2U9ImhzbGEoMCwgMCUsIDEwMCUsIDEuMDApIiBmaWxsPSJub25lIiBvcGFjaXR5PSIwLjUiPjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB4PSIwIiB5PSIwIiBvcGFjaXR5PSIwLjE1Ij48L3JlY3Q+PGNpcmNsZSByPSIxMC44NTUyNjMxNTc4OTQ3MzYiIGN4PSIwIiBjeT0iMCIgZmlsbD0iaHNsYSgwLCAwJSwgMTAwJSwgMS4wMCkiIHN0cm9rZT0ibm9uZSI+PC9jaXJjbGU+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIHg9IjQwMCIgeT0iMCIgb3BhY2l0eT0iMC4xNSI+PC9yZWN0PjxjaXJjbGUgcj0iMTAuODU1MjYzMTU3ODk0NzM2IiBjeD0iNDAwIiBjeT0iMCIgZmlsbD0iaHNsYSgwLCAwJSwgMTAwJSwgMS4wMCkiIHN0cm9rZT0ibm9uZSI+PC9jaXJjbGU+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIHg9IjgwMCIgeT0iMCIgb3BhY2l0eT0iMC4xNSI+PC9yZWN0PjxjaXJjbGUgcj0iMTAuODU1MjYzMTU3ODk0NzM2IiBjeD0iODAwIiBjeT0iMCIgZmlsbD0iaHNsYSgwLCAwJSwgMTAwJSwgMS4wMCkiIHN0cm9rZT0ibm9uZSI+PC9jaXJjbGU+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIHg9IjAiIHk9IjQwMCIgb3BhY2l0eT0iMC4xNSI+PC9yZWN0PjxjaXJjbGUgcj0iMTAuODU1MjYzMTU3ODk0NzM2IiBjeD0iMCIgY3k9IjQwMCIgZmlsbD0iaHNsYSgwLCAwJSwgMTAwJSwgMS4wMCkiIHN0cm9rZT0ibm9uZSI+PC9jaXJjbGU+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIHg9IjQwMCIgeT0iNDAwIiBvcGFjaXR5PSIwLjE1Ij48L3JlY3Q+PGNpcmNsZSByPSIxMC44NTUyNjMxNTc4OTQ3MzYiIGN4PSI0MDAiIGN5PSI0MDAiIGZpbGw9ImhzbGEoMCwgMCUsIDEwMCUsIDEuMDApIiBzdHJva2U9Im5vbmUiPjwvY2lyY2xlPjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiB4PSI4MDAiIHk9IjQwMCIgb3BhY2l0eT0iMC4xNSI+PC9yZWN0PjxjaXJjbGUgcj0iMTAuODU1MjYzMTU3ODk0NzM2IiBjeD0iODAwIiBjeT0iNDAwIiBmaWxsPSJoc2xhKDAsIDAlLCAxMDAlLCAxLjAwKSIgc3Ryb2tlPSJub25lIj48L2NpcmNsZT48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeD0iMCIgeT0iODAwIiBvcGFjaXR5PSIwLjE1Ij48L3JlY3Q+PGNpcmNsZSByPSIxMC44NTUyNjMxNTc4OTQ3MzYiIGN4PSIwIiBjeT0iODAwIiBmaWxsPSJoc2xhKDAsIDAlLCAxMDAlLCAxLjAwKSIgc3Ryb2tlPSJub25lIj48L2NpcmNsZT48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeD0iNDAwIiB5PSI4MDAiIG9wYWNpdHk9IjAuMTUiPjwvcmVjdD48Y2lyY2xlIHI9IjEwLjg1NTI2MzE1Nzg5NDczNiIgY3g9IjQwMCIgY3k9IjgwMCIgZmlsbD0iaHNsYSgwLCAwJSwgMTAwJSwgMS4wMCkiIHN0cm9rZT0ibm9uZSI+PC9jaXJjbGU+PHJlY3Qgd2lkdGg9IjQwMCIgaGVpZ2h0PSI0MDAiIHg9IjgwMCIgeT0iODAwIiBvcGFjaXR5PSIwLjE1Ij48L3JlY3Q+PGNpcmNsZSByPSIxMC44NTUyNjM1NTc4OTQ3MzYiIGN4PSI4MDAiIGN5PSI4MDAiIGZpbGw9ImhzbGEoMCwgMCUsIDEwMCUsIDEuMDApIiBzdHJva2U9Im5vbmUiPjwvY2lyY2xlPjwvZz48L3N2Zz4=')",
+								backgroundSize: "25px 25px",
+								display: "flex",
+								alignItems: "flex-start",
+								justifyContent: "flex-start",
+								position: "relative",
+								flexDirection: "column",
+								textAlign: "left",
+								paddingLeft: "170px",
+								gap: "14px",
+							}}
+						/>
+						<div
+							tw="flex text-6xl absolute bottom-56 isolate font-bold"
+							style={{
+								paddingLeft: "170px",
+								paddingTop: "200px",
+								background: "linear-gradient(45deg, #000000 4%, #fff, #000)",
+								backgroundClip: "text",
+								color: "transparent",
+							}}
+						>
+							{trueHeading}
+						</div>
+
+						<div
+							tw="flex absolute bottom-44 z-[999] text-2xl"
+							style={{
+								paddingLeft: "170px",
+								background:
+									"linear-gradient(10deg, #d4d4d8, 04%, #fff, #d4d4d8)",
+								backgroundClip: "text",
+								opacity: 0.7,
+								color: "transparent",
+							}}
+						>
+							{description}
+						</div>
+
+						<div
+							tw="flex text-2xl absolute bottom-28 z-[999]"
+							style={{
+								paddingLeft: "170px",
+								background:
+									"linear-gradient(10deg, #d4d4d8, 04%, #fff, #d4d4d8)",
+								backgroundClip: "text",
+								opacity: 0.8,
+								color: "transparent",
+							}}
+						>
+							{date}
+						</div>
+					</div>
+
+					{/* Lines */}
+					<div
+						tw="absolute top-10% w-full h-px"
+						style={{
+							background: "linear-gradient(90deg, #888888 30%, #1d1f1f 70%)",
+						}}
+					/>
+					<div
+						tw="absolute bottom-10% w-full h-px"
+						style={{
+							background: "#2c2c2c",
+						}}
+					/>
+					<div
+						tw="absolute left-10% h-full w-px"
+						style={{
+							background: "linear-gradient(180deg, #747474 30%, #222424 70%)",
+						}}
+					/>
+					<div
+						tw="absolute right-10% h-full w-px"
+						style={{
+							background: "#2c2c2c",
+						}}
+					/>
+				</div>
+			</div>,
+			{
+				width: 1200,
+				height: 630,
+				fonts: [
+					{
+						name: "Geist",
+						data: geist,
+						weight: 400,
+						style: "normal",
+					},
+				],
+			},
+		);
+	} catch (err) {
+		console.log({ err });
+		return new Response("Failed to generate the OG image", { status: 500 });
+	}
+}
+
+</document_content>
+</document>
+</documents>

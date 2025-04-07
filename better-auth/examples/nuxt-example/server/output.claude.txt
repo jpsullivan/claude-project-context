@@ -1,0 +1,22 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/server/tsconfig.json</source>
+<document_content>
+{
+	"extends": "../.nuxt/tsconfig.server.json"
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/server/api/auth/[...all].ts</source>
+<document_content>
+import { auth } from "~/lib/auth";
+
+export default defineEventHandler((event) => {
+	return auth.handler(toWebRequest(event));
+});
+
+</document_content>
+</document>
+</documents>

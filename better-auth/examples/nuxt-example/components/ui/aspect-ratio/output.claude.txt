@@ -1,0 +1,26 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/aspect-ratio/AspectRatio.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type AspectRatioProps } from "radix-vue";
+
+const props = defineProps<AspectRatioProps>();
+</script>
+
+<template>
+  <AspectRatio v-bind="props">
+    <slot />
+  </AspectRatio>
+</template>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/aspect-ratio/index.ts</source>
+<document_content>
+export { default as AspectRatio } from "./AspectRatio.vue";
+
+</document_content>
+</document>
+</documents>

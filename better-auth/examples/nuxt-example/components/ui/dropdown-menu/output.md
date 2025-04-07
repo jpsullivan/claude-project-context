@@ -1,0 +1,412 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenu.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuRootEmits,
+	type DropdownMenuRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuRootProps>();
+const emits = defineEmits<DropdownMenuRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuRoot v-bind="forwarded">
+    <slot />
+  </DropdownMenuRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuCheckboxItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuCheckboxItemEmits,
+	type DropdownMenuCheckboxItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuCheckboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuCheckboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuCheckboxItem
+    v-bind="forwarded"
+    :class=" cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuItemIndicator>
+        <CheckIcon class="w-4 h-4" />
+      </DropdownMenuItemIndicator>
+    </span>
+    <slot />
+  </DropdownMenuCheckboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuContentEmits,
+	type DropdownMenuContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = withDefaults(
+	defineProps<DropdownMenuContentProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		sideOffset: 4,
+	},
+);
+const emits = defineEmits<DropdownMenuContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuPortal>
+    <DropdownMenuContent
+      v-bind="forwarded"
+      :class="cn('z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', props.class)"
+    >
+      <slot />
+    </DropdownMenuContent>
+  </DropdownMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuGroup.vue
+```
+<script setup lang="ts">
+import { type DropdownMenuGroupProps } from "radix-vue";
+
+const props = defineProps<DropdownMenuGroupProps>();
+</script>
+
+<template>
+  <DropdownMenuGroup v-bind="props">
+    <slot />
+  </DropdownMenuGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuItemProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuItemProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuItem
+    v-bind="forwardedProps"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+  </DropdownMenuItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuLabel.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuLabelProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuLabel
+    v-bind="forwardedProps"
+    :class="cn('px-2 py-1.5 text-sm font-semibold', inset && 'pl-8', props.class)"
+  >
+    <slot />
+  </DropdownMenuLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuRadioGroup.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuRadioGroupEmits,
+	type DropdownMenuRadioGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuRadioGroupProps>();
+const emits = defineEmits<DropdownMenuRadioGroupEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuRadioGroup v-bind="forwarded">
+    <slot />
+  </DropdownMenuRadioGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuRadioItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuRadioItemEmits,
+	type DropdownMenuRadioItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuRadioItemProps & { class?: HTMLAttributes["class"] }
+>();
+
+const emits = defineEmits<DropdownMenuRadioItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuRadioItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <DropdownMenuItemIndicator>
+        <DotFilledIcon class="h-4 w-4 fill-current" />
+      </DropdownMenuItemIndicator>
+    </span>
+    <slot />
+  </DropdownMenuRadioItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSeparatorProps & {
+		class?: HTMLAttributes["class"];
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DropdownMenuSeparator v-bind="delegatedProps" :class="cn('-mx-1 my-1 h-px bg-muted', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest opacity-60', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSub.vue
+```
+<script setup lang="ts">
+import {
+	type DropdownMenuSubEmits,
+	type DropdownMenuSubProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DropdownMenuSubProps>();
+const emits = defineEmits<DropdownMenuSubEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DropdownMenuSub v-bind="forwarded">
+    <slot />
+  </DropdownMenuSub>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSubContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuSubContentEmits,
+	type DropdownMenuSubContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuSubContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DropdownMenuSubContent
+    v-bind="forwarded"
+    :class="cn('z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2', props.class)"
+  >
+    <slot />
+  </DropdownMenuSubContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuSubTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DropdownMenuSubTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubTriggerProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <DropdownMenuSubTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent data-[state=open]:bg-accent',
+      props.class,
+    )"
+  >
+    <slot />
+    <ChevronRightIcon class="ml-auto h-4 w-4" />
+  </DropdownMenuSubTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/DropdownMenuTrigger.vue
+```
+<script setup lang="ts">
+import { type DropdownMenuTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<DropdownMenuTriggerProps>();
+
+const forwardedProps = useForwardProps(props);
+</script>
+
+<template>
+  <DropdownMenuTrigger class="outline-none" v-bind="forwardedProps">
+    <slot />
+  </DropdownMenuTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/dropdown-menu/index.ts
+```typescript
+export { DropdownMenuPortal } from "radix-vue";
+
+export { default as DropdownMenu } from "./DropdownMenu.vue";
+export { default as DropdownMenuTrigger } from "./DropdownMenuTrigger.vue";
+export { default as DropdownMenuContent } from "./DropdownMenuContent.vue";
+export { default as DropdownMenuGroup } from "./DropdownMenuGroup.vue";
+export { default as DropdownMenuRadioGroup } from "./DropdownMenuRadioGroup.vue";
+export { default as DropdownMenuItem } from "./DropdownMenuItem.vue";
+export { default as DropdownMenuCheckboxItem } from "./DropdownMenuCheckboxItem.vue";
+export { default as DropdownMenuRadioItem } from "./DropdownMenuRadioItem.vue";
+export { default as DropdownMenuShortcut } from "./DropdownMenuShortcut.vue";
+export { default as DropdownMenuSeparator } from "./DropdownMenuSeparator.vue";
+export { default as DropdownMenuLabel } from "./DropdownMenuLabel.vue";
+export { default as DropdownMenuSub } from "./DropdownMenuSub.vue";
+export { default as DropdownMenuSubTrigger } from "./DropdownMenuSubTrigger.vue";
+export { default as DropdownMenuSubContent } from "./DropdownMenuSubContent.vue";
+
+```

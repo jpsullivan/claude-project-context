@@ -1,0 +1,13667 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/banner.tsx
+```
+"use client";
+
+import { Banner } from "fumadocs-ui/components/banner";
+
+export function BetaNotice() {
+	return (
+		<Banner
+			id="beta-notice-1"
+			className="lg:text-sm tracking-tight text-xs hidden md:flex bg-gradient-to-tr from-white to-stone-100 border dark:from-zinc-900 dark:to-zinc-950"
+		>
+			🚧 Heads up! We're still in beta. V1 will be out by nov. 22!
+		</Banner>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/display-techstack.tsx
+```
+import { cn } from "@/lib/utils";
+import { techStackIcons } from "./techstack-icons";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+export const TechStackDisplay = ({
+	skills,
+	className,
+}: {
+	skills: string[];
+	className?: string;
+}) => {
+	return (
+		<div
+			className={cn(
+				"flex gap-7 flex-wrap mt-3 justify-center items-center max-w-4xl",
+				className,
+			)}
+		>
+			{skills.map((icon) => {
+				return (
+					<TooltipProvider delayDuration={50} key={icon}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="transform duration-300 hover:rotate-12 transition-transform">
+									{techStackIcons[icon].icon}
+								</span>
+							</TooltipTrigger>
+							<TooltipContent className="text-white/80 bg-gradient-to-tr from-stone-950/90 via-stone-900 to-stone-950/90">
+								{techStackIcons[icon].name}
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				);
+			})}
+		</div>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/divider-text.tsx
+```
+import type { ReactNode } from "react";
+
+export function DividerText({ children }: { children: ReactNode }) {
+	return (
+		<div className="flex items-center justify-center w-full">
+			<div className="w-full border-b border-muted"></div>
+			<div className="flex items-center justify-center w-full text-muted-foreground">
+				{children}
+			</div>
+			<div className="w-full border-b border-muted"></div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/endpoint.tsx
+```
+import { Server } from "lucide-react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "./ui/tooltip";
+
+function Method({ method }: { method: "POST" | "GET" | "DELETE" | "PUT" }) {
+	return (
+		<div className="flex items-center justify-center h-6 px-2 text-sm font-semibold uppercase border rounded-lg select-none w-fit font-display bg-background">
+			{method}
+		</div>
+	);
+}
+
+export function Endpoint({
+	path,
+	method,
+	isServerOnly,
+}: {
+	path: string;
+	method: "POST" | "GET" | "DELETE" | "PUT";
+	isServerOnly?: boolean;
+}) {
+	return (
+		<div className="relative flex items-center w-full gap-2 p-2 border rounded-md border-muted bg-fd-secondary/50">
+			<Method method={method} />
+			<span className="font-mono text-sm text-muted-foreground">{path}</span>
+			{isServerOnly && (
+				<div className="absolute right-2">
+					<TooltipProvider delayDuration={1}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div className="flex items-center justify-center transition-colors duration-150 ease-in-out size-6 text-muted-foreground/50 hover:text-muted-foreground">
+									<Server className="size-4" />
+								</div>
+							</TooltipTrigger>
+							<TooltipContent className="border bg-fd-popover text-fd-popover-foreground border-fd-border">
+								Server Only Endpoint
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				</div>
+			)}
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/features.tsx
+```
+"use client";
+
+import {
+	Globe2Icon,
+	PlugIcon,
+	PlugZap2Icon,
+	Plus,
+	RabbitIcon,
+	ShieldCheckIcon,
+	Webhook,
+} from "lucide-react";
+import { LockClosedIcon } from "@radix-ui/react-icons";
+
+import { TechStackDisplay } from "./display-techstack";
+import { Ripple } from "./ripple";
+import { GithubStat } from "./github-stat";
+import { cn } from "@/lib/utils";
+import { Testimonial } from "./landing/people-say";
+const features = [
+	{
+		id: 1,
+		label: "Framework Agnostic",
+		title: "Support for popular <strong>frameworks</strong>.",
+		description:
+			"Supports popular frameworks, including React, Vue, Svelte, Astro, Solid, Next.js, Nuxt, Tanstack Start, Hono, and more.",
+		icon: PlugZap2Icon,
+	},
+	{
+		id: 2,
+		label: "Authentication",
+		title: "Email & Password <strong>Authentication</strong>.",
+		description:
+			"Built-in support for email and password authentication, with session and account management features.",
+		icon: LockClosedIcon,
+	},
+	{
+		id: 3,
+		label: "Social Sign-on",
+		title: "Support multiple <strong>OAuth providers</strong>.",
+		description:
+			"Allow users to sign in with their accounts, including GitHub, Google, Discord, Twitter, and more.",
+		icon: Webhook,
+	},
+	{
+		id: 4,
+		label: "Two Factor",
+		title: "Multi Factor <strong>Authentication</strong>.",
+		description:
+			"Secure your users accounts with two factor authentication with a few lines of code.",
+		icon: ShieldCheckIcon,
+	},
+	{
+		id: 5,
+		label: "Multi Tenant",
+		title: "<strong>Organization</strong> Members and Invitation.",
+		description:
+			"Multi tenant support with members, organization, teams and invitation with access control.",
+
+		icon: RabbitIcon,
+	},
+
+	{
+		id: 6,
+		label: "Plugin Ecosystem",
+		title: "A lot more features with <strong>plugins</strong>.",
+		description:
+			"Improve your application experience with our official plugins and those created by the community.",
+		icon: PlugIcon,
+	},
+];
+
+export default function Features({ stars }: { stars: string | null }) {
+	return (
+		<div className="md:w-10/12 mt-10 mx-auto font-geist relative md:border-l-0 md:border-b-0 md:border-[1.2px] rounded-none -pr-2 dark:bg-black/[0.95]">
+			<div className="w-full md:mx-0">
+				<div className="grid grid-cols-1 relative md:grid-rows-2 md:grid-cols-3 border-b-[1.2px]">
+					<div className="hidden md:grid top-1/2 left-0 -translate-y-1/2 w-full grid-cols-3 z-10 pointer-events-none select-none absolute">
+						<Plus className="w-8 h-8 text-neutral-300 translate-x-[16.5px] translate-y-[.5px] ml-auto dark:text-neutral-600" />
+						<Plus className="w-8 h-8 text-neutral-300 ml-auto translate-x-[16.5px] translate-y-[.5px] dark:text-neutral-600" />
+					</div>
+					{features.map((feature, index) => (
+						<div
+							key={feature.id}
+							className={cn(
+								"justify-center border-l-[1.2px] md:min-h-[240px] border-t-[1.2px] md:border-t-0 transform-gpu flex flex-col p-10",
+								index >= 3 && "md:border-t-[1.2px]",
+							)}
+						>
+							<div className="flex items-center gap-2 my-1">
+								<feature.icon className="w-4 h-4" />
+								<p className="text-gray-600 dark:text-gray-400">
+									{feature.label}
+								</p>
+							</div>
+							<div className="mt-2">
+								<div className="max-w-full">
+									<div className="flex gap-3 ">
+										<p
+											className="max-w-lg text-xl font-normal tracking-tighter md:text-2xl"
+											dangerouslySetInnerHTML={{
+												__html: feature.title,
+											}}
+										/>
+									</div>
+								</div>
+								<p className="mt-2 text-sm text-left text-muted-foreground">
+									{feature.description}
+									<a className="ml-2 underline" href="/docs" target="_blank">
+										Learn more
+									</a>
+								</p>
+							</div>
+						</div>
+					))}
+				</div>
+				<div className="w-full border-l-2 hidden md:block">
+					<Testimonial />
+				</div>
+				<div className="relative col-span-3 border-t-[1.2px] border-l-[1.2px] md:border-b-[1.2px] dark:border-b-0  h-full py-20">
+					<div className="w-full h-full p-16 pt-10 md:px-10">
+						<div className="flex flex-col items-center justify-center w-full h-full gap-3">
+							<div className="flex items-center gap-2">
+								<Globe2Icon className="w-4 h-4" />
+								<p className="text-gray-600 dark:text-gray-400">
+									Own your auth
+								</p>
+							</div>
+							<p className="max-w-md mx-auto mt-4 text-4xl font-normal tracking-tighter text-center md:text-4xl">
+								<strong>Roll your own auth with confidence in minutes!</strong>
+							</p>
+							<div className="flex mt-[10px] z-20 justify-center items-start">
+								<TechStackDisplay
+									skills={[
+										"nextJs",
+										"nuxt",
+										"svelteKit",
+										"astro",
+										"solidStart",
+										// "react",
+										// "hono",
+										"expo",
+										"tanstack",
+									]}
+								/>
+							</div>
+							<div className="flex items-center gap-2">
+								<GithubStat stars={stars} />
+							</div>
+							<Ripple />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/fork-button.tsx
+```
+import Link from "next/link";
+import { Button } from "./ui/button";
+import { GitHubLogoIcon } from "@radix-ui/react-icons";
+import { ExternalLink } from "lucide-react";
+
+export function ForkButton({ url }: { url: string }) {
+	return (
+		<div className="flex items-center gap-2 my-2">
+			<Link href={`https://codesandbox.io/p/github/${url}`} target="_blank">
+				<Button className="gap-2" variant="outline" size="sm">
+					<ExternalLink size={12} />
+					Open in Stackblitz
+				</Button>
+			</Link>
+			<Link href={`https://github.com/${url}`} target="_blank">
+				<Button className="gap-2" variant="secondary" size="sm">
+					<GitHubLogoIcon />
+					View on GitHub
+				</Button>
+			</Link>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/generate-secret.tsx
+```
+"use client";
+import { createRandomStringGenerator } from "@better-auth/utils/random";
+import { useState } from "react";
+import { Button } from "./ui/button";
+export const GenerateSecret = () => {
+	const [generated, setGenerated] = useState(false);
+	const generateRandomString = createRandomStringGenerator("a-z", "0-9", "A-Z");
+	return (
+		<div className="my-2">
+			<Button
+				variant="outline"
+				size="sm"
+				disabled={generated}
+				onClick={() => {
+					const elements = document.getElementsByTagName("code"); // or any other selector
+					for (let i = 0; i < elements.length; i++) {
+						if (elements[i].textContent === "BETTER_AUTH_SECRET=") {
+							elements[i].textContent =
+								`BETTER_AUTH_SECRET=${generateRandomString(32)}`;
+							setGenerated(true);
+							setTimeout(() => {
+								elements[i].textContent = "BETTER_AUTH_SECRET=";
+								setGenerated(false);
+							}, 5000);
+						}
+					}
+				}}
+			>
+				{generated ? "Generated" : "Generate Secret"}
+			</Button>
+		</div>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/github-stat.tsx
+```
+import { kFormatter } from "@/lib/utils";
+
+export function GithubStat({ stars }: { stars: string | null }) {
+	let result = 0;
+	if (stars) {
+		result = parseInt(stars?.replace(/,/g, ""), 10);
+	} else {
+		return <></>;
+	}
+
+	return (
+		<a
+			href="https://github.com/better-auth/better-auth"
+			className="flex mt-4 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground rounded-none h-10 p-5 ml-auto z-50 overflow-hidden items-center text-sm font-medium focus-visible:outline-none  disabled:pointer-events-none disabled:opacity-50 bg-transprent dark:text-white text-black px-4 py-2 max-w-[14.8rem] whitespace-pre md:flex group relative w-full justify-center gap-2 transition-all duration-300 ease-out  hover:ring-black"
+		>
+			<span className="absolute right-0 -mt-12 h-32 w-8 translate-x-12 rotate-12 dark:bg-white/60 bg-black/60 opacity-10 transition-all duration-1000 ease-out group-hover:-translate-x-40"></span>
+			<div className="flex items-center ml-2">
+				<svg className="w-4 h-4 fill-current" viewBox="0 0 438.549 438.549">
+					<path d="M409.132 114.573c-19.608-33.596-46.205-60.194-79.798-79.8-33.598-19.607-70.277-29.408-110.063-29.408-39.781 0-76.472 9.804-110.063 29.408-33.596 19.605-60.192 46.204-79.8 79.8C9.803 148.168 0 184.854 0 224.63c0 47.78 13.94 90.745 41.827 128.906 27.884 38.164 63.906 64.572 108.063 79.227 5.14.954 8.945.283 11.419-1.996 2.475-2.282 3.711-5.14 3.711-8.562 0-.571-.049-5.708-.144-15.417a2549.81 2549.81 0 01-.144-25.406l-6.567 1.136c-4.187.767-9.469 1.092-15.846 1-6.374-.089-12.991-.757-19.842-1.999-6.854-1.231-13.229-4.086-19.13-8.559-5.898-4.473-10.085-10.328-12.56-17.556l-2.855-6.57c-1.903-4.374-4.899-9.233-8.992-14.559-4.093-5.331-8.232-8.945-12.419-10.848l-1.999-1.431c-1.332-.951-2.568-2.098-3.711-3.429-1.142-1.331-1.997-2.663-2.568-3.997-.572-1.335-.098-2.43 1.427-3.289 1.525-.859 4.281-1.276 8.28-1.276l5.708.853c3.807.763 8.516 3.042 14.133 6.851 5.614 3.806 10.229 8.754 13.846 14.842 4.38 7.806 9.657 13.754 15.846 17.847 6.184 4.093 12.419 6.136 18.699 6.136 6.28 0 11.704-.476 16.274-1.423 4.565-.952 8.848-2.383 12.847-4.285 1.713-12.758 6.377-22.559 13.988-29.41-10.848-1.14-20.601-2.857-29.264-5.14-8.658-2.286-17.605-5.996-26.835-11.14-9.235-5.137-16.896-11.516-22.985-19.126-6.09-7.614-11.088-17.61-14.987-29.979-3.901-12.374-5.852-26.648-5.852-42.826 0-23.035 7.52-42.637 22.557-58.817-7.044-17.318-6.379-36.732 1.997-58.24 5.52-1.715 13.706-.428 24.554 3.853 10.85 4.283 18.794 7.952 23.84 10.994 5.046 3.041 9.089 5.618 12.135 7.708 17.705-4.947 35.976-7.421 54.818-7.421s37.117 2.474 54.823 7.421l10.849-6.849c7.419-4.57 16.18-8.758 26.262-12.565 10.088-3.805 17.802-4.853 23.134-3.138 8.562 21.509 9.325 40.922 2.279 58.24 15.036 16.18 22.559 35.787 22.559 58.817 0 16.178-1.958 30.497-5.853 42.966-3.9 12.471-8.941 22.457-15.125 29.979-6.191 7.521-13.901 13.85-23.131 18.986-9.232 5.14-18.182 8.85-26.84 11.136-8.662 2.286-18.415 4.004-29.263 5.146 9.894 8.562 14.842 22.077 14.842 40.539v60.237c0 3.422 1.19 6.279 3.572 8.562 2.379 2.279 6.136 2.95 11.276 1.995 44.163-14.653 80.185-41.062 108.068-79.226 27.88-38.161 41.825-81.126 41.825-128.906-.01-39.771-9.818-76.454-29.414-110.049z"></path>
+				</svg>
+				<span className="ml-2 text-black dark:text-white">Star on GitHub</span>
+			</div>
+			<div className="ml-2 flex items-center gap-2 text-sm md:flex">
+				<svg
+					className="w-4 h-4 text-gray-500 transition-all duration-300 group-hover:text-yellow-300"
+					data-slot="icon"
+					aria-hidden="true"
+					fill="currentColor"
+					viewBox="0 0 24 24"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						clipRule="evenodd"
+						d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
+						fillRule="evenodd"
+					></path>
+				</svg>
+				<span className="inline-block tabular-nums tracking-wider font-mono font-medium text-black dark:text-white">
+					{kFormatter(result)}
+				</span>
+			</div>
+		</a>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/icons.tsx
+```
+import { cn } from "@/lib/utils";
+import { SVGProps } from "react";
+
+export const Icons = {
+	nextJS: (props?: SVGProps<any>) => (
+		<svg
+			className={props?.className}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 24 24"
+		>
+			<path
+				fill="currentColor"
+				d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10s-4.477 10-10 10m4-14h-1.35v4H16zM9.346 9.71l6.059 7.828l1.054-.809L9.683 8H8v7.997h1.346z"
+			></path>
+		</svg>
+	),
+	nuxt: (props?: SVGProps<any>) => (
+		<svg
+			className={props?.className}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 24 24"
+		>
+			<path
+				fill="currentColor"
+				d="M13.464 19.83h8.922c.283 0 .562-.073.807-.21a1.6 1.6 0 0 0 .591-.574a1.53 1.53 0 0 0 .216-.783a1.53 1.53 0 0 0-.217-.782L17.792 7.414a1.6 1.6 0 0 0-.591-.573a1.65 1.65 0 0 0-.807-.21c-.283 0-.562.073-.807.21a1.6 1.6 0 0 0-.59.573L13.463 9.99L10.47 4.953a1.6 1.6 0 0 0-.591-.573a1.65 1.65 0 0 0-.807-.21c-.284 0-.562.073-.807.21a1.6 1.6 0 0 0-.591.573L.216 17.481a1.53 1.53 0 0 0-.217.782c0 .275.074.545.216.783a1.6 1.6 0 0 0 .59.574c.246.137.525.21.808.21h5.6c2.22 0 3.856-.946 4.982-2.79l2.733-4.593l1.464-2.457l4.395 7.382h-5.859Zm-6.341-2.46l-3.908-.002l5.858-9.842l2.923 4.921l-1.957 3.29c-.748 1.196-1.597 1.632-2.916 1.632"
+			></path>
+		</svg>
+	),
+	svelteKit: (props?: SVGProps<any>) => (
+		<svg
+			className={props?.className}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 426 512"
+		>
+			<path
+				fill="currentColor"
+				d="M403.508 229.23C491.235 87.7 315.378-58.105 190.392 23.555L71.528 99.337c-57.559 37.487-82.55 109.513-47.45 183.53c-87.761 133.132 83.005 289.03 213.116 205.762l118.864-75.782c64.673-42.583 79.512-116.018 47.45-183.616m-297.592-80.886l118.69-75.739c77.973-46.679 167.756 34.942 135.388 110.992c-19.225-15.274-40.65-24.665-56.923-28.894c6.186-24.57-22.335-42.796-42.174-30.106l-118.95 75.48c-29.411 20.328 1.946 62.138 31.014 44.596l45.33-28.895c101.725-57.403 198 80.425 103.38 147.975l-118.692 75.739C131.455 485.225 34.11 411.96 67.592 328.5c17.786 13.463 36.677 23.363 56.923 28.894c-4.47 28.222 24.006 41.943 42.476 30.365L285.64 312.02c29.28-21.955-2.149-61.692-30.97-44.595l-45.504 28.894c-100.56 58.77-199.076-80.42-103.25-147.975"
+			></path>
+		</svg>
+	),
+	solidStart: (props?: SVGProps<any>) => (
+		<svg
+			className={props?.className}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 128 128"
+		>
+			<path
+				fill="currentColor"
+				d="M61.832 4.744c-3.205.058-6.37.395-9.45 1.07l-2.402.803c-4.806 1.603-8.813 4.005-11.216 7.21l-1.602 2.404l-12.017 20.828l.166.031c-4.785 5.823-5.007 14.07-.166 21.6c1.804 2.345 4.073 4.431 6.634 6.234l-15.445 4.982L.311 97.946s42.46 32.044 75.306 24.033l2.403-.801c5.322-1.565 9.292-4.48 11.683-8.068l.334.056l16.022-28.84c3.204-5.608 2.404-12.016-1.602-18.425a36 36 0 0 0-7.059-6.643l15.872-5.375l14.42-24.033S92.817 4.19 61.831 4.744z"
+			></path>
+		</svg>
+	),
+	react: (props?: SVGProps<any>) => (
+		<svg
+			className={props?.className}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 15 15"
+		>
+			<path
+				fill="currentColor"
+				fillRule="evenodd"
+				d="M5.315 1.837c-.4-.116-.695-.085-.91.032c-.216.116-.404.347-.526.745c-.122.401-.163.936-.104 1.582q.015.157.037.321a14 14 0 0 1 1.676-.311a13 13 0 0 1 1.275-1.54l-.066-.053c-.508-.402-.98-.66-1.382-.776m2.185.14q-.09-.076-.182-.148C6.746 1.377 6.16 1.04 5.594.876C5.024.711 4.441.711 3.928.99s-.833.767-1.005 1.334c-.172.564-.21 1.238-.144 1.965q.023.255.065.523q-.256.09-.49.192c-.671.287-1.246.642-1.66 1.062C.278 6.487 0 7 0 7.584S.278 8.68.694 9.103c.414.42.989.774 1.66 1.062q.235.1.49.192a9 9 0 0 0-.065.523c-.066.726-.028 1.4.144 1.965c.172.567.492 1.056 1.005 1.333c.513.278 1.097.279 1.666.114c.566-.165 1.152-.5 1.724-.953l.182-.149q.09.076.182.149c.572.452 1.158.788 1.724.953c.569.165 1.153.164 1.666-.114c.513-.277.833-.766 1.005-1.333c.172-.564.21-1.239.144-1.965a9 9 0 0 0-.065-.523q.255-.09.49-.192c.671-.288 1.246-.643 1.66-1.062c.416-.422.694-.936.694-1.52c0-.582-.278-1.096-.694-1.518c-.414-.42-.989-.775-1.66-1.062a9 9 0 0 0-.49-.192q.04-.268.065-.523c.066-.727.028-1.4-.144-1.965c-.172-.567-.492-1.056-1.005-1.334S9.975.711 9.406.876c-.566.164-1.152.5-1.724.953zm0 1.365q-.338.346-.672.755a17 17 0 0 1 1.344 0a11 11 0 0 0-.672-.755m2.012.864c-.41-.574-.84-1.092-1.275-1.54l.065-.053c.51-.402.98-.66 1.383-.776c.399-.116.695-.085.91.032c.216.116.404.347.525.745c.122.401.164.936.105 1.582q-.015.158-.037.32a14 14 0 0 0-1.676-.31m-.563.944a15.6 15.6 0 0 0-2.898 0A15.6 15.6 0 0 0 4.72 7.584a15.7 15.7 0 0 0 1.33 2.433a15.6 15.6 0 0 0 2.9 0a15.6 15.6 0 0 0 1.33-2.433A15.7 15.7 0 0 0 8.95 5.15m1.824 1.138a17 17 0 0 0-.527-.956q.39.075.752.168q-.094.385-.225.788m0 2.591a17 17 0 0 1-.527.957q.39-.075.752-.169a12 12 0 0 0-.225-.788m1.18.487a14 14 0 0 0-.588-1.782c.246-.61.443-1.209.588-1.782q.154.058.3.12c.596.256 1.047.547 1.341.845c.292.296.406.572.406.817s-.114.52-.406.816c-.294.299-.745.59-1.341.846a8 8 0 0 1-.3.12m-.765 1.285a14 14 0 0 1-1.676.311c-.41.574-.84 1.091-1.275 1.54l.066.052c.508.403.98.66 1.382.777c.399.116.695.085.91-.032s.404-.348.525-.746c.123-.4.164-.936.105-1.582a7 7 0 0 0-.037-.32M7.5 11.826q.338-.346.672-.755a17 17 0 0 1-1.344 0q.334.408.672.755m-2.746-1.99a17 17 0 0 1-.527-.957q-.13.404-.225.788q.361.094.752.169m-.942.815a14 14 0 0 0 1.676.311c.41.574.839 1.091 1.275 1.54l-.066.052c-.508.403-.98.66-1.382.777c-.4.116-.695.085-.911-.032s-.403-.348-.525-.746c-.122-.4-.163-.936-.104-1.582a8 8 0 0 1 .037-.32m-.765-1.285c.145-.574.341-1.172.588-1.782a14 14 0 0 1-.588-1.782q-.155.058-.3.12c-.596.256-1.047.547-1.341.845c-.292.296-.406.572-.406.817s.114.52.406.816c.294.299.745.59 1.341.846q.146.061.3.12m.955-3.865q.094.384.225.787a17 17 0 0 1 .527-.956q-.39.075-.752.169M6 7.584a1.5 1.5 0 1 1 3 0a1.5 1.5 0 0 1-3 0m1.5-.5a.5.5 0 1 0 0 1a.5.5 0 0 0 0-1"
+				clipRule="evenodd"
+			></path>
+		</svg>
+	),
+	hono: (props?: SVGProps<any>) => (
+		<svg
+			className={cn(props?.className)}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 256 330"
+		>
+			<path
+				className="fill-foreground"
+				d="M134.129.029q1.315-.17 2.319.662a1256 1256 0 0 1 69.573 93.427q24.141 36.346 41.082 76.862q27.055 72.162-28.16 125.564q-48.313 40.83-111.318 31.805q-75.312-15.355-102.373-87.133Q-1.796 217.85.614 193.51q4.014-41.896 19.878-80.838q6.61-15.888 17.228-29.154a382 382 0 0 1 16.565 21.203q3.66 3.825 7.62 7.289Q92.138 52.013 134.13.029"
+				opacity=".993"
+			></path>
+			<path
+				className="fill-muted-foreground"
+				d="M129.49 53.7q36.47 42.3 65.93 90.114a187.3 187.3 0 0 1 15.24 33.13q12.507 49.206-26.836 81.169q-38.05 26.774-83.488 15.902q-48.999-15.205-56.653-65.929q-1.857-15.993 3.314-31.142a225.4 225.4 0 0 1 17.89-35.78l19.878-29.155a5510 5510 0 0 0 44.726-58.31"
+			></path>
+		</svg>
+	),
+	astro: (props?: SVGProps<any>) => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			{...props}
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 128 128"
+		>
+			<path
+				className="fill-foreground"
+				d="M81.504 9.465c.973 1.207 1.469 2.836 2.457 6.09l21.656 71.136a90 90 0 0 0-25.89-8.765L65.629 30.28a1.833 1.833 0 0 0-3.52.004L48.18 77.902a90.1 90.1 0 0 0-26.003 8.778l21.758-71.14c.996-3.25 1.492-4.876 2.464-6.083a8 8 0 0 1 3.243-2.398c1.433-.575 3.136-.575 6.535-.575H71.72c3.402 0 5.105 0 6.543.579a8 8 0 0 1 3.242 2.402Zm2.59 80.61c-3.57 3.054-10.696 5.136-18.903 5.136c-10.07 0-18.515-3.137-20.754-7.356c-.8 2.418-.98 5.184-.98 6.954c0 0-.527 8.675 5.508 14.71a5.67 5.67 0 0 1 5.672-5.671c5.37 0 5.367 4.683 5.363 8.488v.336c0 5.773 3.527 10.719 8.543 12.805a11.6 11.6 0 0 1-1.172-5.098c0-5.508 3.23-7.555 6.988-9.938c2.989-1.894 6.309-4 8.594-8.222a15.5 15.5 0 0 0 1.875-7.41a15.6 15.6 0 0 0-.734-4.735Zm0 0"
+			></path>
+		</svg>
+	),
+	vue: () => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 24 24"
+		>
+			<path
+				className="fill-foreground"
+				d="M1.001 3h4l7 12l7-12h4l-11 19zm8.667 0L12 7l2.333-4h4.035L12 14L5.633 3z"
+			></path>
+		</svg>
+	),
+	express: () => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1em"
+			height="1em"
+			viewBox="0 0 256 256"
+		>
+			<g fill="none">
+				<rect
+					width="256"
+					height="256"
+					className="fill-foreground"
+					rx="60"
+				></rect>
+				<path
+					className="fill-background"
+					d="M228 182.937a12.73 12.73 0 0 1-15.791-6.005c-9.063-13.567-19.071-26.522-28.69-39.755l-4.171-5.56c-11.454 15.346-22.908 30.08-33.361 45.371a12.23 12.23 0 0 1-15.012 5.894l42.98-57.659l-39.978-52.1a13.29 13.29 0 0 1 15.847 5.56c9.285 13.568 19.572 26.523 29.802 40.257c10.287-13.623 20.462-26.634 29.97-40.09a11.95 11.95 0 0 1 14.901-5.56l-15.513 20.573c-6.95 9.174-13.789 18.404-21.017 27.356a5.56 5.56 0 0 0 0 8.285c13.289 17.626 26.466 35.307 40.033 53.433M28 124.5c1.168-5.56 1.89-11.621 3.503-17.292c9.619-34.195 48.818-48.43 75.785-27.245c15.791 12.4 19.739 29.97 18.961 49.764H37.286c-1.446 35.363 24.075 56.714 56.713 45.816a33.86 33.86 0 0 0 21.518-23.965c1.724-5.56 4.504-6.505 9.786-4.893a45.15 45.15 0 0 1-21.573 32.972a52.26 52.26 0 0 1-60.884-7.784a54.77 54.77 0 0 1-13.678-32.138c0-1.89-.723-3.781-1.112-5.56A861 861 0 0 1 28 124.5m9.397-2.391h80.456c-.501-25.632-16.681-43.814-38.254-43.98c-24.02-.334-41.201 17.458-42.258 43.869z"
+				></path>
+			</g>
+		</svg>
+	),
+	javascript: () => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 512 512"
+		>
+			<path
+				className="fill-foreground"
+				d="M32 32v448h448V32Zm240 348c0 43.61-25.76 64.87-63.05 64.87c-33.68 0-53.23-17.44-63.15-38.49l34.28-20.75c6.61 11.73 11.63 21.65 26.06 21.65c12 0 21.86-5.41 21.86-26.46V240h44Zm99.35 63.87c-39.09 0-64.35-17.64-76.68-42L329 382c9 14.74 20.75 24.56 41.5 24.56c17.44 0 27.57-7.72 27.57-19.75c0-14.43-10.43-19.54-29.68-28l-10.52-4.52c-30.38-12.92-50.52-29.16-50.52-63.45c0-31.57 24.05-54.63 61.64-54.63c26.77 0 46 8.32 59.85 32.68L396 290c-7.22-12.93-15-18-27.06-18c-12.33 0-20.15 7.82-20.15 18c0 12.63 7.82 17.74 25.86 25.56l10.52 4.51c35.79 15.34 55.94 31 55.94 66.16c.01 37.9-29.76 57.64-69.76 57.64"
+			></path>
+		</svg>
+	),
+	node: () => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 15 15"
+		>
+			<path
+				fill="currentColor"
+				fillRule="evenodd"
+				d="M14 4.213L7.5.42L1 4.213v6.574l1.006.587l2.057-.832A1.5 1.5 0 0 0 5 9.152V4h1v5.152a2.5 2.5 0 0 1-1.562 2.317l-1.34.542L7.5 14.58l6.5-3.792zM7 6a2 2 0 0 1 2-2h1.167C11.179 4 12 4.82 12 5.833V6h-1v-.167A.833.833 0 0 0 10.167 5H9a1 1 0 0 0 0 2h1a2 2 0 1 1 0 4H9a2 2 0 0 1-2-2h1a1 1 0 0 0 1 1h1a1 1 0 1 0 0-2H9a2 2 0 0 1-2-2"
+				clipRule="evenodd"
+			></path>
+		</svg>
+	),
+	book: () => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1em"
+			height="1em"
+			viewBox="0 0 24 24"
+		>
+			<path
+				fill="currentColor"
+				d="M17.5 4.5c-1.95 0-4.05.4-5.5 1.5c-1.45-1.1-3.55-1.5-5.5-1.5c-1.45 0-2.99.22-4.28.79C1.49 5.62 1 6.33 1 7.14v11.28c0 1.3 1.22 2.26 2.48 1.94c.98-.25 2.02-.36 3.02-.36c1.56 0 3.22.26 4.56.92c.6.3 1.28.3 1.87 0c1.34-.67 3-.92 4.56-.92c1 0 2.04.11 3.02.36c1.26.33 2.48-.63 2.48-1.94V7.14c0-.81-.49-1.52-1.22-1.85c-1.28-.57-2.82-.79-4.27-.79M21 17.23c0 .63-.58 1.09-1.2.98c-.75-.14-1.53-.2-2.3-.2c-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5c.92 0 1.83.09 2.7.28c.46.1.8.51.8.98z"
+			></path>
+			<path
+				fill="currentColor"
+				d="M13.98 11.01c-.32 0-.61-.2-.71-.52c-.13-.39.09-.82.48-.94c1.54-.5 3.53-.66 5.36-.45c.41.05.71.42.66.83s-.42.71-.83.66c-1.62-.19-3.39-.04-4.73.39c-.08.01-.16.03-.23.03m0 2.66c-.32 0-.61-.2-.71-.52c-.13-.39.09-.82.48-.94c1.53-.5 3.53-.66 5.36-.45c.41.05.71.42.66.83s-.42.71-.83.66c-1.62-.19-3.39-.04-4.73.39a1 1 0 0 1-.23.03m0 2.66c-.32 0-.61-.2-.71-.52c-.13-.39.09-.82.48-.94c1.53-.5 3.53-.66 5.36-.45c.41.05.71.42.66.83s-.42.7-.83.66c-1.62-.19-3.39-.04-4.73.39a1 1 0 0 1-.23.03"
+			></path>
+		</svg>
+	),
+	remix: () => (
+		<svg
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 412 474"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M393.946 364.768C398.201 419.418 398.201 445.036 398.201 473H271.756C271.756 466.909 271.865 461.337 271.975 455.687C272.317 438.123 272.674 419.807 269.828 382.819C266.067 328.667 242.748 316.634 199.871 316.634H161.883H1V218.109H205.889C260.049 218.109 287.13 201.633 287.13 158.011C287.13 119.654 260.049 96.4098 205.889 96.4098H1V0H228.456C351.069 0 412 57.9117 412 150.42C412 219.613 369.123 264.739 311.201 272.26C360.096 282.037 388.681 309.865 393.946 364.768Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M1 473V399.553H134.697C157.029 399.553 161.878 416.116 161.878 425.994V473H1Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M1 399.053H0.5V399.553V473V473.5H1H161.878H162.378V473V425.994C162.378 420.988 161.152 414.26 157.063 408.77C152.955 403.255 146.004 399.053 134.697 399.053H1Z"
+				stroke="currentColor"
+				strokeOpacity="0.8"
+			/>
+		</svg>
+	),
+	elysia: () => (
+		<svg
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 512 512"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M424.404 470.816C478.089 423.889 512 354.905 512 278C512 136.615 397.385 22 256 22C114.615 22 0 136.615 0 278C0 352.658 31.9583 419.851 82.9409 466.646L83.1767 465L419.144 355L424.404 470.816Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M189.915 52.7412L144.5 46L151.303 43.9069C155.402 42.6455 159.248 40.6719 162.662 38.0765L163.73 37.2654C167.845 34.1375 171.12 30.0364 173.259 25.3304C174.414 22.7883 175.224 20.1027 175.665 17.3454L176.173 14.1698C176.72 10.7473 176.692 7.25741 176.09 3.84416C175.834 2.39429 177.279 1.23239 178.64 1.79296L180.498 2.55815C182.829 3.51798 185.084 4.65434 187.242 5.95732L194.965 10.6205C205.229 16.8174 214.226 24.9023 221.48 34.4477L226.616 41.2051C228.529 43.7228 230.783 45.9625 233.313 47.8599C236.088 49.9411 239.164 51.5874 242.435 52.7418L246 54L227.274 54.749C214.785 55.2486 202.278 54.5764 189.915 52.7412Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M178.321 93.006L191.79 68.3844C191.922 68.143 191.93 67.8528 191.812 67.6042L187.22 57.9361C184.337 51.8673 178.219 48 171.5 48L170.23 47.9562C161.437 47.653 152.704 46.3829 144.188 44.169L142.504 43.731C135.521 41.9153 128.746 39.3732 122.293 36.1463L119.446 34.723C115.159 32.5797 111.099 30.012 107.325 27.0584L103.55 24.1043C102.428 23.2265 100.803 23.4506 99.9606 24.5992C97.3651 28.1384 95.7379 32.2935 95.2395 36.6541L94.5535 42.6571C94.1854 45.8774 94.1446 49.1267 94.4316 52.3552L96.1031 71.1595C97.3467 85.1501 102.175 98.584 110.123 110.165L111.825 112.645C114.267 116.203 117.113 119.466 120.306 122.369C120.756 122.778 121.329 123.03 121.936 123.084C145.029 125.156 167.194 113.348 178.321 93.006Z"
+				fill="currentColor"
+			/>
+			<path
+				d="M127.378 123.538L143.376 116.613C150.438 113.557 152.588 104.577 147.676 98.6533C143.683 93.8378 136.58 93.0803 131.661 96.9453L127.867 99.9256C126.958 100.64 126.127 101.448 125.387 102.336L116.263 113.284C114.982 114.822 115.084 117.084 116.5 118.5L119.318 121.721C119.77 122.237 120.296 122.685 120.878 123.049C122.833 124.271 125.263 124.453 127.378 123.538Z"
+				fill="#EDEDED"
+			/>
+			<path
+				d="M147.988 44.8437L147.5 45L148.962 45.4651C155.294 47.4798 161.861 48.66 168.498 48.9761C168.83 48.9919 169.163 48.9534 169.483 48.8619L172.5 48L174 47.5L164.419 45.4172C163.158 45.1431 161.982 44.5687 160.991 43.7426C160.218 43.0981 160.223 41.9084 161.002 41.2708L162.423 40.1084C164.12 38.7197 165.493 36.976 166.444 35C160.934 39.3642 154.682 42.6988 147.988 44.8437Z"
+				fill="#B2B2B2"
+			/>
+			<path
+				d="M202.776 219.428L72.2905 452.693C71.643 453.851 70.0687 454.069 69.1308 453.131L66.5 450.5L55.5 438L48.4888 428.927C41.8407 420.323 35.9052 411.192 30.7414 401.624L29.7434 399.775C24.2581 389.611 19.6635 378.991 16.0112 368.034L12.5 357.5C7.22519 338.379 6.01447 318.365 8.94583 298.747L9.06961 297.919C10.354 289.323 12.4034 280.86 15.1935 272.629L21 255.5L25.3334 246.385C32.0537 232.249 41.3193 219.472 52.6669 208.691L58.1719 203.462C69.5529 192.65 83.3937 184.769 98.5 180.5C94.967 181.498 91.3608 182.216 87.7149 182.647L80.5 183.5L75 184L69 185L63 185.561L59 186L56.1186 186.18C55.1927 186.238 54.7576 185.057 55.4998 184.5L55.5002 184.5L59.5273 182.57C72.5066 176.351 83.1766 166.172 90 153.5L94.4475 146.562C99.7511 138.288 106.807 131.28 115.116 126.032L116.833 124.948C119.935 122.989 123.246 121.384 126.705 120.163L142.446 114.607C145.348 113.583 147.69 111.39 148.903 108.561L149.143 108C149.705 106.687 149.932 105.255 149.803 103.833C149.608 101.689 148.616 99.6966 147.023 98.2485L144.256 95.7328C144.086 95.5779 143.93 95.4073 143.792 95.2232L126 71.5L111.803 51.9315C108.994 48.0592 107.359 43.4599 107.094 38.6832C107.051 37.9263 107.836 37.4015 108.52 37.7295L123.881 45.1028C137.174 51.4834 152.33 52.825 166.537 48.8786C169.84 47.9612 173.214 47.3242 176.624 46.9745L183.675 46.2513C201.406 44.4328 219.32 45.9054 236.516 50.5953L238 51L254.798 57.0472C275.869 64.6329 292.567 81.0571 300.5 102L304.022 115.734C305.004 119.567 306.392 123.285 308.162 126.824C312.321 135.142 318.495 142.289 326.121 147.613L335.084 153.87C339.023 156.62 343.157 159.078 347.453 161.227L367.289 171.145C368.178 171.589 368.444 172.732 367.843 173.523C362.372 180.721 355.148 186.395 346.859 190.005L335.371 195.008C330.797 197 326.081 198.65 321.262 199.945L312.822 202.212C300.992 205.39 288.796 207 276.546 207H256.333C252.148 207 248.001 206.213 244.108 204.679C228.581 198.562 210.923 204.863 202.776 219.428Z"
+				fill="white"
+			/>
+			<path
+				d="M271.185 135.316L279.987 135.418C281.182 135.432 281.452 133.748 280.312 133.388C278.441 132.797 276.623 132.048 274.879 131.15L268.008 127.61C263.35 125.211 258.969 122.308 254.944 118.953L253.592 117.827C250.54 115.283 247.77 112.418 245.33 109.282L243.768 107.273C243.234 106.586 242.134 107.005 242.192 107.873C243.212 123.186 255.839 135.138 271.185 135.316Z"
+				fill="#666666"
+			/>
+			<path
+				d="M82.2231 456.395L231.313 323.4C245.367 310.863 257.58 296.403 267.59 280.45L268.5 279C273.404 269.192 275.497 258.217 274.547 247.293L273.24 232.258C272.436 223.009 268.618 214.28 262.373 207.41C262.131 207.144 261.81 206.961 261.457 206.889L237.5 202C220.117 196.752 201.688 195.995 183.933 199.8L183 200L169.06 203.259C128.405 212.763 92.5742 236.685 68.2116 270.592L67.597 271.447C60.8846 280.789 55.1822 290.817 50.5856 301.362L49.765 303.245C38.1544 329.881 34.2409 359.238 38.4684 387.985L39.8511 397.387C41.2751 407.07 44.1931 416.474 48.5011 425.262C52.4798 433.379 57.6014 440.883 63.7095 447.547L71.3177 455.847C74.1911 458.981 79.0498 459.225 82.2231 456.395Z"
+				fill="#CCCCCC"
+			/>
+			<path
+				d="M212.749 278.858L212.267 279.133C199.686 286.322 192.918 299.892 193.58 314.367C193.768 318.484 197.893 322.255 201.858 321.132L209.163 319.062C218.607 316.386 227.353 311.681 234.789 305.274L256 287L262.292 282.343C298.871 255.269 344.833 244.113 389.754 251.405C391.14 251.63 391.184 253.607 389.81 253.894L384.5 255L382.093 255.842C377.15 257.572 372.856 260.776 369.79 265.022C369.214 265.819 369.982 266.89 370.922 266.601L372.663 266.065C382.467 263.049 392.751 261.904 402.978 262.691L407 263C428.843 263.95 449.114 274.626 462.254 292.1L467.179 298.65C481.776 318.063 487.953 342.53 484.319 366.545L482.421 379.087C479.837 396.163 473.618 412.486 464.184 426.952L463.5 428L453 442L441.5 455L430.965 465.114C421.346 474.348 410.827 482.597 399.567 489.738L396 492L389.175 495.25C387.417 496.087 385.95 493.678 387.5 492.5L397 483.5L398.953 481.449C404.232 475.906 408.027 469.12 409.986 461.721L410.889 458.309C411.295 456.776 411.5 455.174 411.5 453.588C411.5 444.909 405.354 437.298 396.836 435.631C391.554 434.597 386.085 435.962 381.907 439.356L372.5 447L355.894 460.587C344.995 469.504 333.185 477.245 320.66 483.682L303.5 492.5L274.5 503.5L268.412 505.16C257.822 508.049 247.012 510.06 236.092 511.174L228 512H202L167.5 508.25L148.832 504.21C138.985 502.079 129.456 498.682 120.482 494.103C113.181 490.378 106.293 485.894 99.931 480.725L85.5 469C68.005 455.64 57.0449 435.448 55.3749 413.498L54.5 402L55.5295 385.822C57.134 360.608 66.7911 336.576 83.0792 317.263C89.6652 309.454 97.2376 302.534 105.606 296.675L108.677 294.526C121.458 285.579 135.72 278.961 150.805 274.976L160.947 272.297C174.135 268.813 187.952 268.445 201.307 271.22L211.887 273.418C214.542 273.97 215.103 277.513 212.749 278.858Z"
+				fill="#5E5E5E"
+			/>
+		</svg>
+	),
+	tanstack: (props?: SVGProps<any>) => (
+		<svg
+			className={cn(props?.className)}
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 100 100"
+		>
+			<mask
+				id="a"
+				style={{ maskType: "alpha" }}
+				maskUnits="userSpaceOnUse"
+				x="0"
+				y="0"
+				width="100"
+				height="100"
+			>
+				<circle cx="50" cy="50" r="50" className="fill-foreground" />
+			</mask>
+			<g mask="url(#a)">
+				<circle
+					cx="11"
+					cy="119"
+					r="52"
+					className="fill-muted-foreground stroke-foreground"
+					strokeWidth="4"
+				/>
+				<circle
+					cx="10"
+					cy="125"
+					r="52"
+					className="fill-muted-foreground stroke-foreground"
+					strokeWidth="4"
+				/>
+				<circle
+					cx="9"
+					cy="131"
+					r="52"
+					className="fill-muted-foreground stroke-muted-foreground"
+					strokeWidth="4"
+				/>
+				<circle
+					cx="88"
+					cy="119"
+					r="52"
+					className="fill-muted-foreground stroke-foreground"
+					strokeWidth="4"
+				/>
+				<path
+					className="fill-foreground"
+					d="M89 35h2v5h-2zM83 34l2 1-1 4h-2zM77 31l2 1-3 4-2-1zM73 27l1 1-3 4-1-2zM70 23l1 1-4 3-1-2zM68 18v2l-4 1-1-2zM68 11l1 2-5 1-1-2zM69 6v2h-5V6z"
+				/>
+				<circle
+					cx="89"
+					cy="125"
+					r="52"
+					className="fill-muted-foreground stroke-foreground"
+					strokeWidth="4"
+				/>
+				<circle
+					cx="90"
+					cy="131"
+					r="52"
+					className="fill-muted-foreground stroke-muted-foreground"
+					strokeWidth="4"
+				/>
+				<ellipse
+					cx="49.5"
+					cy="119"
+					rx="41.5"
+					ry="51"
+					className="fill-muted-foreground"
+				/>
+				<path
+					d="M34 38v-9c1 1 2 4 5 6l7 30-8 2c-1-23-2-23-4-29Z"
+					className="fill-foreground stroke-muted-foreground"
+				/>
+				<path
+					fillRule="evenodd"
+					clipRule="evenodd"
+					d="M95 123c0 31-20 57-45 57S5 154 5 123c0-27 14-50 33-56l12-2c25 0 45 26 45 58Zm-45 47c22 0 39-22 39-50S72 70 50 70s-39 22-39 50 17 50 39 50Z"
+					className="fill-foreground"
+				/>
+				<path
+					d="M34 29c-4-8-11-5-14-4 2 3 5 4 9 4h5Z"
+					className="fill-foreground stroke-muted-foreground"
+				/>
+				<path
+					d="M25 38c-1 6 0 14 2 18 5-7 7-13 7-18v-9c-5 1-7 5-9 9Z"
+					className="fill-muted-foreground"
+				/>
+				<path
+					d="M34 29c-1 3-5 11-5 16m5-16c-5 1-7 5-9 9-1 6 0 14 2 18 5-7 7-13 7-18v-9Z"
+					className="stroke-muted-foreground"
+				/>
+				<path
+					d="M44 18c-10 1-11 7-10 11l4-3c5-4 6-7 6-8Z"
+					className="fill-foreground stroke-muted-foreground"
+				/>
+				<path
+					d="M34 29h7l18 4c-3-6-9-14-21-7l-4 3Z"
+					className="fill-foreground"
+				/>
+				<path
+					d="M34 29c4-2 12-5 18-1m-18 1h7l18 4c-3-6-9-14-21-7l-4 3Z"
+					className="stroke-muted-foreground"
+				/>
+				<path
+					d="M32 29a1189 1189 0 0 1-16 19c0-17 7-18 13-19h5a14 14 0 0 1-2 0Z"
+					className="fill-foreground"
+				/>
+				<path
+					d="M34 29c-5 1-7 5-9 9l-9 10c0-17 7-18 13-19h5Zm0 0c-5 2-11 3-14 10"
+					className="stroke-muted-foreground"
+				/>
+				<path
+					d="M41 29c9 2 13 10 15 14a25 25 0 0 1-22-14h7Z"
+					className="fill-foreground"
+				/>
+				<path
+					d="M34 29c3 1 11 5 15 9m-15-9h7c9 2 13 10 15 14a25 25 0 0 1-22-14Z"
+					className="stroke-muted-foreground"
+				/>
+				<circle
+					cx="91.5"
+					cy="12.5"
+					r="18.5"
+					className="fill-foreground stroke-muted-foreground"
+					strokeWidth="2"
+				/>
+			</g>
+		</svg>
+	),
+	expo: (props?: SVGProps<any>) => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 32 32"
+			{...props}
+		>
+			<path
+				fill="currentColor"
+				d="M24.292 15.547a3.93 3.93 0 0 0 4.115-3.145a2.57 2.57 0 0 0-2.161-1.177c-2.272-.052-3.491 2.651-1.953 4.323zm-9.177-10.85l5.359-3.104L18.766.63l-7.391 4.281l.589.328l1.119.629l2.032-1.176zm6.046-3.39c.089.027.161.1.188.188l2.484 7.593a.285.285 0 0 1-.125.344a5.06 5.06 0 0 0-2.317 5.693a5.066 5.066 0 0 0 5.401 3.703a.3.3 0 0 1 .307.203l2.563 7.803a.3.3 0 0 1-.125.344l-7.859 4.771a.3.3 0 0 1-.131.036a.26.26 0 0 1-.203-.041l-2.765-1.797a.3.3 0 0 1-.109-.129l-5.396-12.896l-8.219 4.875c-.016.011-.037.021-.052.032a.3.3 0 0 1-.261-.021l-1.859-1.093a.283.283 0 0 1-.115-.381l7.953-15.749a.27.27 0 0 1 .135-.131L18.615.045a.29.29 0 0 1 .292-.005zm-8.322 5.1l-1.932-1.089l-7.693 15.229l1.396.823l6.631-9.015a.28.28 0 0 1 .271-.12a.29.29 0 0 1 .235.177l7.228 17.296l1.933 1.251l-8.063-24.552zm13.406 10.557c-2.256 0-3.787-2.292-2.923-4.376c.86-2.083 3.563-2.619 5.156-1.025c.595.593.928 1.396.928 2.235a3.16 3.16 0 0 1-3.161 3.167z"
+			></path>
+		</svg>
+	),
+	x: (props?: SVGProps<any>) => (
+		<svg
+			{...props}
+			width={30}
+			stroke="currentColor"
+			fill="currentColor"
+			strokeWidth="0"
+			viewBox="0 0 512 512"
+			xmlns="http://www.w3.org/2000/svg"
+			className="w-full"
+		>
+			<path d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"></path>
+		</svg>
+	),
+	linkedIn: (props?: SVGProps<any>) => (
+		<svg
+			{...props}
+			width={30}
+			stroke="currentColor"
+			fill="currentColor"
+			strokeWidth="0"
+			viewBox="0 0 448 512"
+			xmlns="http://www.w3.org/2000/svg"
+			className="w-full"
+		>
+			<path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"></path>
+		</svg>
+	),
+	nitro: (props?: SVGProps<any>) => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			fill="currentColor" // Use currentColor here
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 40 40"
+			{...props}
+		>
+			<g clipPath="url(#a)">
+				<path
+					fill="currentColor" // Use currentColor here
+					fillRule="evenodd"
+					d="M35.217 7.02C28.047-1.383 15.424-2.384 7.02 4.785c-8.404 7.169-9.404 19.792-2.236 28.196 7.17 8.403 19.793 9.404 28.196 2.235 8.404-7.169 9.404-19.793 2.236-28.196Zm-9.964 10.497c.77 0 1.262.836.876 1.502l-.112.192L18.47 31.63a.773.773 0 0 1-.661.372h-.72a.755.755 0 0 1-.732-.944l2.048-7.919a1 1 0 0 0-.968-1.25h-3.146a1 1 0 0 1-.968-1.25l3.09-11.955a.923.923 0 0 1 .895-.68c.05 0 .097 0 .135.002h3.168a1 1 0 0 1 .991 1.134l-.02.143-1.207 7.067a1 1 0 0 0 .985 1.168h3.893Z"
+					clipRule="evenodd"
+				/>
+				<mask
+					id="d"
+					x={0}
+					y={0}
+					maskUnits="userSpaceOnUse"
+					style={{
+						maskType: "alpha",
+					}}
+				>
+					<circle cx={20} cy={20.001} r={20} fill="currentColor" />
+				</mask>
+				<g filter="url(#e)" mask="url(#d)">
+					<path
+						fill="currentColor" // Use currentColor here
+						d="M1.111 13.427a20 20 0 1 0 37.957.541l-5.815 1.84a13.901 13.901 0 1 1-26.381-.376l-5.76-2.005Z"
+					/>
+				</g>
+			</g>
+			<defs>
+				<clipPath id="a">
+					<path fill="#fff" d="M0 0h146v40.001H0z" />
+				</clipPath>
+				<filter
+					id="e"
+					x={-10}
+					y={3.427}
+					colorInterpolationFilters="sRGB"
+					filterUnits="userSpaceOnUse"
+				>
+					<feFlood floodOpacity={0} result="BackgroundImageFix" />
+					<feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+					<feGaussianBlur
+						result="effect1_foregroundBlur_115_108"
+						stdDeviation={5}
+					/>
+				</filter>
+			</defs>
+		</svg>
+	),
+	vk: (props?: SVGProps<any>) => (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="1.2em"
+			height="1.2em"
+			viewBox="0 0 20 20"
+			{...props}
+		>
+			<path
+				fill="currentColor"
+				fillRule="evenodd"
+				d="M17.802 12.298s1.617 1.597 2.017 2.336a.1.1 0 0 1 .018.035q.244.409.123.645c-.135.261-.592.392-.747.403h-2.858c-.199 0-.613-.052-1.117-.4c-.385-.269-.768-.712-1.139-1.145c-.554-.643-1.033-1.201-1.518-1.201a.6.6 0 0 0-.18.03c-.367.116-.833.639-.833 2.032c0 .436-.344.684-.585.684H9.674c-.446 0-2.768-.156-4.827-2.327C2.324 10.732.058 5.4.036 5.353c-.141-.345.155-.533.475-.533h2.886c.387 0 .513.234.601.444c.102.241.48 1.205 1.1 2.288c1.004 1.762 1.621 2.479 2.114 2.479a.53.53 0 0 0 .264-.07c.644-.354.524-2.654.494-3.128c0-.092-.001-1.027-.331-1.479c-.236-.324-.638-.45-.881-.496c.065-.094.203-.238.38-.323c.441-.22 1.238-.252 2.029-.252h.439c.858.012 1.08.067 1.392.146c.628.15.64.557.585 1.943c-.016.396-.033.842-.033 1.367c0 .112-.005.237-.005.364c-.019.711-.044 1.512.458 1.841a.4.4 0 0 0 .217.062c.174 0 .695 0 2.108-2.425c.62-1.071 1.1-2.334 1.133-2.429c.028-.053.112-.202.214-.262a.5.5 0 0 1 .236-.056h3.395c.37 0 .621.056.67.196c.082.227-.016.92-1.566 3.016c-.261.349-.49.651-.691.915c-1.405 1.844-1.405 1.937.083 3.337"
+				clipRule="evenodd"
+			/>
+		</svg>
+	),
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/logo-context-menu.tsx
+```
+"use client";
+
+import type React from "react";
+import { useState, useRef, useEffect } from "react";
+import { Code, Image, Type } from "lucide-react";
+import { toast } from "sonner";
+import { useTheme } from "next-themes";
+import type { StaticImageData } from "next/image";
+
+interface LogoAssets {
+	darkSvg: string;
+	whiteSvg: string;
+	darkWordmark: string;
+	whiteWordmark: string;
+	darkPng: StaticImageData;
+	whitePng: StaticImageData;
+}
+
+interface ContextMenuProps {
+	logo: React.ReactNode;
+	logoAssets: LogoAssets;
+}
+
+export default function LogoContextMenu({
+	logo,
+	logoAssets,
+}: ContextMenuProps) {
+	const [showMenu, setShowMenu] = useState<boolean>(false);
+	const menuRef = useRef<HTMLDivElement>(null);
+	const logoRef = useRef<HTMLDivElement>(null);
+	const { theme } = useTheme();
+
+	const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		const rect = logoRef.current?.getBoundingClientRect();
+		if (rect) {
+			setShowMenu(true);
+		}
+	};
+
+	const copySvgToClipboard = (svgContent: string, type: string) => {
+		navigator.clipboard
+			.writeText(svgContent)
+			.then(() => {
+				toast.success("", {
+					description: `${type} copied to clipboard`,
+				});
+			})
+			.catch((err) => {
+				toast.error("", {
+					description: `Failed to copy ${type} to clipboard`,
+				});
+			});
+		setShowMenu(false);
+	};
+
+	const downloadPng = (pngData: StaticImageData, fileName: string) => {
+		const link = document.createElement("a");
+		link.href = pngData.src;
+		link.download = fileName;
+
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+
+		toast.success(`Downloading the asset...`);
+
+		setShowMenu(false);
+	};
+
+	const downloadAllAssets = () => {
+		const link = document.createElement("a");
+		link.href = "/branding/better-auth-brand-assets.zip";
+		link.download = "better-auth-branding-assets.zip";
+
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+
+		toast.success("Downloading all assets...");
+		setShowMenu(false);
+	};
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+				setShowMenu(false);
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, []);
+
+	const getAsset = <T,>(darkAsset: T, lightAsset: T): T => {
+		return theme === "dark" ? darkAsset : lightAsset;
+	};
+
+	return (
+		<div className="relative">
+			<div
+				ref={logoRef}
+				onContextMenu={handleContextMenu}
+				className="cursor-pointer"
+			>
+				{logo}
+			</div>
+
+			{showMenu && (
+				<div
+					ref={menuRef}
+					className="fixed mx-10 z-50 bg-white dark:bg-black border border-gray-200 dark:border-border p-1 rounded-sm shadow-xl w-56 overflow-hidden animate-fd-dialog-in duration-500"
+				>
+					<div className="">
+						<div className="flex p-0 gap-1 flex-col text-xs">
+							<button
+								onClick={() =>
+									copySvgToClipboard(
+										getAsset(logoAssets.darkSvg, logoAssets.whiteSvg),
+										"Logo SVG",
+									)
+								}
+								className="flex items-center gap-3 w-full p-2 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer"
+							>
+								<div className="flex items-center">
+									<span className="text-gray-400 dark:text-zinc-400/30">[</span>
+
+									<Code className="h-[13.8px] w-[13.8px] mx-[3px]" />
+									<span className="text-gray-400 dark:text-zinc-400/30">]</span>
+								</div>
+								<span>Copy Logo as SVG </span>
+							</button>
+							<hr className="border-border/[60%]" />
+							<button
+								onClick={() =>
+									copySvgToClipboard(
+										getAsset(logoAssets.darkWordmark, logoAssets.whiteWordmark),
+										"Logo Wordmark",
+									)
+								}
+								className="flex items-center gap-3 w-full p-2 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer"
+							>
+								<div className="flex items-center">
+									<span className="text-gray-400 dark:text-zinc-400/30">[</span>
+
+									<Type className="h-[13.8px] w-[13.8px] mx-[3px]" />
+									<span className="text-gray-400 dark:text-zinc-400/30">]</span>
+								</div>
+								<span>Copy Logo as Wordmark </span>
+							</button>
+
+							<hr className="border-border/[60%]" />
+							<button
+								onClick={() =>
+									downloadPng(
+										getAsset(logoAssets.darkPng, logoAssets.whitePng),
+										`better-auth-logo-${theme}.png`,
+									)
+								}
+								className="flex items-center gap-3 w-full p-2 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer"
+							>
+								<div className="flex items-center">
+									<span className="text-gray-400 dark:text-zinc-400/30">[</span>
+
+									<Image className="h-[13.8px] w-[13.8px] mx-[3px]" />
+									<span className="text-gray-400 dark:text-zinc-400/30">]</span>
+								</div>
+								<span>Download Logo PNG</span>
+							</button>
+							<hr className="borde-border" />
+							<button
+								onClick={downloadAllAssets}
+								className="flex items-center gap-3 w-full p-2 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-zinc-900 rounded-md transition-colors cursor-pointer"
+							>
+								<div className="flex items-center">
+									<span className="text-gray-400 dark:text-zinc-400/30">[</span>
+
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="1em"
+										height="1em"
+										viewBox="0 0 24 24"
+										className="h-[13.8px] w-[13.8px] mx-[3px]"
+									>
+										<path
+											fill="none"
+											stroke="currentColor"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											stroke-width="2"
+											d="M4 8v8.8c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874c.427.218.987.218 2.105.218h9.606c1.118 0 1.677 0 2.104-.218c.377-.192.683-.498.875-.874c.218-.428.218-.987.218-2.105V8M4 8h16M4 8l1.365-2.39c.335-.585.503-.878.738-1.092c.209-.189.456-.332.723-.42C7.13 4 7.466 4 8.143 4h7.714c.676 0 1.015 0 1.318.099c.267.087.513.23.721.42c.236.213.404.506.74 1.093L20 8m-8 3v6m0 0l3-2m-3 2l-3-2"
+										></path>
+									</svg>
+									<span className="text-gray-400 dark:text-zinc-400/30">]</span>
+								</div>
+								<span>Brand Assets</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/logo.tsx
+```
+import { SVGProps } from "react";
+import { cn } from "@/lib/utils";
+export const Logo = (props: SVGProps<any>) => {
+	return (
+		<svg
+			width="60"
+			height="45"
+			viewBox="0 0 60 45"
+			fill="none"
+			className={cn("w-5 h-5", props.className)}
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M0 0H15V15H30V30H15V45H0V30V15V0ZM45 30V15H30V0H45H60V15V30V45H45H30V30H45Z"
+				className="fill-black dark:fill-white"
+			/>
+		</svg>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/nav-bar.tsx
+```
+import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggler";
+import { NavbarMobile, NavbarMobileBtn } from "./nav-mobile";
+import { NavLink } from "./nav-link";
+import { Logo } from "./logo";
+import LogoContextMenu from "./logo-context-menu";
+import DarkPng from "../public/branding/better-auth-logo-dark.png";
+import WhitePng from "../public/branding/better-auth-logo-light.png";
+export const Navbar = () => {
+	const logoAssets = {
+		darkSvg: `
+    <svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="500" height="500" fill="black"/>
+    <rect x="69" y="121" width="86.9879" height="259" fill="white"/>
+    <rect x="337.575" y="121" width="92.4247" height="259" fill="white"/>
+    <rect x="427.282" y="121" width="83.4555" height="174.52" transform="rotate(90 427.282 121)" fill="white"/>
+    <rect x="430" y="296.544" width="83.4555" height="177.238" transform="rotate(90 430 296.544)" fill="white"/>
+    <rect x="252.762" y="204.455" width="92.0888" height="96.7741" transform="rotate(90 252.762 204.455)" fill="white"/>
+    </svg>
+    `,
+		whiteSvg: `
+    <svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="500" height="500" fill="white"/>
+    <rect x="69" y="121" width="86.9879" height="259" fill="black"/>
+    <rect x="337.575" y="121" width="92.4247" height="259" fill="black"/>
+    <rect x="427.282" y="121" width="83.4555" height="174.52" transform="rotate(90 427.282 121)" fill="black"/>
+    <rect x="430" y="296.544" width="83.4555" height="177.238" transform="rotate(90 430 296.544)" fill="black"/>
+    <rect x="252.762" y="204.455" width="92.0888" height="96.7741" transform="rotate(90 252.762 204.455)" fill="black"/>
+    </svg>
+    `,
+		darkWordmark: `
+    <svg width="1024" height="256" viewBox="0 0 1024 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1024" height="256" fill="black"/>
+    <rect x="96" y="79" width="34.6988" height="97.5904" fill="white"/>
+    <rect x="203.133" y="79" width="36.8675" height="97.5904" fill="white"/>
+    <rect x="238.916" y="79" width="31.4458" height="69.6144" transform="rotate(90 238.916 79)" fill="white"/>
+    <rect x="240" y="145.145" width="31.4458" height="70.6988" transform="rotate(90 240 145.145)" fill="white"/>
+    <rect x="169.301" y="110.446" width="34.6988" height="38.6024" transform="rotate(90 169.301 110.446)" fill="white"/>
+    <path d="M281.832 162V93.84H305.256C313.32 93.84 319.368 95.312 323.4 98.256C327.432 101.2 329.448 105.84 329.448 112.176C329.448 116.016 328.36 119.248 326.184 121.872C324.072 124.432 321.128 126.064 317.352 126.768C322.024 127.408 325.672 129.232 328.296 132.24C330.984 135.184 332.328 138.864 332.328 143.28C332.328 149.488 330.312 154.16 326.28 157.296C322.248 160.432 316.52 162 309.096 162H281.832ZM290.088 123.312H305.256C310.248 123.312 314.088 122.384 316.776 120.528C319.464 118.608 320.808 115.952 320.808 112.56C320.808 105.456 315.624 101.904 305.256 101.904H290.088V123.312ZM290.088 153.936H309.096C313.768 153.936 317.352 152.976 319.848 151.056C322.408 149.136 323.688 146.384 323.688 142.8C323.688 139.216 322.408 136.432 319.848 134.448C317.352 132.4 313.768 131.376 309.096 131.376H290.088V153.936ZM345.301 162V93.84H388.117V101.904H353.557V123.888H386.965V131.76H353.557V153.936H388.885V162H345.301ZM416.681 162V101.904H395.465V93.84H446.153V101.904H424.937V162H416.681ZM470.587 162V101.904H449.371V93.84H500.059V101.904H478.843V162H470.587ZM507.113 162V93.84H549.929V101.904H515.369V123.888H548.777V131.76H515.369V153.936H550.697V162H507.113ZM564.02 162V93.84H589.844C597.012 93.84 602.676 95.696 606.836 99.408C610.996 103.12 613.076 108.144 613.076 114.48C613.076 117.104 612.532 119.504 611.444 121.68C610.356 123.792 608.948 125.584 607.22 127.056C605.492 128.528 603.604 129.552 601.556 130.128C604.564 130.64 606.932 131.856 608.66 133.776C610.452 135.696 611.508 138.416 611.828 141.936L613.748 162H605.396L603.667 142.8C603.412 139.984 602.388 137.904 600.596 136.56C598.868 135.216 596.02 134.544 592.052 134.544H572.276V162H564.02ZM572.276 126.48H590.9C595.06 126.48 598.356 125.424 600.788 123.312C603.22 121.2 604.436 118.192 604.436 114.288C604.436 110.32 603.188 107.28 600.692 105.168C598.196 102.992 594.58 101.904 589.844 101.904H572.276V126.48ZM623.912 137.808V130.224H655.688V137.808H623.912ZM661.826 162L686.402 93.84H697.538L722.114 162H713.09L706.274 142.608H677.666L670.85 162H661.826ZM680.45 134.544H703.49L691.97 101.04L680.45 134.544ZM755.651 163.536C750.403 163.536 745.827 162.512 741.923 160.464C738.083 158.416 735.107 155.504 732.995 151.728C730.947 147.888 729.923 143.376 729.923 138.192V93.744H738.179V138.192C738.179 143.696 739.683 147.952 742.691 150.96C745.763 153.968 750.083 155.472 755.651 155.472C761.155 155.472 765.411 153.968 768.419 150.96C771.491 147.952 773.027 143.696 773.027 138.192V93.744H781.283V138.192C781.283 143.376 780.227 147.888 778.115 151.728C776.067 155.504 773.123 158.416 769.283 160.464C765.443 162.512 760.899 163.536 755.651 163.536ZM811.087 162V101.904H789.871V93.84H840.559V101.904H819.343V162H811.087ZM847.613 162V93.84H855.869V123.696H890.141V93.84H898.397V162H890.141V131.76H855.869V162H847.613ZM911.443 162V151.152H922.291V162H911.443Z" fill="white"/>
+    </svg>
+    `,
+		whiteWordmark: `
+      <svg width="1024" height="256" viewBox="0 0 1024 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1024" height="256" fill="#FFEAEA"/>
+      <rect x="96" y="79" width="34.6988" height="97.5904" fill="black"/>
+      <rect x="203.133" y="79" width="36.8675" height="97.5904" fill="black"/>
+      <rect x="238.916" y="79" width="31.4458" height="69.6144" transform="rotate(90 238.916 79)" fill="black"/>
+      <rect x="240" y="145.145" width="31.4458" height="70.6988" transform="rotate(90 240 145.145)" fill="black"/>
+      <rect x="169.301" y="110.446" width="34.6988" height="38.6024" transform="rotate(90 169.301 110.446)" fill="black"/>
+      <path d="M281.832 162V93.84H305.256C313.32 93.84 319.368 95.312 323.4 98.256C327.432 101.2 329.448 105.84 329.448 112.176C329.448 116.016 328.36 119.248 326.184 121.872C324.072 124.432 321.128 126.064 317.352 126.768C322.024 127.408 325.672 129.232 328.296 132.24C330.984 135.184 332.328 138.864 332.328 143.28C332.328 149.488 330.312 154.16 326.28 157.296C322.248 160.432 316.52 162 309.096 162H281.832ZM290.088 123.312H305.256C310.248 123.312 314.088 122.384 316.776 120.528C319.464 118.608 320.808 115.952 320.808 112.56C320.808 105.456 315.624 101.904 305.256 101.904H290.088V123.312ZM290.088 153.936H309.096C313.768 153.936 317.352 152.976 319.848 151.056C322.408 149.136 323.688 146.384 323.688 142.8C323.688 139.216 322.408 136.432 319.848 134.448C317.352 132.4 313.768 131.376 309.096 131.376H290.088V153.936ZM345.301 162V93.84H388.117V101.904H353.557V123.888H386.965V131.76H353.557V153.936H388.885V162H345.301ZM416.681 162V101.904H395.465V93.84H446.153V101.904H424.937V162H416.681ZM470.587 162V101.904H449.371V93.84H500.059V101.904H478.843V162H470.587ZM507.113 162V93.84H549.929V101.904H515.369V123.888H548.777V131.76H515.369V153.936H550.697V162H507.113ZM564.02 162V93.84H589.844C597.012 93.84 602.676 95.696 606.836 99.408C610.996 103.12 613.076 108.144 613.076 114.48C613.076 117.104 612.532 119.504 611.444 121.68C610.356 123.792 608.948 125.584 607.22 127.056C605.492 128.528 603.604 129.552 601.556 130.128C604.564 130.64 606.932 131.856 608.66 133.776C610.452 135.696 611.508 138.416 611.828 141.936L613.748 162H605.396L603.667 142.8C603.412 139.984 602.388 137.904 600.596 136.56C598.868 135.216 596.02 134.544 592.052 134.544H572.276V162H564.02ZM572.276 126.48H590.9C595.06 126.48 598.356 125.424 600.788 123.312C603.22 121.2 604.436 118.192 604.436 114.288C604.436 110.32 603.188 107.28 600.692 105.168C598.196 102.992 594.58 101.904 589.844 101.904H572.276V126.48ZM623.912 137.808V130.224H655.688V137.808H623.912ZM661.826 162L686.402 93.84H697.538L722.114 162H713.09L706.274 142.608H677.666L670.85 162H661.826ZM680.45 134.544H703.49L691.97 101.04L680.45 134.544ZM755.651 163.536C750.403 163.536 745.827 162.512 741.923 160.464C738.083 158.416 735.107 155.504 732.995 151.728C730.947 147.888 729.923 143.376 729.923 138.192V93.744H738.179V138.192C738.179 143.696 739.683 147.952 742.691 150.96C745.763 153.968 750.083 155.472 755.651 155.472C761.155 155.472 765.411 153.968 768.419 150.96C771.491 147.952 773.027 143.696 773.027 138.192V93.744H781.283V138.192C781.283 143.376 780.227 147.888 778.115 151.728C776.067 155.504 773.123 158.416 769.283 160.464C765.443 162.512 760.899 163.536 755.651 163.536ZM811.087 162V101.904H789.871V93.84H840.559V101.904H819.343V162H811.087ZM847.613 162V93.84H855.869V123.696H890.141V93.84H898.397V162H890.141V131.76H855.869V162H847.613ZM911.443 162V151.152H922.291V162H911.443Z" fill="black"/>
+      </svg>
+      `,
+		darkPng: DarkPng,
+		whitePng: WhitePng,
+	};
+	return (
+		<div className="flex flex-col sticky top-0 bg-background backdrop-blur-md z-30">
+			<nav className="md:grid grid-cols-12 md:border-b top-0 flex items-center justify-between ">
+				<Link
+					href="/"
+					className="md:border-r md:px-5 px-2.5 py-4 text-foreground md:col-span-2 shrink-0 transition-colors md:w-[268px] lg:w-[286px]"
+				>
+					<div className="flex flex-col gap-2 w-full">
+						<LogoContextMenu
+							logo={
+								<div className="flex items-center gap-2">
+									<Logo />
+									<p className="select-none">BETTER-AUTH.</p>
+								</div>
+							}
+							logoAssets={logoAssets}
+						/>
+					</div>
+				</Link>
+				<div className="md:col-span-10 flex items-center justify-end relative">
+					<ul className="md:flex items-center divide-x w-max hidden shrink-0">
+						{navMenu.map((menu, i) => (
+							<NavLink key={menu.name} href={menu.path}>
+								{menu.name}
+							</NavLink>
+						))}
+						<NavLink
+							href="https://github.com/better-auth/better-auth"
+							className=" bg-muted/20"
+							external
+						>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="1.4em"
+								height="1.4em"
+								viewBox="0 0 496 512"
+							>
+								<path
+									fill="currentColor"
+									d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6c-3.3.3-5.6-1.3-5.6-3.6c0-2 2.3-3.6 5.2-3.6c3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9c2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9c.3 2 2.9 3.3 5.9 2.6c2.9-.7 4.9-2.6 4.6-4.6c-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2c12.8 2.3 17.3-5.6 17.3-12.1c0-6.2-.3-40.4-.3-61.4c0 0-70 15-84.7-29.8c0 0-11.4-29.1-27.8-36.6c0 0-22.9-15.7 1.6-15.4c0 0 24.9 2 38.6 25.8c21.9 38.6 58.6 27.5 72.9 20.9c2.3-16 8.8-27.1 16-33.7c-55.9-6.2-112.3-14.3-112.3-110.5c0-27.5 7.6-41.3 23.6-58.9c-2.6-6.5-11.1-33.3 2.6-67.9c20.9-6.5 69 27 69 27c20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27c13.7 34.7 5.2 61.4 2.6 67.9c16 17.7 25.8 31.5 25.8 58.9c0 96.5-58.9 104.2-114.8 110.5c9.2 7.9 17 22.9 17 46.4c0 33.7-.3 75.4-.3 83.6c0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252C496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2c1.6 1.6 3.9 2.3 5.2 1c1.3-1 1-3.3-.7-5.2c-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9c1.6 1 3.6.7 4.3-.7c.7-1.3-.3-2.9-2.3-3.9c-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2c2.3 2.3 5.2 2.6 6.5 1c1.3-1.3.7-4.3-1.3-6.2c-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2c-1.4-2.3-4-3.3-5.6-2"
+								></path>
+							</svg>
+						</NavLink>
+					</ul>
+					<ThemeToggle />
+					<NavbarMobileBtn />
+				</div>
+			</nav>
+			<NavbarMobile />
+		</div>
+	);
+};
+
+export const navMenu = [
+	{
+		name: "helo_",
+		path: "/",
+	},
+	{
+		name: "docs",
+		path: "/docs",
+	},
+
+	{
+		name: "changelogs",
+		path: "/changelogs",
+	},
+	{
+		name: "community",
+		path: "/community",
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/nav-link.tsx
+```
+"use client";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useSelectedLayoutSegment } from "next/navigation";
+
+type Props = {
+	href: string;
+	children: React.ReactNode;
+	className?: string;
+	external?: boolean;
+};
+
+export const NavLink = ({ href, children, className, external }: Props) => {
+	const segment = useSelectedLayoutSegment();
+	const isActive =
+		segment === href.slice(1) || (segment === null && href === "/");
+
+	return (
+		<li className={cn("relative group", className)}>
+			<Link
+				href={href}
+				className={cn(
+					"w-full h-full block py-4 px-5 transition-colors",
+					"group-hover:text-foreground",
+					isActive ? "text-foreground" : "text-muted-foreground",
+				)}
+				target={external ? "_blank" : "_parent"}
+			>
+				{children}
+			</Link>
+			<div
+				className={cn(
+					"absolute bottom-0 h-0.5 bg-muted-foreground opacity-0 transition-all duration-500",
+					"group-hover:opacity-100 group-hover:w-full",
+					isActive ? "opacity-100 w-full" : "w-0",
+				)}
+			/>
+		</li>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/nav-mobile.tsx
+```
+"use client";
+import { ChevronRight, Menu } from "lucide-react";
+import Link from "next/link";
+import { Fragment, createContext, useContext, useState } from "react";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@/components/ui/accordion";
+import { contents, examples } from "./sidebar-content";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+
+interface NavbarMobileContextProps {
+	isOpen: boolean;
+	toggleNavbar: () => void;
+	isDocsOpen: boolean;
+	toggleDocsNavbar: () => void;
+}
+
+const NavbarContext = createContext<NavbarMobileContextProps | undefined>(
+	undefined,
+);
+
+export const NavbarProvider = ({ children }: { children: React.ReactNode }) => {
+	const [isOpen, setIsOpen] = useState(false);
+	const [isDocsOpen, setIsDocsOpen] = useState(false);
+
+	const toggleNavbar = () => {
+		setIsOpen((prevIsOpen) => !prevIsOpen);
+	};
+	const toggleDocsNavbar = () => {
+		setIsDocsOpen((prevIsOpen) => !prevIsOpen);
+	};
+	// @ts-ignore
+	return (
+		<NavbarContext.Provider
+			value={{ isOpen, toggleNavbar, isDocsOpen, toggleDocsNavbar }}
+		>
+			{children}
+		</NavbarContext.Provider>
+	);
+};
+
+export const useNavbarMobile = (): NavbarMobileContextProps => {
+	const context = useContext(NavbarContext);
+	if (!context) {
+		throw new Error(
+			"useNavbarMobile must be used within a NavbarMobileProvider",
+		);
+	}
+	return context;
+};
+
+export const NavbarMobileBtn: React.FC = () => {
+	const { toggleNavbar } = useNavbarMobile();
+
+	return (
+		<div className="flex items-center">
+			<button
+				className="overflow-hidden px-2.5 block md:hidden"
+				onClick={() => {
+					toggleNavbar();
+				}}
+			>
+				<Menu className="size-5" />
+			</button>
+		</div>
+	);
+};
+
+export const NavbarMobile = () => {
+	const { isOpen, toggleNavbar } = useNavbarMobile();
+	const pathname = usePathname();
+	const isDocs = pathname.startsWith("/docs");
+
+	return (
+		<div
+			className={cn(
+				"fixed top-[50px] inset-x-0 transform-gpu z-[100] bg-background grid grid-rows-[0fr] duration-300 transition-all md:hidden",
+				isOpen &&
+					"shadow-lg border-b border-[rgba(255,255,255,.1)] grid-rows-[1fr]",
+			)}
+		>
+			<div
+				className={cn(
+					"px-9 min-h-0 overflow-y-auto max-h-[80vh] divide-y [mask-image:linear-gradient(to_top,transparent,white_40px)] transition-all duration-300",
+					isOpen ? "py-5" : "invisible",
+					isDocs && "px-4",
+				)}
+			>
+				{navMenu.map((menu) => (
+					<Fragment key={menu.name}>
+						{menu.child ? (
+							<Accordion type="single" collapsible>
+								<AccordionItem value={menu.name}>
+									<AccordionTrigger
+										className={cn(
+											"font-normal text-foreground",
+											!isDocs && "text-2xl",
+										)}
+									>
+										{menu.name}
+									</AccordionTrigger>
+									<AccordionContent className="pl-5 divide-y">
+										{menu.child.map((child, j) => (
+											<Link
+												href={child.path}
+												key={child.name}
+												className={cn(
+													"block py-2 border-b first:pt-0 last:pb-0 last:border-0 text-muted-foreground",
+													!isDocs && "text-xl",
+												)}
+												onClick={toggleNavbar}
+											>
+												{child.name}
+											</Link>
+										))}
+									</AccordionContent>
+								</AccordionItem>
+							</Accordion>
+						) : (
+							<Link
+								href={menu.path}
+								className={cn(
+									"group flex items-center gap-2.5 first:pt-0 last:pb-0 text-2xl py-4",
+									isDocs && "text-base py-2",
+								)}
+								onClick={toggleNavbar}
+							>
+								{isDocs && (
+									<ChevronRight className="ml-0.5 size-4 text-muted-foreground md:hidden" />
+								)}
+								{menu.name}
+							</Link>
+						)}
+					</Fragment>
+				))}
+				<DocsNavBarContent />
+			</div>
+		</div>
+	);
+};
+
+function DocsNavBarContent() {
+	const pathname = usePathname();
+	const { toggleNavbar } = useNavbarMobile();
+	if (!pathname.startsWith("/docs")) return null;
+
+	const content = pathname.startsWith("/docs/examples") ? examples : contents;
+
+	return (
+		<>
+			{content.map((menu) => (
+				<Accordion type="single" collapsible key={menu.title}>
+					<AccordionItem value={menu.title}>
+						<AccordionTrigger className="font-normal text-foreground">
+							<div className="flex items-center gap-2">
+								{!!menu.Icon && <menu.Icon className="w-5 h-5" />}
+								{menu.title}
+							</div>
+						</AccordionTrigger>
+						<AccordionContent className="pl-5 divide-y">
+							{menu.list.map((child) => (
+								<Link
+									href={child.href}
+									key={child.title}
+									className="block py-2 text-sm border-b first:pt-0 last:pb-0 last:border-0 text-muted-foreground"
+									onClick={toggleNavbar}
+								>
+									{child.group ? (
+										<div className="flex flex-row items-center gap-2 ">
+											<div className="flex-grow h-px bg-gradient-to-r from-stone-800/90 to-stone-800/60" />
+											<p className="text-sm text-transparent bg-gradient-to-tr dark:from-gray-100 dark:to-stone-200 bg-clip-text from-gray-900 to-stone-900">
+												{child.title}
+											</p>
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											<child.icon />
+											{child.title}
+										</div>
+									)}
+								</Link>
+							))}
+						</AccordionContent>
+					</AccordionItem>
+				</Accordion>
+			))}
+		</>
+	);
+}
+
+export const navMenu: {
+	name: string;
+	path: string;
+	child?: {
+		name: string;
+		path: string;
+	}[];
+}[] = [
+	{
+		name: "_helo",
+		path: "/",
+	},
+
+	{
+		name: "docs",
+		path: "/docs",
+	},
+	{
+		name: "examples",
+		path: "/docs/examples/next-js",
+	},
+	{
+		name: "changelogs",
+		path: "/changelogs",
+	},
+	{
+		name: "community",
+		path: "/community",
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/promo-card.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Sparkles, Clock, ArrowRight } from "lucide-react";
+
+export default function PromoCard() {
+	const [isHovered, setIsHovered] = useState(false);
+
+	return (
+		<TooltipProvider>
+			<Card
+				className="w-full overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600 text-white"
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+			>
+				<CardContent className="p-6 pb-0">
+					<div className="flex justify-between items-start mb-4">
+						<Badge className="bg-yellow-500 text-black hover:bg-yellow-600">
+							New
+						</Badge>
+						<Tooltip>
+							<TooltipTrigger>
+								<Clock className="h-5 w-5 text-white/80" />
+							</TooltipTrigger>
+							<TooltipContent>
+								<p>Limited time offer</p>
+							</TooltipContent>
+						</Tooltip>
+					</div>
+					<h3 className="text-2xl font-bold mb-2">Unlock Pro Features</h3>
+					<p className="text-sm text-white/80 mb-4">
+						Supercharge your workflow with our advanced tools and exclusive
+						content.
+					</p>
+					<div className="relative">
+						<Progress value={67} className="h-2 mb-2" />
+						<span className="text-xs text-white/80">67% of slots filled</span>
+					</div>
+				</CardContent>
+				<CardFooter className="p-6 pt-4">
+					<Button
+						className={`w-full bg-white text-purple-600 hover:bg-white/90 transition-all duration-300 ${
+							isHovered ? "translate-y-[-2px] shadow-lg" : ""
+						}`}
+					>
+						<span className="mr-2">Upgrade Now</span>
+						<Sparkles className="h-4 w-4 mr-2" />
+						<ArrowRight
+							className={`h-4 w-4 transition-transform duration-300 ${
+								isHovered ? "translate-x-1" : ""
+							}`}
+						/>
+					</Button>
+				</CardFooter>
+			</Card>
+		</TooltipProvider>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ripple.tsx
+```
+import React, { CSSProperties } from "react";
+
+interface RippleProps {
+	mainCircleSize?: number;
+	mainCircleOpacity?: number;
+	numCircles?: number;
+}
+
+export const Ripple = React.memo(function Ripple({
+	mainCircleSize = 180,
+	mainCircleOpacity = 0.2,
+	numCircles = 10,
+}: RippleProps) {
+	return (
+		<div className="absolute opacity-65 w-full inset-0 flex items-center justify-center bg-white/5 [mask-image:linear-gradient(to_bottom,white,transparent)] dark:[box-shadow:0_-20px_80px_-20px_#8686f01f_inset]">
+			{Array.from({ length: numCircles }, (_, i) => {
+				const size = mainCircleSize + i * 70;
+				const opacity = mainCircleOpacity - i * 0.03;
+				const animationDelay = `${i * 0.06}s`;
+				const borderStyle = i === numCircles - 1 ? "dashed" : "solid";
+				const borderOpacity = 5 + i * 5;
+
+				return (
+					<div
+						key={i}
+						className={`absolute animate-ripple rounded-full bg-foreground/25 shadow-xl border [--i:${i}]`}
+						style={
+							{
+								width: `${size}px`,
+								height: `${size}px`,
+								opacity,
+								animationDelay,
+								borderStyle,
+								borderWidth: "1px",
+								borderColor: `hsl(var(--foreground), ${borderOpacity / 100})`,
+								top: "50%",
+								left: "50%",
+								transform: "translate(-50%, -50%) scale(1)",
+							} as CSSProperties
+						}
+					/>
+				);
+			})}
+		</div>
+	);
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/side-bar.tsx
+```
+"use client";
+
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { AsideLink } from "@/components/ui/aside-link";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchContext } from "fumadocs-ui/provider";
+import { usePathname, useRouter } from "next/navigation";
+import { contents, examples } from "./sidebar-content";
+import { ChevronDownIcon, Search } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "./ui/select";
+import { cn } from "@/lib/utils";
+import { Badge } from "./ui/badge";
+
+export default function ArticleLayout() {
+	const [currentOpen, setCurrentOpen] = useState<number>(0);
+
+	const { setOpenSearch } = useSearchContext();
+	const pathname = usePathname();
+
+	function getDefaultValue() {
+		const defaultValue = contents.findIndex((item) =>
+			item.list.some((listItem) => listItem.href === pathname),
+		);
+		return defaultValue === -1 ? 0 : defaultValue;
+	}
+
+	const [group, setGroup] = useState("docs");
+
+	useEffect(() => {
+		const grp = pathname.includes("examples") ? "examples" : "docs";
+		setGroup(grp);
+		setCurrentOpen(getDefaultValue());
+	}, [pathname]);
+
+	const cts = group === "docs" ? contents : examples;
+
+	return (
+		<div className={cn("fixed top-0")}>
+			<aside
+				className={cn(
+					"md:transition-all",
+					"border-r border-lines md:flex hidden md:w-[268px] lg:w-[286px] overflow-y-auto absolute top-[58px] h-[92dvh] flex-col justify-between w-[var(--fd-sidebar-width)]",
+				)}
+			>
+				<div>
+					<SidebarTab group={group} setGroup={setGroup} />
+					<button
+						className="flex w-full items-center gap-2 px-5 py-2.5 border-b text-muted-foreground dark:bg-zinc-950 dark:border-t-zinc-900/30 dark:border-t"
+						onClick={() => {
+							setOpenSearch(true);
+						}}
+					>
+						<Search className="size-4 mx-0.5" />
+						<p className="text-sm">Search documentation...</p>
+					</button>
+
+					<MotionConfig
+						transition={{ duration: 0.4, type: "spring", bounce: 0 }}
+					>
+						<div className="flex flex-col">
+							{cts.map((item, index) => (
+								<div key={item.title}>
+									<button
+										className="border-b w-full hover:underline border-lines text-sm px-5 py-2.5 text-left flex items-center gap-2"
+										onClick={() => {
+											if (currentOpen === index) {
+												setCurrentOpen(-1);
+											} else {
+												setCurrentOpen(index);
+											}
+										}}
+									>
+										<item.Icon className="size-5" />
+										<span className="grow">{item.title}</span>
+										{item.isNew && <NewBadge />}
+										<motion.div
+											animate={{ rotate: currentOpen === index ? 180 : 0 }}
+										>
+											<ChevronDownIcon
+												className={cn(
+													"h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+												)}
+											/>
+										</motion.div>
+									</button>
+									<AnimatePresence initial={false}>
+										{currentOpen === index && (
+											<motion.div
+												initial={{ opacity: 0, height: 0 }}
+												animate={{ opacity: 1, height: "auto" }}
+												exit={{ opacity: 0, height: 0 }}
+												className="relative overflow-hidden"
+											>
+												<motion.div className="text-sm">
+													{item.list.map((listItem, j) => (
+														<div key={listItem.title}>
+															<Suspense fallback={<>Loading...</>}>
+																{listItem.group ? (
+																	<div className="flex flex-row items-center gap-2 mx-5 my-1 ">
+																		<p className="text-sm text-transparent bg-gradient-to-tr dark:from-gray-100 dark:to-stone-200 bg-clip-text from-gray-900 to-stone-900">
+																			{listItem.title}
+																		</p>
+																		<div className="flex-grow h-px bg-gradient-to-r from-stone-800/90 to-stone-800/60" />
+																	</div>
+																) : (
+																	<AsideLink
+																		href={listItem.href}
+																		startWith="/docs"
+																		title={listItem.title}
+																		className="break-words text-nowrap w-[--fd-sidebar-width] [&>div>div]:hover:!bg-fd-muted"
+																		activeClassName="[&>div>div]:!bg-fd-muted"
+																	>
+																		<div className="min-w-4">
+																			<listItem.icon className="text-stone-950 dark:text-white" />
+																		</div>
+																		{listItem.title}
+																		{listItem.isNew && <NewBadge />}
+																	</AsideLink>
+																)}
+															</Suspense>
+														</div>
+													))}
+												</motion.div>
+											</motion.div>
+										)}
+									</AnimatePresence>
+								</div>
+							))}
+						</div>
+					</MotionConfig>
+				</div>
+			</aside>
+		</div>
+	);
+}
+
+function NewBadge({ isSelected }: { isSelected?: boolean }) {
+	return (
+		<div className="flex items-center justify-end w-full">
+			<Badge
+				className={cn(
+					" pointer-events-none !no-underline border-dashed !decoration-transparent",
+					isSelected && "!border-solid",
+				)}
+				variant={isSelected ? "default" : "outline"}
+			>
+				New
+			</Badge>
+		</div>
+	);
+}
+
+const tabs = [
+	{
+		value: "docs",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M4.727 2.733c.306-.308.734-.508 1.544-.618C7.105 2.002 8.209 2 9.793 2h4.414c1.584 0 2.688.002 3.522.115c.81.11 1.238.31 1.544.618c.305.308.504.74.613 1.557c.112.84.114 1.955.114 3.552V18H7.426c-1.084 0-1.462.006-1.753.068c-.513.11-.96.347-1.285.667c-.11.108-.164.161-.291.505A1.3 1.3 0 0 0 4 19.7V7.842c0-1.597.002-2.711.114-3.552c.109-.816.308-1.249.613-1.557"
+					opacity=".5"
+				></path>
+				<path
+					fill="currentColor"
+					d="M20 18H7.426c-1.084 0-1.462.006-1.753.068c-.513.11-.96.347-1.285.667c-.11.108-.164.161-.291.505s-.107.489-.066.78l.022.15c.11.653.31.998.616 1.244c.307.246.737.407 1.55.494c.837.09 1.946.092 3.536.092h4.43c1.59 0 2.7-.001 3.536-.092c.813-.087 1.243-.248 1.55-.494c.2-.16.354-.362.467-.664H8a.75.75 0 0 1 0-1.5h11.975c.018-.363.023-.776.025-1.25M7.25 7A.75.75 0 0 1 8 6.25h8a.75.75 0 0 1 0 1.5H8A.75.75 0 0 1 7.25 7M8 9.75a.75.75 0 0 0 0 1.5h5a.75.75 0 0 0 0-1.5z"
+				></path>
+			</svg>
+		),
+		title: "Docs",
+		description: "get started, concepts, and plugins",
+	},
+	{
+		value: "examples",
+		icon: (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M12 2c4.714 0 7.071 0 8.535 1.464c1.08 1.08 1.364 2.647 1.439 5.286L22 9.5H2.026v-.75c.075-2.64.358-4.205 1.438-5.286C4.93 2 7.286 2 12 2"
+					opacity=".5"
+				></path>
+				<path
+					fill="currentColor"
+					d="M13 6a1 1 0 1 1-2 0a1 1 0 0 1 2 0m-3 0a1 1 0 1 1-2 0a1 1 0 0 1 2 0M7 6a1 1 0 1 1-2 0a1 1 0 0 1 2 0"
+				></path>
+				<path
+					fill="currentColor"
+					d="M2 12c0 4.714 0 7.071 1.464 8.535c1.01 1.01 2.446 1.324 4.786 1.421L9 22V9.5H2.026l-.023.75Q2 11.066 2 12"
+					opacity=".7"
+				></path>
+				<path
+					fill="currentColor"
+					d="M22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22c-.819 0-2.316 0-3-.008V9.5h13l-.003.75Q22 11.066 22 12"
+				></path>
+			</svg>
+		),
+		title: "Examples",
+		description: "examples and guides",
+	},
+];
+
+function SidebarTab({
+	group,
+	setGroup,
+}: { group: string; setGroup: (group: string) => void }) {
+	const router = useRouter();
+	const selected = tabs.find((tab) => tab.value === group);
+
+	return (
+		<Select
+			value={group}
+			onValueChange={(val) => {
+				setGroup(val);
+				if (val === "docs") {
+					router.push("/docs");
+				} else {
+					router.push("/docs/examples");
+				}
+			}}
+		>
+			<SelectTrigger className="h-16 border border-b border-none rounded-none px-5">
+				{selected ? (
+					<div className="flex flex-col gap-1 items-start">
+						<div className="flex items-center gap-1 -ml-0.5">
+							{selected.icon}
+							{selected.title}
+						</div>
+						<p className="text-xs text-muted-foreground">
+							{selected.description}
+						</p>
+					</div>
+				) : null}
+			</SelectTrigger>
+			<SelectContent>
+				{tabs.map((tab) => (
+					<SelectItem
+						key={tab.value}
+						value={tab.value}
+						className="h-12 flex flex-col items-start gap-1"
+					>
+						<div className="flex items-center gap-1">
+							{tab.icon}
+							{tab.title}
+						</div>
+						<p className="text-xs text-muted-foreground">{tab.description}</p>
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/sidebar-content.tsx
+```
+import {
+	CircleHelp,
+	Gauge,
+	Key,
+	LucideAArrowDown,
+	LucideIcon,
+	Mail,
+	Mailbox,
+	Phone,
+	ScanFace,
+	ShieldCheck,
+	UserCircle,
+	Users2,
+	UserSquare2,
+	Database,
+	KeyRound,
+} from "lucide-react";
+import { ReactNode, SVGProps } from "react";
+import { Icons } from "./icons";
+
+interface Content {
+	title: string;
+	href?: string;
+	Icon: ((props?: SVGProps<any>) => ReactNode) | LucideIcon;
+	isNew?: boolean;
+	list: {
+		title: string;
+		href: string;
+		icon: ((props?: SVGProps<any>) => ReactNode) | LucideIcon;
+		group?: boolean;
+		isNew?: boolean;
+	}[];
+}
+
+export const contents: Content[] = [
+	{
+		title: "Get Started",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m-1 14H9V8h2zm1 0V8l5 4z"
+				/>
+			</svg>
+		),
+		list: [
+			{
+				title: "Introduction",
+				href: "/docs/introduction",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 256 256"
+					>
+						<path
+							fill="currentColor"
+							d="M232 48h-64a32 32 0 0 0-32 32v87.73a8.17 8.17 0 0 1-7.47 8.25a8 8 0 0 1-8.53-8V80a32 32 0 0 0-32-32H24a8 8 0 0 0-8 8v144a8 8 0 0 0 8 8h72a24 24 0 0 1 24 23.94a7.9 7.9 0 0 0 5.12 7.55A8 8 0 0 0 136 232a24 24 0 0 1 24-24h72a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8m-24 120h-39.73a8.17 8.17 0 0 1-8.25-7.47a8 8 0 0 1 8-8.53h39.73a8.17 8.17 0 0 1 8.25 7.47a8 8 0 0 1-8 8.53m0-32h-39.73a8.17 8.17 0 0 1-8.25-7.47a8 8 0 0 1 8-8.53h39.73a8.17 8.17 0 0 1 8.25 7.47a8 8 0 0 1-8 8.53m0-32h-39.73a8.17 8.17 0 0 1-8.27-7.47a8 8 0 0 1 8-8.53h39.73a8.17 8.17 0 0 1 8.27 7.47a8 8 0 0 1-8 8.53"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Comparison",
+				href: "/docs/comparison",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M13 2a1 1 0 1 0-2 0v1H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h5v1a1 1 0 0 0 2 0v-1a1 1 0 0 0 0-2V5a1 1 0 1 0 0-2zm4 1a1 1 0 1 0 0 2h1a1 1 0 0 1 1 1v1a1 1 0 1 0 2 0V6a3 3 0 0 0-3-3zm4 8a1 1 0 1 0-2 0v2a1 1 0 0 0 2 0zm0 6a1 1 0 1 0-2 0v1a1 1 0 0 1-1 1h-1a1 1 0 1 0 0 2h1a3 3 0 0 0 3-3z"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Installation",
+				href: "/docs/installation",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2c4.714 0 7.071 0 8.535 1.464C22 4.93 22 7.286 22 12c0 4.714 0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12m10-5.75a.75.75 0 0 1 .75.75v5.19l1.72-1.72a.75.75 0 1 1 1.06 1.06l-3 3a.75.75 0 0 1-1.06 0l-3-3a.75.75 0 1 1 1.06-1.06l1.72 1.72V7a.75.75 0 0 1 .75-.75m-4 10a.75.75 0 0 0 0 1.5h8a.75.75 0 0 0 0-1.5z"
+							clipRule="evenodd"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Basic Usage",
+				href: "/docs/basic-usage",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 16 16"
+					>
+						<path
+							fill="currentColor"
+							d="M2 3.75C2 2.784 2.784 2 3.75 2h8.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25zM6 6.5a.5.5 0 0 0-1 0v4a.5.5 0 0 0 1 0zM8 8a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 1 0v-2A.5.5 0 0 0 8 8m3-2.5a.5.5 0 0 0-1 0v5a.5.5 0 0 0 1 0z"
+						></path>
+					</svg>
+				),
+			},
+		],
+	},
+	{
+		title: "Concepts",
+		list: [
+			{
+				href: "/docs/concepts/api",
+				title: "API",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							className="fill-current"
+							fillRule="evenodd"
+							d="M2.6 13.25a1.35 1.35 0 0 0-1.35 1.35v6.8c0 .746.604 1.35 1.35 1.35h18.8a1.35 1.35 0 0 0 1.35-1.35v-6.8a1.35 1.35 0 0 0-1.35-1.35zm3.967 5.25a.75.75 0 0 0-1.114-1.003l-.01.011a.75.75 0 0 0 1.114 1.004zM2.6 1.25A1.35 1.35 0 0 0 1.25 2.6v6.8c0 .746.604 1.35 1.35 1.35h18.8a1.35 1.35 0 0 0 1.35-1.35V2.6a1.35 1.35 0 0 0-1.35-1.35zM6.567 6.5a.75.75 0 0 0-1.114-1.003l-.01.011a.75.75 0 1 0 1.114 1.004z"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "CLI",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 256 256"
+					>
+						<path
+							fill="currentColor"
+							d="M216 40H40a16 16 0 0 0-16 16v144a16 16 0 0 0 16 16h176a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16m-91 94.25l-40 32a8 8 0 1 1-10-12.5L107.19 128L75 102.25a8 8 0 1 1 10-12.5l40 32a8 8 0 0 1 0 12.5M176 168h-40a8 8 0 0 1 0-16h40a8 8 0 0 1 0 16"
+						></path>
+					</svg>
+				),
+				href: "/docs/concepts/cli",
+			},
+			{
+				title: "Client",
+				href: "/docs/concepts/client",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M4 8h4V4H4zm6 12h4v-4h-4zm-6 0h4v-4H4zm0-6h4v-4H4zm6 0h4v-4h-4zm6-10v4h4V4zm-6 4h4V4h-4zm6 6h4v-4h-4zm0 6h4v-4h-4z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Cookies",
+				href: "/docs/concepts/cookies",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 16 16"
+					>
+						<path
+							fill="currentColor"
+							d="M8 1a7 7 0 1 0 6.926 5.978a.5.5 0 0 0-.781-.338a2 2 0 0 1-3.111-1.273a.5.5 0 0 0-.401-.4A2 2 0 0 1 9.36 1.854a.5.5 0 0 0-.338-.78A7 7 0 0 0 8 1m0 7.75a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5m-2 2a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0M4.75 7a.75.75 0 1 1 0-1.5a.75.75 0 0 1 0 1.5m5.75 4.25a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Database",
+				icon: (props?: SVGProps<any>) => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 16 16"
+					>
+						<g fill="currentColor">
+							<path d="M3.904 1.777C4.978 1.289 6.427 1 8 1s3.022.289 4.096.777C13.125 2.245 14 2.993 14 4s-.875 1.755-1.904 2.223C11.022 6.711 9.573 7 8 7s-3.022-.289-4.096-.777C2.875 5.755 2 5.007 2 4s.875-1.755 1.904-2.223"></path>
+							<path d="M2 6.161V7c0 1.007.875 1.755 1.904 2.223C4.978 9.71 6.427 10 8 10s3.022-.289 4.096-.777C13.125 8.755 14 8.007 14 7v-.839c-.457.432-1.004.751-1.49.972C11.278 7.693 9.682 8 8 8s-3.278-.307-4.51-.867c-.486-.22-1.033-.54-1.49-.972"></path>
+							<path d="M2 9.161V10c0 1.007.875 1.755 1.904 2.223C4.978 12.711 6.427 13 8 13s3.022-.289 4.096-.777C13.125 11.755 14 11.007 14 10v-.839c-.457.432-1.004.751-1.49.972c-1.232.56-2.828.867-4.51.867s-3.278-.307-4.51-.867c-.486-.22-1.033-.54-1.49-.972"></path>
+							<path d="M2 12.161V13c0 1.007.875 1.755 1.904 2.223C4.978 15.711 6.427 16 8 16s3.022-.289 4.096-.777C13.125 14.755 14 14.007 14 13v-.839c-.457.432-1.004.751-1.49.972c-1.232.56-2.828.867-4.51.867s-3.278-.307-4.51-.867c-.486-.22-1.033-.54-1.49-.972"></path>
+						</g>
+					</svg>
+				),
+				href: "/docs/concepts/database",
+			},
+			{
+				href: "/docs/concepts/email",
+				title: "Email",
+				icon: (props?: SVGProps<any>) => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 512 512"
+					>
+						<path
+							d="M67 148.7c11 5.8 163.8 89.1 169.5 92.1 5.7 3 11.5 4.4 20.5 4.4s14.8-1.4 20.5-4.4c5.7-3 158.5-86.3 169.5-92.1 4.1-2.1 11-5.9 12.5-10.2 2.6-7.6-.2-10.5-11.3-10.5H65.8c-11.1 0-13.9 3-11.3 10.5 1.5 4.4 8.4 8.1 12.5 10.2z"
+							fill="currentColor"
+						></path>
+						<path
+							d="M455.7 153.2c-8.2 4.2-81.8 56.6-130.5 88.1l82.2 92.5c2 2 2.9 4.4 1.8 5.6-1.2 1.1-3.8.5-5.9-1.4l-98.6-83.2c-14.9 9.6-25.4 16.2-27.2 17.2-7.7 3.9-13.1 4.4-20.5 4.4s-12.8-.5-20.5-4.4c-1.9-1-12.3-7.6-27.2-17.2L110.7 338c-2 2-4.7 2.6-5.9 1.4-1.2-1.1-.3-3.6 1.7-5.6l82.1-92.5c-48.7-31.5-123.1-83.9-131.3-88.1-8.8-4.5-9.3.8-9.3 4.9v205c0 9.3 13.7 20.9 23.5 20.9h371c9.8 0 21.5-11.7 21.5-20.9v-205c0-4.2.6-9.4-8.3-4.9z"
+							fill="currentColor"
+						></path>
+					</svg>
+				),
+			},
+			{
+				href: "/docs/concepts/hooks",
+				title: "Hooks",
+				icon: (props?: SVGProps<any>) => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 65 64"
+						fill="currentColor"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M30.719 27.2c-6.18-3.098-8.44-7.209-6.946-12.241c1.316-4.435 5.752-7.337 10.27-6.655c2.253.34 4.235 1.263 5.78 3.023c2.337 2.667 2.865 5.78 2.151 9.246l2.135.579l3.201.868c2.273-6.234-.393-13.518-6.214-17.258c-6.061-3.893-13.914-3.071-19.062 2c-2.687 2.649-4.158 5.88-4.5 9.62c-.483 5.29 1.703 9.558 5.375 13.21l-5.84 9.793q-.283.02-.502.033c-.269.016-.48.029-.688.058c-3.839.544-6.54 3.958-5.895 7.44c.73 3.933 4.309 6.348 7.983 5.385c3.896-1.02 5.97-4.78 4.5-8.644c-.532-1.398-.203-2.294.463-3.394c1.877-3.101 3.727-6.219 5.61-9.394zm13.222 4.686l-5.647-9.96q.14-.349.272-.665v-.001c.185-.448.354-.858.495-1.277c.747-2.21.296-4.228-1.122-6.02c-1.736-2.194-4.764-2.991-7.345-2.004c-2.605.997-4.272 3.554-4.158 6.383c.115 2.86 2.034 5.414 5.008 5.929c1.78.308 2.652 1.154 3.442 2.61c1.68 3.1 3.42 6.165 5.162 9.233v.001q1.033 1.817 2.061 3.64c5.832-3.888 10.657-3.764 14.26.285c3.12 3.51 3.186 8.854.153 12.438c-3.557 4.201-8.348 4.368-13.826.82l-4.352 3.642c5.546 5.536 13.463 6.272 19.723 1.963c6.099-4.199 8.222-12.258 5.116-19.063c-2.57-5.633-9.737-10.895-19.242-7.954m-12.623 16.99H42.76q.238.321.455.63c.303.428.592.834.928 1.195c2.424 2.592 6.516 2.72 9.106.315c2.685-2.492 2.807-6.68.27-9.281c-2.483-2.547-6.725-2.79-9.03-.094c-1.4 1.639-2.835 1.831-4.694 1.802c-3.397-.052-6.795-.042-10.193-.032q-2.045.007-4.088.008c.309 6.695-2.222 10.867-7.242 11.858c-4.916.97-9.443-1.538-11.037-6.114c-1.81-5.2.428-9.359 6.898-12.66c-.487-1.763-.98-3.548-1.466-5.315C5.617 32.724.327 39.565.872 47.26c.483 6.793 5.963 12.827 12.665 13.907c3.64.588 7.06-.022 10.233-1.822c4.082-2.316 6.451-5.958 7.548-10.47"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+			{
+				href: "/docs/concepts/plugins",
+				title: "Plugins",
+				icon: (props?: SVGProps<any>) => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 20 20"
+					>
+						<path
+							fill="currentColor"
+							d="M20 14v4a2 2 0 0 1-2 2h-4v-2a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2H6a2 2 0 0 1-2-2v-4H2a2 2 0 0 1-2-2a2 2 0 0 1 2-2h2V6c0-1.1.9-2 2-2h4V2a2 2 0 0 1 2-2a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v4h-2a2 2 0 0 0-2 2a2 2 0 0 0 2 2z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "OAuth",
+				href: "/docs/concepts/oauth",
+				icon: (props?: SVGProps<any>) => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 128 128"
+					>
+						<path
+							fill="currentColor"
+							d="M64.6 0a78 78 0 0 0-5.19.188C52.012.698 43.6 2.903 38.6 5.117c-4.012 1.773-8.565 4.44-12.321 7.115c-9.334 6.664-16.905 16.301-21.354 27.38c-.923 2.304-2.093 4.775-2.738 7.118c-2.743 9.996-2.515 21.649-.545 30.664c4.914 22.532 18.131 35.526 35.32 44.63c15.427 8.172 38.988 7.939 55.851-.55c10.083-5.077 18.136-12.813 24.365-22.176c6.057-9.112 10.704-21.527 10.677-35.865c-.023-13.2-5.3-26.044-10.677-34.497C107.124 13.12 90.013-.033 64.6 0m.31 3.072c18.993-.022 33.828 8.963 43.235 19.292c2.656 2.92 5.31 5.816 7.116 8.762c3.346 5.45 5.486 11.89 7.121 18.07c6.115 23.117-3.076 45.042-14.514 56.946c-8.545 8.897-19.037 14.915-32.854 17.521c-15.547 2.937-30.462-.889-41.069-6.844C23.05 110.7 15.331 102.006 9.581 90.81C4.037 80.014 1.457 62.841 5.474 48.645c3.61-12.754 9.772-23.344 19.439-30.935c6.703-5.262 14.41-10.146 24.914-12.867c3.772-.979 7.258-1.39 11.227-1.643a59 59 0 0 1 3.855-.128zm-1.465 2.686a50 50 0 0 0-3.763.18C43.397 7.327 31.96 14.632 23.268 23.187C17.18 29.177 12.604 36.515 9.58 45.09c-1.964 5.565-3.002 11.577-3.122 17.657c-.006.202 0 .405 0 .607l-.002.001c-.017 1.873.056 3.75.214 5.622l.004.06c.473 5.577 1.705 11.107 3.727 16.299c4.256 10.918 11.223 19.732 21.082 26.554c7.279 5.042 17.055 9.178 28.155 10.115c.22.016.44.043.659.057l.002.002a55.6 55.6 0 0 0 8.004 0l.002-.002c.214-.014.427-.023.642-.04l-.001.003l.045-.002c18.195-1.539 31.51-10.875 40.247-21.632c2.234-2.751 4.456-5.86 5.75-9.582c1.266-2.678 1.885-4.501 2.461-5.473c2.235-5.009 3.494-10.282 3.99-16.044l.03-.396l.002-.002c.03-.361.065-.718.089-1.084a66 66 0 0 0 .101-4.939l-.007-.005c0-.207-.002-.409-.007-.616c-.386-16.868-7.398-30.22-16.791-39.613c-5.033-5.034-11.223-9.57-18.616-12.322c-6.246-2.32-13.17-4.32-21.046-4.518l.004.004c-.206-.004-.41-.013-.62-.013l-.006-.007c-.379-.005-.745-.028-1.128-.024zm-3.574 3.925l2.59.01l-.023 5.111c-.002 1.327.664 1.96 1.688 1.965c1.03.005 1.697-.598 1.706-1.886l.018-5.178l2.588.009l-.017 5.098c-.013 2.973-1.715 4.269-4.33 4.256c-2.615-.009-4.25-1.346-4.242-4.22zm15.93 1.32l7.72 2.354l-.651 2.137l-2.642-.804l-2.031 6.66l-2.44-.744l2.031-6.664l-2.638-.804zM49.08 11.8l6.559 7.627l-2.603.835l-1.143-1.361l-3.376 1.084l-.123 1.767l-2.554.818l.897-10.017zm-.268 3.258l-.19 2.808l1.965-.627zm41.6 1.28l2.124 1.41l-1.908 2.866l2.725 1.816l1.908-2.867l2.118 1.412l-5.094 7.657l-2.123-1.41l1.939-2.91l-2.726-1.816l-1.939 2.914l-2.117-1.415zm-54.76 2.381a4.66 4.66 0 0 1 4.047 1.935l.018.022c1.556 2.132 1.1 5.116-1.195 6.792c-2.291 1.67-5.236 1.204-6.792-.933l-.017-.023c-1.556-2.131-1.1-5.114 1.19-6.79c.862-.623 1.812-.954 2.748-1.001zm-.053 2.422a2.3 2.3 0 0 0-1.359.454c-1.125.821-1.213 2.285-.43 3.357l.013.023c.782 1.072 2.241 1.44 3.367.619c1.134-.83 1.222-2.295.439-3.367l-.013-.017c-.493-.673-1.244-1.069-2.017-1.069m28.013 2.317q.303-.001.607.005l.084.083l.083-.083c.202 0 .403-.005.602 0l-.383.382l4.356 4.36l3.72-3.718c.163.039.33.075.492.114l-3.908 3.907l4.356 4.356l4.36-4.354l-3.587-3.588c.28.075.56.15.836.233l3.05 3.05l1.447-1.445l.422.184l-1.564 1.564l4.36 4.356l2.98-2.98c.127.08.24.158.365.237l-3.047 3.047l4.361 4.356l3.248-3.248l.299.303l-3.249 3.25l4.36 4.354l3.236-3.234l.304.304l-3.235 3.234l4.356 4.36l2.312-2.316l.21.395l-2.219 2.22l4.355 4.361l.612-.615c.057.15.114.294.167.443l-.475.47l.936.937q.133.428.251.857l-1.49-1.49l-4.356 4.36l4.355 4.357l2.42-2.417l.07.53l-2.186 2.19l2.462 2.462c0 .193-.022.382-.027.58l-2.738-2.743l-4.356 4.36l4.355 4.356l2.515-2.514c-.026.233-.062.466-.092.695l-2.119 2.123l1.486 1.486c-.039.168-.07.33-.11.497l-1.679-1.68l-4.356 4.356l3.842 3.843c-.06.14-.12.284-.18.422l-3.965-3.961l-4.36 4.356l4.36 4.36l3.15-3.156c-.192.382-.368.774-.58 1.148l-.03.07l-2.237 2.238l.796.799c-.075.128-.14.26-.216.387l-.883-.884l-4.36 4.356l1.44 1.446q-.137.159-.28.318l-1.46-1.46l-4.36 4.36l1.357 1.359c-.109.088-.216.18-.33.272l-1.327-1.331l-4.36 4.36l.51.51c-.127.07-.263.136-.391.21l-.422-.421l-1.35 1.35q-.567.28-1.147.545l2.198-2.195l-4.36-4.36l-4.356 4.36l3.432 3.434c-.148.052-.298.1-.448.154l-3.288-3.288l-4.356 4.36l.628.63q-.263.038-.527.074l-.405-.4l-.505.5c-.224.027-.448.057-.676.08l.877-.884l-4.354-4.36l-4.361 4.36l.953.95q-.331-.024-.664-.056l-.588-.594l-.47.47c-.176-.023-.344-.059-.518-.084l.685-.686l-4.356-4.36l-3.424 3.424c-.15-.048-.3-.106-.45-.154l3.57-3.569l-4.356-4.361l-4.36 4.361l2.645 2.646c-.36-.15-.711-.307-1.063-.461l-1.886-1.886l-.65.655c-.132-.071-.264-.137-.396-.206l.748-.749l-4.36-4.359l-1.693 1.696c-.115-.088-.24-.167-.353-.255l1.746-1.74l-4.36-4.36l-1.957 1.955c-.096-.101-.198-.203-.294-.307l1.95-1.953l-4.36-4.355l-1.44 1.44c-.084-.117-.16-.24-.239-.364l1.381-1.38l-4.36-4.355l-.023.022c-.227-.532-.298-.726-.452-1.1l.475.471l4.36-4.357l-4.36-4.36l-2.057 2.06c-.032-.175-.068-.337-.093-.513l1.846-1.846l-2.307-2.312c-.018-.212-.014-.422-.027-.628l2.638 2.636l4.36-4.355l-4.36-4.361l-2.74 2.739c0-.207.014-.409.014-.616l2.422-2.426l-2.163-2.163c.018-.184.026-.373.048-.553l2.419 2.417l4.36-4.36l-4.36-4.357l-1.605 1.605c.067-.272.132-.546.207-.81l1.094-1.099l-.558-.562q.078-.215.163-.44l.698.704l4.361-4.36l-2.343-2.343c.071-.132.136-.265.206-.396l2.435 2.435l4.36-4.355l-3.318-3.32c.088-.11.185-.22.273-.33l3.345 3.346l4.36-4.356l-3.493-3.495c.104-.097.202-.203.307-.295l3.49 3.486l4.355-4.356l-2.93-2.932q.186-.117.373-.229l2.861 2.859l4.356-4.358l-1.432-1.432c.146-.062.28-.124.426-.18l1.31 1.31l2.694-2.7l.897-.289l-3.292 3.291l4.36 4.356l4.357-4.354l-3.781-3.786l.47-.132l3.614 3.613l4.356-4.36zm.69.69l-4.355 4.36l4.354 4.356l4.362-4.354zm-13.978 4.659l-4.36 4.361l4.36 4.356l4.356-4.356l-4.356-4.36zm9.319 0l-4.356 4.361l4.356 4.356l4.356-4.356l-4.355-4.36zm9.318 0l-4.355 4.361l4.355 4.356l4.36-4.356l-4.36-4.36zm9.324 0l-4.36 4.361l4.36 4.356l4.355-4.356l-4.355-4.36zm-32.62 4.66l-4.361 4.361l4.36 4.355l4.356-4.355zm9.319 0l-4.362 4.361l4.362 4.355l.058-.059c-.175.336-.33.687-.45 1.058l-3.97 3.965l2.064 2.063l-.144.457l-2.218-2.217l-4.36 4.355l4.36 4.36l.244-.242l-.279.88l-4.325 4.327l2.25 2.246l-.145.461l-2.407-2.408l-4.36 4.36l4.36 4.355l.608-.607l-.28.884l-.026.027l.013.014l-.143.454l-.169-.169l-4.361 4.36l2.437 2.437l-.145.458l-2.595-2.591l-4.356 4.356L41 84.128l1.03-1.028a7 7 0 0 0-.147.747l-.58.58l.533.532c.007.213.005.426.03.635L41 84.73l-4.355 4.356L41 93.446l3.381-3.377c.113.09.237.163.356.244l-3.432 3.433l4.355 4.36l4.36-4.36l-2.355-2.352a7 7 0 0 0 .713.113l1.946 1.94l4.356-4.36l-.57-.57a7 7 0 0 0 .22-.383l.653.653l4.357-4.36l-2.693-2.692l.143-.46l2.853 2.853l4.356-4.36l-1.407-1.407h.608l1.103 1.103l1.102-1.103h.608l-1.407 1.407l4.355 4.36l3.365-3.369l.15.457l-3.21 3.212l4.355 4.36l1.063-1.064q.099.202.208.396l-.968.967l4.357 4.36l1.94-1.936c.18.014.357.042.539.042l.024-.002l-2.2 2.2l4.356 4.356l4.36-4.36l-3.117-3.118c.126-.073.23-.171.35-.252l3.071 3.07l4.355-4.36l-4.355-4.356l-.124.123c.004-.29.016-.577-.019-.869l.143.143l4.355-4.36l-4.355-4.356l-2.132 2.126l-.15-.452l1.978-1.978l-3.947-3.947l-.356-1.074l4.3-4.298l-4.358-4.36l-2.116 2.119l-.149-.455l1.967-1.962l-3.923-3.924l-.37-1.108l4.293-4.293l-4.36-4.355l-2.106 2.105l-.15-.453l1.957-1.955l-3.9-3.895l-.039-.12a6.4 6.4 0 0 0-.402-.967l4.34-4.337l-4.36-4.36l-4.356 4.36l1.404 1.404a7 7 0 0 0-1.01-.41l-.698-.696l-.443.447a7 7 0 0 0-.556-.046l.701-.699l-4.36-4.36l-4.356 4.36l.7.701a6 6 0 0 0-.56.044l-.444-.442l-.692.692a7 7 0 0 0-1.031.424l1.42-1.419zm27.96 0l-4.36 4.361l4.36 4.355l4.356-4.355l-4.355-4.36zm-41.94 4.66l-4.359 4.36l4.36 4.356l4.355-4.355l-4.354-4.362zm9.32 0l-4.36 4.36l4.36 4.356l4.356-4.355zm27.961.004l-4.36 4.356l4.355 4.36l4.361-4.36zm9.318 0l-4.36 4.356l4.361 4.36l4.355-4.36l-4.355-4.355zM60.996 39.78h6.639c2.306 0 4.474 1.517 5.195 3.75l13.13 39.54c.936 2.882-.58 5.986-3.464 6.927a5.7 5.7 0 0 1-1.736.276c-2.304 0-4.44-1.432-5.192-3.74l-3.098-9.456H56.742l-2.888 9.38a5.51 5.51 0 0 1-5.231 3.807a5.6 5.6 0 0 1-1.697-.267c-2.883-.867-4.47-3.97-3.605-6.858l12.48-39.535c.72-2.237 2.813-3.824 5.195-3.824m-24.655 3.012l-4.356 4.355l4.356 4.361l4.36-4.36zm9.323 0l-4.36 4.355l4.36 4.361l4.356-4.36l-4.355-4.356zm37.281 0l-4.361 4.355l4.36 4.361l4.356-4.36zm9.318 0l-4.36 4.355l4.36 4.361l4.356-4.36zM31.68 47.45l-4.355 4.356l4.355 4.36l4.36-4.36l-4.36-4.355zm9.32 0l-4.356 4.356L41 56.166l4.362-4.36zm46.603 0l-4.36 4.356l4.36 4.36l4.355-4.36l-4.355-4.355zm9.319 0l-4.361 4.356l4.36 4.36l4.357-4.36l-4.356-4.355zm-60.584 4.66l-4.354 4.356l4.355 4.36l4.36-4.36zm9.323 0l-4.36 4.356l4.362 4.36l4.355-4.36zm37.282 0l-4.36 4.36l4.355 4.357l4.359-4.36zm9.318 0L87.9 56.466l4.363 4.36l4.355-4.355l-4.358-4.36zM31.68 56.77l-4.355 4.357l4.355 4.36l4.36-4.36l-4.36-4.356zm9.321 0l-4.356 4.362L41 65.485l4.362-4.359zm46.603 0l-4.36 4.362l4.36 4.354l4.354-4.354l-4.355-4.361zm9.317 0l-4.361 4.36l4.36 4.354l4.356-4.354zm-60.583 4.66l-4.356 4.361l4.356 4.356l4.36-4.354zm55.921 0L87.9 65.79l4.363 4.356l4.354-4.354zm-60.578 4.66l-4.355 4.361l4.355 4.355l4.36-4.355l-4.36-4.36zm9.321 0l-4.356 4.361l4.355 4.355l4.362-4.355l-4.36-4.36zm46.603 0l-4.36 4.361l4.36 4.355l4.354-4.355l-4.355-4.36zm9.318 0l-4.363 4.36l4.36 4.355l4.356-4.355l-4.354-4.36zM36.34 70.747l-4.355 4.36l4.356 4.358l4.36-4.357l-4.36-4.36zm55.922.005l-4.36 4.356l4.36 4.357l4.356-4.357zm-60.58 4.66l-4.356 4.356l4.355 4.36l4.36-4.36zm4.66 4.658l-4.357 4.359l4.356 4.36l4.36-4.36l-4.36-4.356zm27.96 0l-4.36 4.358l4.36 4.36l4.355-4.36l-4.354-4.356zm27.96 0l-4.36 4.358l4.36 4.36l4.357-4.36l-4.355-4.356zm-32.62 4.66l-4.36 4.356l4.36 4.36L64 89.087l-4.355-4.355zm9.32 0l-4.356 4.356l4.355 4.36l4.36-4.36zm-13.979 4.66l-4.362 4.357l4.362 4.36l4.355-4.36zm9.317 0l-4.359 4.357l4.36 4.36l4.355-4.355l-4.354-4.36zm9.32 0l-4.356 4.362l4.356 4.356l4.36-4.356l-4.36-4.36zm-13.978 4.66l-4.36 4.361l4.36 4.355l4.356-4.355zm9.318 0l-4.355 4.361l4.355 4.355l4.36-4.355zm25.412 4.212a4.66 4.66 0 0 1 3.534 1.792l.018.023c1.64 2.075 1.297 5.073-.932 6.835c-2.229 1.759-5.187 1.402-6.827-.672l-.018-.018c-1.635-2.075-1.29-5.077.938-6.835a5.13 5.13 0 0 1 2.703-1.108a5 5 0 0 1 .585-.017zm-57.06 2.237l2.185 1.314l-1.799 2.998l2.81 1.679l1.797-2.998l2.185 1.31l-4.73 7.89l-2.184-1.31l1.766-2.953l-2.804-1.68l-1.771 2.955l-2.185-1.315zm56.512.21a2.27 2.27 0 0 0-1.337.498c-1.104.87-1.135 2.338-.313 3.38l.018.017c.821 1.042 2.291 1.358 3.394.484c1.095-.862 1.125-2.325.304-3.367l-.02-.023c-.515-.651-1.279-1.019-2.047-.989zm-9.847 3.874l-.458 10.048l-2.307.852l-6.889-7.326l2.563-.95l1.2 1.305l3.328-1.231l.048-1.767zm-32.27 2.597l2.462.664l-1.815 6.726l2.664.72l-.58 2.155l-7.79-2.102l.58-2.159l2.664.722zm14.181 1.688c2.61-.113 4.312 1.138 4.44 4.014l.225 5.16l-2.585.114l-.225-5.108c-.061-1.327-.757-1.924-1.78-1.881c-1.025.045-1.666.677-1.613 1.966l.228 5.173l-2.584.114l-.226-5.095c-.13-2.966 1.505-4.343 4.12-4.456zm15.512.536l-1.934.717l1.868 2.097l.068-2.814z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Rate Limit",
+				icon: () => {
+					return (
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="1.2em"
+							height="1.2em"
+							viewBox="0 0 24 24"
+						>
+							<path
+								className="fill-current"
+								d="M13 12.6V9q0-.425-.288-.712T12 8t-.712.288T11 9v3.975q0 .2.075.388t.225.337l2.8 2.8q.275.275.7.275t.7-.275t.275-.7t-.275-.7zM12 22q-1.875 0-3.512-.712t-2.85-1.925t-1.925-2.85T3 13t.713-3.512t1.924-2.85t2.85-1.925T12 4t3.513.713t2.85 1.925t1.925 2.85T21 13t-.712 3.513t-1.925 2.85t-2.85 1.925T12 22M2.05 7.3q-.275-.275-.275-.7t.275-.7L4.9 3.05q.275-.275.7-.275t.7.275t.275.7t-.275.7L3.45 7.3q-.275.275-.7.275t-.7-.275m19.9 0q-.275.275-.7.275t-.7-.275L17.7 4.45q-.275-.275-.275-.7t.275-.7t.7-.275t.7.275l2.85 2.85q.275.275.275.7t-.275.7"
+							></path>
+						</svg>
+					);
+				},
+				href: "/docs/concepts/rate-limit",
+			},
+			{
+				title: "Sessions",
+				href: "/docs/concepts/session-management",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							className="fill-current"
+							fillRule="evenodd"
+							d="M3 10.417c0-3.198 0-4.797.378-5.335c.377-.537 1.88-1.052 4.887-2.081l.573-.196C10.405 2.268 11.188 2 12 2s1.595.268 3.162.805l.573.196c3.007 1.029 4.51 1.544 4.887 2.081C21 5.62 21 7.22 21 10.417v1.574c0 5.638-4.239 8.375-6.899 9.536C13.38 21.842 13.02 22 12 22s-1.38-.158-2.101-.473C7.239 20.365 3 17.63 3 11.991zM14 9a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-2 8c4 0 4-.895 4-2s-1.79-2-4-2s-4 .895-4 2s0 2 4 2"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Typescript",
+				href: "/docs/concepts/typescript",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 128 128"
+					>
+						<path
+							className="fill-current"
+							d="M2 63.91v62.5h125v-125H2zm100.73-5a15.56 15.56 0 0 1 7.82 4.5a20.6 20.6 0 0 1 3 4c0 .16-5.4 3.81-8.69 5.85c-.12.08-.6-.44-1.13-1.23a7.09 7.09 0 0 0-5.87-3.53c-3.79-.26-6.23 1.73-6.21 5a4.6 4.6 0 0 0 .54 2.34c.83 1.73 2.38 2.76 7.24 4.86c8.95 3.85 12.78 6.39 15.16 10c2.66 4 3.25 10.46 1.45 15.24c-2 5.2-6.9 8.73-13.83 9.9a38.3 38.3 0 0 1-9.52-.1A23 23 0 0 1 80 109.19c-1.15-1.27-3.39-4.58-3.25-4.82a9 9 0 0 1 1.15-.73l4.6-2.64l3.59-2.08l.75 1.11a16.8 16.8 0 0 0 4.74 4.54c4 2.1 9.46 1.81 12.16-.62a5.43 5.43 0 0 0 .69-6.92c-1-1.39-3-2.56-8.59-5c-6.45-2.78-9.23-4.5-11.77-7.24a16.5 16.5 0 0 1-3.43-6.25a25 25 0 0 1-.22-8c1.33-6.23 6-10.58 12.82-11.87a31.7 31.7 0 0 1 9.49.26zm-29.34 5.24v5.12H57.16v46.23H45.65V69.26H29.38v-5a49 49 0 0 1 .14-5.16c.06-.08 10-.12 22-.1h21.81z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Users & Accounts",
+				href: "/docs/concepts/users-accounts",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							className="fill-current"
+							d="M17 15q-1.05 0-1.775-.725T14.5 12.5t.725-1.775T17 10t1.775.725t.725 1.775t-.725 1.775T17 15m-4 5q-.425 0-.712-.288T12 19v-.4q0-.6.313-1.112t.887-.738q.9-.375 1.863-.562T17 16t1.938.188t1.862.562q.575.225.888.738T22 18.6v.4q0 .425-.288.713T21 20zm-3-8q-1.65 0-2.825-1.175T6 8t1.175-2.825T10 4t2.825 1.175T14 8t-1.175 2.825T10 12m-8 5.2q0-.85.425-1.562T3.6 14.55q1.5-.75 3.113-1.15T10 13q.875 0 1.75.15t1.75.35l-1.7 1.7q-.625.625-1.213 1.275T10 18v.975q0 .3.113.563t.362.462H4q-.825 0-1.412-.587T2 18z"
+						></path>
+					</svg>
+				),
+			},
+		],
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					fillRule="evenodd"
+					d="M14.25 4.48v3.057c0 .111 0 .27.021.406a.94.94 0 0 0 .444.683a.96.96 0 0 0 .783.072c.13-.04.272-.108.378-.159L17 8.005l1.124.534c.106.05.248.119.378.16a.96.96 0 0 0 .783-.073a.94.94 0 0 0 .444-.683c.022-.136.021-.295.021-.406V3.031q.17-.008.332-.013C21.154 2.98 22 3.86 22 4.933v11.21c0 1.112-.906 2.01-2.015 2.08c-.97.06-2.108.179-2.985.41c-1.082.286-2.373.904-3.372 1.436q-.422.224-.878.323V5.174a3.6 3.6 0 0 0 .924-.371q.277-.162.576-.323m5.478 8.338a.75.75 0 0 1-.546.91l-4 1a.75.75 0 1 1-.364-1.456l4-1a.75.75 0 0 1 .91.546M11.25 5.214a3.4 3.4 0 0 1-.968-.339C9.296 4.354 8.05 3.765 7 3.487c-.887-.233-2.041-.352-3.018-.412C2.886 3.008 2 3.9 2 4.998v11.146c0 1.11.906 2.01 2.015 2.079c.97.06 2.108.179 2.985.41c1.081.286 2.373.904 3.372 1.436q.422.224.878.324zM4.273 8.818a.75.75 0 0 1 .91-.546l4 1a.75.75 0 1 1-.365 1.456l-4-1a.75.75 0 0 1-.545-.91m.91 3.454a.75.75 0 1 0-.365 1.456l4 1a.75.75 0 0 0 .364-1.456z"
+					clipRule="evenodd"
+				></path>
+				<path
+					className="fill-foreground"
+					d="M18.25 3.151c-.62.073-1.23.18-1.75.336a8 8 0 0 0-.75.27v3.182l.75-.356l.008-.005a1.1 1.1 0 0 1 .492-.13q.072 0 .138.01c.175.029.315.1.354.12l.009.005l.75.356V3.15"
+				></path>
+			</svg>
+		),
+	},
+	{
+		title: "Authentication",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					className="fill-foreground"
+					fillRule="evenodd"
+					d="M10 4h4c3.771 0 5.657 0 6.828 1.172C22 6.343 22 8.229 22 12c0 3.771 0 5.657-1.172 6.828C19.657 20 17.771 20 14 20h-4c-3.771 0-5.657 0-6.828-1.172C2 17.657 2 15.771 2 12c0-3.771 0-5.657 1.172-6.828C4.343 4 6.229 4 10 4m3.25 5a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75m1 3a.75.75 0 0 1 .75-.75h4a.75.75 0 0 1 0 1.5h-4a.75.75 0 0 1-.75-.75m1 3a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 0 1.5h-3a.75.75 0 0 1-.75-.75M11 9a2 2 0 1 1-4 0a2 2 0 0 1 4 0m-2 8c4 0 4-.895 4-2s-1.79-2-4-2s-4 .895-4 2s0 2 4 2"
+					clipRule="evenodd"
+				/>
+			</svg>
+		),
+		list: [
+			{
+				title: "Email & Password",
+				href: "/docs/authentication/email-password",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M3.172 5.172C2 6.343 2 8.229 2 12c0 3.771 0 5.657 1.172 6.828C4.343 20 6.229 20 10 20h4c3.771 0 5.657 0 6.828-1.172C22 17.657 22 15.771 22 12c0-3.771 0-5.657-1.172-6.828C19.657 4 17.771 4 14 4h-4C6.229 4 4.343 4 3.172 5.172M8 13a1 1 0 1 0 0-2a1 1 0 0 0 0 2m5-1a1 1 0 1 1-2 0a1 1 0 0 1 2 0m3 1a1 1 0 1 0 0-2a1 1 0 0 0 0 2"
+							clipRule="evenodd"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Social Sign-On",
+				group: true,
+				icon: LucideAArrowDown,
+				href: "/",
+			},
+			{
+				title: "Apple",
+				href: "/docs/authentication/apple",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 20 20"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M14.122 4.682c1.35 0 2.781.743 3.8 2.028c-3.34 1.851-2.797 6.674.578 7.963c-.465 1.04-.687 1.505-1.285 2.426c-.835 1.284-2.01 2.884-3.469 2.898c-1.295.012-1.628-.853-3.386-.843c-1.758.01-2.125.858-3.42.846c-1.458-.014-2.573-1.458-3.408-2.743C1.198 13.665.954 9.45 2.394 7.21C3.417 5.616 5.03 4.683 6.548 4.683c1.545 0 2.516.857 3.794.857c1.24 0 1.994-.858 3.78-.858M13.73 0c.18 1.215-.314 2.405-.963 3.247c-.695.902-1.892 1.601-3.05 1.565c-.21-1.163.332-2.36.99-3.167C11.43.755 12.67.074 13.73 0"
+						/>
+					</svg>
+				),
+			},
+
+			{
+				title: "Discord",
+				href: "/docs/authentication/discord",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M18.59 5.89c-1.23-.57-2.54-.99-3.92-1.23c-.17.3-.37.71-.5 1.04c-1.46-.22-2.91-.22-4.34 0c-.14-.33-.34-.74-.51-1.04c-1.38.24-2.69.66-3.92 1.23c-2.48 3.74-3.15 7.39-2.82 10.98c1.65 1.23 3.24 1.97 4.81 2.46c.39-.53.73-1.1 1.03-1.69c-.57-.21-1.11-.48-1.62-.79c.14-.1.27-.21.4-.31c3.13 1.46 6.52 1.46 9.61 0c.13.11.26.21.4.31c-.51.31-1.06.57-1.62.79c.3.59.64 1.16 1.03 1.69c1.57-.49 3.17-1.23 4.81-2.46c.39-4.17-.67-7.78-2.82-10.98Zm-9.75 8.78c-.94 0-1.71-.87-1.71-1.94s.75-1.94 1.71-1.94s1.72.87 1.71 1.94c0 1.06-.75 1.94-1.71 1.94m6.31 0c-.94 0-1.71-.87-1.71-1.94s.75-1.94 1.71-1.94s1.72.87 1.71 1.94c0 1.06-.75 1.94-1.71 1.94"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Facebook",
+				href: "/docs/authentication/facebook",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 64 64"
+					>
+						<path
+							fill="#888888"
+							d="M59.5 1h-55C2.5 1 1 2.6 1 4.5v55c0 2 1.6 3.5 3.5 3.5h29.6V38.9h-8v-9.3h8v-6.9c0-8 4.8-12.4 12-12.4c2.4 0 4.8.1 7.2.4V19h-4.8c-3.8 0-4.6 1.8-4.6 4.5v5.9H53l-1.3 9.4h-8v23.8h15.8c2 0 3.5-1.5 3.5-3.5V4.5c-.1-2-1.7-3.5-3.5-3.5"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "GitHub",
+				href: "/docs/authentication/github",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 15 15"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M7.5.25a7.25 7.25 0 0 0-2.292 14.13c.363.066.495-.158.495-.35c0-.172-.006-.628-.01-1.233c-2.016.438-2.442-.972-2.442-.972c-.33-.838-.805-1.06-.805-1.06c-.658-.45.05-.441.05-.441c.728.051 1.11.747 1.11.747c.647 1.108 1.697.788 2.11.602c.066-.468.254-.788.46-.969c-1.61-.183-3.302-.805-3.302-3.583a2.8 2.8 0 0 1 .747-1.945c-.075-.184-.324-.92.07-1.92c0 0 .61-.194 1.994.744A6.963 6.963 0 0 1 7.5 3.756A6.97 6.97 0 0 1 9.315 4c1.384-.938 1.992-.743 1.992-.743c.396.998.147 1.735.072 1.919c.465.507.745 1.153.745 1.945c0 2.785-1.695 3.398-3.31 3.577c.26.224.492.667.492 1.343c0 .97-.009 1.751-.009 1.989c0 .194.131.42.499.349A7.25 7.25 0 0 0 7.499.25"
+							clipRule="evenodd"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Google",
+				href: "/docs/authentication/google",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 56 56"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M28.458 5c6.167 0 11.346 2.2 15.368 5.804l.323.295l-6.62 6.464c-1.695-1.59-4.666-3.493-9.07-3.493c-6.204 0-11.47 4.093-13.372 9.749c-.47 1.46-.756 3.023-.756 4.64c0 1.615.287 3.18.782 4.639c1.877 5.656 7.142 9.748 13.345 9.748c3.347 0 5.928-.886 7.881-2.176l.251-.17l.307-.222c2.813-2.108 4.144-5.084 4.46-7.169l.03-.22h-12.93v-8.705h22.025c.339 1.46.495 2.867.495 4.795c0 7.142-2.554 13.163-6.985 17.255c-3.884 3.597-9.201 5.682-15.535 5.682c-9.031 0-16.85-5.102-20.772-12.57l-.184-.358l-.222-.457A23.45 23.45 0 0 1 5 28.458c0-3.6.827-7.01 2.28-10.073l.222-.457l.184-.357C11.608 10.1 19.426 5 28.458 5"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Kick",
+				href: "/docs/authentication/kick",
+				isNew: true,
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="#888888"
+							d="M9 3a1 1 0 0 1 1 1v3h1V6a1 1 0 0 1 .883-.993L12 5h1V4a1 1 0 0 1 .883-.993L14 3h6a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1v1a1 1 0 0 1-.883.993L18 11h-1v2h1a1 1 0 0 1 .993.883L19 14v1h1a1 1 0 0 1 .993.883L21 16v4a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-1h-1a1 1 0 0 1-.993-.883L11 18v-1h-1v3a1 1 0 0 1-.883.993L9 21H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Microsoft",
+				href: "/docs/authentication/microsoft",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M2 3h9v9H2zm9 19H2v-9h9zM21 3v9h-9V3zm0 19h-9v-9h9z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Tiktok",
+				href: "/docs/authentication/tiktok",
+				isNew: true,
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743l-.002-.001.002.001a2.895 2.895 0 0 1 3.183-4.51v-3.5a6.329 6.329 0 0 0-5.394 10.692 6.33 6.33 0 0 0 10.857-4.424V8.687a8.182 8.182 0 0 0 4.773 1.526V6.79a4.831 4.831 0 0 1-1.003-.104z"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Twitch",
+				href: "/docs/authentication/twitch",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M3.9 2.5a.9.9 0 0 0-.9.9v14.194a.9.9 0 0 0 .9.9h4.116v3.03a.7.7 0 0 0 1.194.494l3.525-3.524h4.643a.9.9 0 0 0 .636-.264l2.722-2.722a.9.9 0 0 0 .264-.636V3.4a.9.9 0 0 0-.9-.9zm7.319 5.2a.75.75 0 0 0-1.5 0v4.272a.75.75 0 1 0 1.5 0zm5.016 0a.75.75 0 0 0-1.5 0v4.272a.75.75 0 1 0 1.5 0z"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Twitter (X)",
+				href: "/docs/authentication/twitter",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 448 512"
+					>
+						<path
+							fill="currentColor"
+							d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Dropbox",
+				href: "/docs/authentication/dropbox",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 528 512"
+					>
+						<path
+							className="fill-current"
+							fillRule="evenodd"
+							d="M264.4 116.3l-132 84.3 132 84.3-132 84.3L0 284.1l132.3-84.3L0 116.3 132.3 32l132.1 84.3zM131.6 395.7l132-84.3 132 84.3-132 84.3-132-84.3zm132.8-111.6l132-84.3-132-83.6L395.7 32 528 116.3l-132.3 84.3L528 284.8l-132.3 84.3-131.3-85z"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "LinkedIn",
+				href: "/docs/authentication/linkedin",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 448 512"
+						fill="currentColor"
+					>
+						<path
+							d="M416 32H31.9C14.3 32 0 46.5 0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6 0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3 0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2 0 38.5 17.3 38.5 38.5 0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6 0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2 0 79.7 44.3 79.7 101.9V416z"
+							fill="currentColor"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "GitLab",
+				href: "/docs/authentication/gitlab",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							fill="currentColor"
+							d="m28.568 12.893l-.037-.094l-3.539-9.235a.92.92 0 0 0-.364-.439a.95.95 0 0 0-1.083.058a.95.95 0 0 0-.314.477l-2.39 7.31h-9.675l-2.39-7.31a.93.93 0 0 0-.313-.478a.95.95 0 0 0-1.083-.058a.93.93 0 0 0-.365.438L3.47 12.794l-.035.093a6.57 6.57 0 0 0 2.18 7.595l.011.01l.033.022l5.39 4.037l2.668 2.019l1.624 1.226c.39.297.931.297 1.322 0l1.624-1.226l2.667-2.019l5.424-4.061l.013-.01a6.574 6.574 0 0 0 2.177-7.588Z"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Reddit",
+				href: "/docs/authentication/reddit",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							d="M29.9999 12.0001C29.9998 11.2336 29.7793 10.4832 29.3649 9.8384C28.9505 9.19356 28.3595 8.68139 27.6623 8.36282C26.9652 8.04425 26.1911 7.93271 25.4324 8.04148C24.6736 8.15024 23.9621 8.47473 23.3824 8.97633C21.2887 7.86383 18.7874 7.19132 16.1749 7.03507L16.8237 3.13883L19.0387 3.47883C19.1511 4.17754 19.5068 4.81402 20.0431 5.27579C20.5794 5.73757 21.2616 5.99489 21.9693 6.00228C22.6769 6.00967 23.3644 5.76665 23.9102 5.31618C24.456 4.86571 24.825 4.23679 24.952 3.54058C25.0789 2.84437 24.9556 2.1257 24.604 1.51158C24.2523 0.897463 23.6948 0.427445 23.0301 0.184601C22.3654 -0.0582438 21.6362 -0.0582795 20.9715 0.1845C20.3067 0.42728 19.7492 0.897242 19.3974 1.51133L16.1474 1.01133C15.8874 0.971236 15.6221 1.03522 15.409 1.18941C15.1958 1.34361 15.052 1.57558 15.0087 1.83508L14.1499 7.02008C11.4199 7.13758 8.79744 7.81757 6.61744 8.97633C5.82132 8.30379 4.79416 7.96851 3.75457 8.04187C2.71499 8.11523 1.74508 8.59143 1.0513 9.36911C0.357515 10.1468 -0.00535957 11.1645 0.0399123 12.2057C0.0851841 13.2469 0.535027 14.2293 1.29369 14.9438C1.09926 15.612 1.00036 16.3042 0.999944 17.0001C0.999944 19.7413 2.49994 22.2938 5.23869 24.1863C7.85994 26.0001 11.3262 27.0001 14.9999 27.0001C18.6737 27.0001 22.1399 26.0001 24.7612 24.1863C27.4999 22.2938 28.9999 19.7413 28.9999 17.0001C28.9995 16.3042 28.9006 15.612 28.7062 14.9438C29.1128 14.5686 29.4376 14.1135 29.6602 13.6069C29.8828 13.1004 29.9985 12.5534 29.9999 12.0001ZM7.99994 15.0001C7.99994 14.6045 8.11724 14.2178 8.337 13.8889C8.55677 13.56 8.86912 13.3037 9.23458 13.1523C9.60003 13.0009 10.0022 12.9613 10.3901 13.0385C10.7781 13.1157 11.1345 13.3062 11.4142 13.5859C11.6939 13.8656 11.8843 14.2219 11.9615 14.6099C12.0387 14.9979 11.9991 15.4 11.8477 15.7654C11.6963 16.1309 11.44 16.4433 11.1111 16.663C10.7822 16.8828 10.3955 17.0001 9.99994 17.0001C9.46951 17.0001 8.9608 16.7894 8.58573 16.4143C8.21066 16.0392 7.99994 15.5305 7.99994 15.0001ZM19.4687 21.8838C18.0927 22.6151 16.5582 22.9975 14.9999 22.9975C13.4417 22.9975 11.9072 22.6151 10.5312 21.8838C10.4151 21.8223 10.3123 21.7385 10.2287 21.6372C10.145 21.5359 10.0821 21.4191 10.0436 21.2935C10.005 21.1679 9.99162 21.036 10.0041 20.9052C10.0165 20.7744 10.0546 20.6474 10.1162 20.5313C10.1778 20.4153 10.2616 20.3125 10.3628 20.2288C10.4641 20.1451 10.5809 20.0822 10.7065 20.0437C10.8321 20.0052 10.964 19.9918 11.0948 20.0042C11.2256 20.0167 11.3526 20.0548 11.4687 20.1163C12.556 20.6944 13.7685 20.9967 14.9999 20.9967C16.2313 20.9967 17.4439 20.6944 18.5312 20.1163C18.6472 20.0548 18.7743 20.0167 18.9051 20.0042C19.0358 19.9918 19.1678 20.0052 19.2934 20.0437C19.419 20.0822 19.5358 20.1451 19.637 20.2288C19.7383 20.3125 19.8221 20.4153 19.8837 20.5313C19.9453 20.6474 19.9833 20.7744 19.9958 20.9052C20.0083 21.036 19.9948 21.1679 19.9563 21.2935C19.9178 21.4191 19.8549 21.5359 19.7712 21.6372C19.6875 21.7385 19.5847 21.8223 19.4687 21.8838ZM19.9999 17.0001C19.6044 17.0001 19.2177 16.8828 18.8888 16.663C18.5599 16.4433 18.3036 16.1309 18.1522 15.7654C18.0008 15.4 17.9612 14.9979 18.0384 14.6099C18.1155 14.2219 18.306 13.8656 18.5857 13.5859C18.8654 13.3062 19.2218 13.1157 19.6098 13.0385C19.9977 12.9613 20.3999 13.0009 20.7653 13.1523C21.1308 13.3037 21.4431 13.56 21.6629 13.8889C21.8826 14.2178 21.9999 14.6045 21.9999 15.0001C21.9999 15.5305 21.7892 16.0392 21.4142 16.4143C21.0391 16.7894 20.5304 17.0001 19.9999 17.0001Z"
+							fill="currentColor"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Roblox",
+				href: "/docs/authentication/roblox",
+				isNew: true,
+				icon: () => (
+					<svg
+						version="1.1"
+						id="svg10"
+						x="0px"
+						y="0px"
+						viewBox="0 0 302.7 302.7"
+						width="1.2em"
+						height="1.2em"
+						fill="currentColor"
+					>
+						<path
+							id="path20"
+							d="M120.5,271.7c-110.9-28.6-120-31-119.9-31.5
+C0.7,239.6,62.1,0.5,62.2,0.4c0,0,54,13.8,119.9,30.8S302.1,62,302.2,62c0.2,0,0.2,0.4,0.1,0.9c-0.2,1.5-61.5,239.3-61.7,239.5
+	C240.6,302.5,186.5,288.7,120.5,271.7z M174.9,158c3.2-12.6,5.9-23.1,6-23.4c0.1-0.5-2.3-1.2-23.2-6.6c-12.8-3.3-23.5-5.9-23.6-5.8
+	c-0.3,0.3-12.1,46.6-12,46.7c0.2,0.2,46.7,12.2,46.8,12.1C168.9,180.9,171.6,170.6,174.9,158L174.9,158z"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Spotify",
+				href: "/docs/authentication/spotify",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 256 256"
+						preserveAspectRatio="xMidYMid"
+					>
+						<path
+							d="M128 0C57.308 0 0 57.309 0 128c0 70.696 57.309 128 128 128 70.697 0 128-57.304 128-128C256 57.314 198.697.007 127.998.007l.001-.006Zm58.699 184.614c-2.293 3.76-7.215 4.952-10.975 2.644-30.053-18.357-67.885-22.515-112.44-12.335a7.981 7.981 0 0 1-9.552-6.007 7.968 7.968 0 0 1 6-9.553c48.76-11.14 90.583-6.344 124.323 14.276 3.76 2.308 4.952 7.215 2.644 10.975Zm15.667-34.853c-2.89 4.695-9.034 6.178-13.726 3.289-34.406-21.148-86.853-27.273-127.548-14.92-5.278 1.594-10.852-1.38-12.454-6.649-1.59-5.278 1.386-10.842 6.655-12.446 46.485-14.106 104.275-7.273 143.787 17.007 4.692 2.89 6.175 9.034 3.286 13.72v-.001Zm1.345-36.293C162.457 88.964 94.394 86.71 55.007 98.666c-6.325 1.918-13.014-1.653-14.93-7.978-1.917-6.328 1.65-13.012 7.98-14.935C93.27 62.027 168.434 64.68 215.929 92.876c5.702 3.376 7.566 10.724 4.188 16.405-3.362 5.69-10.73 7.565-16.4 4.187h-.006Z"
+							fill="currentColor"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "VK",
+				isNew: true,
+				href: "/docs/authentication/vk",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 20 20"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M17.802 12.298s1.617 1.597 2.017 2.336a.1.1 0 0 1 .018.035q.244.409.123.645c-.135.261-.592.392-.747.403h-2.858c-.199 0-.613-.052-1.117-.4c-.385-.269-.768-.712-1.139-1.145c-.554-.643-1.033-1.201-1.518-1.201a.6.6 0 0 0-.18.03c-.367.116-.833.639-.833 2.032c0 .436-.344.684-.585.684H9.674c-.446 0-2.768-.156-4.827-2.327C2.324 10.732.058 5.4.036 5.353c-.141-.345.155-.533.475-.533h2.886c.387 0 .513.234.601.444c.102.241.48 1.205 1.1 2.288c1.004 1.762 1.621 2.479 2.114 2.479a.53.53 0 0 0 .264-.07c.644-.354.524-2.654.494-3.128c0-.092-.001-1.027-.331-1.479c-.236-.324-.638-.45-.881-.496c.065-.094.203-.238.38-.323c.441-.22 1.238-.252 2.029-.252h.439c.858.012 1.08.067 1.392.146c.628.15.64.557.585 1.943c-.016.396-.033.842-.033 1.367c0 .112-.005.237-.005.364c-.019.711-.044 1.512.458 1.841a.4.4 0 0 0 .217.062c.174 0 .695 0 2.108-2.425c.62-1.071 1.1-2.334 1.133-2.429c.028-.053.112-.202.214-.262a.5.5 0 0 1 .236-.056h3.395c.37 0 .621.056.67.196c.082.227-.016.92-1.566 3.016c-.261.349-.49.651-.691.915c-1.405 1.844-1.405 1.937.083 3.337"
+							clipRule="evenodd"
+						/>
+					</svg>
+				),
+			},
+
+			{
+				title: "Others",
+				group: true,
+				icon: () => null,
+				href: "/docs/authentication/others",
+			},
+			{
+				title: "Other Social Providers",
+				href: "/docs/authentication/other-social-providers",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M11.5 2a5.5 5.5 0 1 0 0 11a5.5 5.5 0 0 0 0-11M13 17.75a4.75 4.75 0 1 1 8.74 2.578l1.674 1.671l-1.413 1.415l-1.675-1.673A4.75 4.75 0 0 1 13 17.75M17.75 15a2.75 2.75 0 1 0 0 5.5a2.75 2.75 0 0 0 0-5.5m-5-1a6.22 6.22 0 0 0-1.25 3.75c0 1.641.633 3.135 1.667 4.25H2v-2a6 6 0 0 1 6-6z"
+						/>
+					</svg>
+				),
+			},
+		],
+	},
+	{
+		title: "Databases",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="20px"
+				height="20px"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M12 11q-3.75 0-6.375-1.175T3 7q0-1.65 2.625-2.825Q8.25 3 12 3t6.375 1.175Q21 5.35 21 7q0 1.65-2.625 2.825Q15.75 11 12 11Zm0 5q-3.75 0-6.375-1.175T3 12V9.5q0 1.1 1.025 1.863q1.025.762 2.45 1.237q1.425.475 2.963.687q1.537.213 2.562.213t2.562-.213q1.538-.212 2.963-.687q1.425-.475 2.45-1.237Q21 10.6 21 9.5V12q0 1.65-2.625 2.825Q15.75 16 12 16Zm0 5q-3.75 0-6.375-1.175T3 17v-2.5q0 1.1 1.025 1.863q1.025.762 2.45 1.237q1.425.475 2.963.688q1.537.212 2.562.212t2.562-.212q1.538-.213 2.963-.688t2.45-1.237Q21 15.6 21 14.5V17q0 1.65-2.625 2.825Q15.75 21 12 21Z"
+				/>
+			</svg>
+		),
+		list: [
+			{
+				title: "MySQL",
+				href: "/docs/adapters/mysql",
+				icon: () => (
+					<svg
+						fill="currentColor"
+						width="16px"
+						height="16px"
+						viewBox="0 0 24 24"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path d="m24.129 23.412-.508-.484c-.251-.331-.518-.624-.809-.891l-.005-.004q-.448-.407-.931-.774-.387-.266-1.064-.641c-.371-.167-.661-.46-.818-.824l-.004-.01-.048-.024c.212-.021.406-.06.592-.115l-.023.006.57-.157c.236-.074.509-.122.792-.133h.006c.298-.012.579-.06.847-.139l-.025.006q.194-.048.399-.109t.351-.109v-.169q-.145-.217-.351-.496c-.131-.178-.278-.333-.443-.468l-.005-.004q-.629-.556-1.303-1.076c-.396-.309-.845-.624-1.311-.916l-.068-.04c-.246-.162-.528-.312-.825-.435l-.034-.012q-.448-.182-.883-.399c-.097-.048-.21-.09-.327-.119l-.011-.002c-.117-.024-.217-.084-.29-.169l-.001-.001c-.138-.182-.259-.389-.355-.609l-.008-.02q-.145-.339-.314-.651-.363-.702-.702-1.427t-.651-1.452q-.217-.484-.399-.967c-.134-.354-.285-.657-.461-.942l.013.023c-.432-.736-.863-1.364-1.331-1.961l.028.038c-.463-.584-.943-1.106-1.459-1.59l-.008-.007c-.509-.478-1.057-.934-1.632-1.356l-.049-.035q-.896-.651-1.96-1.282c-.285-.168-.616-.305-.965-.393l-.026-.006-1.113-.278-.629-.048q-.314-.024-.629-.024c-.148-.078-.275-.171-.387-.279-.11-.105-.229-.204-.353-.295l-.01-.007c-.605-.353-1.308-.676-2.043-.93l-.085-.026c-.193-.113-.425-.179-.672-.179-.176 0-.345.034-.499.095l.009-.003c-.38.151-.67.458-.795.84l-.003.01c-.073.172-.115.371-.115.581 0 .368.13.705.347.968l-.002-.003q.544.725.834 1.14.217.291.448.605c.141.188.266.403.367.63l.008.021c.056.119.105.261.141.407l.003.016q.048.206.121.448.217.556.411 1.14c.141.425.297.785.478 1.128l-.019-.04q.145.266.291.52t.314.496c.065.098.147.179.241.242l.003.002c.099.072.164.185.169.313v.001c-.114.168-.191.369-.217.586l-.001.006c-.035.253-.085.478-.153.695l.008-.03c-.223.666-.351 1.434-.351 2.231 0 .258.013.512.04.763l-.003-.031c.06.958.349 1.838.812 2.6l-.014-.025c.197.295.408.552.641.787.168.188.412.306.684.306.152 0 .296-.037.422-.103l-.005.002c.35-.126.599-.446.617-.827v-.002c.048-.474.12-.898.219-1.312l-.013.067c.024-.063.038-.135.038-.211 0-.015-.001-.03-.002-.045v.002q-.012-.109.133-.206v.048q.145.339.302.677t.326.677c.295.449.608.841.952 1.202l-.003-.003c.345.372.721.706 1.127 1.001l.022.015c.212.162.398.337.566.528l.004.004c.158.186.347.339.56.454l.01.005v-.024h.048c-.039-.087-.102-.157-.18-.205l-.002-.001c-.079-.044-.147-.088-.211-.136l.005.003q-.217-.217-.448-.484t-.423-.508q-.508-.702-.969-1.467t-.871-1.555q-.194-.387-.375-.798t-.351-.798c-.049-.099-.083-.213-.096-.334v-.005c-.006-.115-.072-.214-.168-.265l-.002-.001c-.121.206-.255.384-.408.545l.001-.001c-.159.167-.289.364-.382.58l-.005.013c-.141.342-.244.739-.289 1.154l-.002.019q-.072.641-.145 1.318l-.048.024-.024.024c-.26-.053-.474-.219-.59-.443l-.002-.005q-.182-.351-.326-.69c-.248-.637-.402-1.374-.423-2.144v-.009c-.009-.122-.013-.265-.013-.408 0-.666.105-1.308.299-1.91l-.012.044q.072-.266.314-.896t.097-.871c-.05-.165-.143-.304-.265-.41l-.001-.001c-.122-.106-.233-.217-.335-.335l-.003-.004q-.169-.244-.326-.52t-.278-.544c-.165-.382-.334-.861-.474-1.353l-.022-.089c-.159-.565-.336-1.043-.546-1.503l.026.064c-.111-.252-.24-.47-.39-.669l.006.008q-.244-.326-.436-.617-.244-.314-.484-.605c-.163-.197-.308-.419-.426-.657l-.009-.02c-.048-.097-.09-.21-.119-.327l-.002-.011c-.011-.035-.017-.076-.017-.117 0-.082.024-.159.066-.223l-.001.002c.011-.056.037-.105.073-.145.039-.035.089-.061.143-.072h.002c.085-.055.188-.088.3-.088.084 0 .165.019.236.053l-.003-.001c.219.062.396.124.569.195l-.036-.013q.459.194.847.375c.298.142.552.292.792.459l-.018-.012q.194.121.387.266t.411.291h.339q.387 0 .822.037c.293.023.564.078.822.164l-.024-.007c.481.143.894.312 1.286.515l-.041-.019q.593.302 1.125.641c.589.367 1.098.743 1.577 1.154l-.017-.014c.5.428.954.867 1.38 1.331l.01.012c.416.454.813.947 1.176 1.464l.031.047c.334.472.671 1.018.974 1.584l.042.085c.081.154.163.343.234.536l.011.033q.097.278.217.57.266.605.57 1.221t.57 1.198l.532 1.161c.187.406.396.756.639 1.079l-.011-.015c.203.217.474.369.778.422l.008.001c.368.092.678.196.978.319l-.047-.017c.143.065.327.134.516.195l.04.011c.212.065.396.151.565.259l-.009-.005c.327.183.604.363.868.559l-.021-.015q.411.302.822.57.194.145.651.423t.484.52c-.114-.004-.249-.007-.384-.007-.492 0-.976.032-1.45.094l.056-.006c-.536.072-1.022.203-1.479.39l.04-.014c-.113.049-.248.094-.388.129l-.019.004c-.142.021-.252.135-.266.277v.001c.061.076.11.164.143.26l.002.006c.034.102.075.19.125.272l-.003-.006c.119.211.247.393.391.561l-.004-.005c.141.174.3.325.476.454l.007.005q.244.194.508.399c.161.126.343.25.532.362l.024.013c.284.174.614.34.958.479l.046.016c.374.15.695.324.993.531l-.016-.011q.291.169.58.375t.556.399c.073.072.137.152.191.239l.003.005c.091.104.217.175.36.193h.003v-.048c-.088-.067-.153-.16-.184-.267l-.001-.004c-.025-.102-.062-.191-.112-.273l.002.004zm-18.576-19.205q-.194 0-.363.012c-.115.008-.222.029-.323.063l.009-.003v.024h.048q.097.145.244.326t.266.351l.387.798.048-.024c.113-.082.2-.192.252-.321l.002-.005c.052-.139.082-.301.082-.469 0-.018 0-.036-.001-.054v.003c-.045-.044-.082-.096-.108-.154l-.001-.003-.081-.182c-.053-.084-.127-.15-.214-.192l-.003-.001c-.094-.045-.174-.102-.244-.169z" />
+					</svg>
+				),
+			},
+			{
+				title: "Sqlite",
+				href: "/docs/adapters/sqlite",
+				icon: () => (
+					<svg
+						fill="currentColor"
+						width="16px"
+						height="16px"
+						viewBox="0 0 32 32"
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path d="M4.884 2.334c-1.265 0.005-2.289 1.029-2.293 2.294v20.754c0.004 1.264 1.028 2.288 2.293 2.292h11.769c-0.056-0.671-0.088-1.452-0.088-2.241 0-0.401 0.008-0.801 0.025-1.198l-0.002 0.057c-0.008-0.077-0.014-0.176-0.020-0.25q-0.229-1.498-0.591-2.972c-0.119-0.504-0.277-0.944-0.478-1.36l0.017 0.039c-0.080-0.126-0.127-0.279-0.127-0.443 0-0.034 0.002-0.068 0.006-0.101l-0 0.004c0.003-0.173 0.020-0.339 0.049-0.501l-0.003 0.019c0.088-0.523 0.19-0.963 0.314-1.394l-0.022 0.088 0.271-0.035c-0.021-0.044-0.018-0.081-0.039-0.121l-0.051-0.476q0.224-0.751 0.477-1.492l0.25-0.024c-0.010-0.020-0.012-0.047-0.023-0.066l-0.054-0.395c1.006-4.731 3.107-8.864 6.029-12.272l-0.031 0.037c0.082-0.086 0.166-0.16 0.247-0.242zM28.094 1.655c-1.29-1.15-2.849-0.687-4.39 0.68q-0.356 0.319-0.684 0.669c-2.8 3.294-4.843 7.319-5.808 11.747l-0.033 0.18c0.261 0.551 0.494 1.201 0.664 1.876l0.016 0.075q0.115 0.436 0.205 0.878s-0.024-0.089-0.12-0.37l-0.062-0.182q-0.019-0.050-0.041-0.1c-0.172-0.4-0.647-1.243-0.857-1.611-0.179 0.529-0.337 1.022-0.47 1.47 0.413 0.863 0.749 1.867 0.959 2.917l0.014 0.083s-0.031-0.124-0.184-0.552c-0.342-0.739-0.664-1.338-1.015-1.919l0.050 0.089c-0.185 0.464-0.292 1.001-0.292 1.564 0 0.1 0.003 0.199 0.010 0.297l-0.001-0.013c0.219 0.426 0.401 0.921 0.519 1.439l0.008 0.043c0.357 1.375 0.606 3.049 0.606 3.049l0.021 0.28c-0.015 0.342-0.023 0.744-0.023 1.147 0 0.805 0.034 1.602 0.101 2.39l-0.007-0.103c0.058 1.206 0.283 2.339 0.651 3.406l-0.026-0.086 0.194-0.105c-0.346-1.193-0.545-2.564-0.545-3.981 0-0.344 0.012-0.684 0.035-1.022l-0.003 0.046c0.221-3.782 0.964-7.319 2.158-10.641l-0.083 0.264c1.655-4.9 4.359-9.073 7.861-12.417l0.012-0.011c-2.491 2.249-5.863 9.535-6.873 12.232-0.963 2.42-1.798 5.294-2.365 8.263l-0.048 0.305c0.664-1.639 1.914-2.926 3.483-3.622l0.042-0.017s1.321-1.63 2.864-3.956c-1.195 0.25-2.184 0.521-3.15 0.843l0.199-0.057c-0.75 0.314-0.952 0.421-0.952 0.421 1.288-0.791 2.777-1.515 4.337-2.092l0.178-0.058c2.867-4.515 5.991-10.929 2.845-13.736z"></path>
+					</svg>
+				),
+			},
+			{
+				title: "PostgreSQL",
+				href: "/docs/adapters/postgresql",
+				icon: () => (
+					<svg
+						fill="currentColor"
+						width="16px"
+						height="16px"
+						viewBox="0 0 32 32"
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path d="M24.295 9.929c-0.010 0.155-0.082 0.292-0.191 0.387l-0.001 0.001c-0.131 0.143-0.306 0.243-0.504 0.278l-0.005 0.001c-0.028 0.004-0.061 0.007-0.094 0.007h-0c-0.001 0-0.003 0-0.004 0-0.312 0-0.58-0.189-0.694-0.46l-0.002-0.005c-0.030-0.221 0.33-0.388 0.701-0.44s0.764 0.011 0.794 0.231zM14.385 10.443c-0.121 0.311-0.418 0.528-0.766 0.528-0.004 0-0.007-0-0.011-0h0.001c-0 0-0 0-0 0-0.036 0-0.070-0.003-0.105-0.007l0.004 0c-0.261-0.047-0.483-0.191-0.63-0.392l-0.002-0.003c-0.082-0.094-0.132-0.219-0.132-0.354 0-0 0-0.001 0-0.001v0c0.012-0.077 0.055-0.143 0.115-0.185l0.001-0.001c0.152-0.084 0.334-0.133 0.528-0.133 0.083 0 0.164 0.009 0.242 0.026l-0.007-0.001c0.395 0.055 0.803 0.242 0.764 0.523zM25.403 18.086l-0.107-0.134-0.044-0.055c0.457-0.846 0.725-1.853 0.725-2.921 0-0.488-0.056-0.962-0.162-1.418l0.008 0.042c-0.070-0.453-0.111-0.976-0.111-1.508 0-0.007 0-0.014 0-0.021v0.001c0.023-0.501 0.076-0.97 0.158-1.429l-0.010 0.066c0.089-0.464 0.14-0.998 0.14-1.544 0-0.051-0-0.101-0.001-0.151l0 0.008c0.012-0.049 0.019-0.104 0.019-0.162 0-0.027-0.002-0.053-0.004-0.079l0 0.003c-0.4-1.58-1.151-2.949-2.168-4.073l0.007 0.008c-0.911-1.068-2.031-1.929-3.3-2.523l-0.060-0.025c0.696-0.149 1.496-0.234 2.316-0.234 0.075 0 0.15 0.001 0.225 0.002l-0.011-0c0.045-0.001 0.097-0.002 0.15-0.002 2.378 0 4.496 1.109 5.866 2.838l0.012 0.016c0.028 0.036 0.056 0.077 0.080 0.12l0.003 0.005c0.904 1.694-0.345 7.842-3.732 13.172zM25.117 9.322c-0.016 0.455-0.064 0.886-0.14 1.307l0.008-0.055c-0.078 0.425-0.134 0.931-0.157 1.445l-0.001 0.025c-0 0.017-0 0.036-0 0.056 0 0.567 0.042 1.124 0.124 1.668l-0.008-0.061c0.085 0.377 0.134 0.809 0.134 1.254 0 0.763-0.144 1.493-0.407 2.162l0.014-0.040c-0.076-0.131-0.155-0.289-0.224-0.453l-0.011-0.029c-0.066-0.159-0.209-0.416-0.406-0.77-0.769-1.38-2.571-4.611-1.649-5.929 0.474-0.678 1.676-0.707 2.722-0.579zM24.406 20.907c-0.051-1.039 0.336-1.148 0.746-1.263q0.085-0.023 0.169-0.051c0.050 0.044 0.105 0.087 0.162 0.125l0.005 0.003c0.62 0.273 1.342 0.431 2.102 0.431 0.592 0 1.161-0.096 1.693-0.274l-0.038 0.011c-0.344 0.293-0.736 0.544-1.16 0.738l-0.031 0.013c-0.644 0.264-1.391 0.429-2.173 0.454l-0.010 0c-0.119 0.018-0.256 0.029-0.395 0.029-0.386 0-0.754-0.080-1.087-0.224l0.018 0.007zM23.293 22.933c-0.021 0.221-0.045 0.47-0.077 0.745l-0.182 0.548c-0.014 0.040-0.022 0.086-0.023 0.134v0c0.001 0.027 0.001 0.058 0.001 0.089 0 0.355-0.053 0.699-0.151 1.022l0.006-0.025c-0.116 0.389-0.196 0.84-0.223 1.305l-0.001 0.016c-0.052 1.684-1.355 3.047-3.008 3.194l-0.013 0.001c-1.894 0.406-2.23-0.621-2.526-1.527q-0.045-0.142-0.096-0.283c-0.16-0.652-0.252-1.401-0.252-2.171 0-0.36 0.020-0.715 0.059-1.065l-0.004 0.043c0.006-0.128 0.009-0.279 0.009-0.43 0-1.026-0.154-2.016-0.441-2.948l0.019 0.071q0.008-0.55 0.024-1.114c0-0.003 0-0.008 0-0.012 0-0.046-0.007-0.090-0.020-0.132l0.001 0.003c-0.014-0.1-0.033-0.188-0.058-0.273l0.003 0.013c-0.141-0.521-0.496-0.941-0.964-1.164l-0.011-0.005c-0.176-0.088-0.384-0.14-0.605-0.14-0.104 0-0.205 0.011-0.302 0.033l0.009-0.002c0.128-0.47 0.26-0.854 0.412-1.228l-0.026 0.073 0.066-0.177c0.074-0.2 0.167-0.407 0.266-0.626 0.546-1.124 0.865-2.445 0.865-3.841 0-0.938-0.144-1.842-0.411-2.692l0.017 0.063c-0.183-1.108-1.135-1.943-2.281-1.943-0.18 0-0.356 0.021-0.524 0.060l0.016-0.003c-0.796 0.104-1.516 0.338-2.171 0.682l0.035-0.017q-0.124 0.063-0.245 0.13c0.091-2.147 0.896-4.090 2.181-5.615l-0.012 0.014c0.118-0.119 0.242-0.232 0.37-0.338l0.009-0.007c0.069-0.014 0.13-0.042 0.182-0.081l-0.001 0.001c0.893-0.654 2.014-1.047 3.227-1.047 0.097 0 0.193 0.002 0.288 0.007l-0.013-0.001c0.526 0.008 1.034 0.044 1.534 0.108l-0.067-0.007c2.043 0.393 3.787 1.463 5.032 2.963l0.011 0.014c0.748 0.869 1.354 1.887 1.766 2.998l0.022 0.069c-0.257-0.069-0.552-0.109-0.856-0.109-0.983 0-1.868 0.416-2.49 1.081l-0.002 0.002c-1.24 1.773 0.679 5.215 1.601 6.869 0.169 0.303 0.315 0.565 0.361 0.676 0.26 0.601 0.587 1.118 0.98 1.577l-0.007-0.008c0.087 0.109 0.171 0.214 0.236 0.306-0.501 0.144-1.401 0.478-1.319 2.146-0.015 0.195-0.053 0.558-0.104 1.018-0.054 0.269-0.098 0.597-0.123 0.93l-0.002 0.028zM14.091 17.219l-0.066 0.176c-0.137 0.328-0.279 0.745-0.397 1.172l-0.019 0.081c-0.893-0.013-1.695-0.395-2.261-1.001l-0.002-0.002c-0.632-0.667-1.020-1.57-1.020-2.564 0-0.198 0.015-0.392 0.045-0.582l-0.003 0.021c0.097-0.72 0.153-1.551 0.153-2.396 0-0.502-0.020-0.999-0.058-1.491l0.004 0.065c-0.006-0.107-0.012-0.201-0.015-0.275 0.805-0.611 1.824-0.98 2.929-0.98 0.132 0 0.262 0.005 0.391 0.015l-0.017-0.001c0.554 0.129 0.971 0.588 1.037 1.153l0.001 0.006c0.238 0.728 0.375 1.566 0.375 2.435 0 1.266-0.291 2.464-0.809 3.532l0.021-0.048c-0.105 0.233-0.204 0.453-0.289 0.682zM11.474 22.203c-0.205-0.052-0.385-0.128-0.549-0.227l0.009 0.005c0.172-0.073 0.375-0.134 0.585-0.173l0.019-0.003c1.604-0.33 1.851-0.563 2.392-1.25 0.124-0.157 0.264-0.336 0.459-0.553 0.040-0.045 0.072-0.099 0.091-0.159l0.001-0.003c0.213-0.189 0.34-0.137 0.546-0.052 0.227 0.125 0.395 0.336 0.46 0.587l0.001 0.007c0.023 0.065 0.037 0.139 0.037 0.217 0 0.125-0.035 0.242-0.095 0.341l0.002-0.003c-0.645 0.882-1.676 1.449-2.839 1.449-0.4 0-0.785-0.067-1.144-0.191l0.025 0.007zM3.967 15.846c-0.651-1.985-1.181-4.34-1.494-6.764l-0.021-0.199c-0.061-0.322-0.095-0.693-0.095-1.071 0-1.806 0.789-3.427 2.041-4.537l0.006-0.005c2.295-1.623 6.048-0.676 7.633-0.163l-0.012 0.012c-1.535 1.872-2.466 4.292-2.466 6.928 0 0.090 0.001 0.18 0.003 0.27l-0-0.013c-0 0.103 0.008 0.249 0.020 0.449 0.033 0.41 0.052 0.888 0.052 1.371 0 0.802-0.052 1.592-0.154 2.367l0.010-0.091c-0.033 0.206-0.051 0.444-0.051 0.686 0 1.231 0.482 2.35 1.269 3.177l-0.002-0.002q0.151 0.158 0.315 0.297c-0.433 0.464-1.375 1.49-2.377 2.696-0.709 0.853-1.199 0.689-1.36 0.636-0.685-0.368-1.222-0.939-1.538-1.631l-0.009-0.022c-0.684-1.252-1.286-2.708-1.73-4.232l-0.039-0.157zM30.445 19.403c-0.019-0.057-0.043-0.106-0.072-0.151l0.002 0.003c-0.174-0.329-0.596-0.427-1.259-0.29-2.066 0.426-2.866 0.164-3.156-0.024 1.617-2.452 2.918-5.292 3.751-8.326l0.049-0.209c0.339-1.313 0.997-4.403 0.153-5.913-0.059-0.112-0.122-0.208-0.192-0.298l0.003 0.004c-1.563-1.955-3.948-3.196-6.623-3.196-0.076 0-0.152 0.001-0.227 0.003l0.011-0c-0.042-0.001-0.091-0.001-0.141-0.001-1.342 0-2.633 0.22-3.838 0.625l0.085-0.025q-0.321-0.060-0.645-0.102c-0.488-0.093-1.053-0.151-1.631-0.16l-0.008-0c-0.083-0.004-0.18-0.006-0.278-0.006-1.315 0-2.538 0.394-3.557 1.071l0.024-0.015c-1.071-0.401-5.984-2.056-9.025 0.098-1.489 1.27-2.426 3.147-2.426 5.244 0 0.405 0.035 0.802 0.102 1.188l-0.006-0.041c0.335 2.698 0.879 5.126 1.632 7.461l-0.079-0.284c0.493 1.716 1.103 3.201 1.852 4.6l-0.061-0.124c0.433 0.984 1.182 1.764 2.116 2.225l0.026 0.012c0.168 0.049 0.361 0.078 0.561 0.078 0.742 0 1.392-0.391 1.756-0.979l0.005-0.009c1.001-1.204 1.987-2.282 2.43-2.758 0.502 0.279 1.097 0.451 1.731 0.471l0.006 0 0.001 0.005q-0.158 0.188-0.309 0.382c-0.424 0.538-0.512 0.649-1.875 0.93-0.388 0.080-1.418 0.292-1.433 1.014-0 0.004-0 0.008-0 0.013 0 0.147 0.043 0.284 0.117 0.399l-0.002-0.003c0.312 0.395 0.751 0.678 1.254 0.788l0.015 0.003c0.399 0.13 0.859 0.205 1.335 0.205 1.1 0 2.106-0.398 2.884-1.058l-0.006 0.005c-0.024 0.418-0.037 0.908-0.037 1.401 0 1.753 0.171 3.467 0.496 5.125l-0.027-0.167c0.382 1.373 1.616 2.367 3.084 2.38h0.002c0.369-0.003 0.726-0.046 1.070-0.124l-0.033 0.006c1.919-0.171 3.431-1.705 3.567-3.619l0.001-0.012c0.188-1.088 0.502-3.593 0.673-5.125 0.008-0.065 0.034-0.123 0.072-0.171l-0.001 0.001c0.001-0.001 0.087-0.059 0.534 0.038l0.055 0.009 0.317 0.028 0.019 0.001c0.095 0.004 0.207 0.007 0.319 0.007 1.024 0 2.002-0.2 2.895-0.564l-0.051 0.018c0.805-0.373 2.256-1.29 1.993-2.087z"></path>
+					</svg>
+				),
+			},
+			{
+				title: "MS SQL",
+				href: "/docs/adapters/mssql",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						x="0px"
+						y="0px"
+						width="16px"
+						height="16px"
+						viewBox="0 0 48 48"
+					>
+						<path
+							fill="currentColor"
+							d="M23.084,11.277c-1.633-2.449-1.986-5.722-2.063-7.067c-4.148,0.897-8.269,2.506-8.031,3.691 c0.03,0.149,0.218,0.328,0.53,0.502l-0.488,0.873c-0.596-0.334-0.931-0.719-1.022-1.179c-0.269-1.341,1.25-2.554,4.642-3.709 c2.316-0.789,4.652-1.26,4.751-1.279l0.597-0.12L22,3.6c0,0.042,0.026,4.288,1.916,7.123L23.084,11.277z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M24.751,43H24.5c-8.192,0-17.309-2.573-18.386-6.879c-0.657-2.63,1.492-5.536,6.214-8.401 l0.52,0.854c-4.249,2.579-6.296,5.172-5.763,7.305c0.935,3.738,9.575,6.068,17.153,6.12c0.901-1.347,5.742-9.26,2.979-19.873 l0.967-0.252c3.149,12.092-3.218,20.837-3.282,20.924L24.751,43z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M9.931,39.306c-0.539,0-0.806-0.059-0.85-0.07c-0.176-0.043-0.314-0.178-0.362-0.352 c-0.049-0.174,0.001-0.361,0.129-0.488c0.072-0.072,7.197-7.208,8.159-12.978l0.986,0.164c-0.827,4.964-5.715,10.623-7.656,12.707 c1.939-0.111,6.835-1.019,16.234-6.28c-7.335-0.804-8.495-6.676-8.507-6.739l0.983-0.181c0.047,0.246,1.226,6.011,9.244,6.011 c0.003,0,0.005,0,0.008,0l0,0c0.227,0,0.424,0.152,0.482,0.37c0.06,0.218-0.036,0.449-0.231,0.563 C17.315,38.542,11.867,39.305,9.931,39.306z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M14.524,41.7c-0.207,0-0.395-0.128-0.468-0.325c-0.079-0.211-0.007-0.45,0.177-0.582 c0.034-0.025,1.813-1.338,3.706-4.228c-0.728-0.322-1.465-0.698-2.196-1.137c-0.888-0.533-1.559-1.105-2.06-1.691 c-2.57,0.678-4.942,0.946-7.025,0.769l0.084-0.996c1.876,0.159,4.009-0.063,6.321-0.64c-1.573-2.688-0.129-5.356-0.109-5.392 l0.874,0.487c-0.067,0.122-1.265,2.37,0.249,4.633c2.201-0.632,4.549-1.567,6.979-2.782c0.559-1.835,0.996-3.922,1.225-6.276 c0.016-0.161,0.108-0.304,0.248-0.385s0.311-0.088,0.458-0.021c0.032,0.015,3.264,1.491,5.604,2.454 c0.17,0.07,0.288,0.228,0.307,0.411c0.02,0.183-0.063,0.361-0.216,0.465c-2.289,1.56-4.563,2.913-6.778,4.042 c-0.702,2.225-1.571,4.077-2.459,5.591c3.702,1.383,6.915,1.404,6.956,1.404c0.228,0,0.427,0.154,0.484,0.375 c0.057,0.221-0.042,0.452-0.241,0.563c-4.54,2.522-11.767,3.232-12.072,3.261C14.556,41.699,14.54,41.7,14.524,41.7z M18.909,36.967c-1.04,1.614-2.062,2.773-2.826,3.53c1.998-0.294,5.501-0.938,8.408-2.139 C23.099,38.187,21.084,37.807,18.909,36.967z M14.767,33.431c0.393,0.392,0.883,0.775,1.49,1.14 c0.736,0.442,1.483,0.817,2.22,1.135c0.754-1.264,1.501-2.781,2.142-4.568C18.598,32.1,16.636,32.868,14.767,33.431z M23.202,24.329c-0.205,1.768-0.521,3.381-0.913,4.85c1.66-0.885,3.354-1.896,5.062-3.026 C25.802,25.497,24.099,24.734,23.202,24.329z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M17.924,10.6c-0.117,0-0.233-0.042-0.325-0.12c-1.61-1.378-3.505-4.182-3.585-4.301 c-0.129-0.191-0.109-0.446,0.046-0.616c0.154-0.171,0.408-0.211,0.608-0.102c0.011,0.003,0.938,0.385,7.217,1.431 c0.181,0.03,0.33,0.156,0.39,0.328c0.061,0.172,0.022,0.364-0.1,0.5c-1.758,1.953-3.979,2.813-4.073,2.848 C18.044,10.589,17.983,10.6,17.924,10.6z M15.647,6.746c0.631,0.849,1.54,1.996,2.372,2.769c0.511-0.233,1.657-0.818,2.744-1.798 C18.18,7.276,16.604,6.962,15.647,6.746z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M21.843,24.4c-0.068,0-0.137-0.014-0.201-0.042c-0.199-0.088-0.319-0.294-0.296-0.51 c0.292-2.749-3.926-3.852-3.969-3.862c-0.174-0.044-0.312-0.179-0.359-0.352s0.002-0.359,0.129-0.486 c0.207-0.207,5.139-5.098,11.327-7.784c0.173-0.075,0.369-0.047,0.515,0.07c0.145,0.118,0.212,0.307,0.174,0.489 c-1.186,5.744-6.71,12.044-6.944,12.309C22.12,24.341,21.982,24.4,21.843,24.4z M18.455,19.285 c1.184,0.445,3.258,1.475,3.783,3.356c1.449-1.808,4.542-5.973,5.697-9.934C23.548,14.817,19.854,17.999,18.455,19.285z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M13.079,28.36l-0.475-0.88c1.883-1.015,4.04-2.883,5.807-5.054c-1.504,1.03-2.365,1.735-2.392,1.758 l-0.639-0.77c0.039-0.032,1.764-1.447,4.631-3.22c0.787-1.266,1.392-2.568,1.703-3.816c0.053-0.212,0.099-0.417,0.136-0.615 c-1.925-0.687-3.701-1.094-4.921-1.269c-0.185-0.026-0.339-0.153-0.401-0.328c-0.062-0.175-0.021-0.371,0.104-0.507 c0.085-0.092,2.116-2.268,4.654-3.463c0.197-0.093,0.433-0.047,0.581,0.114c0.067,0.073,1.44,1.615,1.091,4.805 c1.155,0.45,2.345,0.997,3.491,1.648c2.759-1.24,5.892-2.356,9.229-3.03c0.172-0.034,0.363,0.028,0.481,0.168 c0.117,0.14,0.149,0.333,0.083,0.503c-1.3,3.332-4.786,6.891-4.934,7.041c-0.101,0.102-0.239,0.153-0.383,0.148 c-0.143-0.008-0.275-0.076-0.365-0.188c-1.12-1.408-2.584-2.574-4.163-3.523c-2.175,1.004-4.101,2.078-5.684,3.049 C18.693,24.084,15.644,26.979,13.079,28.36z M27.492,17.396c1.29,0.832,2.491,1.81,3.484,2.948 c0.828-0.898,2.815-3.168,3.942-5.422C32.268,15.532,29.76,16.415,27.492,17.396z M22.799,16.122 c-0.033,0.163-0.071,0.33-0.113,0.5c-0.21,0.839-0.544,1.701-0.972,2.561c1.096-0.626,2.309-1.272,3.618-1.898 C24.494,16.841,23.639,16.455,22.799,16.122z M18.048,13.672c1.111,0.218,2.48,0.574,3.941,1.086 c0.152-1.843-0.346-2.972-0.647-3.472C19.966,12.004,18.761,13.014,18.048,13.672z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M18.05,18.5c0,4.38-3.65,7.86-6.28,10.4c-0.44,0.43-1.93,0.5-1.93,0.5 c0.37-0.38,0.79-0.78,1.24-1.21c2.5-2.42,5.97-5.73,5.97-9.69c0-4.69-1.89-6.54-3.38-8.02c-0.66-0.67-1.22-1.31-1.56-2.09 l0.31-0.13c0.34,0.15,0.73,0.32,1.03,0.45c0.24,0.35,0.56,0.69,0.93,1.06C15.91,11.3,18.05,13.4,18.05,18.5z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M42.935,19.794c0,0-0.605,0.086-0.775,0.106c-8.76,0.97-17.8,3.49-22.97,5.56 c-1.87,0.75-3.81,1.66-5.58,2.68c-0.01,0.01-0.02,0.01-0.04,0.02C12.53,28.76,10,30,7.95,31.09c3-3.19,8.62-5.65,10.86-6.55 c5.07-2.03,13.78-4.48,22.35-5.53c-1.01-1.18-3.48-3.68-8.34-5.54c-2.84-1.1-7.16-1.72-10.97-2.27c-6.06-0.87-9.51-1.45-9.84-3.1 c-0.07-0.33-0.02-0.66,0.13-0.98c0.33,0.54,0.8,0.92,1.11,1.14c0.15,0.1,0.26,0.16,0.3,0.18l0.01,0.01 c1.42,0.75,5.25,1.3,8.44,1.76c3.86,0.56,8.23,1.19,11.18,2.32c6.87,2.65,9.24,6.44,9.34,6.6 C42.61,19.28,42.935,19.794,42.935,19.794z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Other Relational Databases",
+				href: "/docs/adapters/other-relational-databases",
+				icon: () => <Database className="w-4 h-4 text-current" />,
+			},
+			{
+				group: true,
+				title: "Adapters",
+				href: "/docs/adapters/drizzle",
+				icon: () => <Database className="w-4 h-4 text-current" />,
+			},
+			{
+				title: "Drizzle",
+				href: "/docs/adapters/drizzle",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16px"
+						height="16px"
+						fill="none"
+						viewBox="0 0 160 160"
+					>
+						<rect
+							width="9.631"
+							height="40.852"
+							fill="currentColor"
+							rx="4.816"
+							transform="matrix(.87303 .48767 -.49721 .86763 43.48 67.304)"
+						/>
+						<rect
+							width="9.631"
+							height="40.852"
+							fill="currentColor"
+							rx="4.816"
+							transform="matrix(.87303 .48767 -.49721 .86763 76.94 46.534)"
+						/>
+						<rect
+							width="9.631"
+							height="40.852"
+							fill="currentColor"
+							rx="4.816"
+							transform="matrix(.87303 .48767 -.49721 .86763 128.424 46.535)"
+						/>
+						<rect
+							width="9.631"
+							height="40.852"
+							fill="currentColor"
+							rx="4.816"
+							transform="matrix(.87303 .48767 -.49721 .86763 94.957 67.304)"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Prisma",
+				href: "/docs/adapters/prisma",
+				icon: () => (
+					<svg
+						width="16px"
+						height="16px"
+						viewBox="-27 0 310 310"
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+						preserveAspectRatio="xMidYMid"
+					>
+						<g>
+							<path
+								d="M254.312882,235.518775 L148.000961,9.74987264 C145.309805,4.08935083 139.731924,0.359884549 133.472618,0.0359753113 C127.198908,-0.384374336 121.212054,2.71925839 117.939655,8.08838662 L2.63252565,194.847143 C-0.947129465,200.604248 -0.871814894,207.912774 2.8257217,213.594888 L59.2003287,300.896318 C63.5805009,307.626626 71.8662281,310.673635 79.5631922,308.384597 L243.161606,259.992851 C248.145475,258.535702 252.252801,254.989363 254.421072,250.271225 C256.559881,245.57581 256.523135,240.176915 254.32061,235.511047 L254.312882,235.518775 Z M230.511129,245.201761 L91.6881763,286.252058 C87.4533189,287.511696 83.388474,283.840971 84.269448,279.567474 L133.866738,42.0831633 C134.794079,37.6396542 140.929985,36.9364206 142.869673,41.0476325 L234.684164,236.021085 C235.505704,237.779423 235.515611,239.809427 234.711272,241.575701 C233.906934,243.341974 232.369115,244.667163 230.503401,245.201761 L230.511129,245.201761 Z"
+								fill="currentColor"
+								fillRule="nonzero"
+							></path>
+						</g>
+					</svg>
+				),
+			},
+			{
+				title: "MongoDB",
+				href: "/docs/adapters/mongo",
+				icon: () => (
+					<svg
+						fill="currentColor"
+						width="16px"
+						height="16px"
+						viewBox="0 0 32 32"
+						version="1.1"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path d="M15.821 23.185s0-10.361 0.344-10.36c0.266 0 0.612 13.365 0.612 13.365-0.476-0.056-0.956-2.199-0.956-3.005zM22.489 12.945c-0.919-4.016-2.932-7.469-5.708-10.134l-0.007-0.006c-0.338-0.516-0.647-1.108-0.895-1.732l-0.024-0.068c0.001 0.020 0.001 0.044 0.001 0.068 0 0.565-0.253 1.070-0.652 1.409l-0.003 0.002c-3.574 3.034-5.848 7.505-5.923 12.508l-0 0.013c-0.001 0.062-0.001 0.135-0.001 0.208 0 4.957 2.385 9.357 6.070 12.115l0.039 0.028 0.087 0.063q0.241 1.784 0.412 3.576h0.601c0.166-1.491 0.39-2.796 0.683-4.076l-0.046 0.239c0.396-0.275 0.742-0.56 1.065-0.869l-0.003 0.003c2.801-2.597 4.549-6.297 4.549-10.404 0-0.061-0-0.121-0.001-0.182l0 0.009c-0.003-0.981-0.092-1.94-0.261-2.871l0.015 0.099z"></path>
+					</svg>
+				),
+			},
+			{
+				group: true,
+				title: "Others",
+				href: "/docs/adapters/community-adapters",
+				icon: () => <Database className="w-4 h-4 text-current" />,
+			},
+			{
+				title: "Community Adapters",
+				href: "/docs/adapters/community-adapters",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						className="lucide lucide-users"
+					>
+						<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+						<circle cx="9" cy="7" r="4" />
+						<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+						<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+					</svg>
+				),
+			},
+		],
+	},
+	{
+		title: "Integrations",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.3em"
+				height="1.3em"
+				viewBox="0 0 48 48"
+			>
+				<path
+					fill="currentColor"
+					stroke="currentColor"
+					strokeLinejoin="round"
+					strokeWidth="4"
+					d="M18 6H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2ZM40 6H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Z"
+				></path>
+			</svg>
+		),
+		list: [
+			{
+				group: true,
+				title: "Full Stack",
+				href: "/docs/integrations",
+				icon: LucideAArrowDown,
+			},
+			{
+				title: "Astro",
+				icon: Icons.astro,
+				href: "/docs/integrations/astro",
+			},
+
+			{
+				title: "Remix",
+				icon: Icons.remix,
+				href: "/docs/integrations/remix",
+			},
+			{
+				title: "Next",
+				icon: Icons.nextJS,
+				href: "/docs/integrations/next",
+			},
+			{
+				title: "Nuxt",
+				icon: Icons.nuxt,
+				href: "/docs/integrations/nuxt",
+			},
+			{
+				title: "Svelte Kit",
+				icon: Icons.svelteKit,
+				href: "/docs/integrations/svelte-kit",
+			},
+			{
+				title: "Solid Start",
+				icon: Icons.solidStart,
+				href: "/docs/integrations/solid-start",
+			},
+			{
+				title: "TanStack Start",
+				icon: Icons.tanstack,
+				href: "/docs/integrations/tanstack",
+			},
+			{
+				group: true,
+				title: "Backend",
+				href: "/docs/integrations",
+				icon: LucideAArrowDown,
+			},
+			{
+				title: "Hono",
+				icon: Icons.hono,
+				href: "/docs/integrations/hono",
+			},
+			{
+				title: "Express",
+				icon: Icons.express,
+				href: "/docs/integrations/express",
+			},
+			{
+				title: "Elysia",
+				icon: Icons.elysia,
+				href: "/docs/integrations/elysia",
+			},
+			{
+				title: "Nitro",
+				icon: Icons.nitro,
+				href: "/docs/integrations/nitro",
+			},
+			{
+				group: true,
+				title: "Mobile & Desktop",
+				href: "/docs/integrations",
+				icon: LucideAArrowDown,
+			},
+			{
+				title: "Expo",
+				icon: Icons.expo,
+				href: "/docs/integrations/expo",
+			},
+		],
+	},
+	{
+		title: "Plugins",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<g fill="none">
+					<path d="M24 0v24H0V0zM12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035c-.01-.004-.019-.001-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427c-.002-.01-.009-.017-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093c.012.004.023 0 .029-.008l.004-.014l-.034-.614c-.003-.012-.01-.02-.02-.022m-.715.002a.023.023 0 0 0-.027.006l-.006.014l-.034.614c0 .012.007.02.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z" />
+					<path
+						fill="currentColor"
+						d="M15 20a1 1 0 1 1 0 2H9a1 1 0 1 1 0-2zm0-18a1 1 0 0 1 .993.883L16 3v3h2a2 2 0 0 1 1.995 1.85L20 8v5a6 6 0 0 1-5.775 5.996L14 19h-4a6 6 0 0 1-5.996-5.775L4 13V8a2 2 0 0 1 1.85-1.995L6 6h2V3a1 1 0 0 1 1.993-.117L10 3v3h4V3a1 1 0 0 1 1-1"
+					/>
+				</g>
+			</svg>
+		),
+		list: [
+			{
+				title: "Authentication",
+				group: true,
+				href: "/docs/plugins/1st-party-plugins",
+				icon: () => <LucideAArrowDown className="w-4 h-4" />,
+			},
+
+			{
+				title: "Two Factor",
+				icon: () => <ScanFace className="w-4 h-4" />,
+				href: "/docs/plugins/2fa",
+			},
+			{
+				title: "Username",
+				icon: () => <UserSquare2 className="w-4 h-4" />,
+				href: "/docs/plugins/username",
+			},
+			{
+				title: "Anonymous",
+				icon: () => <UserCircle className="w-4 h-4" />,
+				href: "/docs/plugins/anonymous",
+			},
+			{
+				title: "Phone Number",
+				icon: () => <Phone className="w-4 h-4" />,
+				href: "/docs/plugins/phone-number",
+			},
+			{
+				title: "Magic Link",
+				href: "/docs/plugins/magic-link",
+				icon: () => <Mailbox className="w-4 h-4" />,
+			},
+			{
+				title: "Email OTP",
+				href: "/docs/plugins/email-otp",
+				icon: () => <Mail className="w-4 h-4" />,
+			},
+			{
+				title: "Passkey",
+				href: "/docs/plugins/passkey",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							className="fill-foreground"
+							d="M3.25 9.65q-.175-.125-.213-.312t.113-.388q1.55-2.125 3.888-3.3t4.987-1.175q2.65 0 5 1.138T20.95 8.9q.175.225.113.4t-.213.3q-.15.125-.35.113t-.35-.213q-1.375-1.95-3.537-2.987t-4.588-1.038q-2.425 0-4.55 1.038T3.95 9.5q-.15.225-.35.25t-.35-.1m11.6 12.325q-2.6-.65-4.25-2.588T8.95 14.65q0-1.25.9-2.1t2.175-.85q1.275 0 2.175.85t.9 2.1q0 .825.625 1.388t1.475.562q.85 0 1.45-.562t.6-1.388q0-2.9-2.125-4.875T12.05 7.8q-2.95 0-5.075 1.975t-2.125 4.85q0 .6.113 1.5t.537 2.1q.075.225-.012.4t-.288.25q-.2.075-.387-.012t-.263-.288q-.375-.975-.537-1.937T3.85 14.65q0-3.325 2.413-5.575t5.762-2.25q3.375 0 5.8 2.25t2.425 5.575q0 1.25-.887 2.087t-2.163.838q-1.275 0-2.187-.837T14.1 14.65q0-.825-.612-1.388t-1.463-.562q-.85 0-1.463.563T9.95 14.65q0 2.425 1.438 4.05t3.712 2.275q.225.075.3.25t.025.375q-.05.175-.2.3t-.375.075M6.5 4.425q-.2.125-.4.063t-.3-.263q-.1-.2-.05-.362T6 3.575q1.4-.75 2.925-1.15t3.1-.4q1.6 0 3.125.388t2.95 1.112q.225.125.263.3t-.038.35q-.075.175-.25.275t-.425-.025q-1.325-.675-2.738-1.037t-2.887-.363q-1.45 0-2.85.338T6.5 4.425m2.95 17.2q-1.475-1.55-2.262-3.162T6.4 14.65q0-2.275 1.65-3.838t3.975-1.562q2.325 0 4 1.563T17.7 14.65q0 .225-.137.363t-.363.137q-.2 0-.35-.137t-.15-.363q0-1.875-1.388-3.137t-3.287-1.263q-1.9 0-3.262 1.263T7.4 14.65q0 2.025.7 3.438t2.05 2.837q.15.15.15.35t-.15.35q-.15.15-.35.15t-.35-.15m7.55-1.7q-2.225 0-3.863-1.5T11.5 14.65q0-.2.138-.35t.362-.15q.225 0 .363.15t.137.35q0 1.875 1.35 3.075t3.15 1.2q.15 0 .425-.025t.575-.075q.225-.05.388.063t.212.337q.05.2-.075.35t-.325.2q-.45.125-.787.138t-.413.012"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Generic OAuth",
+				href: "/docs/plugins/generic-oauth",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<g
+							fill="none"
+							stroke="currentColor"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth="2"
+						>
+							<path d="M2 12a10 10 0 1 0 20 0a10 10 0 1 0-20 0"></path>
+							<path d="M12.556 6c.65 0 1.235.373 1.508.947l2.839 7.848a1.646 1.646 0 0 1-1.01 2.108a1.673 1.673 0 0 1-2.068-.851L13.365 15h-2.73l-.398.905A1.67 1.67 0 0 1 8.26 16.95l-.153-.047a1.647 1.647 0 0 1-1.056-1.956l2.824-7.852a1.66 1.66 0 0 1 1.409-1.087z"></path>
+						</g>
+					</svg>
+				),
+			},
+			{
+				title: "One Tap",
+				href: "/docs/plugins/one-tap",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 14 14"
+					>
+						<path
+							fill="currentColor"
+							fillRule="evenodd"
+							d="M3.254 4.361a2.861 2.861 0 1 1 5.647.651a.75.75 0 0 0 1.461.34a4.361 4.361 0 1 0-8.495 0a.75.75 0 0 0 1.461-.34a3 3 0 0 1-.074-.651m1.63 5.335V4.26a1.26 1.26 0 0 1 2.518 0v4.077h2.464a2.573 2.573 0 0 1 2.573 2.573V13a1 1 0 0 1-1 1H4.83a1 1 0 0 1-.823-.433l-.764-1.11a1.715 1.715 0 0 1 1.097-2.66l.543-.102Z"
+							clipRule="evenodd"
+						></path>
+					</svg>
+				),
+			},
+
+			{
+				title: "Authorization",
+				group: true,
+				href: "/docs/plugins/1st-party-plugins",
+				icon: () => <LucideAArrowDown className="w-4 h-4" />,
+			},
+			{
+				title: "Admin",
+				href: "/docs/plugins/admin",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							className="fill-current"
+							d="M12 23C6.443 21.765 2 16.522 2 11V5l10-4l10 4v6c0 5.524-4.443 10.765-10 12M4 6v5a10.58 10.58 0 0 0 8 10a10.58 10.58 0 0 0 8-10V6l-8-3Z"
+						></path>
+						<circle cx="12" cy="8.5" r="2.5" className="fill-current"></circle>
+						<path
+							className="fill-current"
+							d="M7 15a5.78 5.78 0 0 0 5 3a5.78 5.78 0 0 0 5-3c-.025-1.896-3.342-3-5-3c-1.667 0-4.975 1.104-5 3"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "API Key",
+				href: "/docs/plugins/api-key",
+				isNew: true,
+				icon: () => <KeyRound className="size-4" />,
+			},
+			{
+				title: "Organization",
+				icon: () => <Users2 className="w-4 h-4" />,
+				href: "/docs/plugins/organization",
+			},
+			{
+				title: "Enterprise",
+				group: true,
+				href: "/docs/plugins/1st-party-plugins",
+				icon: () => <LucideAArrowDown className="w-4 h-4" />,
+			},
+			{
+				title: "OIDC Provider",
+				href: "/docs/plugins/oidc-provider",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							fill="currentColor"
+							d="M16 2a8 8 0 1 0 8 8a8.01 8.01 0 0 0-8-8m5.91 7h-2.438a15.3 15.3 0 0 0-.791-4.36A6.01 6.01 0 0 1 21.91 9m-5.888 6.999h-.008c-.38-.12-1.309-1.821-1.479-4.999h2.93c-.17 3.176-1.094 4.877-1.443 4.999M14.535 9c.17-3.176 1.094-4.877 1.443-4.999h.008c.38.12 1.309 1.821 1.479 4.999zM13.32 4.64A15.3 15.3 0 0 0 12.528 9H10.09a6.01 6.01 0 0 1 3.23-4.36M10.09 11h2.437a15.3 15.3 0 0 0 .792 4.36A6.01 6.01 0 0 1 10.09 11m8.59 4.36a15.3 15.3 0 0 0 .792-4.36h2.438a6.01 6.01 0 0 1-3.23 4.36M28 30H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2h24a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M4 22v6h24v-6z"
+						></path>
+						<circle cx="7" cy="25" r="1" fill="currentColor"></circle>
+					</svg>
+				),
+			},
+			{
+				title: "SSO",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							fill="currentColor"
+							d="M8 8h2v4H8zm0 6h2v4H8zm6-6h2v4h-2zm0 6h2v4h-2zm-6 6h2v4H8zm6 0h2v4h-2z"
+						></path>
+						<path
+							fill="currentColor"
+							d="M30 14a2 2 0 0 0-2-2h-6V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v26h28ZM4 4h16v24H4Zm18 24V14h6v14Z"
+						></path>
+					</svg>
+				),
+				href: "/docs/plugins/sso",
+			},
+			{
+				title: "Utility",
+				group: true,
+				href: "/docs/plugins/1st-party-plugins",
+				icon: () => <LucideAArrowDown className="w-4 h-4" />,
+			},
+			{
+				title: "Bearer",
+				icon: () => <Key className="w-4 h-4" />,
+				href: "/docs/plugins/bearer",
+			},
+			{
+				title: "Captcha",
+				href: "/docs/plugins/captcha",
+				isNew: true,
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 48 48"
+					>
+						<path
+							fill="currentColor"
+							d="M38.023 18.932A6.3 6.3 0 0 0 42.505 13c0-4.056-2.9-7-8.238-7a14.3 14.3 0 0 0-6.829 1.665.369.369 0 0 0-.171.383v2.732c0 .171.043.212.256.129A11.552 11.552 0 0 1 33.669 9.2c3.756 0 5.336 1.834 5.336 4.224 0 2.732-2.3 4.183-6.061 4.183h-1.58c-.213 0-.256.129-.256.3V20.6c0 .171.086.256.3.256H33.2c4.225 0 7.042 1.537 7.042 4.951 0 2.691-1.878 4.993-6.487 4.993a18.98 18.98 0 0 1-6.655-1.748 10.11 10.11 0 0 0 .882-4.107c0-6.281-4.631-8.511-8.6-8.511A16.789 16.789 0 0 0 12 18.379V3a1 1 0 0 0-1-1l-1.99.007a1 1 0 0 0-.795.4L4.4 5.453a2 2 0 0 0-.4 1.2v.331a1 1 0 0 0 1 1h3v19a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-4.91a14.046 14.046 0 0 1 6.709-2.012c3.4 0 5.469 1.661 5.469 5 0 2.566-1.252 5.06-5.065 9.273a65.711 65.711 0 0 1-6.849 6.719.666.666 0 0 0-.226.558v1.891c0 .43.283.492.451.492H28.2c.317 0 .416-.113.531-.4l.627-2.6a.362.362 0 0 0-.046-.324.479.479 0 0 0-.4-.137h-5.795c-3.224 0-3.886 0-5.152.082a40.482 40.482 0 0 0 4.957-5.367c1-1.222 1.855-2.33 2.586-3.4A22.187 22.187 0 0 0 33.8 34c5.763 0 10.074-2.945 10.074-8.2-.003-4.395-3.374-6.315-5.851-6.868Z"
+						/>
+					</svg>
+				),
+			},
+			{
+				title: "Multi Session",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M16.885 13.616q-.82 0-1.41-.591t-.59-1.41t.59-1.41t1.41-.59q.819 0 1.41.59q.59.591.59 1.41q0 .82-.59 1.41q-.591.59-1.41.59m-4.5 5v-.9q0-.465.232-.843q.232-.379.66-.545q.845-.356 1.748-.534q.904-.177 1.86-.177q.916 0 1.821.177q.905.178 1.786.534q.428.166.66.545q.232.378.232.844v.9zm-2.77-7.23q-1.237 0-2.118-.882t-.881-2.118t.88-2.12t2.12-.88t2.118.88t.882 2.12t-.882 2.118t-2.118.882m-7 7.23V16.97q0-.648.357-1.192q.358-.544.973-.804q1.327-.673 2.756-1.015t2.914-.342q.605 0 1.211.063t1.212.167l-.427.446l-.427.447q-.393-.077-.785-.1t-.784-.023q-1.354 0-2.675.292t-2.518.942q-.327.183-.567.456t-.24.663v.646h6v1zm7-8.23q.825 0 1.412-.588t.588-1.412t-.588-1.413t-1.412-.587t-1.413.587t-.587 1.413t.587 1.412t1.413.588"
+						></path>
+					</svg>
+				),
+				href: "/docs/plugins/multi-session",
+			},
+			{
+				title: "OAuth Proxy",
+				href: "/docs/plugins/oauth-proxy",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							fill="currentColor"
+							d="M6 30h20a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2m0-8h20v6H6z"
+						></path>
+						<circle cx="9" cy="25" r="1" fill="currentColor"></circle>
+						<path
+							fill="currentColor"
+							d="m26 2l-1.41 1.41L27.17 6h-4.855A6.984 6.984 0 0 0 9.08 10H4.83l2.58-2.59L6 6l-5 5l5 5l1.41-1.41L4.83 12h4.855A6.984 6.984 0 0 0 22.92 8h4.25l-2.58 2.59L26 12l5-5Zm-5 7a4.983 4.983 0 0 1-8.974 3H16v-2h-4.899a4.985 4.985 0 0 1 8.874-4H16v2h4.899A5 5 0 0 1 21 9"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Open API",
+				href: "/docs/plugins/open-api",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.1em"
+						height="1.1em"
+						viewBox="0 0 32 32"
+					>
+						<path
+							fill="currentColor"
+							d="M16 0C7.177 0 0 7.177 0 16s7.177 16 16 16s16-7.177 16-16S24.823 0 16 0m0 1.527c7.995 0 14.473 6.479 14.473 14.473S23.994 30.473 16 30.473S1.527 23.994 1.527 16S8.006 1.527 16 1.527m-4.839 6.296c-.188-.005-.375 0-.568.005c-1.307.079-2.093.693-2.312 1.964c-.151.891-.125 1.796-.188 2.692a9 9 0 0 1-.156 1.38c-.177.813-.525 1.068-1.353 1.109q-.167.018-.324.057v1.948c1.5.073 1.704.605 1.823 2.172c.048.573-.015 1.147.021 1.719q.042.816.208 1.6c.344 1.432 1.745 1.911 3.433 1.624V22.38c-.272 0-.511.005-.74 0c-.579-.016-.792-.161-.844-.713c-.079-.713-.057-1.437-.099-2.156c-.089-1.339-.235-2.651-1.541-3.5c.672-.495 1.161-1.084 1.312-1.865c.109-.547.177-1.099.219-1.651s-.025-1.12.021-1.667c.077-.885.135-1.249 1.197-1.213c.161 0 .317-.021.495-.036V7.834c-.213 0-.411-.005-.604-.011m10.126.016a5.4 5.4 0 0 0-1.089.079v1.697c.329 0 .584 0 .833.005c.439.005.772.177.813.661c.041.443.041.891.083 1.339c.089.896.136 1.796.292 2.677c.136.724.636 1.265 1.255 1.713c-1.088.729-1.411 1.776-1.463 2.953c-.032.801-.052 1.615-.093 2.427c-.037.74-.297.979-1.043.995c-.208.011-.411.027-.64.041v1.74c.432 0 .833.027 1.235 0c1.239-.073 1.995-.677 2.239-1.885a15 15 0 0 0 .183-2.005c.041-.615.036-1.235.099-1.844c.093-.953.532-1.349 1.484-1.411q.133-.018.267-.057v-1.953c-.161-.021-.271-.037-.391-.041c-.713-.032-1.068-.272-1.251-.948a6.6 6.6 0 0 1-.197-1.324c-.052-.823-.047-1.656-.099-2.479c-.109-1.588-1.063-2.339-2.516-2.38zm-9.188 7.036c-1.432 0-1.536 2.109-.115 2.245h.079a1.103 1.103 0 0 0 1.167-1.037v-.061a1.13 1.13 0 0 0-1.104-1.147zm3.88 0a1.083 1.083 0 0 0-1.115 1.043c0 .036 0 .067.005.104c0 .672.459 1.099 1.147 1.099c.677 0 1.104-.443 1.104-1.136c-.005-.672-.459-1.115-1.141-1.109zm3.948 0a1.15 1.15 0 0 0-1.167 1.115c0 .625.505 1.131 1.136 1.131h.011c.567.099 1.135-.448 1.172-1.104c.031-.609-.521-1.141-1.152-1.141z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "JWT",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 256 257"
+					>
+						<path
+							className="fill-foreground opacity-70"
+							d="M147.386 69.071L147.129 0h-38.515l.257 69.071l19.257 26.448zm-38.515 118.371v69.328h38.515v-69.328l-19.258-26.447z"
+						></path>
+						<path
+							className="fill-foreground opacity-70"
+							d="m147.386 187.442l40.57 55.976l31.069-22.596l-40.57-55.975l-31.069-10.015zM108.871 69.071L68.044 13.095L36.975 35.691l40.57 55.976l31.326 10.014z"
+						></path>
+						<path
+							className="fill-foreground opacity-70"
+							d="M77.545 91.667L11.811 70.355L0 106.816l65.733 21.569l31.069-10.271zm81.653 46.732l19.257 26.448l65.734 21.311L256 149.697l-65.733-21.312z"
+						></path>
+						<path
+							className="fill-foreground"
+							d="M190.267 128.385L256 106.816l-11.811-36.461l-65.734 21.312l-19.257 26.447zm-124.534 0L0 149.697l11.811 36.461l65.734-21.311l19.257-26.448z"
+						></path>
+						<path
+							className="fill-foreground"
+							d="m77.545 164.847l-40.57 55.975l31.069 22.596l40.827-55.976v-32.61zm100.91-73.18l40.57-55.976l-31.069-22.596l-40.57 55.976v32.61z"
+						></path>
+					</svg>
+				),
+				href: "/docs/plugins/jwt",
+			},
+			{
+				title: "3rd party",
+				group: true,
+				href: "/docs/plugins/1st-party-plugins",
+				icon: () => <LucideAArrowDown className="w-4 h-4" />,
+			},
+			{
+				title: "Polar",
+				href: "/docs/plugins/polar",
+				isNew: true,
+				icon: () => (
+					<svg
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 280 350"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+						className="size-4"
+					>
+						<g transform="translate(30, 20)">
+							<path
+								fillRule="evenodd"
+								clipRule="evenodd"
+								d="M64.8636 269.177C130.906 313.882 220.684 296.585 265.388 230.543C310.094 164.501 292.798 74.723 226.756 30.0179C160.714 -14.6872 70.935 2.60972 26.2299 68.6516C-18.4753 134.693 -1.17834 224.472 64.8636 269.177ZM84.0172 270.357C144.43 301.264 221.064 272.251 255.187 205.557C289.309 138.861 267.997 59.7378 207.584 28.8301C147.173 -2.0774 70.5375 26.9345 36.4152 93.63C2.29299 160.325 23.6051 239.448 84.0172 270.357Z"
+								fill="currentColor"
+							/>
+							<path
+								fillRule="evenodd"
+								clipRule="evenodd"
+								d="M101.233 286.13C155.766 303.879 219.918 256.991 244.522 181.401C269.124 105.812 244.86 30.146 190.327 12.3967C135.794 -5.35246 71.6428 41.5362 47.04 117.126C22.4374 192.715 46.7007 268.381 101.233 286.13ZM117.915 280.385C164.066 290.229 213.97 239.649 229.378 167.414C244.784 95.1779 219.862 28.6392 173.71 18.7955C127.559 8.95174 77.6556 59.5307 62.2482 131.767C46.841 204.002 71.7639 270.541 117.915 280.385Z"
+								fill="currentColor"
+							/>
+							<path
+								fillRule="evenodd"
+								clipRule="evenodd"
+								d="M130.567 292.297C167.056 296.192 203.471 235.332 211.903 156.36C220.336 77.3886 197.592 10.2109 161.104 6.3148C124.616 2.41866 88.2006 63.2795 79.7681 142.251C71.3357 221.222 94.0792 288.401 130.567 292.297ZM147.642 268.26C174.048 267.843 194.616 214.386 193.58 148.861C192.546 83.3351 170.299 30.5544 143.893 30.9716C117.486 31.3889 96.9186 84.8459 97.9538 150.372C98.9891 215.897 121.235 268.677 147.642 268.26Z"
+								fill="currentColor"
+							/>
+						</g>
+					</svg>
+				),
+			},
+			{
+				title: "Stripe",
+				href: "/docs/plugins/stripe",
+				isNew: true,
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="none"
+							stroke="currentColor"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth="2"
+							d="M11.453 8.056c0-.623.518-.979 1.442-.979c1.69 0 3.41.343 4.605.923l.5-4c-.948-.449-2.82-1-5.5-1c-1.895 0-3.373.087-4.5 1c-1.172.956-2 2.33-2 4c0 3.03 1.958 4.906 5 6c1.961.69 3 .743 3 1.5c0 .735-.851 1.5-2 1.5c-1.423 0-3.963-.609-5.5-1.5l-.5 4c1.321.734 3.474 1.5 6 1.5c2 0 3.957-.468 5.084-1.36C18.347 18.661 19 17.372 19 15.5c0-3.096-1.915-4.547-5-5.637c-1.646-.605-2.544-1.07-2.544-1.807z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Community Plugins",
+				href: "/docs/plugins/community-plugins",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						className="lucide lucide-users"
+					>
+						<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+						<circle cx="9" cy="7" r="4" />
+						<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+						<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+					</svg>
+				),
+			},
+		],
+	},
+	{
+		title: "Guides",
+		href: "/docs/guides",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 20 20"
+			>
+				<path
+					fill="currentColor"
+					d="M6.819 17.259q.111.408.335.74h-.156c-1.104 0-2-.895-2.001-2l-.005-5.535zM4 16.499q0 .228.04.446l-.056-.015a2 2 0 0 1-1.416-2.45l1.426-5.34zm3.655.018a2 2 0 0 0 2.451 1.414l5.416-1.451a2 2 0 0 0 1.413-2.45L14.099 3.482a2 2 0 0 0-2.451-1.413l-5.416 1.45a2 2 0 0 0-1.413 2.449zM9 6.25a.75.75 0 1 1-1.5 0a.75.75 0 0 1 1.5 0"
+				></path>
+			</svg>
+		),
+		list: [
+			{
+				title: "Next Auth Migration Guide",
+				href: "/docs/guides/next-auth-migration-guide",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 48 48"
+					>
+						<g
+							fill="none"
+							stroke="currentColor"
+							strokeLinejoin="round"
+							strokeWidth="4"
+						>
+							<path strokeLinecap="round" d="M24 4v37"></path>
+							<path
+								fill="currentColor"
+								d="M24 8h15.545L42 12l-2.455 4H24zm0 14H8.455L6 26l2.455 4H24z"
+							></path>
+							<path strokeLinecap="round" d="M16 42h16"></path>
+						</g>
+					</svg>
+				),
+			},
+			{
+				title: "Supabase Migration Guide",
+				href: "/docs/guides/supabase-migration-guide",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="#888888"
+							d="M11 2.598V13.97H3.9c-.67 0-1.07-.784-.643-1.336zm2 5.433V2.333c0-1.811-2.297-2.624-3.418-1.171L1.673 11.41c-1.427 1.85-.125 4.559 2.227 4.559H11v5.698c0 1.811 2.296 2.624 3.418 1.171l7.908-10.249c1.427-1.849.126-4.558-2.227-4.558zm0 2h7.1c.669 0 1.069.784.643 1.336L13 21.402z"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Create Your First Plugin",
+				href: "/docs/guides/your-first-plugin",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1em"
+						height="1em"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						className="lucide lucide-pencil-ruler"
+					>
+						<path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13" />
+						<path d="m8 6 2-2" />
+						<path d="m18 16 2-2" />
+						<path d="m17 11 4.3 4.3c.94.94.94 2.46 0 3.4l-2.6 2.6c-.94.94-2.46.94-3.4 0L11 17" />
+						<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
+						<path d="m15 5 4 4" />
+					</svg>
+				),
+			},
+			{
+				title: "Browser Extension Guide",
+				href: "/docs/guides/browser-extension-guide",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 512 512"
+					>
+						<path
+							fill="none"
+							stroke="currentColor"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth="32"
+							d="M413.66 246.1H386a2 2 0 0 1-2-2v-77.24A38.86 38.86 0 0 0 345.14 128H267.9a2 2 0 0 1-2-2V98.34c0-27.14-21.5-49.86-48.64-50.33a49.53 49.53 0 0 0-50.4 49.51V126a2 2 0 0 1-2 2H87.62A39.74 39.74 0 0 0 48 167.62V238a2 2 0 0 0 2 2h26.91c29.37 0 53.68 25.48 54.09 54.85c.42 29.87-23.51 57.15-53.29 57.15H50a2 2 0 0 0-2 2v70.38A39.74 39.74 0 0 0 87.62 464H158a2 2 0 0 0 2-2v-20.93c0-30.28 24.75-56.35 55-57.06c30.1-.7 57 20.31 57 50.28V462a2 2 0 0 0 2 2h71.14A38.86 38.86 0 0 0 384 425.14v-78a2 2 0 0 1 2-2h28.48c27.63 0 49.52-22.67 49.52-50.4s-23.2-48.64-50.34-48.64"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Optimize for Performance",
+				href: "/docs/guides/optimizing-for-performance",
+				icon: () => <Gauge className="size-4" />,
+			},
+		],
+	},
+	{
+		title: "Reference",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.3em"
+				height="1.3em"
+				viewBox="0 0 20 20"
+			>
+				<path
+					fill="currentColor"
+					d="M0 3v16h5V3zm4 12H1v-1h3zm0-3H1v-1h3zm2-9v16h5V3zm4 12H7v-1h3zm0-3H7v-1h3zm1-8.5l4.1 15.4l4.8-1.3l-4-15.3zm7 10.6l-2.9.8l-.3-1l2.9-.8zm-.8-2.9l-2.9.8l-.2-1l2.9-.8z"
+				></path>
+			</svg>
+		),
+		list: [
+			{
+				title: "Options",
+				href: "/docs/reference/options",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="currentColor"
+							d="M6.5 16q1.175 0 2.288.263T11 17.05V7.2q-1.025-.6-2.175-.9T6.5 6q-.9 0-1.788.175T2.7 6.7v9.9q.875-.3 1.738-.45T6.5 16m6.5 1.05q1.1-.525 2.213-.787T17.5 16q.9 0 1.763.15T21 16.6V6.7q-.825-.35-1.713-.525T17.5 6q-1.175 0-2.325.3T13 7.2zm-1 2.425q-.35 0-.663-.087t-.587-.238q-.975-.575-2.05-.862T6.5 18q-1.05 0-2.062.275T2.5 19.05q-.525.275-1.012-.025T1 18.15V6.1q0-.275.138-.525T1.55 5.2q1.15-.6 2.4-.9T6.5 4q1.45 0 2.838.375T12 5.5q1.275-.75 2.663-1.125T17.5 4q1.3 0 2.55.3t2.4.9q.275.125.413.375T23 6.1v12.05q0 .575-.487.875t-1.013.025q-.925-.5-1.937-.775T17.5 18q-1.125 0-2.2.288t-2.05.862q-.275.15-.587.238t-.663.087m2-10.7q0-.225.163-.462T14.525 8q.725-.25 1.45-.375T17.5 7.5q.5 0 .988.063t.962.162q.225.05.388.25t.162.45q0 .425-.275.625t-.7.1q-.35-.075-.737-.112T17.5 9q-.65 0-1.275.125t-1.2.325q-.45.175-.737-.025T14 8.775m0 5.5q0-.225.163-.462t.362-.313q.725-.25 1.45-.375T17.5 13q.5 0 .988.063t.962.162q.225.05.388.25t.162.45q0 .425-.275.625t-.7.1q-.35-.075-.737-.112t-.788-.038q-.65 0-1.275.125t-1.2.325q-.45.175-.737-.025t-.288-.65"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Contributing",
+				href: "/docs/reference/contributing",
+				icon: () => (
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="1.2em"
+						height="1.2em"
+						viewBox="0 0 24 24"
+					>
+						<path
+							fill="#888888"
+							d="M6 3a3 3 0 0 1 3 3c0 1.31-.83 2.42-2 2.83v6.34c1.17.41 2 1.52 2 2.83a3 3 0 0 1-3 3a3 3 0 0 1-3-3c0-1.31.83-2.42 2-2.83V8.83A2.99 2.99 0 0 1 3 6a3 3 0 0 1 3-3m0 2a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1m0 12a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1m15 1a3 3 0 0 1-3 3a3 3 0 0 1-3-3c0-1.31.83-2.42 2-2.83V7h-2v3.25L10.75 6L15 1.75V5h2a2 2 0 0 1 2 2v8.17c1.17.41 2 1.52 2 2.83m-3-1a1 1 0 0 0-1 1a1 1 0 0 0 1 1a1 1 0 0 0 1-1a1 1 0 0 0-1-1"
+						></path>
+					</svg>
+				),
+			},
+			{
+				title: "Security",
+				href: "/docs/reference/security",
+				icon: () => <ShieldCheck className="w-4 h-4 text-current" />,
+			},
+			{
+				title: "FAQ",
+				href: "/docs/reference/faq",
+				icon: () => <CircleHelp className="w-4 h-4 text-current" />,
+			},
+		],
+	},
+	// {
+
+	// 	title: "Contribute",
+	// 	Icon: () => (
+	//
+	// 	),
+	// 	list: [
+	// 		{
+	// 			title: "Getting Started",
+	// 			href: "/docs/contribute/getting-started",
+	// 			icon: () => <BookOpenCheck className="text-current size-4" />,
+	// 		},
+	// 		{
+	// 			title: "Areas to Contribute",
+	// 			href: "/docs/contribute/areas-to-contribute",
+	// 			icon: () => <HandHelping className="w-4 h-4 text-current" />,
+	// 		},
+	// 		// {
+	// 		// 	title: "Database Adapters",
+	// 		// 	href: "/docs/contribute/database-adapters",
+	// 		// 	icon: () => <Plug className="w-4 h-4 text-current" />,
+	// 		// },
+	// 		{
+	// 			title: "Testing",
+	// 			href: "/docs/contribute/testing",
+	// 			icon: () => <FlaskConical className="w-4 h-4 text-current" />,
+	// 		},
+	// 		{
+	// 			title: "Documenting",
+	// 			href: "/docs/contribute/documenting",
+	// 			icon: () => <NotebookPen className="w-4 h-4 text-current" />,
+	// 		},
+	// 		{
+	// 			title: "Security Issues",
+	// 			href: "/docs/contribute/security-issues",
+	// 			icon: () => <ShieldCheck className="w-4 h-4 text-current" />,
+	// 		},
+	// 	],
+	// },
+];
+
+export const examples: Content[] = [
+	{
+		title: "Examples",
+		href: "/docs/examples/next",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.4em"
+				height="1.4em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M2 6.95c0-.883 0-1.324.07-1.692A4 4 0 0 1 5.257 2.07C5.626 2 6.068 2 6.95 2c.386 0 .58 0 .766.017a4 4 0 0 1 2.18.904c.144.119.28.255.554.529L11 4c.816.816 1.224 1.224 1.712 1.495a4 4 0 0 0 .848.352C14.098 6 14.675 6 15.828 6h.374c2.632 0 3.949 0 4.804.77q.119.105.224.224c.77.855.77 2.172.77 4.804V14c0 3.771 0 5.657-1.172 6.828S17.771 22 14 22h-4c-3.771 0-5.657 0-6.828-1.172S2 17.771 2 14z"
+					opacity=".5"
+				></path>
+				<path
+					fill="currentColor"
+					d="M20 6.238c0-.298-.005-.475-.025-.63a3 3 0 0 0-2.583-2.582C17.197 3 16.965 3 16.5 3H9.988c.116.104.247.234.462.45L11 4c.816.816 1.224 1.224 1.712 1.495a4 4 0 0 0 .849.352C14.098 6 14.675 6 15.829 6h.373c1.78 0 2.957 0 3.798.238"
+				></path>
+				<path
+					fill="currentColor"
+					fillRule="evenodd"
+					d="M12.25 10a.75.75 0 0 1 .75-.75h5a.75.75 0 0 1 0 1.5h-5a.75.75 0 0 1-.75-.75"
+					clipRule="evenodd"
+				></path>
+			</svg>
+		),
+		list: [
+			{
+				title: "Astro + SolidJs",
+				href: "/docs/examples/astro",
+				icon: Icons.astro,
+			},
+			{
+				title: "Remix",
+				href: "/docs/examples/remix",
+				icon: Icons.remix,
+			},
+			{
+				title: "Next JS",
+				href: "/docs/examples/next-js",
+				icon: Icons.nextJS,
+			},
+			{
+				title: "Nuxt",
+				href: "/docs/examples/nuxt",
+				icon: Icons.nuxt,
+			},
+			{
+				title: "Svelte Kit",
+				href: "/docs/examples/svelte-kit",
+				icon: Icons.svelteKit,
+			},
+		],
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/techstack-icons.tsx
+```
+import { Icons } from "./icons";
+type TechStackIconType = {
+	[key: string]: {
+		name: string;
+		icon: any;
+	};
+};
+export const techStackIcons: TechStackIconType = {
+	nextJs: {
+		name: "Nextjs",
+		icon: <Icons.nextJS className="w-10 h-10" />,
+	},
+	nuxt: {
+		name: "Nuxt",
+		icon: <Icons.nuxt className="w-10 h-10" />,
+	},
+	svelteKit: {
+		name: "Svelte Kit",
+		icon: <Icons.svelteKit className="w-10 h-10" />,
+	},
+	solidStart: {
+		name: "Solid Start",
+		icon: <Icons.solidStart className="w-10 h-10" />,
+	},
+	react: {
+		name: "React",
+		icon: <Icons.react className="w-10 h-10" />,
+	},
+	hono: {
+		name: "Hono",
+		icon: <Icons.hono className="w-10 h-10" />,
+	},
+	astro: {
+		name: "Astro",
+		icon: <Icons.astro className="w-10 h-10" />,
+	},
+	tanstack: {
+		name: "TanStack Start",
+		icon: <Icons.tanstack className="w-10 h-10" />,
+	},
+	expo: {
+		name: "Expo",
+		icon: <Icons.expo className="w-10 h-10" />,
+	},
+	nitro: {
+		name: "Nitro",
+		icon: <Icons.nitro className="w-10 h-10" />,
+	},
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/theme-provider.tsx
+```
+"use client";
+
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+
+export function ThemeProvider({
+	children,
+	...props
+}: React.ComponentProps<typeof NextThemesProvider>) {
+	return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/theme-toggler.tsx
+```
+"use client";
+
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
+
+export function ThemeToggle(props: ComponentProps<typeof Button>) {
+	const { setTheme } = useTheme();
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					variant="ghost"
+					size="icon"
+					aria-label="Toggle Theme"
+					{...props}
+					className={cn(
+						"flex ring-0 shrink-0 md:w-[3.56rem] md:h-14 md:border-l md:text-muted-foreground max-md:-mr-1.5 max-md:hover:bg-transparent",
+						props.className,
+					)}
+				>
+					<Sun className="size-4 fill-current dark:hidden md:size-5" />
+					<Moon className="absolute fill-current size-4 hidden dark:block md:size-5" />
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent className="rounded-none" align="end">
+				<DropdownMenuItem
+					className="rounded-none"
+					onClick={() => setTheme("light")}
+				>
+					Light
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					className="rounded-none"
+					onClick={() => setTheme("dark")}
+				>
+					Dark
+				</DropdownMenuItem>
+				<DropdownMenuItem
+					className="rounded-none"
+					onClick={() => setTheme("system")}
+				>
+					System
+				</DropdownMenuItem>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/blocks/features.tsx
+```
+import { useId } from "react";
+
+export function Features() {
+	return (
+		<div className="py-2">
+			<div className="mt-2 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-10 md:gap-2 max-w-7xl mx-auto">
+				{grid.map((feature, i) => (
+					<div
+						key={feature.title}
+						className="relative bg-gradient-to-b dark:from-neutral-900 from-neutral-100 dark:to-neutral-950 to-white px-6 py-2 overflow-hidden"
+					>
+						<Grid size={i * 5 + 10} />
+						<p className="text-base font-bold text-neutral-800 dark:text-white relative z-0">
+							{feature.title}
+						</p>
+						<p className="text-neutral-600 dark:text-neutral-400 text-base font-normal relative z-0">
+							{feature.description}
+						</p>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
+
+const grid = [
+	{
+		title: "Framework Agnostic",
+		description: "Support for most popular frameworks",
+	},
+	{
+		title: "Email & Password",
+		description:
+			"Built-in support for secure email and password authentication",
+	},
+	{
+		title: "Account & Session Management",
+		description: "Manage user accounts and sessions with ease",
+	},
+	{
+		title: "Built In Rate Limiter",
+		description: "Built in rate limiter with custom rules",
+	},
+	{
+		title: "Automatic Database Management",
+		description: "Automatic database management and migrations",
+	},
+	{
+		title: "Social Sign-on",
+		description: "Multiple social sign-on providers",
+	},
+	{
+		title: "Organization & Access Control",
+		description: "Manage organizations and access control",
+	},
+	{
+		title: "Two Factor Authentication",
+		description: "Secure your users with two factor authentication",
+	},
+	{
+		title: "Plugin Ecosystem",
+		description: "Even more capabilities with plugins",
+	},
+];
+
+export const Grid = ({
+	pattern,
+	size,
+}: {
+	pattern?: number[][];
+	size?: number;
+}) => {
+	const p = pattern ?? [
+		[Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
+		[Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
+		[Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
+		[Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
+		[Math.floor(Math.random() * 4) + 7, Math.floor(Math.random() * 6) + 1],
+	];
+	return (
+		<div className="pointer-events-none absolute left-1/2 top-0  -ml-20 -mt-2 h-full w-full [mask-image:linear-gradient(white,transparent)]">
+			<div className="absolute inset-0 bg-gradient-to-r  [mask-image:radial-gradient(farthest-side_at_top,white,transparent)] dark:from-zinc-900/30 from-zinc-100/30 to-zinc-300/30 dark:to-zinc-900/30 opacity-100">
+				<GridPattern
+					width={size ?? 20}
+					height={size ?? 20}
+					x="-12"
+					y="4"
+					squares={p}
+					className="absolute inset-0 h-full w-full  mix-blend-overlay dark:fill-white/10 dark:stroke-white/10 stroke-black/10 fill-black/10"
+				/>
+			</div>
+		</div>
+	);
+};
+
+export function GridPattern({ width, height, x, y, squares, ...props }: any) {
+	const patternId = useId();
+
+	return (
+		<svg aria-hidden="true" {...props}>
+			<defs>
+				<pattern
+					id={patternId}
+					width={width}
+					height={height}
+					patternUnits="userSpaceOnUse"
+					x={x}
+					y={y}
+				>
+					<path d={`M.5 ${height}V.5H${width}`} fill="none" />
+				</pattern>
+			</defs>
+			<rect
+				width="100%"
+				height="100%"
+				strokeWidth={0}
+				fill={`url(#${patternId})`}
+			/>
+			{squares && (
+				<svg x={x} y={y} className="overflow-visible">
+					{squares.map(([x, y]: any, idx: number) => (
+						<rect
+							strokeWidth="0"
+							key={`${x}-${y}-${idx}`}
+							width={width + 1}
+							height={height + 1}
+							x={x * width}
+							y={y * height}
+						/>
+					))}
+				</svg>
+			)}
+		</svg>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/mdx/database-tables.tsx
+```
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Key, Link } from "lucide-react";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "../ui/tooltip";
+
+interface Field {
+	name: string;
+	type: string;
+	description: string;
+	isPrimaryKey?: boolean;
+	isForeignKey?: boolean;
+	isOptional?: boolean;
+}
+
+interface DatabaseTableProps {
+	fields: Field[];
+}
+
+export default function DatabaseTable({ fields }: DatabaseTableProps) {
+	return (
+		<Table className="my-0">
+			<TableHeader>
+				<TableRow className="bg-primary/10 dark:bg-primary/20">
+					<TableHead className="w-1/6">Field Name</TableHead>
+					<TableHead className="w-1/6">Type</TableHead>
+					<TableHead className="w-1/12">Key</TableHead>
+					<TableHead className="w-1/2">Description</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{fields.map((field, index) => (
+					<TableRow
+						key={index}
+						className={index % 2 === 0 ? "bga-muted/50" : ""}
+					>
+						<TableCell className="font-medium">{field.name}</TableCell>
+						<TableCell className="font-mono text-sm">
+							<Badge variant="outline">{field.type}</Badge>
+						</TableCell>
+						<TableCell>
+							{field.isPrimaryKey && (
+								<TooltipProvider delayDuration={0}>
+									<Tooltip>
+										<TooltipTrigger>
+											<Badge
+												variant="secondary"
+												className="mr-1 rounded-sm bg-amber-500"
+											>
+												<Key className="w-3 h-3 mr-1" size={14} />
+												PK
+											</Badge>
+										</TooltipTrigger>
+										<TooltipContent>Primary Key</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							)}
+							{field.isForeignKey && (
+								<TooltipProvider delayDuration={0}>
+									<Tooltip>
+										<TooltipTrigger>
+											<Badge
+												variant="secondary"
+												className="mr-1 rounded-sm bg-blue-500"
+											>
+												<Link className="w-3 h-3 mr-1" size={14} />
+												FK
+											</Badge>
+										</TooltipTrigger>
+										<TooltipContent>Foreign Key</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							)}
+							{!field.isPrimaryKey &&
+								!field.isForeignKey &&
+								!field.isOptional && (
+									<span className="text-muted text-center">-</span>
+								)}
+							{field.isOptional && (
+								<TooltipProvider delayDuration={0}>
+									<Tooltip>
+										<TooltipTrigger>
+											<Badge variant="outline">?</Badge>
+										</TooltipTrigger>
+										<TooltipContent>Optional</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+							)}
+						</TableCell>
+						<TableCell>{field.description}</TableCell>
+					</TableRow>
+				))}
+			</TableBody>
+		</Table>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/accordion.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronDownIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Accordion({
+	...props
+}: React.ComponentProps<typeof AccordionPrimitive.Root>) {
+	return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
+}
+
+function AccordionItem({
+	className,
+	...props
+}: React.ComponentProps<typeof AccordionPrimitive.Item>) {
+	return (
+		<AccordionPrimitive.Item
+			data-slot="accordion-item"
+			className={cn("border-b last:border-b-0", className)}
+			{...props}
+		/>
+	);
+}
+
+function AccordionTrigger({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof AccordionPrimitive.Trigger>) {
+	return (
+		<AccordionPrimitive.Header className="flex">
+			<AccordionPrimitive.Trigger
+				data-slot="accordion-trigger"
+				className={cn(
+					"focus-visible:border-ring focus-visible:ring-ring/50 flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm font-medium transition-all outline-none hover:underline focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
+					className,
+				)}
+				{...props}
+			>
+				{children}
+				<ChevronDownIcon className="text-muted-foreground pointer-events-none size-4 shrink-0 translate-y-0.5 transition-transform duration-200" />
+			</AccordionPrimitive.Trigger>
+		</AccordionPrimitive.Header>
+	);
+}
+
+function AccordionContent({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof AccordionPrimitive.Content>) {
+	return (
+		<AccordionPrimitive.Content
+			data-slot="accordion-content"
+			className="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
+			{...props}
+		>
+			<div className={cn("pt-0 pb-4", className)}>{children}</div>
+		</AccordionPrimitive.Content>
+	);
+}
+
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/alert-dialog.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
+function AlertDialog({
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+	return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+}
+
+function AlertDialogTrigger({
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+	return (
+		<AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+	);
+}
+
+function AlertDialogPortal({
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+	return (
+		<AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+	);
+}
+
+function AlertDialogOverlay({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+	return (
+		<AlertDialogPrimitive.Overlay
+			data-slot="alert-dialog-overlay"
+			className={cn(
+				"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogContent({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+	return (
+		<AlertDialogPortal>
+			<AlertDialogOverlay />
+			<AlertDialogPrimitive.Content
+				data-slot="alert-dialog-content"
+				className={cn(
+					"bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+					className,
+				)}
+				{...props}
+			/>
+		</AlertDialogPortal>
+	);
+}
+
+function AlertDialogHeader({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="alert-dialog-header"
+			className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogFooter({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="alert-dialog-footer"
+			className={cn(
+				"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+	return (
+		<AlertDialogPrimitive.Title
+			data-slot="alert-dialog-title"
+			className={cn("text-lg font-semibold", className)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogDescription({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+	return (
+		<AlertDialogPrimitive.Description
+			data-slot="alert-dialog-description"
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogAction({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+	return (
+		<AlertDialogPrimitive.Action
+			className={cn(buttonVariants(), className)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDialogCancel({
+	className,
+	...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+	return (
+		<AlertDialogPrimitive.Cancel
+			className={cn(buttonVariants({ variant: "outline" }), className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	AlertDialog,
+	AlertDialogPortal,
+	AlertDialogOverlay,
+	AlertDialogTrigger,
+	AlertDialogContent,
+	AlertDialogHeader,
+	AlertDialogFooter,
+	AlertDialogTitle,
+	AlertDialogDescription,
+	AlertDialogAction,
+	AlertDialogCancel,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/alert.tsx
+```
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const alertVariants = cva(
+	"relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+	{
+		variants: {
+			variant: {
+				default: "bg-background text-foreground",
+				destructive:
+					"text-destructive-foreground [&>svg]:text-current *:data-[slot=alert-description]:text-destructive-foreground/80",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
+
+function Alert({
+	className,
+	variant,
+	...props
+}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
+	return (
+		<div
+			data-slot="alert"
+			role="alert"
+			className={cn(alertVariants({ variant }), className)}
+			{...props}
+		/>
+	);
+}
+
+function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="alert-title"
+			className={cn(
+				"col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function AlertDescription({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="alert-description"
+			className={cn(
+				"text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Alert, AlertTitle, AlertDescription };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/aside-link.tsx
+```
+"use client";
+import type { ClassValue } from "clsx";
+import Link from "next/link";
+import { useSelectedLayoutSegment } from "next/navigation";
+
+import { cn } from "@/lib/utils";
+
+type Props = {
+	href: string;
+	children: React.ReactNode;
+	startWith: string;
+	title?: string | null;
+	className?: ClassValue;
+	activeClassName?: ClassValue;
+} & React.AnchorHTMLAttributes<HTMLAnchorElement>;
+
+export const AsideLink = ({
+	href,
+	children,
+	startWith,
+	title,
+	className,
+	activeClassName,
+	...props
+}: Props) => {
+	const segment = useSelectedLayoutSegment();
+	const path = href;
+	const isActive = path.replace("/docs/", "") === segment;
+
+	return (
+		<Link
+			href={href}
+			className={cn(
+				isActive
+					? cn("text-foreground bg-primary/10", activeClassName)
+					: "text-muted-foreground hover:text-foreground hover:bg-primary/10",
+				"w-full transition-colors flex items-center gap-x-2.5 hover:bg-primary/10 px-5 py-1",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+		</Link>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/aspect-ratio.tsx
+```
+"use client";
+
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio";
+
+function AspectRatio({
+	...props
+}: React.ComponentProps<typeof AspectRatioPrimitive.Root>) {
+	return <AspectRatioPrimitive.Root data-slot="aspect-ratio" {...props} />;
+}
+
+export { AspectRatio };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/avatar.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as AvatarPrimitive from "@radix-ui/react-avatar";
+
+import { cn } from "@/lib/utils";
+
+function Avatar({
+	className,
+	...props
+}: React.ComponentProps<typeof AvatarPrimitive.Root>) {
+	return (
+		<AvatarPrimitive.Root
+			data-slot="avatar"
+			className={cn(
+				"relative flex size-8 shrink-0 overflow-hidden rounded-full",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function AvatarImage({
+	className,
+	...props
+}: React.ComponentProps<typeof AvatarPrimitive.Image>) {
+	return (
+		<AvatarPrimitive.Image
+			data-slot="avatar-image"
+			className={cn("aspect-square size-full", className)}
+			{...props}
+		/>
+	);
+}
+
+function AvatarFallback({
+	className,
+	...props
+}: React.ComponentProps<typeof AvatarPrimitive.Fallback>) {
+	return (
+		<AvatarPrimitive.Fallback
+			data-slot="avatar-fallback"
+			className={cn(
+				"bg-muted flex size-full items-center justify-center rounded-full",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Avatar, AvatarImage, AvatarFallback };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/background-beams.tsx
+```
+"use client";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+export const BackgroundBeams = React.memo(
+	({ className }: { className?: string }) => {
+		const paths = [
+			"M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
+			"M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
+			"M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
+			"M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
+			"M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
+			"M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835",
+			"M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827",
+			"M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819",
+			"M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811",
+			"M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803",
+			"M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795",
+			"M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787",
+			"M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779",
+			"M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771",
+			"M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763",
+			"M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755",
+			"M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747",
+			"M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739",
+			"M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731",
+			"M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723",
+			"M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715",
+			"M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707",
+			"M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699",
+			"M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691",
+			"M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683",
+			"M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675",
+			"M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667",
+			"M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659",
+			"M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651",
+			"M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643",
+			"M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635",
+			"M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627",
+			"M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619",
+			"M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611",
+			"M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603",
+			"M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595",
+			"M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587",
+			"M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579",
+			"M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571",
+			"M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563",
+			"M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555",
+			"M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547",
+			"M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539",
+			"M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531",
+			"M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523",
+			"M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515",
+			"M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507",
+			"M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499",
+			"M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491",
+			"M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483",
+		];
+		return (
+			<div
+				className={cn(
+					"absolute  h-full w-full inset-0  [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center",
+					className,
+				)}
+			>
+				<svg
+					className=" z-0 h-full w-full pointer-events-none absolute "
+					width="100%"
+					height="100%"
+					viewBox="0 0 696 316"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483M-30 -589C-30 -589 38 -184 502 -57C966 70 1034 475 1034 475M-23 -597C-23 -597 45 -192 509 -65C973 62 1041 467 1041 467M-16 -605C-16 -605 52 -200 516 -73C980 54 1048 459 1048 459M-9 -613C-9 -613 59 -208 523 -81C987 46 1055 451 1055 451M-2 -621C-2 -621 66 -216 530 -89C994 38 1062 443 1062 443M5 -629C5 -629 73 -224 537 -97C1001 30 1069 435 1069 435M12 -637C12 -637 80 -232 544 -105C1008 22 1076 427 1076 427M19 -645C19 -645 87 -240 551 -113C1015 14 1083 419 1083 419"
+						stroke="url(#paint0_radial_242_278)"
+						strokeOpacity="0.05"
+						strokeWidth="0.5"
+					></path>
+
+					{paths.map((path, index) => (
+						<motion.path
+							key={`path-` + index}
+							d={path}
+							stroke={`url(#linearGradient-${index})`}
+							strokeOpacity="0.4"
+							strokeWidth="0.5"
+						></motion.path>
+					))}
+					<defs>
+						{paths.map((path, index) => (
+							<motion.linearGradient
+								id={`linearGradient-${index}`}
+								key={`gradient-${index}`}
+								initial={{
+									x1: "0%",
+									x2: "0%",
+									y1: "0%",
+									y2: "0%",
+								}}
+								animate={{
+									x1: ["0%", "100%"],
+									x2: ["0%", "95%"],
+									y1: ["0%", "100%"],
+									y2: ["0%", `${93 + Math.random() * 8}%`],
+								}}
+								transition={{
+									duration: Math.random() * 10 + 10,
+									ease: "easeInOut",
+									repeat: Infinity,
+									delay: Math.random() * 10,
+								}}
+							>
+								<stop stopColor="#18CCFC" stopOpacity="0"></stop>
+								<stop stopColor="#18CCFC"></stop>
+								<stop offset="32.5%" stopColor="#6344F5"></stop>
+								<stop offset="100%" stopColor="#AE48FF" stopOpacity="0"></stop>
+							</motion.linearGradient>
+						))}
+
+						<radialGradient
+							id="paint0_radial_242_278"
+							cx="0"
+							cy="0"
+							r="1"
+							gradientUnits="userSpaceOnUse"
+							gradientTransform="translate(352 34) rotate(90) scale(555 1560.62)"
+						>
+							<stop offset="0.0666667" stopColor="var(--neutral-300)"></stop>
+							<stop offset="0.243243" stopColor="var(--neutral-300)"></stop>
+							<stop offset="0.43594" stopColor="white" stopOpacity="0"></stop>
+						</radialGradient>
+					</defs>
+				</svg>
+			</div>
+		);
+	},
+);
+
+BackgroundBeams.displayName = "BackgroundBeams";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/background-boxes.tsx
+```
+"use client";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+export const BoxesCore = ({ className, ...rest }: { className?: string }) => {
+	const rows = new Array(150).fill(1);
+	const cols = new Array(100).fill(1);
+	let colors = [
+		"--sky-300",
+		"--pink-300",
+		"--green-300",
+		"--yellow-300",
+		"--red-300",
+		"--purple-300",
+		"--blue-300",
+		"--indigo-300",
+		"--violet-300",
+	];
+	const getRandomColor = () => {
+		return colors[Math.floor(Math.random() * colors.length)];
+	};
+
+	return (
+		<div
+			style={{
+				transform: `translate(-40%,-60%) skewX(-48deg) skewY(14deg) scale(0.675) rotate(0deg) translateZ(0)`,
+			}}
+			className={cn(
+				"absolute left-1/4 p-4 -top-1/4 flex  -translate-x-1/2 -translate-y-1/2 w-full h-full z-0 ",
+				className,
+			)}
+			{...rest}
+		>
+			{rows.map((_, i) => (
+				<motion.div
+					key={`row` + i}
+					className="w-16 h-8  border-l  border-slate-700 relative"
+				>
+					{cols.map((_, j) => (
+						<motion.div
+							whileHover={{
+								backgroundColor: `var(${getRandomColor()})`,
+								transition: { duration: 0 },
+							}}
+							animate={{
+								transition: { duration: 2 },
+							}}
+							key={`col` + j}
+							className="w-16 h-8  border-r border-t border-slate-700 relative"
+						>
+							{j % 2 === 0 && i % 2 === 0 ? (
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									strokeWidth="1.5"
+									stroke="currentColor"
+									className="absolute h-6 w-10 -top-[14px] -left-[22px] text-slate-700 stroke-[1px] pointer-events-none"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M12 6v12m6-6H6"
+									/>
+								</svg>
+							) : null}
+						</motion.div>
+					))}
+				</motion.div>
+			))}
+		</div>
+	);
+};
+
+export const Boxes = React.memo(BoxesCore);
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/badge.tsx
+```
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const badgeVariants = cva(
+	"inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
+	{
+		variants: {
+			variant: {
+				default:
+					"border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+				secondary:
+					"border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+				destructive:
+					"border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+				outline:
+					"text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+		},
+	},
+);
+
+function Badge({
+	className,
+	variant,
+	asChild = false,
+	...props
+}: React.ComponentProps<"span"> &
+	VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+	const Comp = asChild ? Slot : "span";
+
+	return (
+		<Comp
+			data-slot="badge"
+			className={cn(badgeVariants({ variant }), className)}
+			{...props}
+		/>
+	);
+}
+
+export { Badge, badgeVariants };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/breadcrumb.tsx
+```
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {
+	return <nav aria-label="breadcrumb" data-slot="breadcrumb" {...props} />;
+}
+
+function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
+	return (
+		<ol
+			data-slot="breadcrumb-list"
+			className={cn(
+				"text-muted-foreground flex flex-wrap items-center gap-1.5 text-sm break-words sm:gap-2.5",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
+	return (
+		<li
+			data-slot="breadcrumb-item"
+			className={cn("inline-flex items-center gap-1.5", className)}
+			{...props}
+		/>
+	);
+}
+
+function BreadcrumbLink({
+	asChild,
+	className,
+	...props
+}: React.ComponentProps<"a"> & {
+	asChild?: boolean;
+}) {
+	const Comp = asChild ? Slot : "a";
+
+	return (
+		<Comp
+			data-slot="breadcrumb-link"
+			className={cn("hover:text-foreground transition-colors", className)}
+			{...props}
+		/>
+	);
+}
+
+function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="breadcrumb-page"
+			role="link"
+			aria-disabled="true"
+			aria-current="page"
+			className={cn("text-foreground font-normal", className)}
+			{...props}
+		/>
+	);
+}
+
+function BreadcrumbSeparator({
+	children,
+	className,
+	...props
+}: React.ComponentProps<"li">) {
+	return (
+		<li
+			data-slot="breadcrumb-separator"
+			role="presentation"
+			aria-hidden="true"
+			className={cn("[&>svg]:size-3.5", className)}
+			{...props}
+		>
+			{children ?? <ChevronRight />}
+		</li>
+	);
+}
+
+function BreadcrumbEllipsis({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="breadcrumb-ellipsis"
+			role="presentation"
+			aria-hidden="true"
+			className={cn("flex size-9 items-center justify-center", className)}
+			{...props}
+		>
+			<MoreHorizontal className="size-4" />
+			<span className="sr-only">More</span>
+		</span>
+	);
+}
+
+export {
+	Breadcrumb,
+	BreadcrumbList,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	BreadcrumbEllipsis,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/button.tsx
+```
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const buttonVariants = cva(
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-[color,box-shadow] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+	{
+		variants: {
+			variant: {
+				default:
+					"bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
+				destructive:
+					"bg-destructive text-white shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+				outline:
+					"border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
+				secondary:
+					"bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
+				ghost: "hover:bg-accent hover:text-accent-foreground",
+				link: "text-primary underline-offset-4 hover:underline",
+			},
+			size: {
+				default: "h-9 px-4 py-2 has-[>svg]:px-3",
+				sm: "h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5",
+				lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
+				icon: "size-9",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+function Button({
+	className,
+	variant,
+	size,
+	asChild = false,
+	...props
+}: React.ComponentProps<"button"> &
+	VariantProps<typeof buttonVariants> & {
+		asChild?: boolean;
+	}) {
+	const Comp = asChild ? Slot : "button";
+
+	return (
+		<Comp
+			data-slot="button"
+			className={cn(buttonVariants({ variant, size, className }))}
+			{...props}
+		/>
+	);
+}
+
+export { Button, buttonVariants };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/calendar.tsx
+```
+"use client";
+
+import * as React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DayPicker } from "react-day-picker";
+
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+
+function Calendar({
+	className,
+	classNames,
+	showOutsideDays = true,
+	...props
+}: React.ComponentProps<typeof DayPicker>) {
+	return (
+		<DayPicker
+			showOutsideDays={showOutsideDays}
+			className={cn("p-3", className)}
+			classNames={{
+				months: "flex flex-col sm:flex-row gap-2",
+				month: "flex flex-col gap-4",
+				caption: "flex justify-center pt-1 relative items-center w-full",
+				caption_label: "text-sm font-medium",
+				nav: "flex items-center gap-1",
+				nav_button: cn(
+					buttonVariants({ variant: "outline" }),
+					"size-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+				),
+				nav_button_previous: "absolute left-1",
+				nav_button_next: "absolute right-1",
+				table: "w-full border-collapse space-x-1",
+				head_row: "flex",
+				head_cell:
+					"text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
+				row: "flex w-full mt-2",
+				cell: cn(
+					"relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-md",
+					props.mode === "range"
+						? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
+						: "[&:has([aria-selected])]:rounded-md",
+				),
+				day: cn(
+					buttonVariants({ variant: "ghost" }),
+					"size-8 p-0 font-normal aria-selected:opacity-100",
+				),
+				day_range_start:
+					"day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
+				day_range_end:
+					"day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
+				day_selected:
+					"bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+				day_today: "bg-accent text-accent-foreground",
+				day_outside:
+					"day-outside text-muted-foreground aria-selected:text-muted-foreground",
+				day_disabled: "text-muted-foreground opacity-50",
+				day_range_middle:
+					"aria-selected:bg-accent aria-selected:text-accent-foreground",
+				day_hidden: "invisible",
+				...classNames,
+			}}
+			components={{
+				IconLeft: ({ className, ...props }) => (
+					<ChevronLeft className={cn("size-4", className)} {...props} />
+				),
+				IconRight: ({ className, ...props }) => (
+					<ChevronRight className={cn("size-4", className)} {...props} />
+				),
+			}}
+			{...props}
+		/>
+	);
+}
+
+export { Calendar };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/card.tsx
+```
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card"
+			className={cn(
+				"bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card-header"
+			className={cn("flex flex-col gap-1.5 px-6", className)}
+			{...props}
+		/>
+	);
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card-title"
+			className={cn("leading-none font-semibold", className)}
+			{...props}
+		/>
+	);
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card-description"
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card-content"
+			className={cn("px-6", className)}
+			{...props}
+		/>
+	);
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="card-footer"
+			className={cn("flex items-center px-6", className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Card,
+	CardHeader,
+	CardFooter,
+	CardTitle,
+	CardDescription,
+	CardContent,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/carousel.tsx
+```
+"use client";
+
+import * as React from "react";
+import useEmblaCarousel, {
+	type UseEmblaCarouselType,
+} from "embla-carousel-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+
+type CarouselApi = UseEmblaCarouselType[1];
+type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;
+type CarouselOptions = UseCarouselParameters[0];
+type CarouselPlugin = UseCarouselParameters[1];
+
+type CarouselProps = {
+	opts?: CarouselOptions;
+	plugins?: CarouselPlugin;
+	orientation?: "horizontal" | "vertical";
+	setApi?: (api: CarouselApi) => void;
+};
+
+type CarouselContextProps = {
+	carouselRef: ReturnType<typeof useEmblaCarousel>[0];
+	api: ReturnType<typeof useEmblaCarousel>[1];
+	scrollPrev: () => void;
+	scrollNext: () => void;
+	canScrollPrev: boolean;
+	canScrollNext: boolean;
+} & CarouselProps;
+
+const CarouselContext = React.createContext<CarouselContextProps | null>(null);
+
+function useCarousel() {
+	const context = React.useContext(CarouselContext);
+
+	if (!context) {
+		throw new Error("useCarousel must be used within a <Carousel />");
+	}
+
+	return context;
+}
+
+function Carousel({
+	orientation = "horizontal",
+	opts,
+	setApi,
+	plugins,
+	className,
+	children,
+	...props
+}: React.ComponentProps<"div"> & CarouselProps) {
+	const [carouselRef, api] = useEmblaCarousel(
+		{
+			...opts,
+			axis: orientation === "horizontal" ? "x" : "y",
+		},
+		plugins,
+	);
+	const [canScrollPrev, setCanScrollPrev] = React.useState(false);
+	const [canScrollNext, setCanScrollNext] = React.useState(false);
+
+	const onSelect = React.useCallback((api: CarouselApi) => {
+		if (!api) return;
+		setCanScrollPrev(api.canScrollPrev());
+		setCanScrollNext(api.canScrollNext());
+	}, []);
+
+	const scrollPrev = React.useCallback(() => {
+		api?.scrollPrev();
+	}, [api]);
+
+	const scrollNext = React.useCallback(() => {
+		api?.scrollNext();
+	}, [api]);
+
+	const handleKeyDown = React.useCallback(
+		(event: React.KeyboardEvent<HTMLDivElement>) => {
+			if (event.key === "ArrowLeft") {
+				event.preventDefault();
+				scrollPrev();
+			} else if (event.key === "ArrowRight") {
+				event.preventDefault();
+				scrollNext();
+			}
+		},
+		[scrollPrev, scrollNext],
+	);
+
+	React.useEffect(() => {
+		if (!api || !setApi) return;
+		setApi(api);
+	}, [api, setApi]);
+
+	React.useEffect(() => {
+		if (!api) return;
+		onSelect(api);
+		api.on("reInit", onSelect);
+		api.on("select", onSelect);
+
+		return () => {
+			api?.off("select", onSelect);
+		};
+	}, [api, onSelect]);
+
+	return (
+		<CarouselContext.Provider
+			value={{
+				carouselRef,
+				api: api,
+				opts,
+				orientation:
+					orientation || (opts?.axis === "y" ? "vertical" : "horizontal"),
+				scrollPrev,
+				scrollNext,
+				canScrollPrev,
+				canScrollNext,
+			}}
+		>
+			<div
+				onKeyDownCapture={handleKeyDown}
+				className={cn("relative", className)}
+				role="region"
+				aria-roledescription="carousel"
+				data-slot="carousel"
+				{...props}
+			>
+				{children}
+			</div>
+		</CarouselContext.Provider>
+	);
+}
+
+function CarouselContent({ className, ...props }: React.ComponentProps<"div">) {
+	const { carouselRef, orientation } = useCarousel();
+
+	return (
+		<div
+			ref={carouselRef}
+			className="overflow-hidden"
+			data-slot="carousel-content"
+		>
+			<div
+				className={cn(
+					"flex",
+					orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col",
+					className,
+				)}
+				{...props}
+			/>
+		</div>
+	);
+}
+
+function CarouselItem({ className, ...props }: React.ComponentProps<"div">) {
+	const { orientation } = useCarousel();
+
+	return (
+		<div
+			role="group"
+			aria-roledescription="slide"
+			data-slot="carousel-item"
+			className={cn(
+				"min-w-0 shrink-0 grow-0 basis-full",
+				orientation === "horizontal" ? "pl-4" : "pt-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CarouselPrevious({
+	className,
+	variant = "outline",
+	size = "icon",
+	...props
+}: React.ComponentProps<typeof Button>) {
+	const { orientation, scrollPrev, canScrollPrev } = useCarousel();
+
+	return (
+		<Button
+			data-slot="carousel-previous"
+			variant={variant}
+			size={size}
+			className={cn(
+				"absolute size-8 rounded-full",
+				orientation === "horizontal"
+					? "top-1/2 -left-12 -translate-y-1/2"
+					: "-top-12 left-1/2 -translate-x-1/2 rotate-90",
+				className,
+			)}
+			disabled={!canScrollPrev}
+			onClick={scrollPrev}
+			{...props}
+		>
+			<ArrowLeft />
+			<span className="sr-only">Previous slide</span>
+		</Button>
+	);
+}
+
+function CarouselNext({
+	className,
+	variant = "outline",
+	size = "icon",
+	...props
+}: React.ComponentProps<typeof Button>) {
+	const { orientation, scrollNext, canScrollNext } = useCarousel();
+
+	return (
+		<Button
+			data-slot="carousel-next"
+			variant={variant}
+			size={size}
+			className={cn(
+				"absolute size-8 rounded-full",
+				orientation === "horizontal"
+					? "top-1/2 -right-12 -translate-y-1/2"
+					: "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
+				className,
+			)}
+			disabled={!canScrollNext}
+			onClick={scrollNext}
+			{...props}
+		>
+			<ArrowRight />
+			<span className="sr-only">Next slide</span>
+		</Button>
+	);
+}
+
+export {
+	type CarouselApi,
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselPrevious,
+	CarouselNext,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/chart.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as RechartsPrimitive from "recharts";
+
+import { cn } from "@/lib/utils";
+
+// Format: { THEME_NAME: CSS_SELECTOR }
+const THEMES = { light: "", dark: ".dark" } as const;
+
+export type ChartConfig = {
+	[k in string]: {
+		label?: React.ReactNode;
+		icon?: React.ComponentType;
+	} & (
+		| { color?: string; theme?: never }
+		| { color?: never; theme: Record<keyof typeof THEMES, string> }
+	);
+};
+
+type ChartContextProps = {
+	config: ChartConfig;
+};
+
+const ChartContext = React.createContext<ChartContextProps | null>(null);
+
+function useChart() {
+	const context = React.useContext(ChartContext);
+
+	if (!context) {
+		throw new Error("useChart must be used within a <ChartContainer />");
+	}
+
+	return context;
+}
+
+function ChartContainer({
+	id,
+	className,
+	children,
+	config,
+	...props
+}: React.ComponentProps<"div"> & {
+	config: ChartConfig;
+	children: React.ComponentProps<
+		typeof RechartsPrimitive.ResponsiveContainer
+	>["children"];
+}) {
+	const uniqueId = React.useId();
+	const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+
+	return (
+		<ChartContext.Provider value={{ config }}>
+			<div
+				data-slot="chart"
+				data-chart={chartId}
+				className={cn(
+					"[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
+					className,
+				)}
+				{...props}
+			>
+				<ChartStyle id={chartId} config={config} />
+				<RechartsPrimitive.ResponsiveContainer>
+					{children}
+				</RechartsPrimitive.ResponsiveContainer>
+			</div>
+		</ChartContext.Provider>
+	);
+}
+
+const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
+	const colorConfig = Object.entries(config).filter(
+		([, config]) => config.theme || config.color,
+	);
+
+	if (!colorConfig.length) {
+		return null;
+	}
+
+	return (
+		<style
+			dangerouslySetInnerHTML={{
+				__html: Object.entries(THEMES)
+					.map(
+						([theme, prefix]) => `
+${prefix} [data-chart=${id}] {
+${colorConfig
+	.map(([key, itemConfig]) => {
+		const color =
+			itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+			itemConfig.color;
+		return color ? `  --color-${key}: ${color};` : null;
+	})
+	.join("\n")}
+}
+`,
+					)
+					.join("\n"),
+			}}
+		/>
+	);
+};
+
+const ChartTooltip = RechartsPrimitive.Tooltip;
+
+function ChartTooltipContent({
+	active,
+	payload,
+	className,
+	indicator = "dot",
+	hideLabel = false,
+	hideIndicator = false,
+	label,
+	labelFormatter,
+	labelClassName,
+	formatter,
+	color,
+	nameKey,
+	labelKey,
+}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+	React.ComponentProps<"div"> & {
+		hideLabel?: boolean;
+		hideIndicator?: boolean;
+		indicator?: "line" | "dot" | "dashed";
+		nameKey?: string;
+		labelKey?: string;
+	}) {
+	const { config } = useChart();
+
+	const tooltipLabel = React.useMemo(() => {
+		if (hideLabel || !payload?.length) {
+			return null;
+		}
+
+		const [item] = payload;
+		const key = `${labelKey || item?.dataKey || item?.name || "value"}`;
+		const itemConfig = getPayloadConfigFromPayload(config, item, key);
+		const value =
+			!labelKey && typeof label === "string"
+				? config[label as keyof typeof config]?.label || label
+				: itemConfig?.label;
+
+		if (labelFormatter) {
+			return (
+				<div className={cn("font-medium", labelClassName)}>
+					{labelFormatter(value, payload)}
+				</div>
+			);
+		}
+
+		if (!value) {
+			return null;
+		}
+
+		return <div className={cn("font-medium", labelClassName)}>{value}</div>;
+	}, [
+		label,
+		labelFormatter,
+		payload,
+		hideLabel,
+		labelClassName,
+		config,
+		labelKey,
+	]);
+
+	if (!active || !payload?.length) {
+		return null;
+	}
+
+	const nestLabel = payload.length === 1 && indicator !== "dot";
+
+	return (
+		<div
+			className={cn(
+				"border-border/50 bg-background grid min-w-[8rem] items-start gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs shadow-xl",
+				className,
+			)}
+		>
+			{!nestLabel ? tooltipLabel : null}
+			<div className="grid gap-1.5">
+				{payload.map((item, index) => {
+					const key = `${nameKey || item.name || item.dataKey || "value"}`;
+					const itemConfig = getPayloadConfigFromPayload(config, item, key);
+					const indicatorColor = color || item.payload.fill || item.color;
+
+					return (
+						<div
+							key={item.dataKey}
+							className={cn(
+								"[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
+								indicator === "dot" && "items-center",
+							)}
+						>
+							{formatter && item?.value !== undefined && item.name ? (
+								formatter(item.value, item.name, item, index, item.payload)
+							) : (
+								<>
+									{itemConfig?.icon ? (
+										<itemConfig.icon />
+									) : (
+										!hideIndicator && (
+											<div
+												className={cn(
+													"shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
+													{
+														"h-2.5 w-2.5": indicator === "dot",
+														"w-1": indicator === "line",
+														"w-0 border-[1.5px] border-dashed bg-transparent":
+															indicator === "dashed",
+														"my-0.5": nestLabel && indicator === "dashed",
+													},
+												)}
+												style={
+													{
+														"--color-bg": indicatorColor,
+														"--color-border": indicatorColor,
+													} as React.CSSProperties
+												}
+											/>
+										)
+									)}
+									<div
+										className={cn(
+											"flex flex-1 justify-between leading-none",
+											nestLabel ? "items-end" : "items-center",
+										)}
+									>
+										<div className="grid gap-1.5">
+											{nestLabel ? tooltipLabel : null}
+											<span className="text-muted-foreground">
+												{itemConfig?.label || item.name}
+											</span>
+										</div>
+										{item.value && (
+											<span className="text-foreground font-mono font-medium tabular-nums">
+												{item.value.toLocaleString()}
+											</span>
+										)}
+									</div>
+								</>
+							)}
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+const ChartLegend = RechartsPrimitive.Legend;
+
+function ChartLegendContent({
+	className,
+	hideIcon = false,
+	payload,
+	verticalAlign = "bottom",
+	nameKey,
+}: React.ComponentProps<"div"> &
+	Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+		hideIcon?: boolean;
+		nameKey?: string;
+	}) {
+	const { config } = useChart();
+
+	if (!payload?.length) {
+		return null;
+	}
+
+	return (
+		<div
+			className={cn(
+				"flex items-center justify-center gap-4",
+				verticalAlign === "top" ? "pb-3" : "pt-3",
+				className,
+			)}
+		>
+			{payload.map((item) => {
+				const key = `${nameKey || item.dataKey || "value"}`;
+				const itemConfig = getPayloadConfigFromPayload(config, item, key);
+
+				return (
+					<div
+						key={item.value}
+						className={cn(
+							"[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
+						)}
+					>
+						{itemConfig?.icon && !hideIcon ? (
+							<itemConfig.icon />
+						) : (
+							<div
+								className="h-2 w-2 shrink-0 rounded-[2px]"
+								style={{
+									backgroundColor: item.color,
+								}}
+							/>
+						)}
+						{itemConfig?.label}
+					</div>
+				);
+			})}
+		</div>
+	);
+}
+
+// Helper to extract item config from a payload.
+function getPayloadConfigFromPayload(
+	config: ChartConfig,
+	payload: unknown,
+	key: string,
+) {
+	if (typeof payload !== "object" || payload === null) {
+		return undefined;
+	}
+
+	const payloadPayload =
+		"payload" in payload &&
+		typeof payload.payload === "object" &&
+		payload.payload !== null
+			? payload.payload
+			: undefined;
+
+	let configLabelKey: string = key;
+
+	if (
+		key in payload &&
+		typeof payload[key as keyof typeof payload] === "string"
+	) {
+		configLabelKey = payload[key as keyof typeof payload] as string;
+	} else if (
+		payloadPayload &&
+		key in payloadPayload &&
+		typeof payloadPayload[key as keyof typeof payloadPayload] === "string"
+	) {
+		configLabelKey = payloadPayload[
+			key as keyof typeof payloadPayload
+		] as string;
+	}
+
+	return configLabelKey in config
+		? config[configLabelKey]
+		: config[key as keyof typeof config];
+}
+
+export {
+	ChartContainer,
+	ChartTooltip,
+	ChartTooltipContent,
+	ChartLegend,
+	ChartLegendContent,
+	ChartStyle,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/checkbox.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { CheckIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Checkbox({
+	className,
+	...props
+}: React.ComponentProps<typeof CheckboxPrimitive.Root>) {
+	return (
+		<CheckboxPrimitive.Root
+			data-slot="checkbox"
+			className={cn(
+				"peer border-input data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+				className,
+			)}
+			{...props}
+		>
+			<CheckboxPrimitive.Indicator
+				data-slot="checkbox-indicator"
+				className="flex items-center justify-center text-current transition-none"
+			>
+				<CheckIcon className="size-3.5" />
+			</CheckboxPrimitive.Indicator>
+		</CheckboxPrimitive.Root>
+	);
+}
+
+export { Checkbox };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/collapsible.tsx
+```
+"use client";
+
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
+
+function Collapsible({
+	...props
+}: React.ComponentProps<typeof CollapsiblePrimitive.Root>) {
+	return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
+}
+
+function CollapsibleTrigger({
+	...props
+}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger>) {
+	return (
+		<CollapsiblePrimitive.CollapsibleTrigger
+			data-slot="collapsible-trigger"
+			{...props}
+		/>
+	);
+}
+
+function CollapsibleContent({
+	...props
+}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) {
+	return (
+		<CollapsiblePrimitive.CollapsibleContent
+			data-slot="collapsible-content"
+			{...props}
+		/>
+	);
+}
+
+export { Collapsible, CollapsibleTrigger, CollapsibleContent };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/command.tsx
+```
+"use client";
+
+import * as React from "react";
+import { Command as CommandPrimitive } from "cmdk";
+import { SearchIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+
+function Command({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive>) {
+	return (
+		<CommandPrimitive
+			data-slot="command"
+			className={cn(
+				"bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CommandDialog({
+	title = "Command Palette",
+	description = "Search for a command to run...",
+	children,
+	...props
+}: React.ComponentProps<typeof Dialog> & {
+	title?: string;
+	description?: string;
+}) {
+	return (
+		<Dialog {...props}>
+			<DialogHeader className="sr-only">
+				<DialogTitle>{title}</DialogTitle>
+				<DialogDescription>{description}</DialogDescription>
+			</DialogHeader>
+			<DialogContent className="overflow-hidden p-0">
+				<Command className="[&_[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+					{children}
+				</Command>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function CommandInput({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.Input>) {
+	return (
+		<div
+			data-slot="command-input-wrapper"
+			className="flex h-9 items-center gap-2 border-b px-3"
+		>
+			<SearchIcon className="size-4 shrink-0 opacity-50" />
+			<CommandPrimitive.Input
+				data-slot="command-input"
+				className={cn(
+					"placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+					className,
+				)}
+				{...props}
+			/>
+		</div>
+	);
+}
+
+function CommandList({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.List>) {
+	return (
+		<CommandPrimitive.List
+			data-slot="command-list"
+			className={cn(
+				"max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CommandEmpty({
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+	return (
+		<CommandPrimitive.Empty
+			data-slot="command-empty"
+			className="py-6 text-center text-sm"
+			{...props}
+		/>
+	);
+}
+
+function CommandGroup({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.Group>) {
+	return (
+		<CommandPrimitive.Group
+			data-slot="command-group"
+			className={cn(
+				"text-foreground [&_[cmdk-group-heading]]:text-muted-foreground overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CommandSeparator({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+	return (
+		<CommandPrimitive.Separator
+			data-slot="command-separator"
+			className={cn("bg-border -mx-1 h-px", className)}
+			{...props}
+		/>
+	);
+}
+
+function CommandItem({
+	className,
+	...props
+}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+	return (
+		<CommandPrimitive.Item
+			data-slot="command-item"
+			className={cn(
+				"data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function CommandShortcut({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="command-shortcut"
+			className={cn(
+				"text-muted-foreground ml-auto text-xs tracking-widest",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Command,
+	CommandDialog,
+	CommandInput,
+	CommandList,
+	CommandEmpty,
+	CommandGroup,
+	CommandItem,
+	CommandShortcut,
+	CommandSeparator,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/context-menu.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function ContextMenu({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
+	return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
+}
+
+function ContextMenuTrigger({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Trigger>) {
+	return (
+		<ContextMenuPrimitive.Trigger data-slot="context-menu-trigger" {...props} />
+	);
+}
+
+function ContextMenuGroup({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Group>) {
+	return (
+		<ContextMenuPrimitive.Group data-slot="context-menu-group" {...props} />
+	);
+}
+
+function ContextMenuPortal({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Portal>) {
+	return (
+		<ContextMenuPrimitive.Portal data-slot="context-menu-portal" {...props} />
+	);
+}
+
+function ContextMenuSub({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Sub>) {
+	return <ContextMenuPrimitive.Sub data-slot="context-menu-sub" {...props} />;
+}
+
+function ContextMenuRadioGroup({
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.RadioGroup>) {
+	return (
+		<ContextMenuPrimitive.RadioGroup
+			data-slot="context-menu-radio-group"
+			{...props}
+		/>
+	);
+}
+
+function ContextMenuSubTrigger({
+	className,
+	inset,
+	children,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.SubTrigger> & {
+	inset?: boolean;
+}) {
+	return (
+		<ContextMenuPrimitive.SubTrigger
+			data-slot="context-menu-sub-trigger"
+			data-inset={inset}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			<ChevronRightIcon className="ml-auto" />
+		</ContextMenuPrimitive.SubTrigger>
+	);
+}
+
+function ContextMenuSubContent({
+	className,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.SubContent>) {
+	return (
+		<ContextMenuPrimitive.SubContent
+			data-slot="context-menu-sub-content"
+			className={cn(
+				"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function ContextMenuContent({
+	className,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Content>) {
+	return (
+		<ContextMenuPrimitive.Portal>
+			<ContextMenuPrimitive.Content
+				data-slot="context-menu-content"
+				className={cn(
+					"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-md",
+					className,
+				)}
+				{...props}
+			/>
+		</ContextMenuPrimitive.Portal>
+	);
+}
+
+function ContextMenuItem({
+	className,
+	inset,
+	variant = "default",
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Item> & {
+	inset?: boolean;
+	variant?: "default" | "destructive";
+}) {
+	return (
+		<ContextMenuPrimitive.Item
+			data-slot="context-menu-item"
+			data-inset={inset}
+			data-variant={variant}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive-foreground data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-destructive-foreground data-[variant=destructive]:*:[svg]:!text-destructive-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function ContextMenuCheckboxItem({
+	className,
+	children,
+	checked,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.CheckboxItem>) {
+	return (
+		<ContextMenuPrimitive.CheckboxItem
+			data-slot="context-menu-checkbox-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			checked={checked}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<ContextMenuPrimitive.ItemIndicator>
+					<CheckIcon className="size-4" />
+				</ContextMenuPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</ContextMenuPrimitive.CheckboxItem>
+	);
+}
+
+function ContextMenuRadioItem({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.RadioItem>) {
+	return (
+		<ContextMenuPrimitive.RadioItem
+			data-slot="context-menu-radio-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<ContextMenuPrimitive.ItemIndicator>
+					<CircleIcon className="size-2 fill-current" />
+				</ContextMenuPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</ContextMenuPrimitive.RadioItem>
+	);
+}
+
+function ContextMenuLabel({
+	className,
+	inset,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Label> & {
+	inset?: boolean;
+}) {
+	return (
+		<ContextMenuPrimitive.Label
+			data-slot="context-menu-label"
+			data-inset={inset}
+			className={cn(
+				"text-foreground px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function ContextMenuSeparator({
+	className,
+	...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.Separator>) {
+	return (
+		<ContextMenuPrimitive.Separator
+			data-slot="context-menu-separator"
+			className={cn("bg-border -mx-1 my-1 h-px", className)}
+			{...props}
+		/>
+	);
+}
+
+function ContextMenuShortcut({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="context-menu-shortcut"
+			className={cn(
+				"text-muted-foreground ml-auto text-xs tracking-widest",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	ContextMenu,
+	ContextMenuTrigger,
+	ContextMenuContent,
+	ContextMenuItem,
+	ContextMenuCheckboxItem,
+	ContextMenuRadioItem,
+	ContextMenuLabel,
+	ContextMenuSeparator,
+	ContextMenuShortcut,
+	ContextMenuGroup,
+	ContextMenuPortal,
+	ContextMenuSub,
+	ContextMenuSubContent,
+	ContextMenuSubTrigger,
+	ContextMenuRadioGroup,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/dialog.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { XIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Dialog({
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+	return <DialogPrimitive.Root data-slot="dialog" {...props} />;
+}
+
+function DialogTrigger({
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+	return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+}
+
+function DialogPortal({
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+	return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
+}
+
+function DialogClose({
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+	return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
+}
+
+function DialogOverlay({
+	className,
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+	return (
+		<DialogPrimitive.Overlay
+			data-slot="dialog-overlay"
+			className={cn(
+				"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DialogContent({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Content>) {
+	return (
+		<DialogPortal data-slot="dialog-portal">
+			<DialogOverlay />
+			<DialogPrimitive.Content
+				data-slot="dialog-content"
+				className={cn(
+					"fixed left-[50%] top-[50%] z-50 grid max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg w-11/12",
+					className,
+				)}
+				{...props}
+			>
+				{children}
+				<DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
+					<XIcon />
+					<span className="sr-only">Close</span>
+				</DialogPrimitive.Close>
+			</DialogPrimitive.Content>
+		</DialogPortal>
+	);
+}
+
+function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="dialog-header"
+			className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+			{...props}
+		/>
+	);
+}
+
+function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="dialog-footer"
+			className={cn(
+				"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DialogTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+	return (
+		<DialogPrimitive.Title
+			data-slot="dialog-title"
+			className={cn("text-lg leading-none font-semibold", className)}
+			{...props}
+		/>
+	);
+}
+
+function DialogDescription({
+	className,
+	...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+	return (
+		<DialogPrimitive.Description
+			data-slot="dialog-description"
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogOverlay,
+	DialogPortal,
+	DialogTitle,
+	DialogTrigger,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/drawer.tsx
+```
+"use client";
+
+import * as React from "react";
+import { Drawer as DrawerPrimitive } from "vaul";
+
+import { cn } from "@/lib/utils";
+
+function Drawer({
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Root>) {
+	return <DrawerPrimitive.Root data-slot="drawer" {...props} />;
+}
+
+function DrawerTrigger({
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Trigger>) {
+	return <DrawerPrimitive.Trigger data-slot="drawer-trigger" {...props} />;
+}
+
+function DrawerPortal({
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Portal>) {
+	return <DrawerPrimitive.Portal data-slot="drawer-portal" {...props} />;
+}
+
+function DrawerClose({
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Close>) {
+	return <DrawerPrimitive.Close data-slot="drawer-close" {...props} />;
+}
+
+function DrawerOverlay({
+	className,
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Overlay>) {
+	return (
+		<DrawerPrimitive.Overlay
+			data-slot="drawer-overlay"
+			className={cn(
+				"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DrawerContent({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+	return (
+		<DrawerPortal data-slot="drawer-portal">
+			<DrawerOverlay />
+			<DrawerPrimitive.Content
+				data-slot="drawer-content"
+				className={cn(
+					"group/drawer-content bg-background fixed z-50 flex h-auto flex-col",
+					"data-[vaul-drawer-direction=top]:inset-x-0 data-[vaul-drawer-direction=top]:top-0 data-[vaul-drawer-direction=top]:mb-24 data-[vaul-drawer-direction=top]:max-h-[80vh] data-[vaul-drawer-direction=top]:rounded-b-lg",
+					"data-[vaul-drawer-direction=bottom]:inset-x-0 data-[vaul-drawer-direction=bottom]:bottom-0 data-[vaul-drawer-direction=bottom]:mt-24 data-[vaul-drawer-direction=bottom]:max-h-[80vh] data-[vaul-drawer-direction=bottom]:rounded-t-lg",
+					"data-[vaul-drawer-direction=right]:inset-y-0 data-[vaul-drawer-direction=right]:right-0 data-[vaul-drawer-direction=right]:w-3/4 data-[vaul-drawer-direction=right]:sm:max-w-sm",
+					"data-[vaul-drawer-direction=left]:inset-y-0 data-[vaul-drawer-direction=left]:left-0 data-[vaul-drawer-direction=left]:w-3/4 data-[vaul-drawer-direction=left]:sm:max-w-sm",
+					className,
+				)}
+				{...props}
+			>
+				<div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
+				{children}
+			</DrawerPrimitive.Content>
+		</DrawerPortal>
+	);
+}
+
+function DrawerHeader({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="drawer-header"
+			className={cn("flex flex-col gap-1.5 p-4", className)}
+			{...props}
+		/>
+	);
+}
+
+function DrawerFooter({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="drawer-footer"
+			className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+			{...props}
+		/>
+	);
+}
+
+function DrawerTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Title>) {
+	return (
+		<DrawerPrimitive.Title
+			data-slot="drawer-title"
+			className={cn("text-foreground font-semibold", className)}
+			{...props}
+		/>
+	);
+}
+
+function DrawerDescription({
+	className,
+	...props
+}: React.ComponentProps<typeof DrawerPrimitive.Description>) {
+	return (
+		<DrawerPrimitive.Description
+			data-slot="drawer-description"
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Drawer,
+	DrawerPortal,
+	DrawerOverlay,
+	DrawerTrigger,
+	DrawerClose,
+	DrawerContent,
+	DrawerHeader,
+	DrawerFooter,
+	DrawerTitle,
+	DrawerDescription,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/dropdown-menu.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function DropdownMenu({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
+	return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+}
+
+function DropdownMenuPortal({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
+	return (
+		<DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+	);
+}
+
+function DropdownMenuTrigger({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+	return (
+		<DropdownMenuPrimitive.Trigger
+			data-slot="dropdown-menu-trigger"
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuContent({
+	className,
+	sideOffset = 4,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
+	return (
+		<DropdownMenuPrimitive.Portal>
+			<DropdownMenuPrimitive.Content
+				data-slot="dropdown-menu-content"
+				sideOffset={sideOffset}
+				className={cn(
+					"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md",
+					className,
+				)}
+				{...props}
+			/>
+		</DropdownMenuPrimitive.Portal>
+	);
+}
+
+function DropdownMenuGroup({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Group>) {
+	return (
+		<DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
+	);
+}
+
+function DropdownMenuItem({
+	className,
+	inset,
+	variant = "default",
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Item> & {
+	inset?: boolean;
+	variant?: "default" | "destructive";
+}) {
+	return (
+		<DropdownMenuPrimitive.Item
+			data-slot="dropdown-menu-item"
+			data-inset={inset}
+			data-variant={variant}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive-foreground data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-destructive-foreground data-[variant=destructive]:*:[svg]:!text-destructive-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuCheckboxItem({
+	className,
+	children,
+	checked,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.CheckboxItem>) {
+	return (
+		<DropdownMenuPrimitive.CheckboxItem
+			data-slot="dropdown-menu-checkbox-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			checked={checked}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<DropdownMenuPrimitive.ItemIndicator>
+					<CheckIcon className="size-4" />
+				</DropdownMenuPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</DropdownMenuPrimitive.CheckboxItem>
+	);
+}
+
+function DropdownMenuRadioGroup({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioGroup>) {
+	return (
+		<DropdownMenuPrimitive.RadioGroup
+			data-slot="dropdown-menu-radio-group"
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuRadioItem({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.RadioItem>) {
+	return (
+		<DropdownMenuPrimitive.RadioItem
+			data-slot="dropdown-menu-radio-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-sm py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<DropdownMenuPrimitive.ItemIndicator>
+					<CircleIcon className="size-2 fill-current" />
+				</DropdownMenuPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</DropdownMenuPrimitive.RadioItem>
+	);
+}
+
+function DropdownMenuLabel({
+	className,
+	inset,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Label> & {
+	inset?: boolean;
+}) {
+	return (
+		<DropdownMenuPrimitive.Label
+			data-slot="dropdown-menu-label"
+			data-inset={inset}
+			className={cn(
+				"px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuSeparator({
+	className,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
+	return (
+		<DropdownMenuPrimitive.Separator
+			data-slot="dropdown-menu-separator"
+			className={cn("bg-border -mx-1 my-1 h-px", className)}
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuShortcut({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="dropdown-menu-shortcut"
+			className={cn(
+				"text-muted-foreground ml-auto text-xs tracking-widest",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function DropdownMenuSub({
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.Sub>) {
+	return <DropdownMenuPrimitive.Sub data-slot="dropdown-menu-sub" {...props} />;
+}
+
+function DropdownMenuSubTrigger({
+	className,
+	inset,
+	children,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubTrigger> & {
+	inset?: boolean;
+}) {
+	return (
+		<DropdownMenuPrimitive.SubTrigger
+			data-slot="dropdown-menu-sub-trigger"
+			data-inset={inset}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[inset]:pl-8",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			<ChevronRightIcon className="ml-auto size-4" />
+		</DropdownMenuPrimitive.SubTrigger>
+	);
+}
+
+function DropdownMenuSubContent({
+	className,
+	...props
+}: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
+	return (
+		<DropdownMenuPrimitive.SubContent
+			data-slot="dropdown-menu-sub-content"
+			className={cn(
+				"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	DropdownMenu,
+	DropdownMenuPortal,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuLabel,
+	DropdownMenuItem,
+	DropdownMenuCheckboxItem,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuSub,
+	DropdownMenuSubTrigger,
+	DropdownMenuSubContent,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/fade-in.tsx
+```
+"use client";
+
+import { AnimatePresence as PrimitiveAnimatePresence } from "framer-motion";
+
+export const AnimatePresence = (
+	props: React.ComponentPropsWithoutRef<typeof PrimitiveAnimatePresence>,
+) => {
+	return <PrimitiveAnimatePresence {...props} />;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/form.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { Slot } from "@radix-ui/react-slot";
+import {
+	Controller,
+	FormProvider,
+	useFormContext,
+	useFormState,
+	type ControllerProps,
+	type FieldPath,
+	type FieldValues,
+} from "react-hook-form";
+
+import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+
+const Form = FormProvider;
+
+type FormFieldContextValue<
+	TFieldValues extends FieldValues = FieldValues,
+	TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+> = {
+	name: TName;
+};
+
+const FormFieldContext = React.createContext<FormFieldContextValue>(
+	{} as FormFieldContextValue,
+);
+
+const FormField = <
+	TFieldValues extends FieldValues = FieldValues,
+	TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+>({
+	...props
+}: ControllerProps<TFieldValues, TName>) => {
+	return (
+		<FormFieldContext.Provider value={{ name: props.name }}>
+			<Controller {...props} />
+		</FormFieldContext.Provider>
+	);
+};
+
+const useFormField = () => {
+	const fieldContext = React.useContext(FormFieldContext);
+	const itemContext = React.useContext(FormItemContext);
+	const { getFieldState } = useFormContext();
+	const formState = useFormState({ name: fieldContext.name });
+	const fieldState = getFieldState(fieldContext.name, formState);
+
+	if (!fieldContext) {
+		throw new Error("useFormField should be used within <FormField>");
+	}
+
+	const { id } = itemContext;
+
+	return {
+		id,
+		name: fieldContext.name,
+		formItemId: `${id}-form-item`,
+		formDescriptionId: `${id}-form-item-description`,
+		formMessageId: `${id}-form-item-message`,
+		...fieldState,
+	};
+};
+
+type FormItemContextValue = {
+	id: string;
+};
+
+const FormItemContext = React.createContext<FormItemContextValue>(
+	{} as FormItemContextValue,
+);
+
+function FormItem({ className, ...props }: React.ComponentProps<"div">) {
+	const id = React.useId();
+
+	return (
+		<FormItemContext.Provider value={{ id }}>
+			<div
+				data-slot="form-item"
+				className={cn("grid gap-2", className)}
+				{...props}
+			/>
+		</FormItemContext.Provider>
+	);
+}
+
+function FormLabel({
+	className,
+	...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+	const { error, formItemId } = useFormField();
+
+	return (
+		<Label
+			data-slot="form-label"
+			data-error={!!error}
+			className={cn("data-[error=true]:text-destructive-foreground", className)}
+			htmlFor={formItemId}
+			{...props}
+		/>
+	);
+}
+
+function FormControl({ ...props }: React.ComponentProps<typeof Slot>) {
+	const { error, formItemId, formDescriptionId, formMessageId } =
+		useFormField();
+
+	return (
+		<Slot
+			data-slot="form-control"
+			id={formItemId}
+			aria-describedby={
+				!error
+					? `${formDescriptionId}`
+					: `${formDescriptionId} ${formMessageId}`
+			}
+			aria-invalid={!!error}
+			{...props}
+		/>
+	);
+}
+
+function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
+	const { formDescriptionId } = useFormField();
+
+	return (
+		<p
+			data-slot="form-description"
+			id={formDescriptionId}
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
+	const { error, formMessageId } = useFormField();
+	const body = error ? String(error?.message ?? "") : props.children;
+
+	if (!body) {
+		return null;
+	}
+
+	return (
+		<p
+			data-slot="form-message"
+			id={formMessageId}
+			className={cn("text-destructive-foreground text-sm", className)}
+			{...props}
+		>
+			{body}
+		</p>
+	);
+}
+
+export {
+	useFormField,
+	Form,
+	FormItem,
+	FormLabel,
+	FormControl,
+	FormDescription,
+	FormMessage,
+	FormField,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/hover-card.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+
+import { cn } from "@/lib/utils";
+
+function HoverCard({
+	...props
+}: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
+	return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
+}
+
+function HoverCardTrigger({
+	...props
+}: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
+	return (
+		<HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
+	);
+}
+
+function HoverCardContent({
+	className,
+	align = "center",
+	sideOffset = 4,
+	...props
+}: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
+	return (
+		<HoverCardPrimitive.Content
+			data-slot="hover-card-content"
+			align={align}
+			sideOffset={sideOffset}
+			className={cn(
+				"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-64 rounded-md border p-4 shadow-md outline-hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { HoverCard, HoverCardTrigger, HoverCardContent };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/input-otp.tsx
+```
+"use client";
+
+import * as React from "react";
+import { OTPInput, OTPInputContext } from "input-otp";
+import { MinusIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function InputOTP({
+	className,
+	containerClassName,
+	...props
+}: React.ComponentProps<typeof OTPInput> & {
+	containerClassName?: string;
+}) {
+	return (
+		<OTPInput
+			data-slot="input-otp"
+			containerClassName={cn(
+				"flex items-center gap-2 has-disabled:opacity-50",
+				containerClassName,
+			)}
+			className={cn("disabled:cursor-not-allowed", className)}
+			{...props}
+		/>
+	);
+}
+
+function InputOTPGroup({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="input-otp-group"
+			className={cn("flex items-center", className)}
+			{...props}
+		/>
+	);
+}
+
+function InputOTPSlot({
+	index,
+	className,
+	...props
+}: React.ComponentProps<"div"> & {
+	index: number;
+}) {
+	const inputOTPContext = React.useContext(OTPInputContext);
+	const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {};
+
+	return (
+		<div
+			data-slot="input-otp-slot"
+			data-active={isActive}
+			className={cn(
+				"border-input data-[active=true]:border-ring data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:ring-destructive/20 dark:data-[active=true]:aria-invalid:ring-destructive/40 aria-invalid:border-destructive data-[active=true]:aria-invalid:border-destructive relative flex h-9 w-9 items-center justify-center border-y border-r text-sm shadow-xs transition-all outline-none first:rounded-l-md first:border-l last:rounded-r-md data-[active=true]:z-10 data-[active=true]:ring-[3px]",
+				className,
+			)}
+			{...props}
+		>
+			{char}
+			{hasFakeCaret && (
+				<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+					<div className="animate-caret-blink bg-foreground h-4 w-px duration-1000" />
+				</div>
+			)}
+		</div>
+	);
+}
+
+function InputOTPSeparator({ ...props }: React.ComponentProps<"div">) {
+	return (
+		<div data-slot="input-otp-separator" role="separator" {...props}>
+			<MinusIcon />
+		</div>
+	);
+}
+
+export { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/input.tsx
+```
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+	return (
+		<input
+			type={type}
+			data-slot="input"
+			className={cn(
+				"border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+				"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+				"aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Input };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/label.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+
+import { cn } from "@/lib/utils";
+
+function Label({
+	className,
+	...props
+}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+	return (
+		<LabelPrimitive.Root
+			data-slot="label"
+			className={cn(
+				"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Label };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/menubar.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as MenubarPrimitive from "@radix-ui/react-menubar";
+import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Menubar({
+	className,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Root>) {
+	return (
+		<MenubarPrimitive.Root
+			data-slot="menubar"
+			className={cn(
+				"bg-background flex h-9 items-center gap-1 rounded-md border p-1 shadow-xs",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarMenu({
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Menu>) {
+	return <MenubarPrimitive.Menu data-slot="menubar-menu" {...props} />;
+}
+
+function MenubarGroup({
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Group>) {
+	return <MenubarPrimitive.Group data-slot="menubar-group" {...props} />;
+}
+
+function MenubarPortal({
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Portal>) {
+	return <MenubarPrimitive.Portal data-slot="menubar-portal" {...props} />;
+}
+
+function MenubarRadioGroup({
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.RadioGroup>) {
+	return (
+		<MenubarPrimitive.RadioGroup data-slot="menubar-radio-group" {...props} />
+	);
+}
+
+function MenubarTrigger({
+	className,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Trigger>) {
+	return (
+		<MenubarPrimitive.Trigger
+			data-slot="menubar-trigger"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex items-center rounded-sm px-2 py-1 text-sm font-medium outline-hidden select-none",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarContent({
+	className,
+	align = "start",
+	alignOffset = -4,
+	sideOffset = 8,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Content>) {
+	return (
+		<MenubarPortal>
+			<MenubarPrimitive.Content
+				data-slot="menubar-content"
+				align={align}
+				alignOffset={alignOffset}
+				sideOffset={sideOffset}
+				className={cn(
+					"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[12rem] overflow-hidden rounded-md border p-1 shadow-md",
+					className,
+				)}
+				{...props}
+			/>
+		</MenubarPortal>
+	);
+}
+
+function MenubarItem({
+	className,
+	inset,
+	variant = "default",
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Item> & {
+	inset?: boolean;
+	variant?: "default" | "destructive";
+}) {
+	return (
+		<MenubarPrimitive.Item
+			data-slot="menubar-item"
+			data-inset={inset}
+			data-variant={variant}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[variant=destructive]:text-destructive-foreground data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/40 data-[variant=destructive]:focus:text-destructive-foreground data-[variant=destructive]:*:[svg]:!text-destructive-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[inset]:pl-8 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarCheckboxItem({
+	className,
+	children,
+	checked,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.CheckboxItem>) {
+	return (
+		<MenubarPrimitive.CheckboxItem
+			data-slot="menubar-checkbox-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			checked={checked}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<MenubarPrimitive.ItemIndicator>
+					<CheckIcon className="size-4" />
+				</MenubarPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</MenubarPrimitive.CheckboxItem>
+	);
+}
+
+function MenubarRadioItem({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.RadioItem>) {
+	return (
+		<MenubarPrimitive.RadioItem
+			data-slot="menubar-radio-item"
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground relative flex cursor-default items-center gap-2 rounded-xs py-1.5 pr-2 pl-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		>
+			<span className="pointer-events-none absolute left-2 flex size-3.5 items-center justify-center">
+				<MenubarPrimitive.ItemIndicator>
+					<CircleIcon className="size-2 fill-current" />
+				</MenubarPrimitive.ItemIndicator>
+			</span>
+			{children}
+		</MenubarPrimitive.RadioItem>
+	);
+}
+
+function MenubarLabel({
+	className,
+	inset,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Label> & {
+	inset?: boolean;
+}) {
+	return (
+		<MenubarPrimitive.Label
+			data-slot="menubar-label"
+			data-inset={inset}
+			className={cn(
+				"px-2 py-1.5 text-sm font-medium data-[inset]:pl-8",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarSeparator({
+	className,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Separator>) {
+	return (
+		<MenubarPrimitive.Separator
+			data-slot="menubar-separator"
+			className={cn("bg-border -mx-1 my-1 h-px", className)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarShortcut({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			data-slot="menubar-shortcut"
+			className={cn(
+				"text-muted-foreground ml-auto text-xs tracking-widest",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function MenubarSub({
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.Sub>) {
+	return <MenubarPrimitive.Sub data-slot="menubar-sub" {...props} />;
+}
+
+function MenubarSubTrigger({
+	className,
+	inset,
+	children,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.SubTrigger> & {
+	inset?: boolean;
+}) {
+	return (
+		<MenubarPrimitive.SubTrigger
+			data-slot="menubar-sub-trigger"
+			data-inset={inset}
+			className={cn(
+				"focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[inset]:pl-8",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			<ChevronRightIcon className="ml-auto h-4 w-4" />
+		</MenubarPrimitive.SubTrigger>
+	);
+}
+
+function MenubarSubContent({
+	className,
+	...props
+}: React.ComponentProps<typeof MenubarPrimitive.SubContent>) {
+	return (
+		<MenubarPrimitive.SubContent
+			data-slot="menubar-sub-content"
+			className={cn(
+				"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1 shadow-lg",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Menubar,
+	MenubarPortal,
+	MenubarMenu,
+	MenubarTrigger,
+	MenubarContent,
+	MenubarGroup,
+	MenubarSeparator,
+	MenubarLabel,
+	MenubarItem,
+	MenubarShortcut,
+	MenubarCheckboxItem,
+	MenubarRadioGroup,
+	MenubarRadioItem,
+	MenubarSub,
+	MenubarSubTrigger,
+	MenubarSubContent,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/navigation-menu.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
+import { cva } from "class-variance-authority";
+import { ChevronDownIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function NavigationMenu({
+	className,
+	children,
+	viewport = true,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Root> & {
+	viewport?: boolean;
+}) {
+	return (
+		<NavigationMenuPrimitive.Root
+			data-slot="navigation-menu"
+			data-viewport={viewport}
+			className={cn(
+				"group/navigation-menu relative flex max-w-max flex-1 items-center justify-center",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			{viewport && <NavigationMenuViewport />}
+		</NavigationMenuPrimitive.Root>
+	);
+}
+
+function NavigationMenuList({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.List>) {
+	return (
+		<NavigationMenuPrimitive.List
+			data-slot="navigation-menu-list"
+			className={cn(
+				"group flex flex-1 list-none items-center justify-center gap-1",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function NavigationMenuItem({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Item>) {
+	return (
+		<NavigationMenuPrimitive.Item
+			data-slot="navigation-menu-item"
+			className={cn("relative", className)}
+			{...props}
+		/>
+	);
+}
+
+const navigationMenuTriggerStyle = cva(
+	"group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=open]:hover:bg-accent data-[state=open]:text-accent-foreground data-[state=open]:focus:bg-accent data-[state=open]:bg-accent/50 ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1",
+);
+
+function NavigationMenuTrigger({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Trigger>) {
+	return (
+		<NavigationMenuPrimitive.Trigger
+			data-slot="navigation-menu-trigger"
+			className={cn(navigationMenuTriggerStyle(), "group", className)}
+			{...props}
+		>
+			{children}{" "}
+			<ChevronDownIcon
+				className="relative top-[1px] ml-1 size-3 transition duration-300 group-data-[state=open]:rotate-180"
+				aria-hidden="true"
+			/>
+		</NavigationMenuPrimitive.Trigger>
+	);
+}
+
+function NavigationMenuContent({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Content>) {
+	return (
+		<NavigationMenuPrimitive.Content
+			data-slot="navigation-menu-content"
+			className={cn(
+				"data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 top-0 left-0 w-full p-2 pr-2.5 md:absolute md:w-auto",
+				"group-data-[viewport=false]/navigation-menu:bg-popover group-data-[viewport=false]/navigation-menu:text-popover-foreground group-data-[viewport=false]/navigation-menu:data-[state=open]:animate-in group-data-[viewport=false]/navigation-menu:data-[state=closed]:animate-out group-data-[viewport=false]/navigation-menu:data-[state=closed]:zoom-out-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:zoom-in-95 group-data-[viewport=false]/navigation-menu:data-[state=open]:fade-in-0 group-data-[viewport=false]/navigation-menu:data-[state=closed]:fade-out-0 group-data-[viewport=false]/navigation-menu:top-full group-data-[viewport=false]/navigation-menu:mt-1.5 group-data-[viewport=false]/navigation-menu:overflow-hidden group-data-[viewport=false]/navigation-menu:rounded-md group-data-[viewport=false]/navigation-menu:border group-data-[viewport=false]/navigation-menu:shadow group-data-[viewport=false]/navigation-menu:duration-200 **:data-[slot=navigation-menu-link]:focus:ring-0 **:data-[slot=navigation-menu-link]:focus:outline-none",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function NavigationMenuViewport({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Viewport>) {
+	return (
+		<div
+			className={cn(
+				"absolute top-full left-0 isolate z-50 flex justify-center",
+			)}
+		>
+			<NavigationMenuPrimitive.Viewport
+				data-slot="navigation-menu-viewport"
+				className={cn(
+					"origin-top-center bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border shadow md:w-[var(--radix-navigation-menu-viewport-width)]",
+					className,
+				)}
+				{...props}
+			/>
+		</div>
+	);
+}
+
+function NavigationMenuLink({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Link>) {
+	return (
+		<NavigationMenuPrimitive.Link
+			data-slot="navigation-menu-link"
+			className={cn(
+				"data-[active=true]:focus:bg-accent data-[active=true]:hover:bg-accent data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 [&_svg:not([class*='text-'])]:text-muted-foreground flex flex-col gap-1 rounded-sm p-2 text-sm transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function NavigationMenuIndicator({
+	className,
+	...props
+}: React.ComponentProps<typeof NavigationMenuPrimitive.Indicator>) {
+	return (
+		<NavigationMenuPrimitive.Indicator
+			data-slot="navigation-menu-indicator"
+			className={cn(
+				"data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden",
+				className,
+			)}
+			{...props}
+		>
+			<div className="bg-border relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm shadow-md" />
+		</NavigationMenuPrimitive.Indicator>
+	);
+}
+
+export {
+	NavigationMenu,
+	NavigationMenuList,
+	NavigationMenuItem,
+	NavigationMenuContent,
+	NavigationMenuTrigger,
+	NavigationMenuLink,
+	NavigationMenuIndicator,
+	NavigationMenuViewport,
+	navigationMenuTriggerStyle,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/pagination.tsx
+```
+import * as React from "react";
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	MoreHorizontalIcon,
+} from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+	return (
+		<nav
+			role="navigation"
+			aria-label="pagination"
+			data-slot="pagination"
+			className={cn("mx-auto flex w-full justify-center", className)}
+			{...props}
+		/>
+	);
+}
+
+function PaginationContent({
+	className,
+	...props
+}: React.ComponentProps<"ul">) {
+	return (
+		<ul
+			data-slot="pagination-content"
+			className={cn("flex flex-row items-center gap-1", className)}
+			{...props}
+		/>
+	);
+}
+
+function PaginationItem({ ...props }: React.ComponentProps<"li">) {
+	return <li data-slot="pagination-item" {...props} />;
+}
+
+type PaginationLinkProps = {
+	isActive?: boolean;
+} & Pick<React.ComponentProps<typeof Button>, "size"> &
+	React.ComponentProps<"a">;
+
+function PaginationLink({
+	className,
+	isActive,
+	size = "icon",
+	...props
+}: PaginationLinkProps) {
+	return (
+		<a
+			aria-current={isActive ? "page" : undefined}
+			data-slot="pagination-link"
+			data-active={isActive}
+			className={cn(
+				buttonVariants({
+					variant: isActive ? "outline" : "ghost",
+					size,
+				}),
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function PaginationPrevious({
+	className,
+	...props
+}: React.ComponentProps<typeof PaginationLink>) {
+	return (
+		<PaginationLink
+			aria-label="Go to previous page"
+			size="default"
+			className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
+			{...props}
+		>
+			<ChevronLeftIcon />
+			<span className="hidden sm:block">Previous</span>
+		</PaginationLink>
+	);
+}
+
+function PaginationNext({
+	className,
+	...props
+}: React.ComponentProps<typeof PaginationLink>) {
+	return (
+		<PaginationLink
+			aria-label="Go to next page"
+			size="default"
+			className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
+			{...props}
+		>
+			<span className="hidden sm:block">Next</span>
+			<ChevronRightIcon />
+		</PaginationLink>
+	);
+}
+
+function PaginationEllipsis({
+	className,
+	...props
+}: React.ComponentProps<"span">) {
+	return (
+		<span
+			aria-hidden
+			data-slot="pagination-ellipsis"
+			className={cn("flex size-9 items-center justify-center", className)}
+			{...props}
+		>
+			<MoreHorizontalIcon className="size-4" />
+			<span className="sr-only">More pages</span>
+		</span>
+	);
+}
+
+export {
+	Pagination,
+	PaginationContent,
+	PaginationLink,
+	PaginationItem,
+	PaginationPrevious,
+	PaginationNext,
+	PaginationEllipsis,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/popover.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as PopoverPrimitive from "@radix-ui/react-popover";
+
+import { cn } from "@/lib/utils";
+
+function Popover({
+	...props
+}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+	return <PopoverPrimitive.Root data-slot="popover" {...props} />;
+}
+
+function PopoverTrigger({
+	...props
+}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+	return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+}
+
+function PopoverContent({
+	className,
+	align = "center",
+	sideOffset = 4,
+	...props
+}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+	return (
+		<PopoverPrimitive.Portal>
+			<PopoverPrimitive.Content
+				data-slot="popover-content"
+				align={align}
+				sideOffset={sideOffset}
+				className={cn(
+					"bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-hidden",
+					className,
+				)}
+				{...props}
+			/>
+		</PopoverPrimitive.Portal>
+	);
+}
+
+function PopoverAnchor({
+	...props
+}: React.ComponentProps<typeof PopoverPrimitive.Anchor>) {
+	return <PopoverPrimitive.Anchor data-slot="popover-anchor" {...props} />;
+}
+
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/progress.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as ProgressPrimitive from "@radix-ui/react-progress";
+
+import { cn } from "@/lib/utils";
+
+function Progress({
+	className,
+	value,
+	...props
+}: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+	return (
+		<ProgressPrimitive.Root
+			data-slot="progress"
+			className={cn(
+				"bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
+				className,
+			)}
+			{...props}
+		>
+			<ProgressPrimitive.Indicator
+				data-slot="progress-indicator"
+				className="bg-primary h-full w-full flex-1 transition-all"
+				style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+			/>
+		</ProgressPrimitive.Root>
+	);
+}
+
+export { Progress };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/radio-group.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
+import { CircleIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function RadioGroup({
+	className,
+	...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+	return (
+		<RadioGroupPrimitive.Root
+			data-slot="radio-group"
+			className={cn("grid gap-3", className)}
+			{...props}
+		/>
+	);
+}
+
+function RadioGroupItem({
+	className,
+	...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+	return (
+		<RadioGroupPrimitive.Item
+			data-slot="radio-group-item"
+			className={cn(
+				"border-input text-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive aspect-square size-4 shrink-0 rounded-full border shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+				className,
+			)}
+			{...props}
+		>
+			<RadioGroupPrimitive.Indicator
+				data-slot="radio-group-indicator"
+				className="relative flex items-center justify-center"
+			>
+				<CircleIcon className="fill-primary absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2" />
+			</RadioGroupPrimitive.Indicator>
+		</RadioGroupPrimitive.Item>
+	);
+}
+
+export { RadioGroup, RadioGroupItem };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/resizable.tsx
+```
+"use client";
+
+import * as React from "react";
+import { GripVerticalIcon } from "lucide-react";
+import * as ResizablePrimitive from "react-resizable-panels";
+
+import { cn } from "@/lib/utils";
+
+function ResizablePanelGroup({
+	className,
+	...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) {
+	return (
+		<ResizablePrimitive.PanelGroup
+			data-slot="resizable-panel-group"
+			className={cn(
+				"flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function ResizablePanel({
+	...props
+}: React.ComponentProps<typeof ResizablePrimitive.Panel>) {
+	return <ResizablePrimitive.Panel data-slot="resizable-panel" {...props} />;
+}
+
+function ResizableHandle({
+	withHandle,
+	className,
+	...props
+}: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
+	withHandle?: boolean;
+}) {
+	return (
+		<ResizablePrimitive.PanelResizeHandle
+			data-slot="resizable-handle"
+			className={cn(
+				"bg-border focus-visible:ring-ring relative flex w-px items-center justify-center after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 focus-visible:ring-1 focus-visible:ring-offset-1 focus-visible:outline-hidden data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0 [&[data-panel-group-direction=vertical]>div]:rotate-90",
+				className,
+			)}
+			{...props}
+		>
+			{withHandle && (
+				<div className="bg-border z-10 flex h-4 w-3 items-center justify-center rounded-xs border">
+					<GripVerticalIcon className="size-2.5" />
+				</div>
+			)}
+		</ResizablePrimitive.PanelResizeHandle>
+	);
+}
+
+export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/scroll-area.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+
+import { cn } from "@/lib/utils";
+
+function ScrollArea({
+	className,
+	children,
+	...props
+}: React.ComponentProps<typeof ScrollAreaPrimitive.Root>) {
+	return (
+		<ScrollAreaPrimitive.Root
+			data-slot="scroll-area"
+			className={cn("relative", className)}
+			{...props}
+		>
+			<ScrollAreaPrimitive.Viewport
+				data-slot="scroll-area-viewport"
+				className="ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1"
+			>
+				{children}
+			</ScrollAreaPrimitive.Viewport>
+			<ScrollBar />
+			<ScrollAreaPrimitive.Corner />
+		</ScrollAreaPrimitive.Root>
+	);
+}
+
+function ScrollBar({
+	className,
+	orientation = "vertical",
+	...props
+}: React.ComponentProps<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>) {
+	return (
+		<ScrollAreaPrimitive.ScrollAreaScrollbar
+			data-slot="scroll-area-scrollbar"
+			orientation={orientation}
+			className={cn(
+				"flex touch-none p-px transition-colors select-none",
+				orientation === "vertical" &&
+					"h-full w-2.5 border-l border-l-transparent",
+				orientation === "horizontal" &&
+					"h-2.5 flex-col border-t border-t-transparent",
+				className,
+			)}
+			{...props}
+		>
+			<ScrollAreaPrimitive.ScrollAreaThumb
+				data-slot="scroll-area-thumb"
+				className="bg-border relative flex-1 rounded-full"
+			/>
+		</ScrollAreaPrimitive.ScrollAreaScrollbar>
+	);
+}
+
+export { ScrollArea, ScrollBar };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/select.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+const Select = SelectPrimitive.Root;
+
+const SelectGroup = SelectPrimitive.Group;
+
+const SelectValue = SelectPrimitive.Value;
+
+const SelectTrigger = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.Trigger>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+	<SelectPrimitive.Trigger
+		ref={ref}
+		className={cn(
+			"flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+			className,
+		)}
+		{...props}
+	>
+		{children}
+		<SelectPrimitive.Icon asChild>
+			<ChevronsUpDown className="size-4 opacity-50" />
+		</SelectPrimitive.Icon>
+	</SelectPrimitive.Trigger>
+));
+SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+
+const SelectScrollUpButton = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
+>(({ className, ...props }, ref) => (
+	<SelectPrimitive.ScrollUpButton
+		ref={ref}
+		className={cn(
+			"flex cursor-default items-center justify-center py-1",
+			className,
+		)}
+		{...props}
+	>
+		<ChevronUp className="h-4 w-4" />
+	</SelectPrimitive.ScrollUpButton>
+));
+SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+
+const SelectScrollDownButton = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
+>(({ className, ...props }, ref) => (
+	<SelectPrimitive.ScrollDownButton
+		ref={ref}
+		className={cn(
+			"flex cursor-default items-center justify-center py-1",
+			className,
+		)}
+		{...props}
+	>
+		<ChevronDown className="h-4 w-4" />
+	</SelectPrimitive.ScrollDownButton>
+));
+SelectScrollDownButton.displayName =
+	SelectPrimitive.ScrollDownButton.displayName;
+
+const SelectContent = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.Content>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
+>(({ className, children, position = "popper", ...props }, ref) => (
+	<SelectPrimitive.Portal>
+		<SelectPrimitive.Content
+			ref={ref}
+			className={cn(
+				"relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+				position === "popper" &&
+					"data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+				className,
+			)}
+			position={position}
+			{...props}
+		>
+			<SelectScrollUpButton />
+			<SelectPrimitive.Viewport
+				className={cn(
+					"p-1",
+					position === "popper" &&
+						"h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+				)}
+			>
+				{children}
+			</SelectPrimitive.Viewport>
+			<SelectScrollDownButton />
+		</SelectPrimitive.Content>
+	</SelectPrimitive.Portal>
+));
+SelectContent.displayName = SelectPrimitive.Content.displayName;
+
+const SelectLabel = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.Label>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
+>(({ className, ...props }, ref) => (
+	<SelectPrimitive.Label
+		ref={ref}
+		className={cn("px-2 py-1.5 text-sm font-semibold", className)}
+		{...props}
+	/>
+));
+SelectLabel.displayName = SelectPrimitive.Label.displayName;
+
+const SelectItem = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.Item>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
+>(({ className, children, ...props }, ref) => (
+	<SelectPrimitive.Item
+		ref={ref}
+		className={cn(
+			"relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+			className,
+		)}
+		{...props}
+	>
+		<span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+			<SelectPrimitive.ItemIndicator>
+				<Check className="h-4 w-4" />
+			</SelectPrimitive.ItemIndicator>
+		</span>
+		<SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+	</SelectPrimitive.Item>
+));
+SelectItem.displayName = SelectPrimitive.Item.displayName;
+
+const SelectSeparator = React.forwardRef<
+	React.ElementRef<typeof SelectPrimitive.Separator>,
+	React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
+>(({ className, ...props }, ref) => (
+	<SelectPrimitive.Separator
+		ref={ref}
+		className={cn("-mx-1 my-1 h-px bg-muted", className)}
+		{...props}
+	/>
+));
+SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+
+export {
+	Select,
+	SelectGroup,
+	SelectValue,
+	SelectTrigger,
+	SelectContent,
+	SelectLabel,
+	SelectItem,
+	SelectSeparator,
+	SelectScrollUpButton,
+	SelectScrollDownButton,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/separator.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
+
+import { cn } from "@/lib/utils";
+
+function Separator({
+	className,
+	orientation = "horizontal",
+	decorative = true,
+	...props
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
+	return (
+		<SeparatorPrimitive.Root
+			data-slot="separator-root"
+			decorative={decorative}
+			orientation={orientation}
+			className={cn(
+				"bg-border shrink-0 data-[orientation=horizontal]:h-px data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-px",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Separator };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/sheet.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { XIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
+	return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+}
+
+function SheetTrigger({
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
+	return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />;
+}
+
+function SheetClose({
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Close>) {
+	return <SheetPrimitive.Close data-slot="sheet-close" {...props} />;
+}
+
+function SheetPortal({
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
+	return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
+}
+
+function SheetOverlay({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+	return (
+		<SheetPrimitive.Overlay
+			data-slot="sheet-overlay"
+			className={cn(
+				"data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SheetContent({
+	className,
+	children,
+	side = "right",
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Content> & {
+	side?: "top" | "right" | "bottom" | "left";
+}) {
+	return (
+		<SheetPortal>
+			<SheetOverlay />
+			<SheetPrimitive.Content
+				data-slot="sheet-content"
+				className={cn(
+					"bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+					side === "right" &&
+						"data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
+					side === "left" &&
+						"data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
+					side === "top" &&
+						"data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
+					side === "bottom" &&
+						"data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
+					className,
+				)}
+				{...props}
+			>
+				{children}
+				<SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+					<XIcon className="size-4" />
+					<span className="sr-only">Close</span>
+				</SheetPrimitive.Close>
+			</SheetPrimitive.Content>
+		</SheetPortal>
+	);
+}
+
+function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sheet-header"
+			className={cn("flex flex-col gap-1.5 p-4", className)}
+			{...props}
+		/>
+	);
+}
+
+function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sheet-footer"
+			className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+			{...props}
+		/>
+	);
+}
+
+function SheetTitle({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Title>) {
+	return (
+		<SheetPrimitive.Title
+			data-slot="sheet-title"
+			className={cn("text-foreground font-semibold", className)}
+			{...props}
+		/>
+	);
+}
+
+function SheetDescription({
+	className,
+	...props
+}: React.ComponentProps<typeof SheetPrimitive.Description>) {
+	return (
+		<SheetPrimitive.Description
+			data-slot="sheet-description"
+			className={cn("text-muted-foreground text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Sheet,
+	SheetTrigger,
+	SheetClose,
+	SheetContent,
+	SheetHeader,
+	SheetFooter,
+	SheetTitle,
+	SheetDescription,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/sidebar.tsx
+```
+"use client";
+
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
+import { VariantProps, cva } from "class-variance-authority";
+import { PanelLeftIcon } from "lucide-react";
+
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import {
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
+} from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+const SIDEBAR_COOKIE_NAME = "sidebar_state";
+const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+const SIDEBAR_WIDTH = "16rem";
+const SIDEBAR_WIDTH_MOBILE = "18rem";
+const SIDEBAR_WIDTH_ICON = "3rem";
+const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+type SidebarContext = {
+	state: "expanded" | "collapsed";
+	open: boolean;
+	setOpen: (open: boolean) => void;
+	openMobile: boolean;
+	setOpenMobile: (open: boolean) => void;
+	isMobile: boolean;
+	toggleSidebar: () => void;
+};
+
+const SidebarContext = React.createContext<SidebarContext | null>(null);
+
+function useSidebar() {
+	const context = React.useContext(SidebarContext);
+	if (!context) {
+		throw new Error("useSidebar must be used within a SidebarProvider.");
+	}
+
+	return context;
+}
+
+function SidebarProvider({
+	defaultOpen = true,
+	open: openProp,
+	onOpenChange: setOpenProp,
+	className,
+	style,
+	children,
+	...props
+}: React.ComponentProps<"div"> & {
+	defaultOpen?: boolean;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
+}) {
+	const isMobile = useIsMobile();
+	const [openMobile, setOpenMobile] = React.useState(false);
+
+	// This is the internal state of the sidebar.
+	// We use openProp and setOpenProp for control from outside the component.
+	const [_open, _setOpen] = React.useState(defaultOpen);
+	const open = openProp ?? _open;
+	const setOpen = React.useCallback(
+		(value: boolean | ((value: boolean) => boolean)) => {
+			const openState = typeof value === "function" ? value(open) : value;
+			if (setOpenProp) {
+				setOpenProp(openState);
+			} else {
+				_setOpen(openState);
+			}
+
+			// This sets the cookie to keep the sidebar state.
+			document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+		},
+		[setOpenProp, open],
+	);
+
+	// Helper to toggle the sidebar.
+	const toggleSidebar = React.useCallback(() => {
+		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
+	}, [isMobile, setOpen, setOpenMobile]);
+
+	// Adds a keyboard shortcut to toggle the sidebar.
+	React.useEffect(() => {
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (
+				event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+				(event.metaKey || event.ctrlKey)
+			) {
+				event.preventDefault();
+				toggleSidebar();
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [toggleSidebar]);
+
+	// We add a state so that we can do data-state="expanded" or "collapsed".
+	// This makes it easier to style the sidebar with Tailwind classes.
+	const state = open ? "expanded" : "collapsed";
+
+	const contextValue = React.useMemo<SidebarContext>(
+		() => ({
+			state,
+			open,
+			setOpen,
+			isMobile,
+			openMobile,
+			setOpenMobile,
+			toggleSidebar,
+		}),
+		[state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar],
+	);
+
+	return (
+		<SidebarContext.Provider value={contextValue}>
+			<TooltipProvider delayDuration={0}>
+				<div
+					data-slot="sidebar-wrapper"
+					style={
+						{
+							"--sidebar-width": SIDEBAR_WIDTH,
+							"--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+							...style,
+						} as React.CSSProperties
+					}
+					className={cn(
+						"group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+						className,
+					)}
+					{...props}
+				>
+					{children}
+				</div>
+			</TooltipProvider>
+		</SidebarContext.Provider>
+	);
+}
+
+function Sidebar({
+	side = "left",
+	variant = "sidebar",
+	collapsible = "offcanvas",
+	className,
+	children,
+	...props
+}: React.ComponentProps<"div"> & {
+	side?: "left" | "right";
+	variant?: "sidebar" | "floating" | "inset";
+	collapsible?: "offcanvas" | "icon" | "none";
+}) {
+	const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+
+	if (collapsible === "none") {
+		return (
+			<div
+				data-slot="sidebar"
+				className={cn(
+					"bg-sidebar text-sidebar-foreground flex h-full w-(--sidebar-width) flex-col",
+					className,
+				)}
+				{...props}
+			>
+				{children}
+			</div>
+		);
+	}
+
+	if (isMobile) {
+		return (
+			<Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+				<SheetContent
+					data-sidebar="sidebar"
+					data-slot="sidebar"
+					data-mobile="true"
+					className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+					style={
+						{
+							"--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+						} as React.CSSProperties
+					}
+					side={side}
+				>
+					<SheetHeader className="sr-only">
+						<SheetTitle>Sidebar</SheetTitle>
+						<SheetDescription>Displays the mobile sidebar.</SheetDescription>
+					</SheetHeader>
+					<div className="flex h-full w-full flex-col">{children}</div>
+				</SheetContent>
+			</Sheet>
+		);
+	}
+
+	return (
+		<div
+			className="group peer text-sidebar-foreground hidden md:block"
+			data-state={state}
+			data-collapsible={state === "collapsed" ? collapsible : ""}
+			data-variant={variant}
+			data-side={side}
+			data-slot="sidebar"
+		>
+			{/* This is what handles the sidebar gap on desktop */}
+			<div
+				className={cn(
+					"relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear",
+					"group-data-[collapsible=offcanvas]:w-0",
+					"group-data-[side=right]:rotate-180",
+					variant === "floating" || variant === "inset"
+						? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
+						: "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
+				)}
+			/>
+			<div
+				className={cn(
+					"fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+					side === "left"
+						? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
+						: "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+					// Adjust the padding for floating and inset variants.
+					variant === "floating" || variant === "inset"
+						? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
+						: "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+					className,
+				)}
+				{...props}
+			>
+				<div
+					data-sidebar="sidebar"
+					className="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm"
+				>
+					{children}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function SidebarTrigger({
+	className,
+	onClick,
+	...props
+}: React.ComponentProps<typeof Button>) {
+	const { toggleSidebar } = useSidebar();
+
+	return (
+		<Button
+			data-sidebar="trigger"
+			data-slot="sidebar-trigger"
+			variant="ghost"
+			size="icon"
+			className={cn("h-7 w-7", className)}
+			onClick={(event) => {
+				onClick?.(event);
+				toggleSidebar();
+			}}
+			{...props}
+		>
+			<PanelLeftIcon />
+			<span className="sr-only">Toggle Sidebar</span>
+		</Button>
+	);
+}
+
+function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
+	const { toggleSidebar } = useSidebar();
+
+	return (
+		<button
+			data-sidebar="rail"
+			data-slot="sidebar-rail"
+			aria-label="Toggle Sidebar"
+			tabIndex={-1}
+			onClick={toggleSidebar}
+			title="Toggle Sidebar"
+			className={cn(
+				"hover:after:bg-sidebar-border absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear group-data-[side=left]:-right-4 group-data-[side=right]:left-0 after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] sm:flex",
+				"in-data-[side=left]:cursor-w-resize in-data-[side=right]:cursor-e-resize",
+				"[[data-side=left][data-state=collapsed]_&]:cursor-e-resize [[data-side=right][data-state=collapsed]_&]:cursor-w-resize",
+				"hover:group-data-[collapsible=offcanvas]:bg-sidebar group-data-[collapsible=offcanvas]:translate-x-0 group-data-[collapsible=offcanvas]:after:left-full",
+				"[[data-side=left][data-collapsible=offcanvas]_&]:-right-2",
+				"[[data-side=right][data-collapsible=offcanvas]_&]:-left-2",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+	return (
+		<main
+			data-slot="sidebar-inset"
+			className={cn(
+				"bg-background relative flex w-full flex-1 flex-col",
+				"md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarInput({
+	className,
+	...props
+}: React.ComponentProps<typeof Input>) {
+	return (
+		<Input
+			data-slot="sidebar-input"
+			data-sidebar="input"
+			className={cn("bg-background h-8 w-full shadow-none", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarHeader({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-header"
+			data-sidebar="header"
+			className={cn("flex flex-col gap-2 p-2", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarFooter({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-footer"
+			data-sidebar="footer"
+			className={cn("flex flex-col gap-2 p-2", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarSeparator({
+	className,
+	...props
+}: React.ComponentProps<typeof Separator>) {
+	return (
+		<Separator
+			data-slot="sidebar-separator"
+			data-sidebar="separator"
+			className={cn("bg-sidebar-border mx-2 w-auto", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarContent({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-content"
+			data-sidebar="content"
+			className={cn(
+				"flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-group"
+			data-sidebar="group"
+			className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarGroupLabel({
+	className,
+	asChild = false,
+	...props
+}: React.ComponentProps<"div"> & { asChild?: boolean }) {
+	const Comp = asChild ? Slot : "div";
+
+	return (
+		<Comp
+			data-slot="sidebar-group-label"
+			data-sidebar="group-label"
+			className={cn(
+				"text-sidebar-foreground/70 ring-sidebar-ring flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium outline-hidden transition-[margin,opacity] duration-200 ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+				"group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarGroupAction({
+	className,
+	asChild = false,
+	...props
+}: React.ComponentProps<"button"> & { asChild?: boolean }) {
+	const Comp = asChild ? Slot : "button";
+
+	return (
+		<Comp
+			data-slot="sidebar-group-action"
+			data-sidebar="group-action"
+			className={cn(
+				"text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+				// Increases the hit area of the button on mobile.
+				"after:absolute after:-inset-2 md:after:hidden",
+				"group-data-[collapsible=icon]:hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarGroupContent({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-group-content"
+			data-sidebar="group-content"
+			className={cn("w-full text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenu({ className, ...props }: React.ComponentProps<"ul">) {
+	return (
+		<ul
+			data-slot="sidebar-menu"
+			data-sidebar="menu"
+			className={cn("flex w-full min-w-0 flex-col gap-1", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
+	return (
+		<li
+			data-slot="sidebar-menu-item"
+			data-sidebar="menu-item"
+			className={cn("group/menu-item relative", className)}
+			{...props}
+		/>
+	);
+}
+
+const sidebarMenuButtonVariants = cva(
+	"peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-hidden ring-sidebar-ring transition-[width,height,padding] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-data-[sidebar=menu-action]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+	{
+		variants: {
+			variant: {
+				default: "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+				outline:
+					"bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
+			},
+			size: {
+				default: "h-8 text-sm",
+				sm: "h-7 text-xs",
+				lg: "h-12 text-sm group-data-[collapsible=icon]:p-0!",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+function SidebarMenuButton({
+	asChild = false,
+	isActive = false,
+	variant = "default",
+	size = "default",
+	tooltip,
+	className,
+	...props
+}: React.ComponentProps<"button"> & {
+	asChild?: boolean;
+	isActive?: boolean;
+	tooltip?: string | React.ComponentProps<typeof TooltipContent>;
+} & VariantProps<typeof sidebarMenuButtonVariants>) {
+	const Comp = asChild ? Slot : "button";
+	const { isMobile, state } = useSidebar();
+
+	const button = (
+		<Comp
+			data-slot="sidebar-menu-button"
+			data-sidebar="menu-button"
+			data-size={size}
+			data-active={isActive}
+			className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+			{...props}
+		/>
+	);
+
+	if (!tooltip) {
+		return button;
+	}
+
+	if (typeof tooltip === "string") {
+		tooltip = {
+			children: tooltip,
+		};
+	}
+
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>{button}</TooltipTrigger>
+			<TooltipContent
+				side="right"
+				align="center"
+				hidden={state !== "collapsed" || isMobile}
+				{...tooltip}
+			/>
+		</Tooltip>
+	);
+}
+
+function SidebarMenuAction({
+	className,
+	asChild = false,
+	showOnHover = false,
+	...props
+}: React.ComponentProps<"button"> & {
+	asChild?: boolean;
+	showOnHover?: boolean;
+}) {
+	const Comp = asChild ? Slot : "button";
+
+	return (
+		<Comp
+			data-slot="sidebar-menu-action"
+			data-sidebar="menu-action"
+			className={cn(
+				"text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground peer-hover/menu-button:text-sidebar-accent-foreground absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 outline-hidden transition-transform focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+				// Increases the hit area of the button on mobile.
+				"after:absolute after:-inset-2 md:after:hidden",
+				"peer-data-[size=sm]/menu-button:top-1",
+				"peer-data-[size=default]/menu-button:top-1.5",
+				"peer-data-[size=lg]/menu-button:top-2.5",
+				"group-data-[collapsible=icon]:hidden",
+				showOnHover &&
+					"peer-data-[active=true]/menu-button:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 md:opacity-0",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenuBadge({
+	className,
+	...props
+}: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="sidebar-menu-badge"
+			data-sidebar="menu-badge"
+			className={cn(
+				"text-sidebar-foreground pointer-events-none absolute right-1 flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium tabular-nums select-none",
+				"peer-hover/menu-button:text-sidebar-accent-foreground peer-data-[active=true]/menu-button:text-sidebar-accent-foreground",
+				"peer-data-[size=sm]/menu-button:top-1",
+				"peer-data-[size=default]/menu-button:top-1.5",
+				"peer-data-[size=lg]/menu-button:top-2.5",
+				"group-data-[collapsible=icon]:hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenuSkeleton({
+	className,
+	showIcon = false,
+	...props
+}: React.ComponentProps<"div"> & {
+	showIcon?: boolean;
+}) {
+	// Random width between 50 to 90%.
+	const width = React.useMemo(() => {
+		return `${Math.floor(Math.random() * 40) + 50}%`;
+	}, []);
+
+	return (
+		<div
+			data-slot="sidebar-menu-skeleton"
+			data-sidebar="menu-skeleton"
+			className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
+			{...props}
+		>
+			{showIcon && (
+				<Skeleton
+					className="size-4 rounded-md"
+					data-sidebar="menu-skeleton-icon"
+				/>
+			)}
+			<Skeleton
+				className="h-4 max-w-(--skeleton-width) flex-1"
+				data-sidebar="menu-skeleton-text"
+				style={
+					{
+						"--skeleton-width": width,
+					} as React.CSSProperties
+				}
+			/>
+		</div>
+	);
+}
+
+function SidebarMenuSub({ className, ...props }: React.ComponentProps<"ul">) {
+	return (
+		<ul
+			data-slot="sidebar-menu-sub"
+			data-sidebar="menu-sub"
+			className={cn(
+				"border-sidebar-border mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l px-2.5 py-0.5",
+				"group-data-[collapsible=icon]:hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenuSubItem({
+	className,
+	...props
+}: React.ComponentProps<"li">) {
+	return (
+		<li
+			data-slot="sidebar-menu-sub-item"
+			data-sidebar="menu-sub-item"
+			className={cn("group/menu-sub-item relative", className)}
+			{...props}
+		/>
+	);
+}
+
+function SidebarMenuSubButton({
+	asChild = false,
+	size = "md",
+	isActive = false,
+	className,
+	...props
+}: React.ComponentProps<"a"> & {
+	asChild?: boolean;
+	size?: "sm" | "md";
+	isActive?: boolean;
+}) {
+	const Comp = asChild ? Slot : "a";
+
+	return (
+		<Comp
+			data-slot="sidebar-menu-sub-button"
+			data-sidebar="menu-sub-button"
+			data-size={size}
+			data-active={isActive}
+			className={cn(
+				"text-sidebar-foreground ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-sidebar-accent active:text-sidebar-accent-foreground [&>svg]:text-sidebar-accent-foreground flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0",
+				"data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+				size === "sm" && "text-xs",
+				size === "md" && "text-sm",
+				"group-data-[collapsible=icon]:hidden",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupAction,
+	SidebarGroupContent,
+	SidebarGroupLabel,
+	SidebarHeader,
+	SidebarInput,
+	SidebarInset,
+	SidebarMenu,
+	SidebarMenuAction,
+	SidebarMenuBadge,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarMenuSkeleton,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
+	SidebarProvider,
+	SidebarRail,
+	SidebarSeparator,
+	SidebarTrigger,
+	useSidebar,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/skeleton.tsx
+```
+import { cn } from "@/lib/utils";
+
+function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+	return (
+		<div
+			data-slot="skeleton"
+			className={cn("bg-primary/10 animate-pulse rounded-md", className)}
+			{...props}
+		/>
+	);
+}
+
+export { Skeleton };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/slider.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+
+import { cn } from "@/lib/utils";
+
+function Slider({
+	className,
+	defaultValue,
+	value,
+	min = 0,
+	max = 100,
+	...props
+}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+	const _values = React.useMemo(
+		() =>
+			Array.isArray(value)
+				? value
+				: Array.isArray(defaultValue)
+					? defaultValue
+					: [min, max],
+		[value, defaultValue, min, max],
+	);
+
+	return (
+		<SliderPrimitive.Root
+			data-slot="slider"
+			defaultValue={defaultValue}
+			value={value}
+			min={min}
+			max={max}
+			className={cn(
+				"relative flex w-full touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col",
+				className,
+			)}
+			{...props}
+		>
+			<SliderPrimitive.Track
+				data-slot="slider-track"
+				className={cn(
+					"bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
+				)}
+			>
+				<SliderPrimitive.Range
+					data-slot="slider-range"
+					className={cn(
+						"bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full",
+					)}
+				/>
+			</SliderPrimitive.Track>
+			{Array.from({ length: _values.length }, (_, index) => (
+				<SliderPrimitive.Thumb
+					data-slot="slider-thumb"
+					key={index}
+					className="border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+				/>
+			))}
+		</SliderPrimitive.Root>
+	);
+}
+
+export { Slider };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/sonner.tsx
+```
+"use client";
+
+import { useTheme } from "next-themes";
+import { Toaster as Sonner, ToasterProps } from "sonner";
+
+const Toaster = ({ ...props }: ToasterProps) => {
+	const { theme = "system" } = useTheme();
+
+	return (
+		<Sonner
+			theme={theme as ToasterProps["theme"]}
+			className="toaster group"
+			toastOptions={{
+				classNames: {
+					toast:
+						"group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+					description: "group-[.toast]:text-muted-foreground",
+					actionButton:
+						"group-[.toast]:bg-primary group-[.toast]:text-primary-foreground font-medium",
+					cancelButton:
+						"group-[.toast]:bg-muted group-[.toast]:text-muted-foreground font-medium",
+				},
+			}}
+			{...props}
+		/>
+	);
+};
+
+export { Toaster };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/sparkles.tsx
+```
+"use client";
+import { useId } from "react";
+import { useEffect, useState } from "react";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
+import type { Container, SingleOrMultiple } from "@tsparticles/engine";
+import { loadSlim } from "@tsparticles/slim";
+import { cn } from "@/lib/utils";
+import { motion, useAnimation } from "framer-motion";
+
+type ParticlesProps = {
+	id?: string;
+	className?: string;
+	background?: string;
+	particleSize?: number;
+	minSize?: number;
+	maxSize?: number;
+	speed?: number;
+	particleColor?: string;
+	particleDensity?: number;
+};
+export const SparklesCore = (props: ParticlesProps) => {
+	const {
+		id,
+		className,
+		background,
+		minSize,
+		maxSize,
+		speed,
+		particleColor,
+		particleDensity,
+	} = props;
+	const [init, setInit] = useState(false);
+	useEffect(() => {
+		initParticlesEngine(async (engine) => {
+			await loadSlim(engine);
+		}).then(() => {
+			setInit(true);
+		});
+	}, []);
+	const controls = useAnimation();
+
+	const particlesLoaded = async (container?: Container) => {
+		if (container) {
+			console.log(container);
+			controls.start({
+				opacity: 1,
+				transition: {
+					duration: 1,
+				},
+			});
+		}
+	};
+
+	const generatedId = useId();
+	return (
+		<motion.div animate={controls} className={cn("opacity-0", className)}>
+			{init && (
+				<Particles
+					id={id || generatedId}
+					className={cn("h-full w-full")}
+					particlesLoaded={particlesLoaded}
+					options={{
+						background: {
+							color: {
+								value: background || "#0d47a1",
+							},
+						},
+						fullScreen: {
+							enable: false,
+							zIndex: 1,
+						},
+
+						fpsLimit: 120,
+						interactivity: {
+							events: {
+								onClick: {
+									enable: true,
+									mode: "push",
+								},
+								onHover: {
+									enable: false,
+									mode: "repulse",
+								},
+								resize: true as any,
+							},
+							modes: {
+								push: {
+									quantity: 4,
+								},
+								repulse: {
+									distance: 200,
+									duration: 0.4,
+								},
+							},
+						},
+						particles: {
+							bounce: {
+								horizontal: {
+									value: 1,
+								},
+								vertical: {
+									value: 1,
+								},
+							},
+							collisions: {
+								absorb: {
+									speed: 2,
+								},
+								bounce: {
+									horizontal: {
+										value: 1,
+									},
+									vertical: {
+										value: 1,
+									},
+								},
+								enable: false,
+								maxSpeed: 50,
+								mode: "bounce",
+								overlap: {
+									enable: true,
+									retries: 0,
+								},
+							},
+							color: {
+								value: particleColor || "#ffffff",
+								animation: {
+									h: {
+										count: 0,
+										enable: false,
+										speed: 1,
+										decay: 0,
+										delay: 0,
+										sync: true,
+										offset: 0,
+									},
+									s: {
+										count: 0,
+										enable: false,
+										speed: 1,
+										decay: 0,
+										delay: 0,
+										sync: true,
+										offset: 0,
+									},
+									l: {
+										count: 0,
+										enable: false,
+										speed: 1,
+										decay: 0,
+										delay: 0,
+										sync: true,
+										offset: 0,
+									},
+								},
+							},
+							effect: {
+								close: true,
+								fill: true,
+								options: {},
+								type: {} as SingleOrMultiple<string> | undefined,
+							},
+							groups: {},
+							move: {
+								angle: {
+									offset: 0,
+									value: 90,
+								},
+								attract: {
+									distance: 200,
+									enable: false,
+									rotate: {
+										x: 3000,
+										y: 3000,
+									},
+								},
+								center: {
+									x: 50,
+									y: 50,
+									mode: "percent",
+									radius: 0,
+								},
+								decay: 0,
+								distance: {},
+								direction: "none",
+								drift: 0,
+								enable: true,
+								gravity: {
+									acceleration: 9.81,
+									enable: false,
+									inverse: false,
+									maxSpeed: 50,
+								},
+								path: {
+									clamp: true,
+									delay: {
+										value: 0,
+									},
+									enable: false,
+									options: {},
+								},
+								outModes: {
+									default: "out",
+								},
+								random: false,
+								size: false,
+								speed: {
+									min: 0.1,
+									max: 1,
+								},
+								spin: {
+									acceleration: 0,
+									enable: false,
+								},
+								straight: false,
+								trail: {
+									enable: false,
+									length: 10,
+									fill: {},
+								},
+								vibrate: false,
+								warp: false,
+							},
+							number: {
+								density: {
+									enable: true,
+									width: 400,
+									height: 400,
+								},
+								limit: {
+									mode: "delete",
+									value: 0,
+								},
+								value: particleDensity || 120,
+							},
+							opacity: {
+								value: {
+									min: 0.1,
+									max: 1,
+								},
+								animation: {
+									count: 0,
+									enable: true,
+									speed: speed || 4,
+									decay: 0,
+									delay: 0,
+									sync: false,
+									mode: "auto",
+									startValue: "random",
+									destroy: "none",
+								},
+							},
+							reduceDuplicates: false,
+							shadow: {
+								blur: 0,
+								color: {
+									value: "#000",
+								},
+								enable: false,
+								offset: {
+									x: 0,
+									y: 0,
+								},
+							},
+							shape: {
+								close: true,
+								fill: true,
+								options: {},
+								type: "circle",
+							},
+							size: {
+								value: {
+									min: minSize || 1,
+									max: maxSize || 3,
+								},
+								animation: {
+									count: 0,
+									enable: false,
+									speed: 5,
+									decay: 0,
+									delay: 0,
+									sync: false,
+									mode: "auto",
+									startValue: "random",
+									destroy: "none",
+								},
+							},
+							stroke: {
+								width: 0,
+							},
+							zIndex: {
+								value: 0,
+								opacityRate: 1,
+								sizeRate: 1,
+								velocityRate: 1,
+							},
+							destroy: {
+								bounds: {},
+								mode: "none",
+								split: {
+									count: 1,
+									factor: {
+										value: 3,
+									},
+									rate: {
+										value: {
+											min: 4,
+											max: 9,
+										},
+									},
+									sizeOffset: true,
+								},
+							},
+							roll: {
+								darken: {
+									enable: false,
+									value: 0,
+								},
+								enable: false,
+								enlighten: {
+									enable: false,
+									value: 0,
+								},
+								mode: "vertical",
+								speed: 25,
+							},
+							tilt: {
+								value: 0,
+								animation: {
+									enable: false,
+									speed: 0,
+									decay: 0,
+									sync: false,
+								},
+								direction: "clockwise",
+								enable: false,
+							},
+							twinkle: {
+								lines: {
+									enable: false,
+									frequency: 0.05,
+									opacity: 1,
+								},
+								particles: {
+									enable: false,
+									frequency: 0.05,
+									opacity: 1,
+								},
+							},
+							wobble: {
+								distance: 5,
+								enable: false,
+								speed: {
+									angle: 50,
+									move: 10,
+								},
+							},
+							life: {
+								count: 0,
+								delay: {
+									value: 0,
+									sync: false,
+								},
+								duration: {
+									value: 0,
+									sync: false,
+								},
+							},
+							rotate: {
+								value: 0,
+								animation: {
+									enable: false,
+									speed: 0,
+									decay: 0,
+									sync: false,
+								},
+								direction: "clockwise",
+								path: false,
+							},
+							orbit: {
+								animation: {
+									count: 0,
+									enable: false,
+									speed: 1,
+									decay: 0,
+									delay: 0,
+									sync: false,
+								},
+								enable: false,
+								opacity: 1,
+								rotation: {
+									value: 45,
+								},
+								width: 1,
+							},
+							links: {
+								blink: false,
+								color: {
+									value: "#fff",
+								},
+								consent: false,
+								distance: 100,
+								enable: false,
+								frequency: 1,
+								opacity: 1,
+								shadow: {
+									blur: 5,
+									color: {
+										value: "#000",
+									},
+									enable: false,
+								},
+								triangles: {
+									enable: false,
+									frequency: 1,
+								},
+								width: 1,
+								warp: false,
+							},
+							repulse: {
+								value: 0,
+								enabled: false,
+								distance: 1,
+								duration: 1,
+								factor: 1,
+								speed: 1,
+							},
+						},
+						detectRetina: true,
+					}}
+				/>
+			)}
+		</motion.div>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/switch.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as SwitchPrimitive from "@radix-ui/react-switch";
+
+import { cn } from "@/lib/utils";
+
+function Switch({
+	className,
+	...props
+}: React.ComponentProps<typeof SwitchPrimitive.Root>) {
+	return (
+		<SwitchPrimitive.Root
+			data-slot="switch"
+			className={cn(
+				"peer data-[state=checked]:bg-primary data-[state=unchecked]:bg-input focus-visible:border-ring focus-visible:ring-ring/50 inline-flex h-5 w-9 shrink-0 items-center rounded-full border-2 border-transparent shadow-xs transition-all outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+				className,
+			)}
+			{...props}
+		>
+			<SwitchPrimitive.Thumb
+				data-slot="switch-thumb"
+				className={cn(
+					"bg-background pointer-events-none block size-4 rounded-full ring-0 shadow-lg transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0",
+				)}
+			/>
+		</SwitchPrimitive.Root>
+	);
+}
+
+export { Switch };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/table.tsx
+```
+"use client";
+
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Table({ className, ...props }: React.ComponentProps<"table">) {
+	return (
+		<div
+			data-slot="table-container"
+			className="relative w-full overflow-x-auto"
+		>
+			<table
+				data-slot="table"
+				className={cn("w-full caption-bottom text-sm", className)}
+				{...props}
+			/>
+		</div>
+	);
+}
+
+function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+	return (
+		<thead
+			data-slot="table-header"
+			className={cn("[&_tr]:border-b", className)}
+			{...props}
+		/>
+	);
+}
+
+function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+	return (
+		<tbody
+			data-slot="table-body"
+			className={cn("[&_tr:last-child]:border-0", className)}
+			{...props}
+		/>
+	);
+}
+
+function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+	return (
+		<tfoot
+			data-slot="table-footer"
+			className={cn(
+				"bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+	return (
+		<tr
+			data-slot="table-row"
+			className={cn(
+				"hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+	return (
+		<th
+			data-slot="table-head"
+			className={cn(
+				"text-muted-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+	return (
+		<td
+			data-slot="table-cell"
+			className={cn(
+				"p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TableCaption({
+	className,
+	...props
+}: React.ComponentProps<"caption">) {
+	return (
+		<caption
+			data-slot="table-caption"
+			className={cn("text-muted-foreground mt-4 text-sm", className)}
+			{...props}
+		/>
+	);
+}
+
+export {
+	Table,
+	TableHeader,
+	TableBody,
+	TableFooter,
+	TableHead,
+	TableRow,
+	TableCell,
+	TableCaption,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/tabs.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as TabsPrimitive from "@radix-ui/react-tabs";
+
+import { cn } from "@/lib/utils";
+
+function Tabs({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+	return (
+		<TabsPrimitive.Root
+			data-slot="tabs"
+			className={cn("flex flex-col gap-2", className)}
+			{...props}
+		/>
+	);
+}
+
+function TabsList({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.List>) {
+	return (
+		<TabsPrimitive.List
+			data-slot="tabs-list"
+			className={cn(
+				"bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-1",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TabsTrigger({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+	return (
+		<TabsPrimitive.Trigger
+			data-slot="tabs-trigger"
+			className={cn(
+				"data-[state=active]:bg-background data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring inline-flex flex-1 items-center justify-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:shadow-sm [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+function TabsContent({
+	className,
+	...props
+}: React.ComponentProps<typeof TabsPrimitive.Content>) {
+	return (
+		<TabsPrimitive.Content
+			data-slot="tabs-content"
+			className={cn("flex-1 outline-none", className)}
+			{...props}
+		/>
+	);
+}
+
+export { Tabs, TabsList, TabsTrigger, TabsContent };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/textarea.tsx
+```
+import * as React from "react";
+
+import { cn } from "@/lib/utils";
+
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+	return (
+		<textarea
+			data-slot="textarea"
+			className={cn(
+				"border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+				className,
+			)}
+			{...props}
+		/>
+	);
+}
+
+export { Textarea };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/toggle-group.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
+import { type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+import { toggleVariants } from "@/components/ui/toggle";
+
+const ToggleGroupContext = React.createContext<
+	VariantProps<typeof toggleVariants>
+>({
+	size: "default",
+	variant: "default",
+});
+
+function ToggleGroup({
+	className,
+	variant,
+	size,
+	children,
+	...props
+}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
+	VariantProps<typeof toggleVariants>) {
+	return (
+		<ToggleGroupPrimitive.Root
+			data-slot="toggle-group"
+			data-variant={variant}
+			data-size={size}
+			className={cn(
+				"group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
+				className,
+			)}
+			{...props}
+		>
+			<ToggleGroupContext.Provider value={{ variant, size }}>
+				{children}
+			</ToggleGroupContext.Provider>
+		</ToggleGroupPrimitive.Root>
+	);
+}
+
+function ToggleGroupItem({
+	className,
+	children,
+	variant,
+	size,
+	...props
+}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
+	VariantProps<typeof toggleVariants>) {
+	const context = React.useContext(ToggleGroupContext);
+
+	return (
+		<ToggleGroupPrimitive.Item
+			data-slot="toggle-group-item"
+			data-variant={context.variant || variant}
+			data-size={context.size || size}
+			className={cn(
+				toggleVariants({
+					variant: context.variant || variant,
+					size: context.size || size,
+				}),
+				"min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+		</ToggleGroupPrimitive.Item>
+	);
+}
+
+export { ToggleGroup, ToggleGroupItem };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/toggle.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as TogglePrimitive from "@radix-ui/react-toggle";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+
+const toggleVariants = cva(
+	"inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-[color,box-shadow] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive whitespace-nowrap",
+	{
+		variants: {
+			variant: {
+				default: "bg-transparent",
+				outline:
+					"border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground",
+			},
+			size: {
+				default: "h-9 px-2 min-w-9",
+				sm: "h-8 px-1.5 min-w-8",
+				lg: "h-10 px-2.5 min-w-10",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+function Toggle({
+	className,
+	variant,
+	size,
+	...props
+}: React.ComponentProps<typeof TogglePrimitive.Root> &
+	VariantProps<typeof toggleVariants>) {
+	return (
+		<TogglePrimitive.Root
+			data-slot="toggle"
+			className={cn(toggleVariants({ variant, size, className }))}
+			{...props}
+		/>
+	);
+}
+
+export { Toggle, toggleVariants };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/ui/tooltip.tsx
+```
+"use client";
+
+import * as React from "react";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+
+import { cn } from "@/lib/utils";
+
+function TooltipProvider({
+	delayDuration = 0,
+	...props
+}: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
+	return (
+		<TooltipPrimitive.Provider
+			data-slot="tooltip-provider"
+			delayDuration={delayDuration}
+			{...props}
+		/>
+	);
+}
+
+function Tooltip({
+	...props
+}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+	return (
+		<TooltipProvider>
+			<TooltipPrimitive.Root data-slot="tooltip" {...props} />
+		</TooltipProvider>
+	);
+}
+
+function TooltipTrigger({
+	...props
+}: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
+	return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+}
+
+function TooltipContent({
+	className,
+	sideOffset = 0,
+	children,
+	...props
+}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+	return (
+		<TooltipPrimitive.Portal>
+			<TooltipPrimitive.Content
+				data-slot="tooltip-content"
+				sideOffset={sideOffset}
+				className={cn(
+					"bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-fit rounded-md px-3 py-1.5 text-xs text-balance",
+					className,
+				)}
+				{...props}
+			>
+				{children}
+				<TooltipPrimitive.Arrow className="bg-primary dark:bg-stone-900 dark:fill-stone-900 fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+			</TooltipPrimitive.Content>
+		</TooltipPrimitive.Portal>
+	);
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/gradient-bg.tsx
+```
+"use client";
+import React from "react";
+import { cn } from "@/lib/utils";
+
+export function GradientBG({
+	children,
+	className,
+	...props
+}: React.PropsWithChildren<
+	{
+		className?: string;
+	} & React.HTMLAttributes<HTMLElement>
+>) {
+	return (
+		<div
+			className={cn(
+				"relative flex   content-center  transition duration-500  items-center flex-col flex-nowrap gap-10 h-min justify-center overflow-visible p-px decoration-clone w-full",
+			)}
+			{...props}
+		>
+			<div className={cn("w-auto z-10  px-4 py-2 rounded-none", className)}>
+				{children}
+			</div>
+			<div
+				className={cn(
+					"flex-none inset-0 overflow-hidden absolute z-0 rounded-none bg-gradient-to-tl dark:from-amber-100/30 dark:via-zinc-900 dark:to-black blur-md opacity-50",
+				)}
+			/>
+			<div className="bg-zinc-100 dark:bg-zinc-950 absolute z-1 flex-none inset-[2px] " />
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/grid-pattern.tsx
+```
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useId, useRef, useState } from "react";
+
+const Block = ({
+	x,
+	y,
+	...props
+}: Omit<React.ComponentPropsWithoutRef<typeof motion.path>, "x" | "y"> & {
+	x: number;
+	y: number;
+}) => {
+	return (
+		<motion.path
+			transform={`translate(${-32 * y + 96 * x} ${160 * y})`}
+			d="M45.119 4.5a11.5 11.5 0 0 0-11.277 9.245l-25.6 128C6.82 148.861 12.262 155.5 19.52 155.5h63.366a11.5 11.5 0 0 0 11.277-9.245l25.6-128c1.423-7.116-4.02-13.755-11.277-13.755H45.119Z"
+			{...props}
+		/>
+	);
+};
+
+export const GridPattern = ({ yOffset = 0, interactive = false, ...props }) => {
+	const id = useId();
+	const ref = useRef<React.ElementRef<"svg">>(null);
+	const currentBlock = useRef<[x: number, y: number]>();
+	const counter = useRef(0);
+	const [hoveredBlocks, setHoveredBlocks] = useState<
+		Array<[x: number, y: number, key: number]>
+	>([]);
+	const staticBlocks = [
+		[1, 1],
+		[2, 2],
+		[4, 3],
+		[6, 2],
+		[7, 4],
+		[5, 5],
+	];
+
+	useEffect(() => {
+		if (!interactive) {
+			return;
+		}
+
+		function onMouseMove(event: MouseEvent) {
+			if (!ref.current) {
+				return;
+			}
+
+			const rect = ref.current.getBoundingClientRect();
+			let x = event.clientX - rect.left;
+			let y = event.clientY - rect.top;
+			if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+				return;
+			}
+
+			x = x - rect.width / 2 - 32;
+			y = y - yOffset;
+			x += Math.tan(32 / 160) * y;
+			x = Math.floor(x / 96);
+			y = Math.floor(y / 160);
+
+			if (currentBlock.current?.[0] === x && currentBlock.current?.[1] === y) {
+				return;
+			}
+
+			currentBlock.current = [x, y];
+
+			setHoveredBlocks((blocks) => {
+				const key = counter.current++;
+				const block = [x, y, key] as (typeof hoveredBlocks)[number];
+				return [...blocks, block].filter(
+					(block) => !(block[0] === x && block[1] === y && block[2] !== key),
+				);
+			});
+		}
+
+		window.addEventListener("mousemove", onMouseMove);
+
+		return () => {
+			window.removeEventListener("mousemove", onMouseMove);
+		};
+	}, [yOffset, interactive]);
+
+	return (
+		<motion.svg
+			ref={ref}
+			aria-hidden="true"
+			{...props}
+			exit={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			initial={{ opacity: 0 }}
+		>
+			<rect width="100%" height="100%" fill={`url(#${id})`} strokeWidth="0" />
+			<svg x="50%" y={yOffset} strokeWidth="0" className="overflow-visible">
+				{staticBlocks.map((block) => (
+					<Block key={`${block}`} x={block[0]} y={block[1]} />
+				))}
+				{hoveredBlocks.map((block) => (
+					<Block
+						key={block[2]}
+						x={block[0]}
+						y={block[1]}
+						animate={{ opacity: [0, 1, 0] }}
+						transition={{ duration: 1, times: [0, 0, 1] }}
+						onAnimationComplete={() => {
+							setHoveredBlocks((blocks) =>
+								blocks.filter((b) => b[2] !== block[2]),
+							);
+						}}
+					/>
+				))}
+			</svg>
+			<defs>
+				<pattern
+					id={id}
+					width="96"
+					height="480"
+					x="50%"
+					patternUnits="userSpaceOnUse"
+					patternTransform={`translate(0 ${yOffset})`}
+					fill="none"
+				>
+					<path d="M128 0 98.572 147.138A16 16 0 0 1 82.883 160H13.117a16 16 0 0 0-15.69 12.862l-26.855 134.276A16 16 0 0 1-45.117 320H-116M64-160 34.572-12.862A16 16 0 0 1 18.883 0h-69.766a16 16 0 0 0-15.69 12.862l-26.855 134.276A16 16 0 0 1-109.117 160H-180M192 160l-29.428 147.138A15.999 15.999 0 0 1 146.883 320H77.117a16 16 0 0 0-15.69 12.862L34.573 467.138A16 16 0 0 1 18.883 480H-52M-136 480h58.883a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1-18.883 320h69.766a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1 109.117 160H192M-72 640h58.883a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1 45.117 480h69.766a15.999 15.999 0 0 0 15.689-12.862l26.856-134.276A15.999 15.999 0 0 1 173.117 320H256M-200 320h58.883a15.999 15.999 0 0 0 15.689-12.862l26.856-134.276A16 16 0 0 1-82.883 160h69.766a16 16 0 0 0 15.69-12.862L29.427 12.862A16 16 0 0 1 45.117 0H128" />
+				</pattern>
+			</defs>
+		</motion.svg>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/hero.tsx
+```
+"use client";
+
+import { Fragment, useEffect, useId, useState } from "react";
+import useMeasure from "react-use-measure";
+import Link from "next/link";
+import clsx from "clsx";
+import { Button } from "@/components/ui/button";
+import { Check, Copy, CornerRightUp } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Highlight, themes } from "prism-react-renderer";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { Builder } from "../builder";
+import { Spotlight } from "./spotlight";
+import { GradientBG } from "./gradient-bg";
+const tabs: { name: "auth.ts" | "client.ts"; code: string }[] = [
+	{
+		name: "auth.ts",
+		code: `export const auth = betterAuth({
+	database: new Pool({
+		connectionString: DATABASE_URL,
+	}),
+    emailAndPassword: {
+        enabled: true,
+    },
+	plugins: [
+	  organization(),
+      twoFactor(),
+	]
+})`,
+	},
+	{
+		name: "client.ts",
+		code: `const client = createAuthClient({
+    plugins: [passkeyClient()]
+});
+        `,
+	},
+];
+
+function TrafficLightsIcon(props: React.ComponentPropsWithoutRef<"svg">) {
+	return (
+		<svg aria-hidden="true" viewBox="0 0 42 10" fill="none" {...props}>
+			<circle cx="5" cy="5" r="4.5" />
+			<circle cx="21" cy="5" r="4.5" />
+			<circle cx="37" cy="5" r="4.5" />
+		</svg>
+	);
+}
+
+export default function Hero() {
+	return (
+		<section className="max-h-[40rem] relative w-full flex md:items-center md:justify-center dark:bg-black/[0.96] antialiased bg-grid-white/[0.02] overflow-hidden px-8 md:min-h-[40rem]">
+			<Spotlight />
+			<div className="overflow-hidden bg-transparent md:px-10 dark:-mb-32 dark:mt-[-4.75rem] dark:pb-32 dark:pt-[4.75rem]">
+				<div className="lg:max-w-8xl mx-auto grid max-w-full grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-2 lg:grid-cols-2 lg:px-8 lg:py-4 xl:gap-x-16 xl:px-12">
+					<div className="relative z-10 md:text-center lg:text-left">
+						<div className="relative">
+							<div className="flex flex-col items-start gap-2">
+								<div className="flex items-end gap-1 mt-2 ">
+									<div className="flex items-center gap-1">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="0.8em"
+											height="0.8em"
+											viewBox="0 0 24 24"
+										>
+											<path
+												fill="currentColor"
+												d="M13 4V2c4.66.5 8.33 4.19 8.85 8.85c.6 5.49-3.35 10.43-8.85 11.03v-2c3.64-.45 6.5-3.32 6.96-6.96A7.994 7.994 0 0 0 13 4m-7.33.2A9.8 9.8 0 0 1 11 2v2.06c-1.43.2-2.78.78-3.9 1.68zM2.05 11a9.8 9.8 0 0 1 2.21-5.33L5.69 7.1A8 8 0 0 0 4.05 11zm2.22 7.33A10.04 10.04 0 0 1 2.06 13h2c.18 1.42.75 2.77 1.63 3.9zm1.4 1.41l1.39-1.37h.04c1.13.88 2.48 1.45 3.9 1.63v2c-1.96-.21-3.82-1-5.33-2.26M12 17l1.56-3.42L17 12l-3.44-1.56L12 7l-1.57 3.44L7 12l3.43 1.58z"
+											></path>
+										</svg>
+										<span className="text-xs text-opacity-75">
+											Own Your Auth
+										</span>
+									</div>
+									<Link href={"/changelogs/1-2"}>
+										<span className="bg-gradient-to-tr dark:from-stone-800/50 dark:to-black from-stone-200 to-white  px-2 rounded-none">
+											<span className="text-xs dark:text-zinc-200 tracking-tighter font-mono mb-0 underline underline-offset-4">
+												v1.2 is out
+											</span>
+											<CornerRightUp className="inline ml-1 w-3 h-3" />
+										</span>
+									</Link>
+								</div>
+							</div>
+
+							<p className="text-zinc-800 dark:text-zinc-300 mt-3 tracking-tight text-2xl md:text-3xl">
+								The most comprehensive authentication framework for TypeScript.
+							</p>
+							<div className="relative mt-2 md:flex items-center gap-2 w-10/12 hidden border border-white/5">
+								<GradientBG className="w-full flex items-center justify-between">
+									<div className="w-full flex items-center gap-2">
+										<p className="md:text-sm text-xs font-mono select-none">
+											<span>
+												<span className="text-[#4498c8]">git:</span>
+												<span className="text-[#F07178]">(main) </span>
+											</span>
+											<span className="italic text-amber-600"> x</span>
+										</p>
+										<p className=" relative inline tracking-tight opacity-90 md:text-sm text-xs dark:text-white font-mono text-black">
+											npm add{" "}
+											<span className="relative dark:text-fuchsia-100 text-fuchsia-950">
+												better-auth
+												<span className="absolute h-2 bg-gradient-to-tr from-white via-stone-200 to-stone-300 blur-3xl w-full top-0 left-2"></span>
+											</span>
+										</p>
+									</div>
+									<div className="flex gap-2 items-center">
+										<Link
+											href="https://www.npmjs.com/package/better-auth"
+											target="_blank"
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="1em"
+												height="1em"
+												viewBox="0 0 128 128"
+											>
+												<path
+													fill="#cb3837"
+													d="M0 7.062C0 3.225 3.225 0 7.062 0h113.88c3.838 0 7.063 3.225 7.063 7.062v113.88c0 3.838-3.225 7.063-7.063 7.063H7.062c-3.837 0-7.062-3.225-7.062-7.063zm23.69 97.518h40.395l.05-58.532h19.494l-.05 58.581h19.543l.05-78.075l-78.075-.1l-.1 78.126z"
+												></path>
+												<path
+													fill="#fff"
+													d="M25.105 65.52V26.512H40.96c8.72 0 26.274.034 39.008.075l23.153.075v77.866H83.645v-58.54H64.057v58.54H25.105z"
+												></path>
+											</svg>
+										</Link>
+										<Link
+											href="https://github.com/better-auth/better-auth"
+											target="_blank"
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="1em"
+												height="1em"
+												viewBox="0 0 256 256"
+											>
+												<g fill="none">
+													<rect
+														width="256"
+														height="256"
+														fill="#242938"
+														rx="60"
+													></rect>
+													<path
+														fill="#fff"
+														d="M128.001 30C72.779 30 28 74.77 28 130.001c0 44.183 28.653 81.667 68.387 94.89c4.997.926 6.832-2.169 6.832-4.81c0-2.385-.093-10.262-.136-18.618c-27.82 6.049-33.69-11.799-33.69-11.799c-4.55-11.559-11.104-14.632-11.104-14.632c-9.073-6.207.684-6.079.684-6.079c10.042.705 15.33 10.305 15.33 10.305c8.919 15.288 23.394 10.868 29.1 8.313c.898-6.464 3.489-10.875 6.349-13.372c-22.211-2.529-45.56-11.104-45.56-49.421c0-10.918 3.906-19.839 10.303-26.842c-1.039-2.519-4.462-12.69.968-26.464c0 0 8.398-2.687 27.508 10.25c7.977-2.215 16.531-3.326 25.03-3.364c8.498.038 17.06 1.149 25.051 3.365c19.087-12.939 27.473-10.25 27.473-10.25c5.443 13.773 2.019 23.945.98 26.463c6.412 7.003 10.292 15.924 10.292 26.842c0 38.409-23.394 46.866-45.662 49.341c3.587 3.104 6.783 9.189 6.783 18.519c0 13.38-.116 24.149-.116 27.443c0 2.661 1.8 5.779 6.869 4.797C199.383 211.64 228 174.169 228 130.001C228 74.771 183.227 30 128.001 30M65.454 172.453c-.22.497-1.002.646-1.714.305c-.726-.326-1.133-1.004-.898-1.502c.215-.512.999-.654 1.722-.311c.727.326 1.141 1.01.89 1.508m4.919 4.389c-.477.443-1.41.237-2.042-.462c-.654-.697-.777-1.629-.293-2.078c.491-.442 1.396-.235 2.051.462c.654.706.782 1.631.284 2.078m3.374 5.616c-.613.426-1.615.027-2.234-.863c-.613-.889-.613-1.955.013-2.383c.621-.427 1.608-.043 2.236.84c.611.904.611 1.971-.015 2.406m5.707 6.504c-.548.604-1.715.442-2.57-.383c-.874-.806-1.118-1.95-.568-2.555c.555-.606 1.729-.435 2.59.383c.868.804 1.133 1.957.548 2.555m7.376 2.195c-.242.784-1.366 1.14-2.499.807c-1.13-.343-1.871-1.26-1.642-2.052c.235-.788 1.364-1.159 2.505-.803c1.13.341 1.871 1.252 1.636 2.048m8.394.932c.028.824-.932 1.508-2.121 1.523c-1.196.027-2.163-.641-2.176-1.452c0-.833.939-1.51 2.134-1.53c1.19-.023 2.163.639 2.163 1.459m8.246-.316c.143.804-.683 1.631-1.864 1.851c-1.161.212-2.236-.285-2.383-1.083c-.144-.825.697-1.651 1.856-1.865c1.183-.205 2.241.279 2.391 1.097"
+													></path>
+												</g>
+											</svg>
+										</Link>
+									</div>
+								</GradientBG>
+							</div>
+							{
+								<>
+									<div className="mt-8 flex w-fit flex-col gap-4 font-sans md:flex-row md:justify-center lg:justify-start items-center">
+										<Link
+											href="/docs"
+											className="hover:shadow-sm dark:border-stone-100 dark:hover:shadow-sm border-2 border-black bg-white px-4 py-1.5 text-sm uppercase text-black shadow-[1px_1px_rgba(0,0,0),2px_2px_rgba(0,0,0),3px_3px_rgba(0,0,0),4px_4px_rgba(0,0,0),5px_5px_0px_0px_rgba(0,0,0)] transition duration-200 md:px-8 dark:shadow-[1px_1px_rgba(255,255,255),2px_2px_rgba(255,255,255),3px_3px_rgba(255,255,255),4px_4px_rgba(255,255,255),5px_5px_0px_0px_rgba(255,255,255)]"
+										>
+											Get Started
+										</Link>
+										<Builder />
+									</div>
+								</>
+							}
+						</div>
+					</div>
+
+					<div className="relative hidden md:block lg:static xl:pl-10">
+						<div className="relative">
+							<div className="from-sky-300 via-sky-300/70 to-blue-300 absolute inset-0 rounded-none bg-gradient-to-tr opacity-5 blur-lg" />
+							<div className="from-stone-300 via-stone-300/70 to-blue-300 absolute inset-0 rounded-none bg-gradient-to-tr opacity-5" />
+							<CodePreview />
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+function CodePreview() {
+	const [currentTab, setCurrentTab] = useState<"auth.ts" | "client.ts">(
+		"auth.ts",
+	);
+
+	const theme = useTheme();
+
+	const code = tabs.find((tab) => tab.name === currentTab)?.code ?? "";
+	const [copyState, setCopyState] = useState(false);
+	const [ref, { height }] = useMeasure();
+	const copyToClipboard = (text: string) => {
+		navigator.clipboard.writeText(text).then(() => {
+			setCopyState(true);
+			setTimeout(() => {
+				setCopyState(false);
+			}, 2000);
+		});
+	};
+
+	const [codeTheme, setCodeTheme] = useState(themes.synthwave84);
+
+	useEffect(() => {
+		setCodeTheme(
+			theme.resolvedTheme === "light" ? themes.oneLight : themes.synthwave84,
+		);
+	}, [theme.resolvedTheme]);
+
+	return (
+		<AnimatePresence initial={false}>
+			<MotionConfig transition={{ duration: 0.5, type: "spring", bounce: 0 }}>
+				<motion.div
+					animate={{ height: height > 0 ? height : undefined }}
+					className="from-stone-100 to-stone-200 dark:to-black/90 dark:via-stone-950/10 dark:from-stone-950/90 relative overflow-hidden rounded-sm bg-gradient-to-tr ring-1 ring-white/10 backdrop-blur-lg"
+				>
+					<div ref={ref}>
+						<div className="absolute -top-px left-0 right-0 h-px" />
+						<div className="absolute -bottom-px left-11 right-20 h-px" />
+						<div className="pl-4 pt-4">
+							<TrafficLightsIcon className="stroke-slate-500/30 h-2.5 w-auto" />
+
+							<div className="mt-4 flex space-x-2 text-xs">
+								{tabs.map((tab) => (
+									<button
+										key={tab.name}
+										onClick={() => setCurrentTab(tab.name)}
+										className={clsx(
+											"relative isolate flex h-6 cursor-pointer items-center justify-center rounded-full px-2.5",
+											currentTab === tab.name
+												? "text-stone-300"
+												: "text-slate-500",
+										)}
+									>
+										{tab.name}
+										{tab.name === currentTab && (
+											<motion.div
+												layoutId="tab-code-preview"
+												className="bg-stone-800 absolute inset-0 -z-10 rounded-full"
+											/>
+										)}
+									</button>
+								))}
+							</div>
+
+							<div className="mt-6 flex flex-col items-start px-1 text-sm">
+								<div className="absolute top-2 right-4">
+									<Button
+										variant="outline"
+										size="icon"
+										className="absolute w-5 border-none bg-transparent h-5 top-2 right-0"
+										onClick={() => copyToClipboard(code)}
+									>
+										{copyState ? (
+											<Check className="h-3 w-3" />
+										) : (
+											<Copy className="h-3 w-3" />
+										)}
+										<span className="sr-only">Copy code</span>
+									</Button>
+								</div>
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									transition={{ duration: 0.5 }}
+									key={currentTab}
+									className="relative flex items-start px-1 text-sm"
+								>
+									<div
+										aria-hidden="true"
+										className="border-slate-300/5 text-slate-600 select-none border-r pr-4 font-mono"
+									>
+										{Array.from({
+											length: code.split("\n").length,
+										}).map((_, index) => (
+											<Fragment key={index}>
+												{(index + 1).toString().padStart(2, "0")}
+												<br />
+											</Fragment>
+										))}
+									</div>
+									<Highlight
+										key={theme.resolvedTheme}
+										code={code}
+										language={"javascript"}
+										theme={{
+											...codeTheme,
+											plain: {
+												backgroundColor: "transparent",
+											},
+										}}
+									>
+										{({
+											className,
+											style,
+											tokens,
+											getLineProps,
+											getTokenProps,
+										}) => (
+											<pre
+												className={clsx(className, "flex overflow-x-auto pb-6")}
+												style={style}
+											>
+												<code className="px-4">
+													{tokens.map((line, lineIndex) => (
+														<div key={lineIndex} {...getLineProps({ line })}>
+															{line.map((token, tokenIndex) => (
+																<span
+																	key={tokenIndex}
+																	{...getTokenProps({ token })}
+																/>
+															))}
+														</div>
+													))}
+												</code>
+											</pre>
+										)}
+									</Highlight>
+								</motion.div>
+								<motion.div layout className="self-end">
+									<Link
+										href="https://demo.better-auth.com"
+										target="_blank"
+										className="shadow-md  border shadow-primary-foreground mb-4 ml-auto mr-4 mt-auto flex cursor-pointer items-center gap-2 px-3 py-1 transition-all ease-in-out hover:opacity-70"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="1em"
+											height="1em"
+											viewBox="0 0 24 24"
+										>
+											<path
+												fill="currentColor"
+												d="M10 20H8V4h2v2h2v3h2v2h2v2h-2v2h-2v3h-2z"
+											></path>
+										</svg>
+										<p className="text-sm">Demo</p>
+									</Link>
+								</motion.div>
+							</div>
+						</div>
+					</div>
+				</motion.div>
+			</MotionConfig>
+		</AnimatePresence>
+	);
+}
+
+export function HeroBackground(props: React.ComponentPropsWithoutRef<"svg">) {
+	const id = useId();
+	return (
+		<svg
+			aria-hidden="true"
+			viewBox="0 0 668 1069"
+			width={668}
+			height={1069}
+			fill="none"
+			{...props}
+		>
+			<defs>
+				<clipPath id={`${id}-clip-path`}>
+					<path
+						fill="#fff"
+						transform="rotate(-180 334 534.4)"
+						d="M0 0h668v1068.8H0z"
+					/>
+				</clipPath>
+			</defs>
+			<g opacity=".4" clipPath={`url(#${id}-clip-path)`} strokeWidth={4}>
+				<path
+					opacity=".3"
+					d="M584.5 770.4v-474M484.5 770.4v-474M384.5 770.4v-474M283.5 769.4v-474M183.5 768.4v-474M83.5 767.4v-474"
+					stroke="#334155"
+				/>
+				<path
+					d="M83.5 221.275v6.587a50.1 50.1 0 0 0 22.309 41.686l55.581 37.054a50.102 50.102 0 0 1 22.309 41.686v6.587M83.5 716.012v6.588a50.099 50.099 0 0 0 22.309 41.685l55.581 37.054a50.102 50.102 0 0 1 22.309 41.686v6.587M183.7 584.5v6.587a50.1 50.1 0 0 0 22.31 41.686l55.581 37.054a50.097 50.097 0 0 1 22.309 41.685v6.588M384.101 277.637v6.588a50.1 50.1 0 0 0 22.309 41.685l55.581 37.054a50.1 50.1 0 0 1 22.31 41.686v6.587M384.1 770.288v6.587a50.1 50.1 0 0 1-22.309 41.686l-55.581 37.054A50.099 50.099 0 0 0 283.9 897.3v6.588"
+					stroke="#334155"
+				/>
+				<path
+					d="M384.1 770.288v6.587a50.1 50.1 0 0 1-22.309 41.686l-55.581 37.054A50.099 50.099 0 0 0 283.9 897.3v6.588M484.3 594.937v6.587a50.1 50.1 0 0 1-22.31 41.686l-55.581 37.054A50.1 50.1 0 0 0 384.1 721.95v6.587M484.3 872.575v6.587a50.1 50.1 0 0 1-22.31 41.686l-55.581 37.054a50.098 50.098 0 0 0-22.309 41.686v6.582M584.501 663.824v39.988a50.099 50.099 0 0 1-22.31 41.685l-55.581 37.054a50.102 50.102 0 0 0-22.309 41.686v6.587M283.899 945.637v6.588a50.1 50.1 0 0 1-22.309 41.685l-55.581 37.05a50.12 50.12 0 0 0-22.31 41.69v6.59M384.1 277.637c0 19.946 12.763 37.655 31.686 43.962l137.028 45.676c18.923 6.308 31.686 24.016 31.686 43.962M183.7 463.425v30.69c0 21.564 13.799 40.709 34.257 47.529l134.457 44.819c18.922 6.307 31.686 24.016 31.686 43.962M83.5 102.288c0 19.515 13.554 36.412 32.604 40.645l235.391 52.309c19.05 4.234 32.605 21.13 32.605 40.646M83.5 463.425v-58.45M183.699 542.75V396.625M283.9 1068.8V945.637M83.5 363.225v-141.95M83.5 179.524v-77.237M83.5 60.537V0M384.1 630.425V277.637M484.301 830.824V594.937M584.5 1068.8V663.825M484.301 555.275V452.988M584.5 622.075V452.988M384.1 728.537v-56.362M384.1 1068.8v-20.88M384.1 1006.17V770.287M283.9 903.888V759.85M183.699 1066.71V891.362M83.5 1068.8V716.012M83.5 674.263V505.175"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="384.1"
+					r="10.438"
+					transform="rotate(-180 83.5 384.1)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="200.399"
+					r="10.438"
+					transform="rotate(-180 83.5 200.399)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="81.412"
+					r="10.438"
+					transform="rotate(-180 83.5 81.412)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="375.75"
+					r="10.438"
+					transform="rotate(-180 183.699 375.75)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="563.625"
+					r="10.438"
+					transform="rotate(-180 183.699 563.625)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="651.3"
+					r="10.438"
+					transform="rotate(-180 384.1 651.3)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="484.301"
+					cy="574.062"
+					r="10.438"
+					transform="rotate(-180 484.301 574.062)"
+					fill="#0EA5E9"
+					fillOpacity=".42"
+					stroke="#0EA5E9"
+				/>
+				<circle
+					cx="384.1"
+					cy="749.412"
+					r="10.438"
+					transform="rotate(-180 384.1 749.412)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="1027.05"
+					r="10.438"
+					transform="rotate(-180 384.1 1027.05)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="283.9"
+					cy="924.763"
+					r="10.438"
+					transform="rotate(-180 283.9 924.763)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="870.487"
+					r="10.438"
+					transform="rotate(-180 183.699 870.487)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="283.9"
+					cy="738.975"
+					r="10.438"
+					transform="rotate(-180 283.9 738.975)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="695.138"
+					r="10.438"
+					transform="rotate(-180 83.5 695.138)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="484.3"
+					r="10.438"
+					transform="rotate(-180 83.5 484.3)"
+					fill="#0EA5E9"
+					fillOpacity=".42"
+					stroke="#0EA5E9"
+				/>
+				<circle
+					cx="484.301"
+					cy="432.112"
+					r="10.438"
+					transform="rotate(-180 484.301 432.112)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="584.5"
+					cy="432.112"
+					r="10.438"
+					transform="rotate(-180 584.5 432.112)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="584.5"
+					cy="642.95"
+					r="10.438"
+					transform="rotate(-180 584.5 642.95)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="484.301"
+					cy="851.699"
+					r="10.438"
+					transform="rotate(-180 484.301 851.699)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="256.763"
+					r="10.438"
+					transform="rotate(-180 384.1 256.763)"
+					stroke="#334155"
+				/>
+			</g>
+		</svg>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/people-say.tsx
+```
+import { cn } from "@/lib/utils";
+import { Icons } from "../icons";
+import Link from "next/link";
+
+const testimonials = [
+	{
+		name: "Dev Ed",
+		profession: "Content Creator",
+		link: "https://x.com/edgarasben/status/1856336936505590160",
+		description:
+			"This has been the best auth experience by a mileee, auto generated my drizzle schemas for users, sessions etc, full type safe and dead simple api, well done @better_auth 👏👏",
+		avatar: "/people-say/dev-ed.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Lazar Nikolov",
+		profession: "Software Engineer & Educator",
+		link: "https://x.com/NikolovLazar/status/1888992999872331985",
+		description:
+			"I didn't know  @better_auth was THAT good. I'm implementing it in TanStack Start and I can't believe how good the DX is. This is my favorite stack now (along with  @DrizzleORM and @shadcn ui).",
+		avatar: "/people-say/lazar-nikolov.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Theo - t3.gg",
+		profession: "CEO of t3.chat",
+		link: "https://x.com/theo/status/1879769267866120341",
+		description: "Very exciting project and a super easy rec",
+		avatar: "/people-say/theo.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Jonathan Wilke",
+		profession: "Creator of Supastarter",
+		link: "https://x.com/jonathan_wilke/status/1853086900279562329",
+		description: "fuck, @better_auth is just so good",
+		avatar: "/people-say/jonathan-wilke.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Sébastien Chopin",
+		profession: "Creator of Nuxt & NuxtLabs",
+		link: "https://x.com/Atinux/status/1853751424561336322",
+		description:
+			"When @better_auth meets @nuxt_hub to build full-stack Nuxt apps on Cloudflare (using D1 & KV).",
+		avatar: "/people-say/sebastien-chopin.png",
+		image: "",
+		social: <Icons.x />,
+	},
+
+	{
+		name: "Dax",
+		profession: "Creator of SST",
+		link: "https://x.com/thdxr/status/1866222656468705426",
+		description:
+			"between better-auth and openauth one of those options should cover how you want to do things for 95% of cases. the problem of defaulting to SaaS for auth in js is finally fixed...",
+		avatar: "/people-say/dax.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Dagmawi Babi",
+		profession: "Developer",
+		link: "https://x.com/DagmawiBabi/status/1845966382703280458",
+		description:
+			"@better_auth exceeded all expectations, and it's just getting started",
+		avatar: "/people-say/dagmawi-babi.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Tech Nerd",
+		profession: "Developer",
+		link: "https://x.com/TechNerd556/status/1863523931614822784",
+		description:
+			"Using @better_auth with custom components feels like having someone hand you the remote while you're comfortably on the sofa. The ease I'm feeling rn is insane Auth done in under 5 minutes 🤌⚡️.",
+		avatar: "/people-say/tech-nerd.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Omar McAdam",
+		profession: "Creator of AugmentedHQ",
+		link: "https://x.com/McPizza0/status/1879526862046839249",
+		description:
+			"if you're building a code project in 2025 use @better_auth. It has everything you need now and everything you'll need at scale. dont take this suggestion lightly..",
+		avatar: "/people-say/omar-mcadam.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Guillermo Rauch",
+		profession: "CEO of Vercel",
+		link: "https://x.com/rauchg/status/1871628287962906846",
+		description: "Great project & maintainer",
+		avatar: "/people-say/guillermo-rauch.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Nizzy",
+		profession: "Co-founder of Zero",
+		link: "https://x.com/NizzyABI/status/1889178812459422162",
+		description:
+			"i cant believe how easy @better_auth is compared to @authjs all i had to do was connect it to my drizzle schema and create a sign up page w the auth :)))",
+		avatar: "/people-say/nizzy.png",
+		image: "",
+		social: <Icons.x />,
+	},
+
+	{
+		name: "Vybhav Bhargav",
+		profession: "Founding engineer @glyfspace",
+		link: "https://x.com/vybhavab/status/1891589126513684669",
+		description: "better-auth is a work of art.",
+		avatar: "/people-say/vybhav-bhargav.png",
+		social: <Icons.x />,
+	},
+	{
+		name: "Shreyas Mididoddi",
+		profession: "Senior Developer",
+		link: "https://x.com/Shreyassanthu77/status/1887544964881784927",
+		description:
+			"dang!! Didn't think I would but absolutely loving @better_auth",
+		avatar: "/people-say/shreyas-mididddi.png",
+		social: <Icons.x />,
+	},
+];
+type TestimonialProps = (typeof testimonials)[number];
+const PeopleSay = ({
+	reverse = false,
+	testimonials,
+}: {
+	reverse?: boolean;
+	testimonials: TestimonialProps[];
+}) => {
+	const animeSeconds = testimonials.length * 10;
+	return (
+		<div className="max-w-full mx-auto">
+			<div
+				className={`[--anime-duration:${animeSeconds}s] px-10 mx-auto w-full`}
+			>
+				<div
+					style={{
+						animationDuration: `${animeSeconds}s`,
+					}}
+					className={cn(
+						"scroller flex flex-nowrap w-max min-w-full duration-[1000s] hover:[animation-play-state:paused] overflow-hidden relative gap-5 justify-around shrink-0",
+						reverse ? "animate-hrtl-scroll-reverse " : "animate-hrtl-scroll",
+					)}
+				>
+					{testimonials.map((testimonial, indx) => {
+						return (
+							<div
+								key={indx}
+								className={cn(
+									"flex flex-col justify-between h-[220px] rounded-none border-[1.2px] border-black/20 shrink-0 grow-0 w-[450px] dark:border-white/10",
+								)}
+							>
+								<p className="px-5 py-5 tracking-tight text-md font-extralight sm:text-xl md:text-lg text-pretty text-text-primary dark:text-dark-text-primary">
+									&quot;{testimonial.description}.&quot;
+								</p>
+								<div className="flex overflow-hidden h-[28%] gap-1 w-full border-t-[1.2px]">
+									<div className="flex items-center w-3/4 gap-3 px-4 py-3">
+										<img
+											src={testimonial.avatar}
+											className="w-10 h-10 rounded-full"
+											alt="avatar"
+										/>
+										<div className="flex flex-col items-start justify-start flex-1 gap-0">
+											<h5 className="text-base font-medium md:text-md">
+												{testimonial.name}
+											</h5>
+											<p className="text-sm md:text-base text-black/30 mt-[-4px] text-text-tertiary dark:text-white/50 dark:text-dark-text-tertiary">
+												{testimonial.profession}
+											</p>
+										</div>
+									</div>
+									<div className="w-[1px] bg-black/20 dark:bg-white/20" />
+									<div className="flex items-center justify-center max-w-full mx-auto">
+										<Link href={testimonial.link} target="_blank">
+											{testimonial.social}
+										</Link>
+									</div>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	);
+};
+
+export const Testimonial = () => {
+	return (
+		<div className="max-w-full py-5 mx-auto overflow-hidden">
+			<div className="flex flex-col gap-3">
+				<div
+					style={{
+						maskImage:
+							"linear-gradient(to left, transparent 0%, black 20%, black 80%, transparent 95%)",
+					}}
+					className="relative flex justify-around gap-5 overflow-hidden shrink-0"
+				>
+					<PeopleSay
+						reverse
+						testimonials={Array(10)
+							.fill(testimonials.slice(0, Math.floor(testimonials.length / 2)))
+							.flat()}
+					/>
+				</div>
+				<div
+					style={{
+						maskImage:
+							"linear-gradient(to left, transparent 0%, black 20%, black 80%, transparent 95%)",
+					}}
+					className="relative flex justify-around gap-5 overflow-hidden shrink-0"
+				>
+					<PeopleSay
+						testimonials={Array(10)
+							.fill(
+								testimonials.slice(
+									Math.floor(testimonials.length / 2) + 1,
+									testimonials.length - 1,
+								),
+							)
+							.flat()}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/section-svg.tsx
+```
+const SectionSvg = ({
+	crossesOffset,
+}: {
+	crossesOffset: string;
+}) => {
+	return (
+		<>
+			<PlusSvg
+				className={`hidden absolute -top-[0.3125rem] ${
+					crossesOffset && crossesOffset
+				} pointer-events-none lg:block lg:left-[3.6825rem]`}
+			/>
+
+			<PlusSvg
+				className={`hidden absolute  -top-[0.3125rem] right-[1.4625rem] ${
+					crossesOffset && crossesOffset
+				} pointer-events-none lg:block lg:right-[3.20rem]`}
+			/>
+		</>
+	);
+};
+
+export default SectionSvg;
+
+export const PlusSvg = ({ className = "" }) => {
+	return (
+		<svg className={`${className} || ""`} width="11" height="11" fill="none">
+			<path
+				d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+				fill="#878787"
+			/>
+		</svg>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/section.tsx
+```
+import type React from "react";
+import SectionSvg from "./section-svg";
+
+const Section = ({
+	className,
+	id,
+	crosses,
+	crossesOffset,
+	customPaddings,
+	children,
+}: {
+	className: string;
+	id: string;
+	crosses?: boolean;
+	crossesOffset: string;
+	customPaddings: boolean;
+	children: React.ReactNode;
+}) => {
+	return (
+		<div
+			id={id}
+			className={`
+      relative
+      ${customPaddings || `py-10 lg:py-16  ${crosses ? "" : ""}`}
+      ${className || " "}`}
+		>
+			{children}
+
+			<div className="hidden absolute top-0 left-5 w-[0.0625rem] h-[calc(100%_+_30px)] dark:bg-[#26242C] bg-stone-200  pointer-events-none lg:block lg:left-16 xl:left-16" />
+			<div className="hidden absolute top-0 right-5 w-[0.0625rem] h-[calc(100%_+_30px)]  dark:bg-[#26242C] bg-stone-200  pointer-events-none lg:block lg:right-14 xl:right-14" />
+
+			{crosses && (
+				<>
+					<SectionSvg crossesOffset={crossesOffset} />
+				</>
+			)}
+		</div>
+	);
+};
+
+export default Section;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/spotlight.tsx
+```
+import { cn } from "@/lib/utils";
+
+type SpotlightProps = {
+	className?: string;
+	fill?: string;
+};
+
+export const Spotlight = ({ className, fill }: SpotlightProps) => {
+	return (
+		<svg
+			className={cn(
+				"animate-spotlight pointer-events-none absolute z-[1] h-[169%] w-[138%] lg:w-[84%] opacity-0",
+				className,
+			)}
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 3787 2842"
+			fill="none"
+		>
+			<g filter="url(#filter)">
+				<ellipse
+					cx="1924.71"
+					cy="273.501"
+					rx="1924.71"
+					ry="273.501"
+					transform="matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)"
+					fill={fill || "white"}
+					fillOpacity="0.1"
+				></ellipse>
+			</g>
+			<defs>
+				<filter
+					id="filter"
+					x="0.860352"
+					y="0.838989"
+					width="3785.16"
+					height="2840.26"
+					filterUnits="userSpaceOnUse"
+					colorInterpolationFilters="sRGB"
+				>
+					<feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood>
+					<feBlend
+						mode="normal"
+						in="SourceGraphic"
+						in2="BackgroundImageFix"
+						result="shape"
+					></feBlend>
+					<feGaussianBlur
+						stdDeviation="180"
+						result="effect1_foregroundBlur_1065_8"
+					></feGaussianBlur>
+				</filter>
+			</defs>
+		</svg>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/beam.tsx
+```
+"use client";
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+export const BackgroundBeams = React.memo(
+	({ className }: { className?: string }) => {
+		const paths = [
+			"M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875",
+			"M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867",
+			"M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859",
+			"M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851",
+			"M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843",
+			"M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835",
+			"M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827",
+			"M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819",
+			"M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811",
+			"M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803",
+			"M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795",
+			"M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787",
+			"M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779",
+			"M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771",
+			"M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763",
+			"M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755",
+			"M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747",
+			"M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739",
+			"M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731",
+			"M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723",
+			"M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715",
+			"M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707",
+			"M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699",
+			"M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691",
+			"M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683",
+			"M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675",
+			"M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667",
+			"M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659",
+			"M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651",
+			"M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643",
+			"M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635",
+			"M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627",
+			"M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619",
+			"M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611",
+			"M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603",
+			"M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595",
+			"M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587",
+			"M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579",
+			"M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571",
+			"M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563",
+			"M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555",
+			"M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547",
+			"M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539",
+			"M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531",
+			"M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523",
+			"M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515",
+			"M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507",
+			"M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499",
+			"M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491",
+			"M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483",
+		];
+		return (
+			<div
+				className={cn(
+					"absolute  h-full w-full inset-0  [mask-size:40px] [mask-repeat:no-repeat] flex items-center justify-center",
+					className,
+				)}
+			>
+				<svg
+					className=" z-0 h-full w-full pointer-events-none absolute "
+					width="100%"
+					height="100%"
+					viewBox="0 0 696 316"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875M-373 -197C-373 -197 -305 208 159 335C623 462 691 867 691 867M-366 -205C-366 -205 -298 200 166 327C630 454 698 859 698 859M-359 -213C-359 -213 -291 192 173 319C637 446 705 851 705 851M-352 -221C-352 -221 -284 184 180 311C644 438 712 843 712 843M-345 -229C-345 -229 -277 176 187 303C651 430 719 835 719 835M-338 -237C-338 -237 -270 168 194 295C658 422 726 827 726 827M-331 -245C-331 -245 -263 160 201 287C665 414 733 819 733 819M-324 -253C-324 -253 -256 152 208 279C672 406 740 811 740 811M-317 -261C-317 -261 -249 144 215 271C679 398 747 803 747 803M-310 -269C-310 -269 -242 136 222 263C686 390 754 795 754 795M-303 -277C-303 -277 -235 128 229 255C693 382 761 787 761 787M-296 -285C-296 -285 -228 120 236 247C700 374 768 779 768 779M-289 -293C-289 -293 -221 112 243 239C707 366 775 771 775 771M-282 -301C-282 -301 -214 104 250 231C714 358 782 763 782 763M-275 -309C-275 -309 -207 96 257 223C721 350 789 755 789 755M-268 -317C-268 -317 -200 88 264 215C728 342 796 747 796 747M-261 -325C-261 -325 -193 80 271 207C735 334 803 739 803 739M-254 -333C-254 -333 -186 72 278 199C742 326 810 731 810 731M-247 -341C-247 -341 -179 64 285 191C749 318 817 723 817 723M-240 -349C-240 -349 -172 56 292 183C756 310 824 715 824 715M-233 -357C-233 -357 -165 48 299 175C763 302 831 707 831 707M-226 -365C-226 -365 -158 40 306 167C770 294 838 699 838 699M-219 -373C-219 -373 -151 32 313 159C777 286 845 691 845 691M-212 -381C-212 -381 -144 24 320 151C784 278 852 683 852 683M-205 -389C-205 -389 -137 16 327 143C791 270 859 675 859 675M-198 -397C-198 -397 -130 8 334 135C798 262 866 667 866 667M-191 -405C-191 -405 -123 0 341 127C805 254 873 659 873 659M-184 -413C-184 -413 -116 -8 348 119C812 246 880 651 880 651M-177 -421C-177 -421 -109 -16 355 111C819 238 887 643 887 643M-170 -429C-170 -429 -102 -24 362 103C826 230 894 635 894 635M-163 -437C-163 -437 -95 -32 369 95C833 222 901 627 901 627M-156 -445C-156 -445 -88 -40 376 87C840 214 908 619 908 619M-149 -453C-149 -453 -81 -48 383 79C847 206 915 611 915 611M-142 -461C-142 -461 -74 -56 390 71C854 198 922 603 922 603M-135 -469C-135 -469 -67 -64 397 63C861 190 929 595 929 595M-128 -477C-128 -477 -60 -72 404 55C868 182 936 587 936 587M-121 -485C-121 -485 -53 -80 411 47C875 174 943 579 943 579M-114 -493C-114 -493 -46 -88 418 39C882 166 950 571 950 571M-107 -501C-107 -501 -39 -96 425 31C889 158 957 563 957 563M-100 -509C-100 -509 -32 -104 432 23C896 150 964 555 964 555M-93 -517C-93 -517 -25 -112 439 15C903 142 971 547 971 547M-86 -525C-86 -525 -18 -120 446 7C910 134 978 539 978 539M-79 -533C-79 -533 -11 -128 453 -1C917 126 985 531 985 531M-72 -541C-72 -541 -4 -136 460 -9C924 118 992 523 992 523M-65 -549C-65 -549 3 -144 467 -17C931 110 999 515 999 515M-58 -557C-58 -557 10 -152 474 -25C938 102 1006 507 1006 507M-51 -565C-51 -565 17 -160 481 -33C945 94 1013 499 1013 499M-44 -573C-44 -573 24 -168 488 -41C952 86 1020 491 1020 491M-37 -581C-37 -581 31 -176 495 -49C959 78 1027 483 1027 483M-30 -589C-30 -589 38 -184 502 -57C966 70 1034 475 1034 475M-23 -597C-23 -597 45 -192 509 -65C973 62 1041 467 1041 467M-16 -605C-16 -605 52 -200 516 -73C980 54 1048 459 1048 459M-9 -613C-9 -613 59 -208 523 -81C987 46 1055 451 1055 451M-2 -621C-2 -621 66 -216 530 -89C994 38 1062 443 1062 443M5 -629C5 -629 73 -224 537 -97C1001 30 1069 435 1069 435M12 -637C12 -637 80 -232 544 -105C1008 22 1076 427 1076 427M19 -645C19 -645 87 -240 551 -113C1015 14 1083 419 1083 419"
+						stroke="url(#paint0_radial_242_278)"
+						strokeOpacity="0.05"
+						strokeWidth="0.5"
+					></path>
+
+					{paths.map((path, index) => (
+						<motion.path
+							key={`path-` + index}
+							d={path}
+							stroke={`url(#linearGradient-${index})`}
+							strokeOpacity="0.4"
+							strokeWidth="0.5"
+						></motion.path>
+					))}
+					<defs>
+						{paths.map((path, index) => (
+							<motion.linearGradient
+								id={`linearGradient-${index}`}
+								key={`gradient-${index}`}
+								initial={{
+									x1: "0%",
+									x2: "0%",
+									y1: "0%",
+									y2: "0%",
+								}}
+								animate={{
+									x1: ["0%", "100%"],
+									x2: ["0%", "95%"],
+									y1: ["0%", "100%"],
+									y2: ["0%", `${93 + Math.random() * 8}%`],
+								}}
+								transition={{
+									duration: Math.random() * 10 + 10,
+									ease: "easeInOut",
+									repeat: Infinity,
+									delay: Math.random() * 10,
+								}}
+							>
+								<stop stopColor="#18CCFC" stopOpacity="0"></stop>
+								<stop stopColor="#18CCFC"></stop>
+								<stop offset="32.5%" stopColor="#6344F5"></stop>
+								<stop offset="100%" stopColor="#AE48FF" stopOpacity="0"></stop>
+							</motion.linearGradient>
+						))}
+
+						<radialGradient
+							id="paint0_radial_242_278"
+							cx="0"
+							cy="0"
+							r="1"
+							gradientUnits="userSpaceOnUse"
+							gradientTransform="translate(352 34) rotate(90) scale(555 1560.62)"
+						>
+							<stop offset="0.0666667" stopColor="var(--neutral-300)"></stop>
+							<stop offset="0.243243" stopColor="var(--neutral-300)"></stop>
+							<stop offset="0.43594" stopColor="white" stopOpacity="0"></stop>
+						</radialGradient>
+					</defs>
+				</svg>
+			</div>
+		);
+	},
+);
+
+BackgroundBeams.displayName = "BackgroundBeams";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/index.tsx
+```
+import { Moon, PlusIcon, Sun } from "lucide-react";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "../ui/dialog";
+import {
+	Card,
+	CardContent,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "../ui/card";
+import SignIn from "./sign-in";
+import { SignUp } from "./sign-up";
+import { AuthTabs } from "./tabs";
+import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
+import { Separator } from "../ui/separator";
+import { useState } from "react";
+import CodeTabs from "./code-tabs";
+import { cn } from "@/lib/utils";
+import { socialProviders } from "./social-provider";
+import { useAtom } from "jotai";
+import { optionsAtom } from "./store";
+import { useTheme } from "next-themes";
+import { ScrollArea } from "../ui/scroll-area";
+const frameworks = [
+	{
+		title: "Next.js",
+		description: "The React Framework for Production",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="2em"
+				height="2em"
+				viewBox="0 0 15 15"
+			>
+				<path
+					fill="currentColor"
+					fillRule="evenodd"
+					d="M0 7.5a7.5 7.5 0 1 1 11.698 6.216L4.906 4.21A.5.5 0 0 0 4 4.5V12h1V6.06l5.83 8.162A7.5 7.5 0 0 1 0 7.5M10 10V4h1v6z"
+					clipRule="evenodd"
+				></path>
+			</svg>
+		),
+	},
+	{
+		title: "Nuxt",
+		description: "The Intuitive Vue Framework",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="2em"
+				height="2em"
+				viewBox="0 0 256 256"
+			>
+				<g fill="none">
+					<rect width="256" height="256" fill="#242938" rx="60"></rect>
+					<path
+						fill="#00DC82"
+						d="M138.787 189.333h68.772c2.184.001 4.33-.569 6.222-1.652a12.4 12.4 0 0 0 4.554-4.515a12.24 12.24 0 0 0-.006-12.332l-46.185-79.286a12.4 12.4 0 0 0-4.553-4.514a12.53 12.53 0 0 0-12.442 0a12.4 12.4 0 0 0-4.553 4.514l-11.809 20.287l-23.09-39.67a12.4 12.4 0 0 0-4.555-4.513a12.54 12.54 0 0 0-12.444 0a12.4 12.4 0 0 0-4.555 4.513L36.67 170.834a12.24 12.24 0 0 0-.005 12.332a12.4 12.4 0 0 0 4.554 4.515a12.5 12.5 0 0 0 6.222 1.652h43.17c17.104 0 29.718-7.446 38.397-21.973l21.072-36.169l11.287-19.356l33.873 58.142h-45.16zm-48.88-19.376l-30.127-.007l45.16-77.518l22.533 38.759l-15.087 25.906c-5.764 9.426-12.312 12.86-22.48 12.86"
+					></path>
+				</g>
+			</svg>
+		),
+	},
+	{
+		title: "Svelte Kit",
+		description: "Web development for the rest of us",
+		Icon: () => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="2em"
+				height="2em"
+				viewBox="0 0 256 256"
+			>
+				<g fill="none">
+					<rect width="256" height="256" fill="#FF3E00" rx="60"></rect>
+					<g clipPath="url(#skillIconsSvelte0)">
+						<path
+							fill="#fff"
+							d="M193.034 61.797c-16.627-23.95-49.729-30.966-73.525-15.865L77.559 72.78c-11.44 7.17-19.372 18.915-21.66 32.186c-1.984 11.136-.306 22.576 5.033 32.492c-3.66 5.491-6.102 11.593-7.17 18c-2.44 13.576.764 27.61 8.696 38.745c16.78 23.95 49.728 30.966 73.525 15.865l41.949-26.695c11.441-7.17 19.373-18.915 21.661-32.187c1.983-11.135.305-22.576-5.034-32.491c3.661-5.492 6.102-11.593 7.17-18c2.593-13.729-.61-27.763-8.695-38.898"
+						></path>
+						<path
+							fill="#FF3E00"
+							d="M115.39 196.491a33.25 33.25 0 0 1-35.695-13.271c-4.881-6.712-6.712-15.101-5.34-23.339c.306-1.373.611-2.593.916-3.966l.763-2.44L78.169 155a55.6 55.6 0 0 0 16.475 8.237l1.525.458l-.152 1.525c-.153 2.136.458 4.424 1.678 6.255c2.441 3.508 6.712 5.186 10.83 4.118c.916-.305 1.831-.61 2.594-1.068l41.796-26.695c2.136-1.372 3.509-3.355 3.966-5.796s-.152-5.034-1.525-7.017c-2.441-3.509-6.712-5.034-10.831-3.966c-.915.305-1.83.61-2.593 1.068l-16.017 10.22c-2.593 1.678-5.491 2.898-8.542 3.661a33.25 33.25 0 0 1-35.695-13.271c-4.729-6.712-6.712-15.102-5.186-23.339c1.372-7.932 6.254-15.102 13.118-19.373l41.949-26.695c2.593-1.678 5.492-2.898 8.543-3.814a33.25 33.25 0 0 1 35.695 13.272c4.881 6.712 6.711 15.101 5.339 23.339c-.306 1.373-.611 2.593-1.068 3.966l-.763 2.44l-2.136-1.525a55.6 55.6 0 0 0-16.474-8.237l-1.526-.458l.153-1.525c.153-2.136-.458-4.424-1.678-6.255c-2.441-3.508-6.712-5.034-10.83-3.966c-.916.305-1.831.61-2.594 1.068l-41.796 26.695c-2.136 1.373-3.509 3.356-3.966 5.797s.152 5.034 1.525 7.017c2.441 3.508 6.712 5.033 10.831 3.966c.915-.305 1.83-.611 2.593-1.068l16.017-10.22c2.593-1.678 5.491-2.899 8.542-3.814a33.25 33.25 0 0 1 35.695 13.271c4.881 6.712 6.712 15.102 5.339 23.339c-1.373 7.932-6.254 15.102-13.119 19.373l-41.949 26.695c-2.593 1.678-5.491 2.898-8.542 3.813"
+						></path>
+					</g>
+					<defs>
+						<clipPath id="skillIconsSvelte0">
+							<path fill="#fff" d="M53 38h149.644v180H53z"></path>
+						</clipPath>
+					</defs>
+				</g>
+			</svg>
+		),
+	},
+	{
+		title: "Solid Start",
+		description: "Fine-grained reactivity goes fullstack",
+		Icon: () => (
+			<svg
+				data-hk="00000010210"
+				width="2em"
+				height="2em"
+				viewBox="0 0 500 500"
+				fill="none"
+				xmlns="http://www.w3.org/2000/svg"
+				role="presentation"
+			>
+				<path
+					d="M233.205 430.856L304.742 425.279C304.742 425.279 329.208 421.295 343.569 397.659L293.041 385.443L233.205 430.856Z"
+					fill="url(#paint0_linear_1_2)"
+				></path>
+				<path
+					d="M134.278 263.278C113.003 264.341 73.6443 268.059 73.6443 268.059L245.173 392.614L284.265 402.44L343.569 397.925L170.977 273.105C170.977 273.105 157.148 263.278 137.203 263.278C136.139 263.278 135.342 263.278 134.278 263.278Z"
+					fill="url(#paint1_linear_1_2)"
+				></path>
+				<path
+					d="M355.536 238.58L429.2 234.065C429.2 234.065 454.464 230.348 468.825 206.977L416.435 193.964L355.536 238.58Z"
+					fill="url(#paint2_linear_1_2)"
+				></path>
+				<path
+					d="M251.289 68.6128C229.217 69.4095 188.795 72.5964 188.795 72.5964L367.503 200.072L407.926 210.429L469.09 206.712L289.318 78.9702C289.318 78.9702 274.426 68.6128 253.417 68.6128C252.885 68.6128 252.087 68.6128 251.289 68.6128Z"
+					fill="url(#paint3_linear_1_2)"
+				></path>
+				<path
+					d="M31.0946 295.679C30.8287 295.945 30.8287 296.21 30.8287 296.475L77.8993 330.469L202.623 420.764C228.95 439.62 264.586 431.653 282.67 402.44L187.465 333.921L110.077 277.62C100.504 270.715 89.8663 267.528 79.2289 267.528C60.6134 267.528 42.2639 277.354 31.0946 295.679Z"
+					fill="url(#paint4_linear_1_2)"
+				></path>
+				<path
+					d="M147.043 99.9505C147.043 100.216 146.776 100.482 146.511 100.747L195.442 135.538L244.374 170.062L325.751 227.957C353.142 247.345 389.841 239.642 407.925 210.695L358.461 175.374L308.997 140.318L228.153 82.6881C218.047 75.5177 206.611 72.0652 195.442 72.0652C176.561 72.3308 158.212 81.8915 147.043 99.9505Z"
+					fill="url(#paint5_linear_1_2)"
+				></path>
+				<path
+					d="M112.471 139.255L175.497 208.305C178.423 212.289 181.614 216.006 185.337 219.193L308.199 354.105L369.364 350.387C387.448 321.439 380.002 282.135 352.611 262.748L271.234 204.852L222.568 170.328L173.636 135.538L112.471 139.255Z"
+					fill="url(#paint6_linear_1_2)"
+				></path>
+				<path
+					d="M111.939 140.052C94.1213 168.734 101.567 207.509 128.427 226.629L209.005 283.994L258.735 319.049L308.199 354.105C326.283 325.158 318.836 285.852 291.445 266.465L112.471 139.255C112.471 139.521 112.204 139.787 111.939 140.052Z"
+					fill="url(#paint7_linear_1_2)"
+				></path>
+				<defs>
+					<linearGradient
+						id="paint0_linear_1_2"
+						x1="359.728"
+						y1="56.8062"
+						x2="265.623"
+						y2="521.28"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="#1593F5"></stop>
+						<stop offset="1" stopColor="#0084CE"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint1_linear_1_2"
+						x1="350.496"
+						y1="559.872"
+						x2="-44.0802"
+						y2="-73.2062"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="#1593F5"></stop>
+						<stop offset="1" stopColor="#0084CE"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint2_linear_1_2"
+						x1="610.25"
+						y1="570.526"
+						x2="372.635"
+						y2="144.034"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="white"></stop>
+						<stop offset="1" stopColor="#15ABFF"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint3_linear_1_2"
+						x1="188.808"
+						y1="-180.608"
+						x2="390.515"
+						y2="281.703"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="white"></stop>
+						<stop offset="1" stopColor="#79CFFF"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint4_linear_1_2"
+						x1="415.84"
+						y1="-4.74684"
+						x2="95.1922"
+						y2="439.83"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="#0057E5"></stop>
+						<stop offset="1" stopColor="#0084CE"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint5_linear_1_2"
+						x1="343.141"
+						y1="-21.5427"
+						x2="242.301"
+						y2="256.708"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="white"></stop>
+						<stop offset="1" stopColor="#15ABFF"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint6_linear_1_2"
+						x1="469.095"
+						y1="533.421"
+						x2="-37.6939"
+						y2="-135.731"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="white"></stop>
+						<stop offset="1" stopColor="#79CFFF"></stop>
+					</linearGradient>
+					<linearGradient
+						id="paint7_linear_1_2"
+						x1="380.676"
+						y1="-89.0869"
+						x2="120.669"
+						y2="424.902"
+						gradientUnits="userSpaceOnUse"
+					>
+						<stop stopColor="white"></stop>
+						<stop offset="1" stopColor="#79CFFF"></stop>
+					</linearGradient>
+				</defs>
+			</svg>
+		),
+	},
+];
+
+export function Builder() {
+	const [currentStep, setCurrentStep] = useState(0);
+
+	const [options, setOptions] = useAtom(optionsAtom);
+	const { setTheme, resolvedTheme } = useTheme();
+	return (
+		<Dialog>
+			<DialogTrigger asChild>
+				<button className="bg-stone-950 no-underline group cursor-pointer relative  p-px text-xs font-semibold leading-6  text-white md:inline-block hidden">
+					<span className="absolute inset-0 overflow-hidden rounded-sm">
+						<span className="absolute inset-0 rounded-sm bg-[image:radial-gradient(75%_100%_at_50%_0%,rgba(56,189,248,0.6)_0%,rgba(56,189,248,0)_75%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"></span>
+					</span>
+					<div className="relative flex space-x-2 items-center z-10 rounded-none bg-zinc-950 py-2 px-4 ring-1 ring-white/10 ">
+						<PlusIcon size={14} />
+						<span>Create Sign in Box</span>
+					</div>
+					<span className="absolute -bottom-0 left-[1.125rem] h-px w-[calc(100%-2.25rem)] bg-gradient-to-r from-emerald-400/0 via-stone-800/90 to-emerald-400/0 transition-opacity duration-500 group-hover:opacity-40"></span>
+				</button>
+			</DialogTrigger>
+			<DialogContent className="max-w-7xl h-5/6 overflow-clip !rounded-none">
+				<DialogHeader>
+					<DialogTitle>Create Sign in Box</DialogTitle>
+					<DialogDescription>
+						Configure the sign in box to your liking and copy the code to your
+						application.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="flex gap-4 md:gap-12 flex-col md:flex-row items-center md:items-start">
+					<ScrollArea className="w-4/12">
+						<div className="overflow-scroll h-[580px] relative">
+							{options.signUp ? (
+								<AuthTabs
+									tabs={[
+										{
+											title: "Sign In",
+											value: "sign-in",
+											content: <SignIn />,
+										},
+										{
+											title: "Sign Up",
+											value: "sign-up",
+											content: <SignUp />,
+										},
+									]}
+								/>
+							) : (
+								<SignIn />
+							)}
+						</div>
+					</ScrollArea>
+					<ScrollArea className="w-[45%] flex-grow">
+						<div className="h-[580px]">
+							{currentStep === 0 ? (
+								<Card className="rounded-none flex-grow h-full">
+									<CardHeader className="flex flex-row justify-between">
+										<CardTitle>Configuration</CardTitle>
+										<div
+											className="cursor-pointer"
+											onClick={() => {
+												if (resolvedTheme === "dark") {
+													setTheme("light");
+												} else {
+													setTheme("dark");
+												}
+											}}
+										>
+											{resolvedTheme === "dark" ? (
+												<Moon onClick={() => setTheme("light")} size={18} />
+											) : (
+												<Sun onClick={() => setTheme("dark")} size={18} />
+											)}
+										</div>
+									</CardHeader>
+									<CardContent className="max-h-[400px] overflow-scroll">
+										<div className="flex flex-col gap-2">
+											<div>
+												<Label>Email & Password</Label>
+											</div>
+											<Separator />
+											<div className="flex items-center justify-between">
+												<div className="flex items-center">
+													<Label
+														className="cursor-pointer"
+														htmlFor="email-provider-email"
+													>
+														Enabled
+													</Label>
+												</div>
+												<Switch
+													id="email-provider-email"
+													checked={options.email}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															email: checked,
+															magicLink: checked ? false : prev.magicLink,
+															signUp: checked,
+														}));
+													}}
+												/>
+											</div>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<Label
+														className="cursor-pointer"
+														htmlFor="email-provider-remember-me"
+													>
+														Remember Me
+													</Label>
+												</div>
+												<Switch
+													id="email-provider-remember-me"
+													checked={options.rememberMe}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															rememberMe: checked,
+														}));
+													}}
+												/>
+											</div>
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<Label
+														className="cursor-pointer"
+														htmlFor="email-provider-forget-password"
+													>
+														Forget Password
+													</Label>
+												</div>
+												<Switch
+													id="email-provider-forget-password"
+													checked={options.forgetPassword}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															forgetPassword: checked,
+														}));
+													}}
+												/>
+											</div>
+										</div>
+										<div className="flex flex-col gap-2 mt-4">
+											<div>
+												<Label>Social Providers</Label>
+											</div>
+											<Separator />
+											{Object.entries(socialProviders).map(
+												([provider, { Icon }]) => (
+													<div
+														className="flex items-center justify-between"
+														key={provider}
+													>
+														<div className="flex items-center gap-2">
+															<Icon />
+															<Label
+																className="cursor-pointer"
+																htmlFor={"social-provider".concat(
+																	"-",
+																	provider,
+																)}
+															>
+																{provider.charAt(0).toUpperCase() +
+																	provider.slice(1)}
+															</Label>
+														</div>
+														<Switch
+															id={"social-provider".concat("-", provider)}
+															checked={options.socialProviders.includes(
+																provider,
+															)}
+															onCheckedChange={(checked) => {
+																setOptions((prev) => ({
+																	...prev,
+																	socialProviders: checked
+																		? [...prev.socialProviders, provider]
+																		: prev.socialProviders.filter(
+																				(p) => p !== provider,
+																			),
+																}));
+															}}
+														/>
+													</div>
+												),
+											)}
+										</div>
+										<div className="flex flex-col gap-2 mt-4">
+											<div>
+												<Label>Plugins</Label>
+											</div>
+											<Separator />
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														width="1em"
+														height="1em"
+														viewBox="0 0 24 24"
+													>
+														<path
+															fill="currentColor"
+															d="M5 20q-.825 0-1.412-.587T3 18v-.8q0-.85.438-1.562T4.6 14.55q1.55-.775 3.15-1.162T11 13q.35 0 .7.013t.7.062q.275.025.437.213t.163.462q.05 1.175.575 2.213t1.4 1.762q.175.125.275.313t.1.412V19q0 .425-.288.713T14.35 20zm6-8q-1.65 0-2.825-1.175T7 8t1.175-2.825T11 4t2.825 1.175T15 8t-1.175 2.825T11 12m7.5 2q.425 0 .713-.288T19.5 13t-.288-.712T18.5 12t-.712.288T17.5 13t.288.713t.712.287m.15 8.65l-1-1q-.05-.05-.15-.35v-4.45q-1.1-.325-1.8-1.237T15 13.5q0-1.45 1.025-2.475T18.5 10t2.475 1.025T22 13.5q0 1.125-.638 2t-1.612 1.25l.9.9q.15.15.15.35t-.15.35l-.8.8q-.15.15-.15.35t.15.35l.8.8q.15.15.15.35t-.15.35l-1.3 1.3q-.15.15-.35.15t-.35-.15"
+														></path>
+													</svg>
+													<Label
+														className="cursor-pointer"
+														htmlFor="plugin-passkey"
+													>
+														Passkey
+													</Label>
+												</div>
+												<Switch
+													id="plugin-passkey"
+													checked={options.passkey}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															passkey: checked,
+														}));
+													}}
+												/>
+											</div>
+
+											<div className="flex items-center justify-between">
+												<div className="flex items-center gap-2">
+													<svg
+														xmlns="http://www.w3.org/2000/svg"
+														width="1em"
+														height="1em"
+														viewBox="0 0 24 24"
+													>
+														<g fill="none">
+															<path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z"></path>
+															<path
+																fill="currentColor"
+																d="M17.5 3a4.5 4.5 0 0 1 4.495 4.288L22 7.5V15a2 2 0 0 1-1.85 1.995L20 17h-3v3a1 1 0 0 1-1.993.117L15 20v-3H4a2 2 0 0 1-1.995-1.85L2 15V7.5a4.5 4.5 0 0 1 4.288-4.495L6.5 3zm-11 2A2.5 2.5 0 0 0 4 7.5V15h5V7.5A2.5 2.5 0 0 0 6.5 5M7 8a1 1 0 0 1 .117 1.993L7 10H6a1 1 0 0 1-.117-1.993L6 8z"
+															></path>
+														</g>
+													</svg>
+													<Label
+														className="cursor-pointer"
+														htmlFor="plugin-otp-magic-link"
+													>
+														Magic Link
+													</Label>
+												</div>
+												<Switch
+													id="plugin-otp-magic-link"
+													checked={options.magicLink}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															magicLink: checked,
+															email: checked ? false : prev.email,
+															signUp: checked ? false : prev.signUp,
+														}));
+													}}
+												/>
+											</div>
+										</div>
+										<div className="mt-4">
+											<Separator />
+											<div className="flex items-center justify-between mt-2">
+												<Label
+													className="cursor-pointer"
+													htmlFor="label-powered-by"
+												>
+													Powered by label
+												</Label>
+												<Switch
+													id="label-powered-by"
+													checked={options.label}
+													onCheckedChange={(checked) => {
+														setOptions((prev) => ({
+															...prev,
+															label: checked,
+														}));
+													}}
+												/>
+											</div>
+										</div>
+									</CardContent>
+									<CardFooter>
+										<button
+											className="bg-stone-950 no-underline group cursor-pointer relative shadow-2xl shadow-zinc-900 rounded-sm p-px text-xs font-semibold leading-6  text-white inline-block w-full"
+											onClick={() => {
+												setCurrentStep(currentStep + 1);
+											}}
+										>
+											<span className="absolute inset-0 overflow-hidden rounded-sm">
+												<span className="absolute inset-0 rounded-sm bg-[image:radial-gradient(75%_100%_at_50%_0%,rgba(56,189,248,0.6)_0%,rgba(56,189,248,0)_75%)] opacity-0 transition-opacity duration-500 group-hover:opacity-100"></span>
+											</span>
+											<div className="relative flex space-x-2 items-center z-10 rounded-none bg-zinc-950 py-2 px-4 ring-1 ring-white/10 justify-center">
+												<span>Continue</span>
+											</div>
+											<span className="absolute -bottom-0 left-[1.125rem] h-px w-[calc(100%-2.25rem)] bg-gradient-to-r from-emerald-400/0 via-stone-800/90 to-emerald-400/0 transition-opacity duration-500 group-hover:opacity-40"></span>
+										</button>
+									</CardFooter>
+								</Card>
+							) : currentStep === 1 ? (
+								<Card className="rounded-none flex-grow  h-full">
+									<CardHeader>
+										<CardTitle>Choose Framework</CardTitle>
+										<p
+											className="text-blue-400 hover:underline mt-1 text-sm cursor-pointer"
+											onClick={() => {
+												setCurrentStep(0);
+											}}
+										>
+											Go Back
+										</p>
+									</CardHeader>
+									<CardContent className="flex items-start gap-2 flex-wrap justify-between">
+										{frameworks.map((fm) => (
+											<div
+												onClick={() => {
+													if (fm.title === "Next.js") {
+														setCurrentStep(currentStep + 1);
+													}
+												}}
+												className={cn(
+													"flex flex-col items-center gap-4 border p-6 rounded-md w-5/12 flex-grow h-44 relative",
+													fm.title !== "Next.js"
+														? "opacity-55"
+														: "hover:ring-1 transition-all ring-border hover:bg-background duration-200 ease-in-out cursor-pointer",
+												)}
+												key={fm.title}
+											>
+												{fm.title !== "Next.js" && (
+													<span className="absolute top-4 right-4 text-xs">
+														Coming Soon
+													</span>
+												)}
+												<fm.Icon />
+												<Label className="text-2xl">{fm.title}</Label>
+												<p className="text-sm">{fm.description}</p>
+											</div>
+										))}
+									</CardContent>
+								</Card>
+							) : (
+								<Card className="rounded-none w-full overflow-y-hidden h-full overflow-auto">
+									<CardHeader>
+										<div className="flex flex-col -mb-2 items-start">
+											<CardTitle>Code</CardTitle>
+										</div>
+									</CardHeader>
+									<CardContent>
+										<div className="flex gap-2 items-baseline">
+											<p>
+												Copy the code below and paste it in your application to
+												get started.
+											</p>
+											<p
+												className="text-blue-400 hover:underline mt-1 text-sm cursor-pointer"
+												onClick={() => {
+													setCurrentStep(0);
+												}}
+											>
+												Go Back
+											</p>
+										</div>
+										<div>
+											<CodeTabs />
+										</div>
+									</CardContent>
+								</Card>
+							)}
+						</div>
+					</ScrollArea>
+				</div>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/sign-in.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Key } from "lucide-react";
+import Link from "next/link";
+import { useAtom } from "jotai";
+import { optionsAtom } from "./store";
+import { socialProviders } from "./social-provider";
+import { cn } from "@/lib/utils";
+
+export default function SignIn() {
+	const [options] = useAtom(optionsAtom);
+	return (
+		<Card className="z-50 rounded-none max-w-full">
+			<CardHeader>
+				<CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
+				<CardDescription className="text-xs md:text-sm">
+					Enter your email below to login to your account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-4">
+					{options.email && (
+						<>
+							<div className="grid gap-2">
+								<Label htmlFor="email">Email</Label>
+								<Input
+									id="email"
+									type="email"
+									placeholder="m@example.com"
+									required
+								/>
+							</div>
+
+							<div className="grid gap-2">
+								<div className="flex items-center">
+									<Label htmlFor="password">Password</Label>
+									{options.forgetPassword && (
+										<Link
+											href="#"
+											className="ml-auto inline-block text-sm underline"
+										>
+											Forgot your password?
+										</Link>
+									)}
+								</div>
+
+								<Input
+									id="password"
+									type="password"
+									placeholder="password"
+									autoComplete="password"
+								/>
+							</div>
+
+							{options.rememberMe && (
+								<div className="flex items-center gap-2">
+									<Checkbox />
+									<Label>Remember me</Label>
+								</div>
+							)}
+						</>
+					)}
+
+					{options.magicLink && (
+						<div className="grid gap-2">
+							<Label htmlFor="email">Email</Label>
+							<Input
+								id="email"
+								type="email"
+								placeholder="m@example.com"
+								required
+							/>
+							<Button className="gap-2" onClick={async () => {}}>
+								Sign-in with Magic Link
+							</Button>
+						</div>
+					)}
+
+					{options.email && (
+						<Button type="submit" className="w-full" onClick={async () => {}}>
+							Login
+						</Button>
+					)}
+
+					{options.passkey && (
+						<Button variant="secondary" className="gap-2">
+							<Key size={16} />
+							Sign-in with Passkey
+						</Button>
+					)}
+					<div
+						className={cn(
+							"w-full gap-2 flex items-center justify-between",
+							options.socialProviders.length > 3
+								? "flex-row flex-wrap"
+								: "flex-col",
+						)}
+					>
+						{Object.keys(socialProviders).map((provider) => {
+							if (options.socialProviders.includes(provider)) {
+								const { Icon } =
+									socialProviders[provider as keyof typeof socialProviders];
+								return (
+									<Button
+										key={provider}
+										variant="outline"
+										className={cn(
+											options.socialProviders.length > 3
+												? "flex-grow"
+												: "w-full gap-2",
+										)}
+									>
+										<Icon width="1.2em" height="1.2em" />
+										{options.socialProviders.length <= 3 &&
+											"Sign in with " +
+												provider.charAt(0).toUpperCase() +
+												provider.slice(1)}
+									</Button>
+								);
+							}
+							return null;
+						})}
+					</div>
+				</div>
+			</CardContent>
+			{options.label && (
+				<CardFooter>
+					<div className="flex justify-center w-full border-t py-4">
+						<p className="text-center text-xs text-neutral-500">
+							Powered by{" "}
+							<Link
+								href="https://better-auth.com"
+								className="underline"
+								target="_blank"
+							>
+								<span className="dark:text-orange-200/90">better-auth.</span>
+							</Link>
+						</p>
+					</div>
+				</CardFooter>
+			)}
+		</Card>
+	);
+}
+
+export const signInString = (options: any) => `"use client"
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
+import { Loader2, Key } from "lucide-react";
+import { signIn } from "@/lib/auth-client";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+
+export default function SignIn() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  ${
+		options.rememberMe
+			? "const [rememberMe, setRememberMe] = useState(false);"
+			: ""
+	}
+
+  return (
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
+        <CardDescription className="text-xs md:text-sm">
+          Enter your email below to login to your account
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4">
+          ${
+						options.email
+							? `<div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+                value={email}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                ${
+									options.forgetPassword
+										? `<Link
+                    href="#"
+                    className="ml-auto inline-block text-sm underline"
+                  >
+                    Forgot your password?
+                  </Link>`
+										: ""
+								}
+              </div>
+
+              <Input
+                id="password"
+                type="password"
+                placeholder="password"
+                autoComplete="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            ${
+							options.rememberMe
+								? `<div className="flex items-center gap-2">
+                <Checkbox
+                  id="remember"
+                  onClick={() => {
+                    setRememberMe(!rememberMe);
+                  }}
+                />
+                <Label htmlFor="remember">Remember me</Label>
+              </div>`
+								: ""
+						}`
+							: ""
+					}
+
+          ${
+						options.magicLink
+							? `<div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+                value={email}
+              />
+              <Button
+                disabled={loading}
+                className="gap-2"
+                onClick={async () => {
+                  await signIn.magicLink(
+                  {
+                    email
+                  },
+                  {
+                     onRequest: (ctx) => {
+                        setLoading(true);
+                      },
+                     onResponse: (ctx) => {
+                         setLoading(false);
+                     },
+                   },
+                  );
+                 }}>
+                  {loading ? (
+                     <Loader2 size={16} className="animate-spin" />
+                     ):(
+                         Sign-in with Magic Link
+                   )}
+              </Button>
+            </div>`
+							: ""
+					}
+
+          ${
+						options.email
+							? `<Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+              onClick={async () => {
+                await signIn.email(
+                {
+                    email,
+                    password
+                },
+                {
+                  onRequest: (ctx) => {
+                    setLoading(true);
+                  },
+                  onResponse: (ctx) => {
+                    setLoading(false);
+                  },
+                },
+                );
+              }}
+            >
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                Login
+              )}
+              </Button>`
+							: ""
+					}
+
+          ${
+						options.passkey
+							? `<Button
+              variant="secondary"
+              disabled={loading}
+              className="gap-2"
+              onClick={async () => {
+              await signIn.passkey(
+                {
+                  onRequest: (ctx) => {
+                    setLoading(true);
+                  },
+                  onResponse: (ctx) => {
+                    setLoading(false);
+                  },
+                },
+                )
+              }}
+            >
+              <Key size={16} />
+              Sign-in with Passkey
+            </Button>`
+							: ""
+					}
+
+          ${
+						options.socialProviders?.length > 0
+							? `<div className={cn(
+              "w-full gap-2 flex items-center",
+              ${
+								options.socialProviders.length > 3
+									? '"justify-between flex-wrap"'
+									: '"justify-between flex-col"'
+							}
+            )}>
+              ${options.socialProviders
+								.map((provider: string) => {
+									const icon =
+										socialProviders[provider as keyof typeof socialProviders]
+											?.stringIcon || "";
+									return `\n\t\t\t\t<Button
+                  variant="outline"
+                  className={cn(
+                    ${
+											options.socialProviders.length > 3
+												? '"flex-grow"'
+												: '"w-full gap-2"'
+										}
+                  )}
+                  disabled={loading}
+                  onClick={async () => {
+                    await signIn.social(
+                    {
+                      provider: "${provider}",
+                      callbackURL: "/dashboard"
+                    },
+                    {
+                      onRequest: (ctx) => {
+                         setLoading(true);
+                      },
+                      onResponse: (ctx) => {
+                         setLoading(false);
+                      },
+                     },
+                    );
+                  }}
+                >
+                  ${icon}
+                  ${
+										options.socialProviders.length <= 3
+											? `Sign in with ${
+													provider.charAt(0).toUpperCase() + provider.slice(1)
+												}`
+											: ""
+									}
+                </Button>`;
+								})
+								.join("")}
+            </div>`
+							: ""
+					}
+        </div>
+      </CardContent>
+      ${
+				options.label
+					? `<CardFooter>
+          <div className="flex justify-center w-full border-t py-4">
+            <p className="text-center text-xs text-neutral-500">
+              Powered by{" "}
+              <Link
+                href="https://better-auth.com"
+                className="underline"
+                target="_blank"
+              >
+                <span className="dark:text-orange-200/90">better-auth.</span>
+              </Link>
+            </p>
+          </div>
+        </CardFooter>`
+					: ""
+			}
+    </Card>
+  );
+}`;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/sign-up.tsx
+```
+"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import Image from "next/image";
+import { Loader2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+export function SignUp() {
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [passwordConfirmation, setPasswordConfirmation] = useState("");
+	const [image, setImage] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const router = useRouter();
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			setImage(file);
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setImagePreview(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+	const [loading, setLoading] = useState(false);
+
+	return (
+		<Card className="z-50 rounded-md rounded-t-none max-w-md">
+			<CardHeader>
+				<CardTitle className="text-lg md:text-xl">Sign Up</CardTitle>
+				<CardDescription className="text-xs md:text-sm">
+					Enter your information to create an account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-4">
+					<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="first-name">First name</Label>
+							<Input
+								id="first-name"
+								placeholder="Max"
+								required
+								onChange={(e) => {
+									setFirstName(e.target.value);
+								}}
+								value={firstName}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="last-name">Last name</Label>
+							<Input
+								id="last-name"
+								placeholder="Robinson"
+								required
+								onChange={(e) => {
+									setLastName(e.target.value);
+								}}
+								value={lastName}
+							/>
+						</div>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="email">Email</Label>
+						<Input
+							id="email"
+							type="email"
+							placeholder="m@example.com"
+							required
+							onChange={(e) => {
+								setEmail(e.target.value);
+							}}
+							value={email}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="password">Password</Label>
+						<Input
+							id="password"
+							type="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							autoComplete="new-password"
+							placeholder="Password"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="password">Confirm Password</Label>
+						<Input
+							id="password_confirmation"
+							type="password"
+							value={passwordConfirmation}
+							onChange={(e) => setPasswordConfirmation(e.target.value)}
+							autoComplete="new-password"
+							placeholder="Confirm Password"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="image">Profile Image (optional)</Label>
+						<div className="flex items-end gap-4">
+							{imagePreview && (
+								<div className="relative w-16 h-16 rounded-sm overflow-hidden">
+									<Image
+										src={imagePreview}
+										alt="Profile preview"
+										layout="fill"
+										objectFit="cover"
+									/>
+								</div>
+							)}
+							<div className="flex items-center gap-2 w-full">
+								<Input
+									id="image"
+									type="file"
+									accept="image/*"
+									onChange={handleImageChange}
+									className="w-full"
+								/>
+								{imagePreview && (
+									<X
+										className="cursor-pointer"
+										onClick={() => {
+											setImage(null);
+											setImagePreview(null);
+										}}
+									/>
+								)}
+							</div>
+						</div>
+					</div>
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={loading}
+						onClick={async () => {}}
+					>
+						{loading ? (
+							<Loader2 size={16} className="animate-spin" />
+						) : (
+							"Create an account"
+						)}
+					</Button>
+				</div>
+			</CardContent>
+			<CardFooter>
+				<div className="flex justify-center w-full border-t py-4">
+					<p className="text-center text-xs text-neutral-500">
+						Secured by <span className="text-orange-400">better-auth.</span>
+					</p>
+				</div>
+			</CardFooter>
+		</Card>
+	);
+}
+
+async function convertImageToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+}
+
+export const signUpString = `"use client";
+
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import Image from "next/image";
+import { Loader2, X } from "lucide-react";
+import { signUp } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+export default function SignUp() {
+	const [firstName, setFirstName] = useState("");
+	const [lastName, setLastName] = useState("");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [passwordConfirmation, setPasswordConfirmation] = useState("");
+	const [image, setImage] = useState<File | null>(null);
+	const [imagePreview, setImagePreview] = useState<string | null>(null);
+	const router = useRouter();
+	const [loading, setLoading] = useState(false);
+
+	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (file) {
+			setImage(file);
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				setImagePreview(reader.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
+	};
+
+	return (
+		<Card className="z-50 rounded-md rounded-t-none max-w-md">
+			<CardHeader>
+				<CardTitle className="text-lg md:text-xl">Sign Up</CardTitle>
+				<CardDescription className="text-xs md:text-sm">
+					Enter your information to create an account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div className="grid gap-4">
+					<div className="grid grid-cols-2 gap-4">
+						<div className="grid gap-2">
+							<Label htmlFor="first-name">First name</Label>
+							<Input
+								id="first-name"
+								placeholder="Max"
+								required
+								onChange={(e) => {
+									setFirstName(e.target.value);
+								}}
+								value={firstName}
+							/>
+						</div>
+						<div className="grid gap-2">
+							<Label htmlFor="last-name">Last name</Label>
+							<Input
+								id="last-name"
+								placeholder="Robinson"
+								required
+								onChange={(e) => {
+									setLastName(e.target.value);
+								}}
+								value={lastName}
+							/>
+						</div>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="email">Email</Label>
+						<Input
+							id="email"
+							type="email"
+							placeholder="m@example.com"
+							required
+							onChange={(e) => {
+								setEmail(e.target.value);
+							}}
+							value={email}
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="password">Password</Label>
+						<Input
+							id="password"
+							type="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							autoComplete="new-password"
+							placeholder="Password"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="password">Confirm Password</Label>
+						<Input
+							id="password_confirmation"
+							type="password"
+							value={passwordConfirmation}
+							onChange={(e) => setPasswordConfirmation(e.target.value)}
+							autoComplete="new-password"
+							placeholder="Confirm Password"
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="image">Profile Image (optional)</Label>
+						<div className="flex items-end gap-4">
+							{imagePreview && (
+								<div className="relative w-16 h-16 rounded-sm overflow-hidden">
+									<Image
+										src={imagePreview}
+										alt="Profile preview"
+										layout="fill"
+										objectFit="cover"
+									/>
+								</div>
+							)}
+							<div className="flex items-center gap-2 w-full">
+								<Input
+									id="image"
+									type="file"
+									accept="image/*"
+									onChange={handleImageChange}
+									className="w-full"
+								/>
+								{imagePreview && (
+									<X
+										className="cursor-pointer"
+										onClick={() => {
+											setImage(null);
+											setImagePreview(null);
+										}}
+									/>
+								)}
+							</div>
+						</div>
+					</div>
+					<Button
+						type="submit"
+						className="w-full"
+						disabled={loading}
+						onClick={async () => {
+							await signUp.email({
+								email,
+								password,
+								name: \`\${firstName} \${lastName}\`,
+								image: image ? await convertImageToBase64(image) : "",
+								callbackURL: "/dashboard",
+								fetchOptions: {
+									onResponse: () => {
+										setLoading(false);
+									},
+									onRequest: () => {
+										setLoading(true);
+									},
+									onError: (ctx) => {
+										toast.error(ctx.error.message);
+									},
+									onSuccess: async () => {
+										router.push("/dashboard");
+									},
+								},
+							});
+						}}
+					>
+						{loading ? (
+							<Loader2 size={16} className="animate-spin" />
+						) : (
+							"Create an account"
+						)}
+					</Button>
+				</div>
+			</CardContent>
+			<CardFooter>
+				<div className="flex justify-center w-full border-t py-4">
+					<p className="text-center text-xs text-neutral-500">
+						Secured by <span className="text-orange-400">better-auth.</span>
+					</p>
+				</div>
+			</CardFooter>
+		</Card>
+	);
+}
+
+async function convertImageToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(file);
+	});
+}`;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/social-provider.tsx
+```
+import { SVGProps } from "react";
+
+export const socialProviders = {
+	apple: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				{...props}
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M17.05 20.28c-.98.95-2.05.8-3.08.35c-1.09-.46-2.09-.48-3.24 0c-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8c1.18-.24 2.31-.93 3.57-.84c1.51.12 2.65.72 3.4 1.8c-3.12 1.87-2.38 5.98.48 7.13c-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25c.29 2.58-2.34 4.5-3.74 4.25"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M17.05 20.28c-.98.95-2.05.8-3.08.35c-1.09-.46-2.09-.48-3.24 0c-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8c1.18-.24 2.31-.93 3.57-.84c1.51.12 2.65.72 3.4 1.8c-3.12 1.87-2.38 5.98.48 7.13c-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25c.29 2.58-2.34 4.5-3.74 4.25"
+				></path>
+			</svg>`,
+	},
+	dropbox: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<g fill="none" fillRule="evenodd">
+					<path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z"></path>
+					<path
+						fill="currentColor"
+						d="m11.998 13.503l2.879 1.662c.426.246.923.34 1.365.34c.443 0 .94-.094 1.367-.34l.587-.34V17a1 1 0 0 1-.5.866l-5.196 3a1 1 0 0 1-1 0l-5.196-3a1 1 0 0 1-.5-.866v-2.172l.583.337c.426.246.923.34 1.366.34c.442 0 .939-.094 1.366-.34zM6.887 3.5c.434-.251 1.115-.274 1.594-.068l.138.068l3.379 1.95l3.379-1.95c.434-.251 1.115-.274 1.594-.068l.138.068l4.242 2.45c.447.257.476.664.09.942l-.09.057l-3.378 1.95l3.378 1.95c.447.258.476.665.09.943l-.09.057l-4.242 2.45c-.435.25-1.116.273-1.595.068l-.137-.068l-3.38-1.951l-3.378 1.95c-.435.252-1.116.274-1.595.07l-.137-.07l-4.243-2.449c-.447-.257-.476-.665-.09-.942l.09-.058L6.022 8.9L2.644 6.95c-.447-.257-.476-.665-.09-.942l.09-.058zm5.546 2.702c-.205-.119-.52-.136-.755-.051l-.111.05l-4.243 2.45c-.212.122-.236.313-.07.45l.07.05l4.243 2.449c.205.118.52.135.755.05l.111-.05l4.243-2.45c.212-.122.236-.312.07-.45l-.07-.05z"
+					></path>
+				</g>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<g fill="none" fillRule="evenodd">
+					<path d="m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z"></path>
+					<path
+						fill="currentColor"
+						d="m11.998 13.503l2.879 1.662c.426.246.923.34 1.365.34c.443 0 .94-.094 1.367-.34l.587-.34V17a1 1 0 0 1-.5.866l-5.196 3a1 1 0 0 1-1 0l-5.196-3a1 1 0 0 1-.5-.866v-2.172l.583.337c.426.246.923.34 1.366.34c.442 0 .939-.094 1.366-.34zM6.887 3.5c.434-.251 1.115-.274 1.594-.068l.138.068l3.379 1.95l3.379-1.95c.434-.251 1.115-.274 1.594-.068l.138.068l4.242 2.45c.447.257.476.664.09.942l-.09.057l-3.378 1.95l3.378 1.95c.447.258.476.665.09.943l-.09.057l-4.242 2.45c-.435.25-1.116.273-1.595.068l-.137-.068l-3.38-1.951l-3.378 1.95c-.435.252-1.116.274-1.595.07l-.137-.07l-4.243-2.449c-.447-.257-.476-.665-.09-.942l.09-.058L6.022 8.9L2.644 6.95c-.447-.257-.476-.665-.09-.942l.09-.058zm5.546 2.702c-.205-.119-.52-.136-.755-.051l-.111.05l-4.243 2.45c-.212.122-.236.313-.07.45l.07.05l4.243 2.449c.205.118.52.135.755.05l.111-.05l4.243-2.45c.212-.122.236-.312.07-.45l-.07-.05z"
+					></path>
+				</g>
+			</svg>`,
+	},
+	discord: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.1.1 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.1 16.1 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.1.1 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.1 16.1 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"
+				></path>
+			</svg>`,
+	},
+	facebook: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					d="M20 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8.615v-6.96h-2.338v-2.725h2.338v-2c0-2.325 1.42-3.592 3.5-3.592c.699-.002 1.399.034 2.095.107v2.42h-1.435c-1.128 0-1.348.538-1.348 1.325v1.735h2.697l-.35 2.725h-2.348V21H20a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z"
+					fill="currentColor"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					d="M20 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h8.615v-6.96h-2.338v-2.725h2.338v-2c0-2.325 1.42-3.592 3.5-3.592c.699-.002 1.399.034 2.095.107v2.42h-1.435c-1.128 0-1.348.538-1.348 1.325v1.735h2.697l-.35 2.725h-2.348V21H20a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z"
+					fill="currentColor"
+				></path>
+			</svg>`,
+	},
+	github: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"
+				></path>
+			</svg>`,
+	},
+	gitlab: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="m22.749 9.769l-.031-.08l-3.027-7.9a.79.79 0 0 0-.782-.495a.8.8 0 0 0-.456.17a.8.8 0 0 0-.268.408L16.14 8.125H7.865L5.822 1.872a.8.8 0 0 0-.269-.409a.81.81 0 0 0-.926-.05c-.14.09-.25.22-.312.376L1.283 9.684l-.03.08a5.62 5.62 0 0 0 1.864 6.496l.01.008l.028.02l4.61 3.453l2.282 1.726l1.39 1.049a.935.935 0 0 0 1.13 0l1.389-1.05l2.281-1.726l4.639-3.473l.011-.01A5.62 5.62 0 0 0 22.75 9.77"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="m22.749 9.769l-.031-.08l-3.027-7.9a.79.79 0 0 0-.782-.495a.8.8 0 0 0-.456.17a.8.8 0 0 0-.268.408L16.14 8.125H7.865L5.822 1.872a.8.8 0 0 0-.269-.409a.81.81 0 0 0-.926-.05c-.14.09-.25.22-.312.376L1.283 9.684l-.03.08a5.62 5.62 0 0 0 1.864 6.496l.01.008l.028.02l4.61 3.453l2.282 1.726l1.39 1.049a.935.935 0 0 0 1.13 0l1.389-1.05l2.281-1.726l4.639-3.473l.011-.01A5.62 5.62 0 0 0 22.75 9.77"
+				></path>
+			</svg>`,
+	},
+	google: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="0.98em"
+				height="1em"
+				viewBox="0 0 256 262"
+			>
+				<path
+					fill="#4285F4"
+					d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"
+				></path>
+				<path
+					fill="#34A853"
+					d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"
+				></path>
+				<path
+					fill="#FBBC05"
+					d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z"
+				></path>
+				<path
+					fill="#EB4335"
+					d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="0.98em" height="1em" viewBox="0 0 256 262">
+				<path fill="#4285F4" d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622l38.755 30.023l2.685.268c24.659-22.774 38.875-56.282 38.875-96.027"></path>
+				<path fill="#34A853" d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055c-34.523 0-63.824-22.773-74.269-54.25l-1.531.13l-40.298 31.187l-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1"></path>
+				<path fill="#FBBC05" d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82c0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602z"></path>
+				<path fill="#EB4335" d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"></path>
+			</svg>`,
+	},
+	linkedin: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"
+				></path>
+			</svg>`,
+	},
+	microsoft: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.2em"
+				height="1.2em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M2 3h9v9H2zm9 19H2v-9h9zM21 3v9h-9V3zm0 19h-9v-9h9z"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M2 3h9v9H2zm9 19H2v-9h9zM21 3v9h-9V3zm0 19h-9v-9h9z"
+				></path>
+			</svg>`,
+	},
+	twitch: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.58-3.57h2.85L20.57 12V2m-1.43 9.29l-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43Z"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.2em"
+				height="1.2em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M11.64 5.93h1.43v4.28h-1.43m3.93-4.28H17v4.28h-1.43M7 2L3.43 5.57v12.86h4.28V22l3.58-3.57h2.85L20.57 12V2m-1.43 9.29l-2.85 2.85h-2.86l-2.5 2.5v-2.5H7.71V3.43h11.43Z"
+				></path>
+			</svg>`,
+	},
+	spotify: {
+		Icon: (props: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1em"
+				height="1em"
+				viewBox="0 0 24 24"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M12.001 2c-5.5 0-10 4.5-10 10s4.5 10 10 10s10-4.5 10-10s-4.45-10-10-10m3.75 14.65c-2.35-1.45-5.3-1.75-8.8-.95c-.35.1-.65-.15-.75-.45c-.1-.35.15-.65.45-.75c3.8-.85 7.1-.5 9.7 1.1c.35.15.4.55.25.85c-.2.3-.55.4-.85.2m1-2.7c-2.7-1.65-6.8-2.15-9.95-1.15c-.4.1-.85-.1-.95-.5s.1-.85.5-.95c3.65-1.1 8.15-.55 11.25 1.35c.3.15.45.65.2 1s-.7.5-1.05.25M6.3 9.75c-.5.15-1-.15-1.15-.6c-.15-.5.15-1 .6-1.15c3.55-1.05 9.4-.85 13.1 1.35c.45.25.6.85.35 1.3c-.25.35-.85.5-1.3.25C14.7 9 9.35 8.8 6.3 9.75"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.2em"
+				height="1.2em"
+				viewBox="0 0 24 24"
+			>
+				<path
+					fill="currentColor"
+					d="M12.001 2c-5.5 0-10 4.5-10 10s4.5 10 10 10s10-4.5 10-10s-4.45-10-10-10m3.75 14.65c-2.35-1.45-5.3-1.75-8.8-.95c-.35.1-.65-.15-.75-.45c-.1-.35.15-.65.45-.75c3.8-.85 7.1-.5 9.7 1.1c.35.15.4.55.25.85c-.2.3-.55.4-.85.2m1-2.7c-2.7-1.65-6.8-2.15-9.95-1.15c-.4.1-.85-.1-.95-.5s.1-.85.5-.95c3.65-1.1 8.15-.55 11.25 1.35c.3.15.45.65.2 1s-.7.5-1.05.25M6.3 9.75c-.5.15-1-.15-1.15-.6c-.15-.5.15-1 .6-1.15c3.55-1.05 9.4-.85 13.1 1.35c.45.25.6.85.35 1.3c-.25.35-.85.5-1.3.25C14.7 9 9.35 8.8 6.3 9.75"
+				></path>
+			</svg>`,
+	},
+	tiktok: {
+		Icon: (props?: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="0.88em"
+				height="1em"
+				viewBox="0 0 448 512"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M412.19,118.66a109.27,109.27,0,0,1-9.45-5.5,132.87,132.87,0,0,1-24.27-20.62c-18.1-20.71-24.86-41.72-27.35-56.43h.1C349.14,23.9,350,16,350.13,16H267.69V334.78c0,4.28,0,8.51-.18,12.69,0,.52-.05,1-.08,1.56,0,.23,0,.47-.05.71,0,.06,0,.12,0,.18a70,70,0,0,1-35.22,55.56,68.8,68.8,0,0,1-34.11,9c-38.41,0-69.54-31.32-69.54-70s31.13-70,69.54-70a68.9,68.9,0,0,1,21.41,3.39l.1-83.94a153.14,153.14,0,0,0-118,34.52,161.79,161.79,0,0,0-35.3,43.53c-3.48,6-16.61,30.11-18.2,69.24-1,22.21,5.67,45.22,8.85,54.73v.2c2,5.6,9.75,24.71,22.38,40.82A167.53,167.53,0,0,0,115,470.66v-.2l.2.2C155.11,497.78,199.36,496,199.36,496c7.66-.31,33.32,0,62.46-13.81,32.32-15.31,50.72-38.12,50.72-38.12a158.46,158.46,0,0,0,27.64-45.93c7.46-19.61,9.95-43.13,9.95-52.53V176.49c1,.6,14.32,9.41,14.32,9.41s19.19,12.3,49.13,20.31c21.48,5.7,50.42,6.9,50.42,6.9V131.27C453.86,132.37,433.27,129.17,412.19,118.66Z"
+				/>
+			</svg>
+		),
+		stringIcon: `<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="0.88em"
+				height="1em"
+				viewBox="0 0 448 512"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M412.19,118.66a109.27,109.27,0,0,1-9.45-5.5,132.87,132.87,0,0,1-24.27-20.62c-18.1-20.71-24.86-41.72-27.35-56.43h.1C349.14,23.9,350,16,350.13,16H267.69V334.78c0,4.28,0,8.51-.18,12.69,0,.52-.05,1-.08,1.56,0,.23,0,.47-.05.71,0,.06,0,.12,0,.18a70,70,0,0,1-35.22,55.56,68.8,68.8,0,0,1-34.11,9c-38.41,0-69.54-31.32-69.54-70s31.13-70,69.54-70a68.9,68.9,0,0,1,21.41,3.39l.1-83.94a153.14,153.14,0,0,0-118,34.52,161.79,161.79,0,0,0-35.3,43.53c-3.48,6-16.61,30.11-18.2,69.24-1,22.21,5.67,45.22,8.85,54.73v.2c2,5.6,9.75,24.71,22.38,40.82A167.53,167.53,0,0,0,115,470.66v-.2l.2.2C155.11,497.78,199.36,496,199.36,496c7.66-.31,33.32,0,62.46-13.81,32.32-15.31,50.72-38.12,50.72-38.12a158.46,158.46,0,0,0,27.64-45.93c7.46-19.61,9.95-43.13,9.95-52.53V176.49c1,.6,14.32,9.41,14.32,9.41s19.19,12.3,49.13,20.31c21.48,5.7,50.42,6.9,50.42,6.9V131.27C453.86,132.37,433.27,129.17,412.19,118.66Z"
+				/>
+			</svg>`,
+	},
+	twitter: {
+		Icon: (props?: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="0.88em"
+				height="1em"
+				viewBox="0 0 448 512"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 448 512"><path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z"></path></svg>`,
+	},
+	roblox: {
+		Icon: (props?: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.2em"
+				height="1.2em"
+				viewBox="0 0 267 267"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					d="M 56.926 0.986 L 1.01 210.05 L 210.073 266.014 L 265.989 56.951 L 56.926 0.986 Z M 112.15 96.988 L 170.481 112.619 L 154.849 170.95 L 96.47 155.318 L 112.15 96.988 Z"
+				></path>
+			</svg>
+		),
+		stringIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 267 267"><path xmlns="http://www.w3.org/2000/svg" fill="currentColor" d="M 56.926 0.986 L 1.01 210.05 L 210.073 266.014 L 265.989 56.951 L 56.926 0.986 Z M 112.15 96.988 L 170.481 112.619 L 154.849 170.95 L 96.47 155.318 L 112.15 96.988 Z"/></svg>`,
+	},
+	vk: {
+		Icon: (props?: SVGProps<any>) => (
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="1.2em"
+				height="1.2em"
+				viewBox="0 0 20 20"
+				{...props}
+			>
+				<path
+					fill="currentColor"
+					fillRule="evenodd"
+					d="M17.802 12.298s1.617 1.597 2.017 2.336a.1.1 0 0 1 .018.035q.244.409.123.645c-.135.261-.592.392-.747.403h-2.858c-.199 0-.613-.052-1.117-.4c-.385-.269-.768-.712-1.139-1.145c-.554-.643-1.033-1.201-1.518-1.201a.6.6 0 0 0-.18.03c-.367.116-.833.639-.833 2.032c0 .436-.344.684-.585.684H9.674c-.446 0-2.768-.156-4.827-2.327C2.324 10.732.058 5.4.036 5.353c-.141-.345.155-.533.475-.533h2.886c.387 0 .513.234.601.444c.102.241.48 1.205 1.1 2.288c1.004 1.762 1.621 2.479 2.114 2.479a.53.53 0 0 0 .264-.07c.644-.354.524-2.654.494-3.128c0-.092-.001-1.027-.331-1.479c-.236-.324-.638-.45-.881-.496c.065-.094.203-.238.38-.323c.441-.22 1.238-.252 2.029-.252h.439c.858.012 1.08.067 1.392.146c.628.15.64.557.585 1.943c-.016.396-.033.842-.033 1.367c0 .112-.005.237-.005.364c-.019.711-.044 1.512.458 1.841a.4.4 0 0 0 .217.062c.174 0 .695 0 2.108-2.425c.62-1.071 1.1-2.334 1.133-2.429c.028-.053.112-.202.214-.262a.5.5 0 0 1 .236-.056h3.395c.37 0 .621.056.67.196c.082.227-.016.92-1.566 3.016c-.261.349-.49.651-.691.915c-1.405 1.844-1.405 1.937.083 3.337"
+					clipRule="evenodd"
+				/>
+			</svg>
+		),
+		stringIcon: `<svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 448 512"><path fill="currentColor" d="M64 32C28.7 32 0 60.7 0 96v320c0 35.3 28.7 64 64 64h320c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64zm297.1 84L257.3 234.6L379.4 396h-95.6L209 298.1L123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5l78.2-89.5zm-37.8 251.6L153.4 142.9h-28.3l171.8 224.7h26.3z"></path></svg>`,
+	},
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/store.ts
+```typescript
+import { atom } from "jotai";
+
+export const optionsAtom = atom({
+	email: true,
+	passkey: false,
+	socialProviders: ["google", "github"],
+	magicLink: false,
+	signUp: true,
+	label: true,
+	rememberMe: true,
+	forgetPassword: true,
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/tabs.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+type Tab = {
+	title: string;
+	value: string;
+	content?: string | React.ReactNode | any;
+};
+
+export const AuthTabs = ({
+	tabs: propTabs,
+}: {
+	tabs: Tab[];
+}) => {
+	const [active, setActive] = useState<Tab>(propTabs[0]);
+	const [tabs, setTabs] = useState<Tab[]>(propTabs);
+	const isActive = (tab: Tab) => {
+		return tab.value === tabs[0].value;
+	};
+	const moveSelectedTabToTop = (idx: number) => {
+		const newTabs = [...propTabs];
+		const selectedTab = newTabs.splice(idx, 1);
+		newTabs.unshift(selectedTab[0]);
+		setTabs(newTabs);
+		setActive(newTabs[0]);
+	};
+
+	return (
+		<>
+			<div
+				className={cn(
+					"flex flex-row items-center justify-start mt-0 relative no-visible-scrollbar border-x w-full border-t max-w-max bg-opacity-0",
+				)}
+			>
+				{propTabs.map((tab, idx) => (
+					<button
+						key={tab.title}
+						onClick={() => {
+							moveSelectedTabToTop(idx);
+						}}
+						className={cn(
+							"relative px-4 py-2 rounded-full opacity-80 hover:opacity-100",
+						)}
+					>
+						{active.value === tab.value && (
+							<div
+								className={cn(
+									"absolute inset-0 bg-gray-200 dark:bg-zinc-900/90 opacity-100",
+								)}
+							/>
+						)}
+
+						<span
+							className={cn(
+								"relative block text-black dark:text-white",
+								active.value === tab.value
+									? "text-opacity-100 font-medium"
+									: "opacity-40 ",
+							)}
+						>
+							{tab.title}
+						</span>
+					</button>
+				))}
+			</div>
+			<div className="relative w-full h-full">
+				{tabs.map((tab, idx) => (
+					<div
+						key={tab.value}
+						style={{
+							scale: 1 - idx * 0.1,
+							zIndex: -idx,
+							opacity: idx < 3 ? 1 - idx * 0.1 : 0,
+						}}
+						className={cn("h-full", isActive(tab) ? "" : "hidden")}
+					>
+						{tab.content}
+					</div>
+				))}
+			</div>
+		</>
+	);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/code-tabs/code-editor.tsx
+```
+"use client";
+
+import { useState } from "react";
+import { Highlight } from "prism-react-renderer";
+import { Check, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import theme from "./theme";
+
+interface CodeEditorProps {
+	code: string;
+	language: string;
+}
+
+export function CodeEditor({ code, language }: CodeEditorProps) {
+	const [isCopied, setIsCopied] = useState(false);
+
+	const copyToClipboard = async () => {
+		try {
+			await navigator.clipboard.writeText(code);
+			setIsCopied(true);
+			setTimeout(() => setIsCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy text: ", err);
+		}
+	};
+
+	return (
+		<div className="relative">
+			<div className="dark:bg-bg-white rounded-md overflow-hidden">
+				<Highlight theme={theme} code={code} language={language}>
+					{({ className, style, tokens, getLineProps, getTokenProps }) => (
+						<div className="overflow-auto max-h-[400px]">
+							<pre
+								className={`${className} relative text-sm p-4 w-full min-w-fit rounded-md`}
+								style={style}
+							>
+								{tokens.map((line, i) => {
+									const lineProps = getLineProps({ line, key: i });
+									return (
+										<div
+											key={i}
+											className={lineProps.className}
+											style={lineProps.style}
+										>
+											<span className="sticky dark:bg-black top-0 left-0 mr-4 mx-auto pr-2 text-gray-500 select-none">
+												{i + 1}
+											</span>
+											{line.map((token, key) => {
+												const tokenProps = getTokenProps({ token, key });
+												return (
+													<span
+														key={key}
+														className={tokenProps.className}
+														style={tokenProps.style}
+													>
+														{tokenProps.children}
+													</span>
+												);
+											})}
+										</div>
+									);
+								})}
+							</pre>
+						</div>
+					)}
+				</Highlight>
+				<Button
+					variant="outline"
+					size="icon"
+					className="absolute top-2 right-2"
+					onClick={copyToClipboard}
+					aria-label="Copy code"
+				>
+					{isCopied ? (
+						<Check className="h-4 w-4" />
+					) : (
+						<Copy className="h-4 w-4" />
+					)}
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/code-tabs/code-tabs.tsx
+```
+import { cn } from "@/lib/utils";
+interface TabProps {
+	fileName: string;
+	isActive: boolean;
+	brightnessLevel?: number; // New optional prop for brightness level
+	onClick: () => void;
+	onClose: () => void;
+}
+
+const brightnessLevels = [
+	"bg-background",
+	"bg-background-200", //
+	"bg-background-300",
+	"bg-background-400",
+	"bg-background-500",
+	"bg-background-600",
+	"bg-background-700",
+];
+
+export function CodeTab({
+	fileName,
+	isActive,
+	brightnessLevel = 0,
+	onClick,
+	onClose,
+}: TabProps) {
+	const activeBrightnessClass = isActive
+		? brightnessLevels[brightnessLevel % brightnessLevels.length]
+		: "bg-muted";
+
+	const textColor = isActive ? "text-foreground" : "text-muted-foreground";
+	const borderColor = isActive
+		? "border-t-foreground"
+		: "border-t-transparent hover:bg-background/50";
+
+	return (
+		<div
+			className={cn(
+				"flex items-center px-3 py-2 gap-2 text-sm font-medium border-t-2 cursor-pointer transition-colors duration-200",
+				activeBrightnessClass,
+				textColor,
+				borderColor,
+			)}
+			onClick={onClick}
+		>
+			{fileName.endsWith(".ts") && (
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="1em"
+					height="1em"
+					viewBox="0 0 128 128"
+				>
+					<path
+						className="fill-current"
+						d="M2 63.91v62.5h125v-125H2zm100.73-5a15.56 15.56 0 0 1 7.82 4.5a20.6 20.6 0 0 1 3 4c0 .16-5.4 3.81-8.69 5.85c-.12.08-.6-.44-1.13-1.23a7.09 7.09 0 0 0-5.87-3.53c-3.79-.26-6.23 1.73-6.21 5a4.6 4.6 0 0 0 .54 2.34c.83 1.73 2.38 2.76 7.24 4.86c8.95 3.85 12.78 6.39 15.16 10c2.66 4 3.25 10.46 1.45 15.24c-2 5.2-6.9 8.73-13.83 9.9a38.3 38.3 0 0 1-9.52-.1A23 23 0 0 1 80 109.19c-1.15-1.27-3.39-4.58-3.25-4.82a9 9 0 0 1 1.15-.73l4.6-2.64l3.59-2.08l.75 1.11a16.8 16.8 0 0 0 4.74 4.54c4 2.1 9.46 1.81 12.16-.62a5.43 5.43 0 0 0 .69-6.92c-1-1.39-3-2.56-8.59-5c-6.45-2.78-9.23-4.5-11.77-7.24a16.5 16.5 0 0 1-3.43-6.25a25 25 0 0 1-.22-8c1.33-6.23 6-10.58 12.82-11.87a31.7 31.7 0 0 1 9.49.26zm-29.34 5.24v5.12H57.16v46.23H45.65V69.26H29.38v-5a49 49 0 0 1 .14-5.16c.06-.08 10-.12 22-.1h21.81z"
+					></path>
+				</svg>
+			)}
+			{fileName.endsWith(".tsx") && (
+				<svg
+					fill="currentColor"
+					xmlns="http://www.w3.org/2000/svg"
+					width="1.3em"
+					height="1.3em"
+					viewBox="0 0 30 30"
+				>
+					<path
+						className="fill-current"
+						d="M 10.679688 4.1816406 C 10.068687 4.1816406 9.502 4.3184219 9 4.6074219 C 7.4311297 5.5132122 6.8339651 7.7205462 7.1503906 10.46875 C 4.6127006 11.568833 3 13.188667 3 15 C 3 16.811333 4.6127006 18.431167 7.1503906 19.53125 C 6.8341285 22.279346 7.4311297 24.486788 9 25.392578 C 9.501 25.681578 10.067687 25.818359 10.679688 25.818359 C 11.982314 25.818359 13.48785 25.164589 15 24.042969 C 16.512282 25.164589 18.01964 25.818359 19.322266 25.818359 C 19.933266 25.818359 20.499953 25.681578 21.001953 25.392578 C 22.570814 24.486793 23.167976 22.279432 22.851562 19.53125 C 25.388297 18.431178 27 16.81094 27 15 C 27 13.188667 25.387299 11.568833 22.849609 10.46875 C 23.165872 7.7206538 22.56887 5.5132122 21 4.6074219 C 20.499 4.3174219 19.932312 4.1816406 19.320312 4.1816406 C 18.017686 4.1816406 16.51215 4.8354109 15 5.9570312 C 13.487763 4.8354109 11.981863 4.1816406 10.679688 4.1816406 z M 10.679688 5.9316406 C 11.461321 5.9316406 12.49496 6.3472486 13.617188 7.1171875 C 12.95737 7.7398717 12.311153 8.4479321 11.689453 9.2363281 C 10.681079 9.3809166 9.7303472 9.5916908 8.8496094 9.8554688 C 8.8448793 9.7943902 8.8336776 9.7303008 8.8300781 9.6699219 C 8.7230781 7.8899219 9.114 6.5630469 9.875 6.1230469 C 10.1 5.9930469 10.362688 5.9316406 10.679688 5.9316406 z M 19.320312 5.9316406 C 19.636312 5.9316406 19.9 5.9930469 20.125 6.1230469 C 20.886 6.5620469 21.276922 7.8899219 21.169922 9.6699219 C 21.166295 9.7303008 21.155145 9.7943902 21.150391 9.8554688 C 20.2691 9.5915252 19.317669 9.3809265 18.308594 9.2363281 C 17.686902 8.4480417 17.042616 7.7397993 16.382812 7.1171875 C 17.504962 6.3473772 18.539083 5.9316406 19.320312 5.9316406 z M 15 8.2285156 C 15.27108 8.4752506 15.540266 8.7360345 15.8125 9.0214844 C 15.542718 9.012422 15.274373 9 15 9 C 14.726286 9 14.458598 9.0124652 14.189453 9.0214844 C 14.461446 8.7363308 14.729174 8.4750167 15 8.2285156 z M 15 10.75 C 15.828688 10.75 16.614128 10.796321 17.359375 10.876953 C 17.813861 11.494697 18.261774 12.147811 18.681641 12.875 C 19.084074 13.572033 19.439938 14.285488 19.753906 15 C 19.439896 15.714942 19.084316 16.429502 18.681641 17.126953 C 18.263078 17.852044 17.816279 18.500949 17.363281 19.117188 C 16.591711 19.201607 15.800219 19.25 15 19.25 C 14.171312 19.25 13.385872 19.203679 12.640625 19.123047 C 12.186139 18.505303 11.738226 17.854142 11.318359 17.126953 C 10.915684 16.429502 10.560194 15.714942 10.246094 15 C 10.559972 14.285488 10.915926 13.572033 11.318359 12.875 C 11.737083 12.149909 12.183612 11.499051 12.636719 10.882812 C 13.408289 10.798393 14.199781 10.75 15 10.75 z M 19.746094 11.291016 C 20.142841 11.386804 20.524253 11.490209 20.882812 11.605469 C 20.801579 11.97252 20.702235 12.346608 20.589844 12.724609 C 20.461164 12.483141 20.336375 12.240903 20.197266 12 C 20.054139 11.752196 19.895244 11.529558 19.746094 11.291016 z M 10.251953 11.292969 C 10.103305 11.530776 9.9454023 11.752991 9.8027344 12 C 9.6636666 12.240944 9.5387971 12.483106 9.4101562 12.724609 C 9.29751 12.345829 9.1965499 11.971295 9.1152344 11.603516 C 9.4803698 11.48815 9.86083 11.385986 10.251953 11.292969 z M 7.46875 12.246094 C 7.6794464 13.135714 7.9717297 14.057918 8.3476562 14.998047 C 7.9725263 15.935943 7.6814729 16.856453 7.4707031 17.744141 C 5.7292327 16.903203 4.75 15.856373 4.75 15 C 4.75 14.121 5.701875 13.119266 7.296875 12.322266 C 7.3513169 12.295031 7.4131225 12.272692 7.46875 12.246094 z M 22.529297 12.255859 C 24.270767 13.096797 25.25 14.143627 25.25 15 C 25.25 15.879 24.298125 16.880734 22.703125 17.677734 C 22.648683 17.704969 22.586877 17.727308 22.53125 17.753906 C 22.32043 16.863764 22.030541 15.940699 21.654297 15 C 22.028977 14.062913 22.318703 13.142804 22.529297 12.255859 z M 15 13 C 13.895 13 13 13.895 13 15 C 13 16.105 13.895 17 15 17 C 16.105 17 17 16.105 17 15 C 17 13.895 16.105 13 15 13 z M 9.4101562 17.275391 C 9.5388794 17.516948 9.6655262 17.759008 9.8046875 18 C 9.9476585 18.247625 10.104915 18.470608 10.253906 18.708984 C 9.857159 18.613196 9.4757466 18.509791 9.1171875 18.394531 C 9.1984813 18.02725 9.2976676 17.653633 9.4101562 17.275391 z M 20.589844 17.277344 C 20.702364 17.655759 20.803517 18.02905 20.884766 18.396484 C 20.51963 18.51185 20.13917 18.614014 19.748047 18.707031 C 19.896695 18.469224 20.054598 18.247009 20.197266 18 C 20.336044 17.759557 20.461449 17.518344 20.589844 17.277344 z M 8.8496094 20.144531 C 9.7309004 20.408475 10.682331 20.619073 11.691406 20.763672 C 12.313288 21.552345 12.957085 22.261935 13.617188 22.884766 C 12.495042 23.654481 11.461272 24.070312 10.679688 24.070312 C 10.363687 24.070312 10.1 24.006953 9.875 23.876953 C 9.114 23.437953 8.7230781 22.112031 8.8300781 20.332031 C 8.8337424 20.271023 8.8447938 20.206253 8.8496094 20.144531 z M 21.150391 20.144531 C 21.155182 20.206253 21.166285 20.271023 21.169922 20.332031 C 21.276922 22.112031 20.886 23.436953 20.125 23.876953 C 19.9 24.006953 19.637312 24.070313 19.320312 24.070312 C 18.538728 24.070312 17.504958 23.654609 16.382812 22.884766 C 17.042964 22.261863 17.688542 21.552454 18.310547 20.763672 C 19.318921 20.619083 20.269653 20.408309 21.150391 20.144531 z M 14.1875 20.978516 C 14.457282 20.987578 14.725627 21 15 21 C 15.274373 21 15.542718 20.987578 15.8125 20.978516 C 15.540266 21.263964 15.27108 21.524765 15 21.771484 C 14.72892 21.524749 14.459734 21.263966 14.1875 20.978516 z"
+					></path>
+				</svg>
+			)}
+			<span className="truncate max-w-[100px]">{fileName}</span>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/code-tabs/index.tsx
+```
+import { useState } from "react";
+import { TabBar } from "./tab-bar";
+import { CodeEditor } from "./code-editor";
+import { useAtom } from "jotai";
+import { optionsAtom } from "../store";
+import { js_beautify } from "js-beautify";
+import { signUpString } from "../sign-up";
+import { signInString } from "../sign-in";
+
+export default function CodeTabs() {
+	const [options] = useAtom(optionsAtom);
+
+	const initialFiles = [
+		{
+			id: "1",
+			name: "auth.ts",
+			content: `import { betterAuth } from 'better-auth';
+
+	export const auth = betterAuth({
+		${
+			options.email
+				? `emailAndPassword: {
+		enabled: true,
+${
+	options.forgetPassword
+		? `async sendResetPassword(data, request) {
+			// Send an email to the user with a link to reset their password
+		},`
+		: ``
+}
+		},`
+				: ""
+		}${
+			options.socialProviders.length
+				? `socialProviders: ${JSON.stringify(
+						options.socialProviders.reduce((acc, provider) => {
+							return {
+								...acc,
+								[provider]: {
+									clientId: `process.env.${provider.toUpperCase()}_CLIENT_ID!`,
+									clientSecret: `process.env.${provider.toUpperCase()}_CLIENT_SECRET!`,
+								},
+							};
+						}, {}),
+					).replace(/"/g, "")},`
+				: ""
+		}
+		${
+			options.magicLink || options.passkey
+				? `plugins: [
+			${
+				options.magicLink
+					? `magicLink({
+				async sendMagicLink(data) {
+					// Send an email to the user with a magic link
+				},
+			}),`
+					: `${options.passkey ? `passkey(),` : ""}`
+			}
+			${options.passkey && options.magicLink ? `passkey(),` : ""}
+		]`
+				: ""
+		}
+		/** if no database is provided, the user data will be stored in memory.
+	 * Make sure to provide a database to persist user data **/
+	});
+	`,
+		},
+		{
+			id: "2",
+			name: "auth-client.ts",
+			content: `import { createAuthClient } from "better-auth/react";
+			${
+				options.magicLink || options.passkey
+					? `import { ${options.magicLink ? "magicLinkClient, " : ""}, ${
+							options.passkey ? "passkeyClient" : ""
+						} } from "better-auth/client/plugins";`
+					: ""
+			}
+
+			export const authClient = createAuthClient({
+				baseURL: process.env.NEXT_PUBLIC_APP_URL,
+				${
+					options.magicLink || options.passkey
+						? `plugins: [${options.magicLink ? `magicLinkClient(),` : ""}${
+								options.passkey ? `passkeyClient(),` : ""
+							}],`
+						: ""
+				}
+			})
+
+			export const { signIn, signOut, signUp, useSession } = authClient;
+			`,
+		},
+		{
+			id: "3",
+			name: "sign-in.tsx",
+			content: signInString(options),
+		},
+	];
+	if (options.email) {
+		initialFiles.push({
+			id: "4",
+			name: "sign-up.tsx",
+			content: signUpString,
+		});
+	}
+
+	const [files, setFiles] = useState(initialFiles);
+	const [activeFileId, setActiveFileId] = useState(files[0].id);
+
+	const handleTabClick = (fileId: string) => {
+		setActiveFileId(fileId);
+	};
+
+	const handleTabClose = (fileId: string) => {
+		setFiles(files.filter((file) => file.id !== fileId));
+		if (activeFileId === fileId) {
+			setActiveFileId(files[0].id);
+		}
+	};
+
+	const activeFile = files.find((file) => file.id === activeFileId);
+
+	return (
+		<div className="w-full mr-auto max-w-[45rem] mt-8 border border-border rounded-md overflow-hidden">
+			<TabBar
+				files={files}
+				activeFileId={activeFileId}
+				onTabClick={handleTabClick}
+				onTabClose={handleTabClose}
+			/>
+			<div className="">
+				{activeFile && (
+					<CodeEditor
+						language="typescript"
+						code={
+							activeFile.name.endsWith(".ts")
+								? js_beautify(activeFile.content)
+								: activeFile.content.replace(/\n{3,}/g, "\n\n")
+						}
+					/>
+				)}
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/code-tabs/tab-bar.tsx
+```
+import { CodeTab } from "./code-tabs";
+
+interface File {
+	id: string;
+	name: string;
+	content: string;
+}
+
+interface TabBarProps {
+	files: File[];
+	activeFileId: string;
+	onTabClick: (fileId: string) => void;
+	onTabClose: (fileId: string) => void;
+}
+
+export function TabBar({
+	files,
+	activeFileId,
+	onTabClick,
+	onTabClose,
+}: TabBarProps) {
+	return (
+		<div className="flex bg-muted border-b border-border">
+			{files.map((file) => (
+				<CodeTab
+					key={file.id}
+					fileName={file.name}
+					isActive={file.id === activeFileId}
+					onClick={() => onTabClick(file.id)}
+					onClose={() => onTabClose(file.id)}
+				/>
+			))}
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/builder/code-tabs/theme.ts
+```typescript
+import { PrismTheme } from "prism-react-renderer";
+
+const theme: PrismTheme = {
+	plain: {
+		color: "#d0d0d0",
+		backgroundColor: "#000000", // Changed to true black
+	},
+	styles: [
+		{
+			types: ["comment", "prolog", "doctype", "cdata"],
+			style: {
+				color: "#555555",
+				fontStyle: "italic",
+			},
+		},
+		{
+			types: ["namespace"],
+			style: {
+				opacity: 0.7,
+			},
+		},
+		{
+			types: ["string", "attr-value"],
+			style: {
+				color: "#8ab4f8", // Darker soft blue for strings
+			},
+		},
+		{
+			types: ["punctuation", "operator"],
+			style: {
+				color: "#888888",
+			},
+		},
+		{
+			types: [
+				"entity",
+				"url",
+				"symbol",
+				"number",
+				"boolean",
+				"variable",
+				"constant",
+				"property",
+				"regex",
+				"inserted",
+			],
+			style: {
+				color: "#a0a0a0",
+			},
+		},
+		{
+			types: ["atrule", "keyword", "attr-name", "selector"],
+			style: {
+				color: "#c5c5c5",
+				fontWeight: "bold",
+			},
+		},
+		{
+			types: ["function", "deleted", "tag"],
+			style: {
+				color: "#7aa2f7", // Darker soft blue for functions
+			},
+		},
+		{
+			types: ["function-variable"],
+			style: {
+				color: "#9e9e9e",
+			},
+		},
+		{
+			types: ["tag", "selector", "keyword"],
+			style: {
+				color: "#cccccc", // Adjusted to a slightly lighter gray for better contrast on true black
+			},
+		},
+	],
+};
+
+export default theme;
+
+```

@@ -1,0 +1,500 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/avatar.tsx
+```
+import * as AvatarPrimitive from "@rn-primitives/avatar";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Avatar = React.forwardRef<
+	AvatarPrimitive.RootRef,
+	AvatarPrimitive.RootProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Root
+		ref={ref}
+		className={cn(
+			"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+			className,
+		)}
+		{...props}
+	/>
+));
+Avatar.displayName = AvatarPrimitive.Root.displayName;
+
+const AvatarImage = React.forwardRef<
+	AvatarPrimitive.ImageRef,
+	AvatarPrimitive.ImageProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Image
+		ref={ref}
+		className={cn("aspect-square h-full w-full", className)}
+		{...props}
+	/>
+));
+AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+
+const AvatarFallback = React.forwardRef<
+	AvatarPrimitive.FallbackRef,
+	AvatarPrimitive.FallbackProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Fallback
+		ref={ref}
+		className={cn(
+			"flex h-full w-full items-center justify-center rounded-full bg-muted",
+			className,
+		)}
+		{...props}
+	/>
+));
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+
+export { Avatar, AvatarFallback, AvatarImage };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/button.tsx
+```
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+import { Pressable } from "react-native";
+import { cn } from "@/lib/utils";
+import { TextClassContext } from "@/components/ui/text";
+
+const buttonVariants = cva(
+	"group flex items-center justify-center rounded-md web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+	{
+		variants: {
+			variant: {
+				default: "bg-primary web:hover:opacity-90 active:opacity-90",
+				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
+				outline:
+					"border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				secondary: "bg-secondary web:hover:opacity-80 active:opacity-80",
+				ghost:
+					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				link: "web:underline-offset-4 web:hover:underline web:focus:underline ",
+			},
+			size: {
+				default: "h-10 px-4 py-2 native:h-12 native:px-5 native:py-3",
+				sm: "h-9 rounded-md px-3",
+				lg: "h-11 rounded-md px-8 native:h-14",
+				icon: "h-10 w-10",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+const buttonTextVariants = cva(
+	"web:whitespace-nowrap text-sm native:text-base font-medium text-foreground web:transition-colors",
+	{
+		variants: {
+			variant: {
+				default: "text-primary-foreground",
+				destructive: "text-destructive-foreground",
+				outline: "group-active:text-accent-foreground",
+				secondary:
+					"text-secondary-foreground group-active:text-secondary-foreground",
+				ghost: "group-active:text-accent-foreground",
+				link: "text-primary group-active:underline",
+			},
+			size: {
+				default: "",
+				sm: "",
+				lg: "native:text-lg",
+				icon: "",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
+	VariantProps<typeof buttonVariants>;
+
+const Button = React.forwardRef<
+	React.ElementRef<typeof Pressable>,
+	ButtonProps
+>(({ className, variant, size, ...props }, ref) => {
+	return (
+		<TextClassContext.Provider
+			value={buttonTextVariants({
+				variant,
+				size,
+				className: "web:pointer-events-none",
+			})}
+		>
+			<Pressable
+				className={cn(
+					props.disabled && "opacity-50 web:pointer-events-none",
+					buttonVariants({ variant, size, className }),
+				)}
+				ref={ref}
+				role="button"
+				{...props}
+			/>
+		</TextClassContext.Provider>
+	);
+});
+Button.displayName = "Button";
+
+export { Button, buttonTextVariants, buttonVariants };
+export type { ButtonProps };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/card.tsx
+```
+import { TextRef, ViewRef } from "@rn-primitives/types";
+import * as React from "react";
+import { Text, type TextProps, View, type ViewProps } from "react-native";
+import { cn } from "@/lib/utils";
+import { TextClassContext } from "@/components/ui/text";
+
+const Card = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn(
+				"rounded-lg border border-border bg-card shadow-sm shadow-foreground/10",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn("flex flex-col space-y-1.5 p-6", className)}
+			{...props}
+		/>
+	),
+);
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<TextRef, TextProps>(
+	({ className, ...props }, ref) => (
+		<Text
+			role="heading"
+			aria-level={3}
+			ref={ref}
+			className={cn(
+				"text-2xl text-card-foreground font-semibold leading-none tracking-tight",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<TextRef, TextProps>(
+	({ className, ...props }, ref) => (
+		<Text
+			ref={ref}
+			className={cn("text-sm text-muted-foreground", className)}
+			{...props}
+		/>
+	),
+);
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<TextClassContext.Provider value="text-card-foreground">
+			<View ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+		</TextClassContext.Provider>
+	),
+);
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn("flex flex-row items-center p-6 pt-0", className)}
+			{...props}
+		/>
+	),
+);
+CardFooter.displayName = "CardFooter";
+
+export {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/dialog.tsx
+```
+import * as DialogPrimitive from "@rn-primitives/dialog";
+import * as React from "react";
+import { Platform, StyleSheet, View, type ViewProps } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { X } from "@/lib/icons/X";
+import { cn } from "@/lib/utils";
+
+const Dialog = DialogPrimitive.Root;
+
+const DialogTrigger = DialogPrimitive.Trigger;
+
+const DialogPortal = DialogPrimitive.Portal;
+
+const DialogClose = DialogPrimitive.Close;
+
+const DialogOverlayWeb = React.forwardRef<
+	DialogPrimitive.OverlayRef,
+	DialogPrimitive.OverlayProps
+>(({ className, ...props }, ref) => {
+	const { open } = DialogPrimitive.useRootContext();
+	return (
+		<DialogPrimitive.Overlay
+			className={cn(
+				"bg-black/80 flex justify-center items-center p-2 absolute top-0 right-0 bottom-0 left-0",
+				open
+					? "web:animate-in web:fade-in-0"
+					: "web:animate-out web:fade-out-0",
+				className,
+			)}
+			{...props}
+			ref={ref}
+		/>
+	);
+});
+
+DialogOverlayWeb.displayName = "DialogOverlayWeb";
+
+const DialogOverlayNative = React.forwardRef<
+	DialogPrimitive.OverlayRef,
+	DialogPrimitive.OverlayProps
+>(({ className, children, ...props }, ref) => {
+	return (
+		<DialogPrimitive.Overlay
+			style={StyleSheet.absoluteFill}
+			className={cn(
+				"flex bg-black/80 justify-center items-center p-2",
+				className,
+			)}
+			{...props}
+			ref={ref}
+		>
+			<Animated.View
+				entering={FadeIn.duration(150)}
+				exiting={FadeOut.duration(150)}
+			>
+				<>{children}</>
+			</Animated.View>
+		</DialogPrimitive.Overlay>
+	);
+});
+
+DialogOverlayNative.displayName = "DialogOverlayNative";
+
+const DialogOverlay = Platform.select({
+	web: DialogOverlayWeb,
+	default: DialogOverlayNative,
+});
+
+const DialogContent = React.forwardRef<
+	DialogPrimitive.ContentRef,
+	DialogPrimitive.ContentProps & { portalHost?: string }
+>(({ className, children, portalHost, ...props }, ref) => {
+	const { open } = DialogPrimitive.useRootContext();
+	return (
+		<DialogPortal hostName={portalHost}>
+			<DialogOverlay>
+				<DialogPrimitive.Content
+					ref={ref}
+					className={cn(
+						"max-w-lg gap-4 border border-border web:cursor-default bg-background p-6 shadow-lg web:duration-200 rounded-lg",
+						open
+							? "web:animate-in web:fade-in-0 web:zoom-in-95"
+							: "web:animate-out web:fade-out-0 web:zoom-out-95",
+						className,
+					)}
+					{...props}
+				>
+					{children}
+					<DialogPrimitive.Close
+						className={
+							"absolute right-4 top-4 p-0.5 web:group rounded-sm opacity-70 web:ring-offset-background web:transition-opacity web:hover:opacity-100 web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 web:disabled:pointer-events-none"
+						}
+					>
+						<X
+							size={Platform.OS === "web" ? 16 : 18}
+							className={cn(
+								"text-muted-foreground",
+								open && "text-accent-foreground",
+							)}
+						/>
+					</DialogPrimitive.Close>
+				</DialogPrimitive.Content>
+			</DialogOverlay>
+		</DialogPortal>
+	);
+});
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+const DialogHeader = ({ className, ...props }: ViewProps) => (
+	<View
+		className={cn("flex flex-col gap-1.5 text-center sm:text-left", className)}
+		{...props}
+	/>
+);
+DialogHeader.displayName = "DialogHeader";
+
+const DialogFooter = ({ className, ...props }: ViewProps) => (
+	<View
+		className={cn(
+			"flex flex-col-reverse sm:flex-row sm:justify-end gap-2",
+			className,
+		)}
+		{...props}
+	/>
+);
+DialogFooter.displayName = "DialogFooter";
+
+const DialogTitle = React.forwardRef<
+	DialogPrimitive.TitleRef,
+	DialogPrimitive.TitleProps
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Title
+		ref={ref}
+		className={cn(
+			"text-lg native:text-xl text-foreground font-semibold leading-none tracking-tight",
+			className,
+		)}
+		{...props}
+	/>
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+const DialogDescription = React.forwardRef<
+	DialogPrimitive.DescriptionRef,
+	DialogPrimitive.DescriptionProps
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Description
+		ref={ref}
+		className={cn("text-sm native:text-base text-muted-foreground", className)}
+		{...props}
+	/>
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
+
+export {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogOverlay,
+	DialogPortal,
+	DialogTitle,
+	DialogTrigger,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/input.tsx
+```
+import * as React from "react";
+import { TextInput, type TextInputProps } from "react-native";
+import { cn } from "@/lib/utils";
+
+const Input = React.forwardRef<
+	React.ElementRef<typeof TextInput>,
+	TextInputProps
+>(({ className, placeholderClassName, ...props }, ref) => {
+	return (
+		<TextInput
+			ref={ref}
+			className={cn(
+				"web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-3 web:py-2 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+				props.editable === false && "opacity-50 web:cursor-not-allowed",
+				className,
+			)}
+			placeholderClassName={cn("text-muted-foreground", placeholderClassName)}
+			{...props}
+		/>
+	);
+});
+
+Input.displayName = "Input";
+
+export { Input };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/separator.tsx
+```
+import * as SeparatorPrimitive from "@rn-primitives/separator";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Separator = React.forwardRef<
+	SeparatorPrimitive.RootRef,
+	SeparatorPrimitive.RootProps
+>(
+	(
+		{ className, orientation = "horizontal", decorative = true, ...props },
+		ref,
+	) => (
+		<SeparatorPrimitive.Root
+			ref={ref}
+			decorative={decorative}
+			orientation={orientation}
+			className={cn(
+				"shrink-0 bg-border",
+				orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Separator.displayName = SeparatorPrimitive.Root.displayName;
+
+export { Separator };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/text.tsx
+```
+import * as Slot from "@rn-primitives/slot";
+import { SlottableTextProps, TextRef } from "@rn-primitives/types";
+import * as React from "react";
+import { Text as RNText } from "react-native";
+import { cn } from "@/lib/utils";
+
+const TextClassContext = React.createContext<string | undefined>(undefined);
+
+const Text = React.forwardRef<TextRef, SlottableTextProps>(
+	({ className, asChild = false, ...props }, ref) => {
+		const textClass = React.useContext(TextClassContext);
+		const Component = asChild ? Slot.Text : RNText;
+		return (
+			<Component
+				className={cn(
+					"text-base text-foreground web:select-text",
+					textClass,
+					className,
+				)}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Text.displayName = "Text";
+
+export { Text, TextClassContext };
+
+```

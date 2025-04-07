@@ -1,0 +1,99 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/lib/constants.ts</source>
+<document_content>
+export const ENV = {
+	NEXT_PUBLIC_WEBSITE_URL:
+		process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000",
+	NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: "",
+	NODE_ENV: process.env.NODE_ENV || "development",
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/lib/metadata.ts</source>
+<document_content>
+import type { Metadata } from "next/types";
+
+export function createMetadata(override: Metadata): Metadata {
+	return {
+		...override,
+		openGraph: {
+			title: override.title ?? undefined,
+			description: override.description ?? undefined,
+			url: "https://better-auth.com",
+			images: "https://better-auth.com/og.png",
+			siteName: "Better Auth",
+			...override.openGraph,
+		},
+		twitter: {
+			card: "summary_large_image",
+			creator: "@beakcru",
+			title: override.title ?? undefined,
+			description: override.description ?? undefined,
+			images: "https://better-auth.com/og.png",
+			...override.twitter,
+		},
+	};
+}
+
+export const baseUrl =
+	process.env.NODE_ENV === "development"
+		? new URL("http://localhost:3000")
+		: new URL(`https://${process.env.VERCEL_URL!}`);
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/lib/source.ts</source>
+<document_content>
+import { changelogCollection, docs } from "@/.source";
+import { loader } from "fumadocs-core/source";
+import { createMDXSource } from "fumadocs-mdx";
+
+export const source = loader({
+	baseUrl: "/docs",
+	source: docs.toFumadocsSource(),
+});
+
+export const changelogs = loader({
+	baseUrl: "/changelogs",
+	source: createMDXSource(changelogCollection),
+});
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/lib/utils.ts</source>
+<document_content>
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+export function absoluteUrl(path: string) {
+	return `${process.env.NEXT_PUBLIC_APP_URL}${path}`;
+}
+export function kFormatter(num: number) {
+	return Math.abs(num) > 999
+		? Math.sign(num) * parseFloat((Math.abs(num) / 1000).toFixed(1)) + "k"
+		: Math.sign(num) * Math.abs(num);
+}
+
+export const baseUrl =
+	process.env.NODE_ENV === "development" || !process.env.VERCEL_URL
+		? new URL("http://localhost:3000")
+		: new URL(`https://${process.env.VERCEL_URL}`);
+export function formatDate(date: Date) {
+	let d = new Date(date);
+	return d
+		.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+		.replace(",", "");
+}
+
+</document_content>
+</document>
+</documents>

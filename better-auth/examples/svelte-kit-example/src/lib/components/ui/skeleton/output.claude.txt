@@ -1,0 +1,31 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/skeleton/index.ts</source>
+<document_content>
+import Root from "./skeleton.svelte";
+
+export {
+	Root,
+	//
+	Root as Skeleton,
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/skeleton/skeleton.svelte</source>
+<document_content>
+<script lang="ts">
+import type { HTMLAttributes } from "svelte/elements";
+
+type $$Props = HTMLAttributes<HTMLDivElement>;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<div class={cn("bg-primary/10 animate-pulse rounded-md", className)} {...$$restProps}></div>
+
+</document_content>
+</document>
+</documents>

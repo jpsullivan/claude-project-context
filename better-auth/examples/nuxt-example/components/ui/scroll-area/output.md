@@ -1,0 +1,70 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/ScrollArea.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ScrollAreaRootProps } from "radix-vue";
+
+const props = defineProps<
+	ScrollAreaRootProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ScrollAreaRoot v-bind="delegatedProps" :class="cn('relative overflow-hidden', props.class)">
+    <ScrollAreaViewport class="h-full w-full rounded-[inherit]">
+      <slot />
+    </ScrollAreaViewport>
+    <ScrollBar />
+    <ScrollAreaCorner />
+  </ScrollAreaRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/ScrollBar.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ScrollAreaScrollbarProps } from "radix-vue";
+
+const props = withDefaults(
+	defineProps<ScrollAreaScrollbarProps & { class?: HTMLAttributes["class"] }>(),
+	{
+		orientation: "vertical",
+	},
+);
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ScrollAreaScrollbar
+    v-bind="delegatedProps"
+    :class="
+      cn('flex touch-none select-none transition-colors',
+         orientation === 'vertical'
+           && 'h-full w-2.5 border-l border-l-transparent p-px',
+         orientation === 'horizontal'
+           && 'h-2.5 flex-col border-t border-t-transparent p-px',
+         props.class)"
+  >
+    <ScrollAreaThumb class="relative flex-1 rounded-full bg-border" />
+  </ScrollAreaScrollbar>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/scroll-area/index.ts
+```typescript
+export { default as ScrollArea } from "./ScrollArea.vue";
+export { default as ScrollBar } from "./ScrollBar.vue";
+
+```

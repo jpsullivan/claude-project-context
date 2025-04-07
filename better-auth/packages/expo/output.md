@@ -1,0 +1,676 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/build.config.ts
+```typescript
+import { defineBuildConfig } from "unbuild";
+
+export default defineBuildConfig({
+	declaration: true,
+	rollup: {
+		emitCJS: true,
+		esbuild: {
+			treeShaking: true,
+		},
+	},
+	outDir: "dist",
+	clean: false,
+	externals: [
+		"better-auth",
+		"better-call",
+		"@better-fetch/fetch",
+		"react-native",
+		"expo-web-browser",
+		"expo-linking",
+		"expo-constants",
+	],
+	entries: ["./src/index.ts", "./src/client.ts"],
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/package.json
+```json
+{
+  "name": "@better-auth/expo",
+  "version": "1.2.6-beta.6",
+  "description": "",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "scripts": {
+    "test": "vitest",
+    "build": "unbuild --clean",
+    "dev": "unbuild --watch",
+    "stub": "unbuild --stub"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.cjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.ts"
+      ],
+      "client": [
+        "./dist/client.d.ts"
+      ]
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@better-fetch/fetch": "catalog:",
+    "better-auth": "workspace:*",
+    "better-sqlite3": "^11.6.0",
+    "expo-constants": "~16.0.2",
+    "expo-crypto": "^13.0.2",
+    "expo-linking": "~6.3.1",
+    "expo-secure-store": "~13.0.2",
+    "expo-web-browser": "~13.0.3",
+    "unbuild": "^3.5.0",
+    "vitest": "^1.6.0"
+  },
+  "peerDependencies": {
+    "better-auth": "workspace:*"
+  },
+  "dependencies": {
+    "better-call": "catalog:",
+    "@better-fetch/fetch": "catalog:",
+    "zod": "^3.23.8"
+  },
+  "files": [
+    "dist"
+  ]
+}
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"declaration": true,
+		"emitDeclarationOnly": true,
+		"declarationMap": true,
+		"outDir": "dist",
+		"noEmit": false,
+		"composite": false,
+		"target": "es2022",
+		"incremental": true,
+		"moduleResolution": "Bundler",
+		"strict": true,
+		"moduleDetection": "force",
+		"module": "Preserve",
+		"skipLibCheck": true,
+		"types": ["node"],
+		"isolatedModules": true,
+		"tsBuildInfoFile": ".tsbuildinfo",
+		"preserveSymlinks": true,
+		"noImplicitOverride": true
+	},
+	"exclude": ["node_modules", "dist"],
+	"references": [],
+	"include": ["src/**/*"]
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/src/client.ts
+````typescript
+import type { BetterAuthClientPlugin, Store } from "better-auth";
+import * as Browser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { Platform } from "react-native";
+import Constants from "expo-constants";
+import { BetterFetchOption } from "@better-fetch/fetch";
+
+interface CookieAttributes {
+	value: string;
+	expires?: Date;
+	"max-age"?: number;
+	domain?: string;
+	path?: string;
+	secure?: boolean;
+	httpOnly?: boolean;
+	sameSite?: "Strict" | "Lax" | "None";
+}
+
+export function parseSetCookieHeader(
+	header: string,
+): Map<string, CookieAttributes> {
+	const cookieMap = new Map<string, CookieAttributes>();
+	const cookies = header.split(", ");
+	cookies.forEach((cookie) => {
+		const [nameValue, ...attributes] = cookie.split("; ");
+		const [name, value] = nameValue.split("=");
+
+		const cookieObj: CookieAttributes = { value };
+
+		attributes.forEach((attr) => {
+			const [attrName, attrValue] = attr.split("=");
+			cookieObj[attrName.toLowerCase() as "value"] = attrValue;
+		});
+
+		cookieMap.set(name, cookieObj);
+	});
+
+	return cookieMap;
+}
+
+interface ExpoClientOptions {
+	scheme?: string;
+	storage: {
+		setItem: (key: string, value: string) => any;
+		getItem: (key: string) => string | null;
+	};
+	storagePrefix?: string;
+	disableCache?: boolean;
+}
+
+interface StoredCookie {
+	value: string;
+	expires: Date | null;
+}
+
+export function getSetCookie(header: string, prevCookie?: string) {
+	const parsed = parseSetCookieHeader(header);
+	let toSetCookie: Record<string, StoredCookie> = {};
+	parsed.forEach((cookie, key) => {
+		const expiresAt = cookie["expires"];
+		const maxAge = cookie["max-age"];
+		const expires = expiresAt
+			? new Date(String(expiresAt))
+			: maxAge
+				? new Date(Date.now() + Number(maxAge))
+				: null;
+		toSetCookie[key] = {
+			value: cookie["value"],
+			expires,
+		};
+	});
+	if (prevCookie) {
+		try {
+			const prevCookieParsed = JSON.parse(prevCookie);
+			toSetCookie = {
+				...prevCookieParsed,
+				...toSetCookie,
+			};
+		} catch {
+			//
+		}
+	}
+	return JSON.stringify(toSetCookie);
+}
+
+export function getCookie(cookie: string) {
+	let parsed = {} as Record<string, StoredCookie>;
+	try {
+		parsed = JSON.parse(cookie) as Record<string, StoredCookie>;
+	} catch (e) {}
+	const toSend = Object.entries(parsed).reduce((acc, [key, value]) => {
+		if (value.expires && value.expires < new Date()) {
+			return acc;
+		}
+		return `${acc}; ${key}=${value.value}`;
+	}, "");
+	return toSend;
+}
+
+function getOrigin(scheme: string) {
+	const schemeURI = Linking.createURL("", { scheme });
+	return schemeURI;
+}
+
+export const expoClient = (opts: ExpoClientOptions) => {
+	let store: Store | null = null;
+	const cookieName = `${opts?.storagePrefix || "better-auth"}_cookie`;
+	const localCacheName = `${opts?.storagePrefix || "better-auth"}_session_data`;
+	const storage = opts?.storage;
+	const isWeb = Platform.OS === "web";
+
+	const rawScheme =
+		opts?.scheme || Constants.expoConfig?.scheme || Constants.platform?.scheme;
+	const scheme = Array.isArray(rawScheme) ? rawScheme[0] : rawScheme;
+
+	if (!scheme && !isWeb) {
+		throw new Error(
+			"Scheme not found in app.json. Please provide a scheme in the options.",
+		);
+	}
+	return {
+		id: "expo",
+		getActions(_, $store) {
+			store = $store;
+			return {
+				/**
+				 * Get the stored cookie.
+				 *
+				 * You can use this to get the cookie stored in the device and use it in your fetch
+				 * requests.
+				 *
+				 * @example
+				 * ```ts
+				 * const cookie = client.getCookie();
+				 * fetch("https://api.example.com", {
+				 * 	headers: {
+				 * 		cookie,
+				 * 	},
+				 * });
+				 */
+				getCookie: () => {
+					const cookie = storage.getItem(cookieName);
+					return getCookie(cookie || "{}");
+				},
+			};
+		},
+		fetchPlugins: [
+			{
+				id: "expo",
+				name: "Expo",
+				hooks: {
+					async onSuccess(context) {
+						if (isWeb) return;
+						const setCookie = context.response.headers.get("set-cookie");
+						if (setCookie) {
+							const prevCookie = await storage.getItem(cookieName);
+							const toSetCookie = getSetCookie(
+								setCookie || "",
+								prevCookie ?? undefined,
+							);
+							await storage.setItem(cookieName, toSetCookie);
+							store?.notify("$sessionSignal");
+						}
+
+						if (
+							context.request.url.toString().includes("/get-session") &&
+							!opts?.disableCache
+						) {
+							const data = context.data;
+							storage.setItem(localCacheName, JSON.stringify(data));
+						}
+
+						if (
+							context.data?.redirect &&
+							context.request.url.toString().includes("/sign-in") &&
+							!context.request?.body.includes("idToken") // id token is used for silent sign-in
+						) {
+							const callbackURL = JSON.parse(context.request.body)?.callbackURL;
+							const to = callbackURL;
+							const signInURL = context.data?.url;
+							const result = await Browser.openAuthSessionAsync(signInURL, to);
+							if (result.type !== "success") return;
+							const url = new URL(result.url);
+							const cookie = String(url.searchParams.get("cookie"));
+							if (!cookie) return;
+							storage.setItem(cookieName, getSetCookie(cookie));
+							store?.notify("$sessionSignal");
+						}
+					},
+				},
+				async init(url, options) {
+					if (isWeb) {
+						return {
+							url,
+							options: options as BetterFetchOption,
+						};
+					}
+					options = options || {};
+					const storedCookie = storage.getItem(cookieName);
+					const cookie = getCookie(storedCookie || "{}");
+					options.credentials = "omit";
+					options.headers = {
+						...options.headers,
+						cookie,
+						"expo-origin": getOrigin(scheme!),
+					};
+					if (options.body?.callbackURL) {
+						if (options.body.callbackURL.startsWith("/")) {
+							const url = Linking.createURL(options.body.callbackURL, {
+								scheme,
+							});
+							options.body.callbackURL = url;
+						}
+					}
+					if (options.body?.newUserCallbackURL) {
+						if (options.body.newUserCallbackURL.startsWith("/")) {
+							const url = Linking.createURL(options.body.newUserCallbackURL, {
+								scheme,
+							});
+							options.body.newUserCallbackURL = url;
+						}
+					}
+					if (options.body?.errorCallbackURL) {
+						if (options.body.errorCallbackURL.startsWith("/")) {
+							const url = Linking.createURL(options.body.errorCallbackURL, {
+								scheme,
+							});
+							options.body.errorCallbackURL = url;
+						}
+					}
+					if (url.includes("/sign-out")) {
+						await storage.setItem(cookieName, "{}");
+						store?.atoms.session?.set({
+							data: null,
+							error: null,
+							isPending: false,
+						});
+						storage.setItem(localCacheName, "{}");
+					}
+					return {
+						url,
+						options: options as BetterFetchOption,
+					};
+				},
+			},
+		],
+	} satisfies BetterAuthClientPlugin;
+};
+
+````
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/src/expo.test.ts
+```typescript
+import { createAuthClient } from "better-auth/client";
+import Database from "better-sqlite3";
+import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
+import { expo } from ".";
+import { expoClient } from "./client";
+import { betterAuth } from "better-auth";
+import { getMigrations } from "better-auth/db";
+
+vi.mock("expo-web-browser", async () => {
+	return {
+		openAuthSessionAsync: vi.fn(async (...args) => {
+			fn(...args);
+			return {
+				type: "success",
+				url: "better-auth://?cookie=better-auth.session_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYxMzQwZj",
+			};
+		}),
+	};
+});
+
+vi.mock("react-native", async () => {
+	return {
+		Platform: {
+			OS: "android",
+		},
+	};
+});
+
+vi.mock("expo-constants", async () => {
+	return {
+		default: {
+			platform: {
+				scheme: "better-auth",
+			},
+		},
+	};
+});
+
+vi.mock("expo-linking", async () => {
+	return {
+		createURL: vi.fn((url) => `better-auth://${url}`),
+	};
+});
+
+const fn = vi.fn();
+
+function testUtils(extraOpts?: Parameters<typeof betterAuth>[0]) {
+	const storage = new Map<string, string>();
+
+	const auth = betterAuth({
+		baseURL: "http://localhost:3000",
+		database: new Database(":memory:"),
+		emailAndPassword: {
+			enabled: true,
+		},
+		socialProviders: {
+			google: {
+				clientId: "test",
+				clientSecret: "test",
+			},
+		},
+		plugins: [expo()],
+		trustedOrigins: ["better-auth://"],
+		...extraOpts,
+	});
+
+	const client = createAuthClient({
+		baseURL: "http://localhost:3000",
+		fetchOptions: {
+			customFetchImpl: (url, init) => {
+				const req = new Request(url.toString(), init);
+				return auth.handler(req);
+			},
+		},
+		plugins: [
+			expoClient({
+				storage: {
+					getItem: (key) => storage.get(key) || null,
+					setItem: async (key, value) => storage.set(key, value),
+				},
+			}),
+		],
+	});
+
+	return { storage, auth, client };
+}
+
+describe("expo", async () => {
+	const { auth, client, storage } = testUtils();
+
+	beforeAll(async () => {
+		const { runMigrations } = await getMigrations(auth.options);
+		await runMigrations();
+		vi.useFakeTimers();
+	});
+	afterAll(() => {
+		vi.useRealTimers();
+	});
+
+	it("should store cookie with expires date", async () => {
+		const testUser = {
+			email: "test@test.com",
+			password: "password",
+			name: "Test User",
+		};
+		await client.signUp.email(testUser);
+		const storedCookie = storage.get("better-auth_cookie");
+		expect(storedCookie).toBeDefined();
+		const parsedCookie = JSON.parse(storedCookie || "");
+		expect(parsedCookie["better-auth.session_token"]).toMatchObject({
+			value: expect.stringMatching(/.+/),
+			expires: expect.any(String),
+		});
+	});
+
+	it("should send cookie and get session", async () => {
+		const { data } = await client.getSession();
+		expect(data).toMatchObject({
+			session: expect.any(Object),
+			user: expect.any(Object),
+		});
+	});
+
+	it("should use the scheme to open the browser", async () => {
+		const { data: res } = await client.signIn.social({
+			provider: "google",
+			callbackURL: "/dashboard",
+		});
+		expect(res).toMatchObject({
+			url: expect.stringContaining("accounts.google"),
+		});
+		expect(fn).toHaveBeenCalledWith(
+			expect.stringContaining("accounts.google"),
+			"better-auth:///dashboard",
+		);
+	});
+
+	it("should get cookies", async () => {
+		const c = client.getCookie();
+		expect(c).includes("better-auth.session_token");
+	});
+});
+
+describe("expo with cookieCache", async () => {
+	const { auth, client, storage } = testUtils({
+		session: {
+			expiresIn: 5,
+			cookieCache: {
+				enabled: true,
+				maxAge: 1,
+			},
+		},
+	});
+	beforeAll(async () => {
+		const { runMigrations } = await getMigrations(auth.options);
+		await runMigrations();
+		vi.useFakeTimers();
+	});
+	afterAll(() => {
+		vi.useRealTimers();
+	});
+
+	it("should store cookie with expires date", async () => {
+		const testUser = {
+			email: "test@test.com",
+			password: "password",
+			name: "Test User",
+		};
+		await client.signUp.email(testUser);
+		const storedCookie = storage.get("better-auth_cookie");
+		expect(storedCookie).toBeDefined();
+		const parsedCookie = JSON.parse(storedCookie || "");
+		expect(parsedCookie["better-auth.session_token"]).toMatchObject({
+			value: expect.stringMatching(/.+/),
+			expires: expect.any(String),
+		});
+		expect(parsedCookie["better-auth.session_data"]).toMatchObject({
+			value: expect.stringMatching(/.+/),
+			expires: expect.any(String),
+		});
+	});
+	it("should refresh session_data when it expired without erasing session_token", async () => {
+		vi.advanceTimersByTime(1000);
+		const { data } = await client.getSession();
+		expect(data).toMatchObject({
+			session: expect.any(Object),
+			user: expect.any(Object),
+		});
+		const storedCookie = storage.get("better-auth_cookie");
+		expect(storedCookie).toBeDefined();
+		const parsedCookie = JSON.parse(storedCookie || "");
+		expect(parsedCookie["better-auth.session_token"]).toMatchObject({
+			value: expect.stringMatching(/.+/),
+			expires: expect.any(String),
+		});
+		expect(parsedCookie["better-auth.session_data"]).toMatchObject({
+			value: expect.stringMatching(/.+/),
+			expires: expect.any(String),
+		});
+	});
+
+	it("should erase both session_data and session_token when token expired", async () => {
+		vi.advanceTimersByTime(5000);
+		const { data } = await client.getSession();
+		expect(data).toBeNull();
+		const storedCookie = storage.get("better-auth_cookie");
+		expect(storedCookie).toBeDefined();
+		const parsedCookie = JSON.parse(storedCookie || "");
+		expect(parsedCookie["better-auth.session_token"]).toMatchObject({
+			value: expect.stringMatching(/^$/),
+			expires: expect.any(String),
+		});
+		expect(parsedCookie["better-auth.session_data"]).toMatchObject({
+			value: expect.stringMatching(/^$/),
+			expires: expect.any(String),
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/expo/src/index.ts
+```typescript
+import type { BetterAuthPlugin } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
+
+export interface ExpoOptions {
+	/**
+	 * Override origin header for expo api routes
+	 */
+	overrideOrigin?: boolean;
+}
+
+export const expo = (options?: ExpoOptions) => {
+	return {
+		id: "expo",
+		init: (ctx) => {
+			const trustedOrigins =
+				process.env.NODE_ENV === "development"
+					? [...(ctx.trustedOrigins || []), "exp://"]
+					: ctx.trustedOrigins;
+			return {
+				options: {
+					trustedOrigins,
+				},
+			};
+		},
+		async onRequest(request, ctx) {
+			if (!options?.overrideOrigin || request.headers.get("origin")) {
+				return;
+			}
+			/**
+			 * To bypass origin check from expo, we need to set the origin header to the expo-origin header
+			 */
+			const expoOrigin = request.headers.get("expo-origin");
+			if (!expoOrigin) {
+				return;
+			}
+			const req = request.clone();
+			req.headers.set("origin", expoOrigin);
+			return {
+				request: req,
+			};
+		},
+		hooks: {
+			after: [
+				{
+					matcher(context) {
+						return (
+							context.path?.startsWith("/callback") ||
+							context.path?.startsWith("/oauth2/callback")
+						);
+					},
+					handler: createAuthMiddleware(async (ctx) => {
+						const headers = ctx.context.responseHeaders;
+						const location = headers?.get("location");
+						if (!location) {
+							return;
+						}
+						const trustedOrigins = ctx.context.trustedOrigins.filter(
+							(origin: string) => !origin.startsWith("http"),
+						);
+						const isTrustedOrigin = trustedOrigins.some((origin: string) =>
+							location?.startsWith(origin),
+						);
+						if (!isTrustedOrigin) {
+							return;
+						}
+						const cookie = headers?.get("set-cookie");
+						if (!cookie) {
+							return;
+						}
+						const url = new URL(location);
+						url.searchParams.set("cookie", cookie);
+						ctx.setHeader("location", url.toString());
+					}),
+				},
+			],
+		},
+	} satisfies BetterAuthPlugin;
+};
+
+```

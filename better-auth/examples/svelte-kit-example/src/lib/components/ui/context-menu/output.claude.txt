@@ -1,0 +1,350 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-checkbox-item.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.CheckboxItemProps;
+type $$Events = ContextMenuPrimitive.CheckboxItemEvents;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+export let checked: $$Props["checked"] = undefined;
+</script>
+
+<ContextMenuPrimitive.CheckboxItem
+	bind:checked
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerdown
+	on:pointerleave
+	on:pointermove
+>
+	<span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+		<ContextMenuPrimitive.CheckboxIndicator>
+			<Check class="h-4 w-4" />
+		</ContextMenuPrimitive.CheckboxIndicator>
+	</span>
+	<slot />
+</ContextMenuPrimitive.CheckboxItem>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-content.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+import { flyAndScale } from "$lib/utils.js";
+
+type $$Props = ContextMenuPrimitive.ContentProps;
+
+let className: $$Props["class"] = undefined;
+export let transition: $$Props["transition"] = flyAndScale;
+export let transitionConfig: $$Props["transitionConfig"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.Content
+	{transition}
+	{transitionConfig}
+	class={cn(
+		"bg-popover text-popover-foreground z-50 min-w-[8rem] rounded-md border p-1 shadow-md focus:outline-none",
+		className
+	)}
+	{...$$restProps}
+	on:keydown
+>
+	<slot />
+</ContextMenuPrimitive.Content>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-item.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.ItemProps & {
+	inset?: boolean;
+};
+type $$Events = ContextMenuPrimitive.ItemEvents;
+
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.Item
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		inset && "pl-8",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerdown
+	on:pointerleave
+	on:pointermove
+>
+	<slot />
+</ContextMenuPrimitive.Item>
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-label.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.LabelProps & {
+	inset?: boolean;
+};
+
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.Label
+	class={cn("text-foreground px-2 py-1.5 text-sm font-semibold", inset && "pl-8", className)}
+	{...$$restProps}
+>
+	<slot />
+</ContextMenuPrimitive.Label>
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-radio-group.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.RadioGroupProps;
+
+export let value: $$Props["value"] = undefined;
+</script>
+
+<ContextMenuPrimitive.RadioGroup {...$$restProps} bind:value>
+	<slot />
+</ContextMenuPrimitive.RadioGroup>
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-radio-item.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.RadioItemProps;
+type $$Events = ContextMenuPrimitive.RadioItemEvents;
+
+let className: $$Props["class"] = undefined;
+export let value: $$Props["value"];
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.RadioItem
+	class={cn(
+		"data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+		className
+	)}
+	{value}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerdown
+	on:pointerleave
+	on:pointermove
+>
+	<span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+		<ContextMenuPrimitive.RadioIndicator>
+			<DotFilled class="h-4 w-4 fill-current" />
+		</ContextMenuPrimitive.RadioIndicator>
+	</span>
+	<slot />
+</ContextMenuPrimitive.RadioItem>
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-separator.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.SeparatorProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.Separator
+	class={cn("bg-border -mx-1 my-1 h-px", className)}
+	{...$$restProps}
+/>
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-shortcut.svelte</source>
+<document_content>
+<script lang="ts">
+import type { HTMLAttributes } from "svelte/elements";
+
+type $$Props = HTMLAttributes<HTMLSpanElement>;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<span
+	class={cn("text-muted-foreground ml-auto text-xs tracking-widest", className)}
+	{...$$restProps}
+>
+	<slot />
+</span>
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-sub-content.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+import { flyAndScale } from "$lib/utils.js";
+
+type $$Props = ContextMenuPrimitive.SubContentProps;
+
+let className: $$Props["class"] = undefined;
+export let transition: $$Props["transition"] = flyAndScale;
+export let transitionConfig: $$Props["transitionConfig"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.SubContent
+	{transition}
+	{transitionConfig}
+	class={cn(
+		"bg-popover text-popover-foreground z-50 min-w-[8rem] rounded-md border p-1 shadow-lg focus:outline-none",
+		className
+	)}
+	{...$$restProps}
+	on:keydown
+	on:focusout
+	on:pointermove
+>
+	<slot />
+</ContextMenuPrimitive.SubContent>
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/context-menu-sub-trigger.svelte</source>
+<document_content>
+<script lang="ts">
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+type $$Props = ContextMenuPrimitive.SubTriggerProps & {
+	inset?: boolean;
+};
+type $$Events = ContextMenuPrimitive.SubTriggerEvents;
+
+let className: $$Props["class"] = undefined;
+export let inset: $$Props["inset"] = undefined;
+export { className as class };
+</script>
+
+<ContextMenuPrimitive.SubTrigger
+	class={cn(
+		"data-[highlighted]:bg-accent data-[state=open]:bg-accent data-[highlighted]:text-accent-foreground data-[state=open]:text-accent-foreground flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none",
+		inset && "pl-8",
+		className
+	)}
+	{...$$restProps}
+	on:click
+	on:keydown
+	on:focusin
+	on:focusout
+	on:pointerleave
+	on:pointermove
+>
+	<slot />
+	<ChevronRight class="ml-auto h-4 w-4" />
+</ContextMenuPrimitive.SubTrigger>
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/context-menu/index.ts</source>
+<document_content>
+import { ContextMenu as ContextMenuPrimitive } from "bits-ui";
+
+import Item from "./context-menu-item.svelte";
+import Label from "./context-menu-label.svelte";
+import Content from "./context-menu-content.svelte";
+import Shortcut from "./context-menu-shortcut.svelte";
+import RadioItem from "./context-menu-radio-item.svelte";
+import Separator from "./context-menu-separator.svelte";
+import RadioGroup from "./context-menu-radio-group.svelte";
+import SubContent from "./context-menu-sub-content.svelte";
+import SubTrigger from "./context-menu-sub-trigger.svelte";
+import CheckboxItem from "./context-menu-checkbox-item.svelte";
+
+const Sub = ContextMenuPrimitive.Sub;
+const Root = ContextMenuPrimitive.Root;
+const Trigger = ContextMenuPrimitive.Trigger;
+const Group = ContextMenuPrimitive.Group;
+
+export {
+	Sub,
+	Root,
+	Item,
+	Label,
+	Group,
+	Trigger,
+	Content,
+	Shortcut,
+	Separator,
+	RadioItem,
+	SubContent,
+	SubTrigger,
+	RadioGroup,
+	CheckboxItem,
+	//
+	Root as ContextMenu,
+	Sub as ContextMenuSub,
+	Item as ContextMenuItem,
+	Label as ContextMenuLabel,
+	Group as ContextMenuGroup,
+	Content as ContextMenuContent,
+	Trigger as ContextMenuTrigger,
+	Shortcut as ContextMenuShortcut,
+	RadioItem as ContextMenuRadioItem,
+	Separator as ContextMenuSeparator,
+	RadioGroup as ContextMenuRadioGroup,
+	SubContent as ContextMenuSubContent,
+	SubTrigger as ContextMenuSubTrigger,
+	CheckboxItem as ContextMenuCheckboxItem,
+};
+
+</document_content>
+</document>
+</documents>

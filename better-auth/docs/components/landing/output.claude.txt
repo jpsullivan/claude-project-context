@@ -1,0 +1,1108 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/gradient-bg.tsx</source>
+<document_content>
+"use client";
+import React from "react";
+import { cn } from "@/lib/utils";
+
+export function GradientBG({
+	children,
+	className,
+	...props
+}: React.PropsWithChildren<
+	{
+		className?: string;
+	} & React.HTMLAttributes<HTMLElement>
+>) {
+	return (
+		<div
+			className={cn(
+				"relative flex   content-center  transition duration-500  items-center flex-col flex-nowrap gap-10 h-min justify-center overflow-visible p-px decoration-clone w-full",
+			)}
+			{...props}
+		>
+			<div className={cn("w-auto z-10  px-4 py-2 rounded-none", className)}>
+				{children}
+			</div>
+			<div
+				className={cn(
+					"flex-none inset-0 overflow-hidden absolute z-0 rounded-none bg-gradient-to-tl dark:from-amber-100/30 dark:via-zinc-900 dark:to-black blur-md opacity-50",
+				)}
+			/>
+			<div className="bg-zinc-100 dark:bg-zinc-950 absolute z-1 flex-none inset-[2px] " />
+		</div>
+	);
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/grid-pattern.tsx</source>
+<document_content>
+"use client";
+
+import { motion } from "framer-motion";
+import { useEffect, useId, useRef, useState } from "react";
+
+const Block = ({
+	x,
+	y,
+	...props
+}: Omit<React.ComponentPropsWithoutRef<typeof motion.path>, "x" | "y"> & {
+	x: number;
+	y: number;
+}) => {
+	return (
+		<motion.path
+			transform={`translate(${-32 * y + 96 * x} ${160 * y})`}
+			d="M45.119 4.5a11.5 11.5 0 0 0-11.277 9.245l-25.6 128C6.82 148.861 12.262 155.5 19.52 155.5h63.366a11.5 11.5 0 0 0 11.277-9.245l25.6-128c1.423-7.116-4.02-13.755-11.277-13.755H45.119Z"
+			{...props}
+		/>
+	);
+};
+
+export const GridPattern = ({ yOffset = 0, interactive = false, ...props }) => {
+	const id = useId();
+	const ref = useRef<React.ElementRef<"svg">>(null);
+	const currentBlock = useRef<[x: number, y: number]>();
+	const counter = useRef(0);
+	const [hoveredBlocks, setHoveredBlocks] = useState<
+		Array<[x: number, y: number, key: number]>
+	>([]);
+	const staticBlocks = [
+		[1, 1],
+		[2, 2],
+		[4, 3],
+		[6, 2],
+		[7, 4],
+		[5, 5],
+	];
+
+	useEffect(() => {
+		if (!interactive) {
+			return;
+		}
+
+		function onMouseMove(event: MouseEvent) {
+			if (!ref.current) {
+				return;
+			}
+
+			const rect = ref.current.getBoundingClientRect();
+			let x = event.clientX - rect.left;
+			let y = event.clientY - rect.top;
+			if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+				return;
+			}
+
+			x = x - rect.width / 2 - 32;
+			y = y - yOffset;
+			x += Math.tan(32 / 160) * y;
+			x = Math.floor(x / 96);
+			y = Math.floor(y / 160);
+
+			if (currentBlock.current?.[0] === x && currentBlock.current?.[1] === y) {
+				return;
+			}
+
+			currentBlock.current = [x, y];
+
+			setHoveredBlocks((blocks) => {
+				const key = counter.current++;
+				const block = [x, y, key] as (typeof hoveredBlocks)[number];
+				return [...blocks, block].filter(
+					(block) => !(block[0] === x && block[1] === y && block[2] !== key),
+				);
+			});
+		}
+
+		window.addEventListener("mousemove", onMouseMove);
+
+		return () => {
+			window.removeEventListener("mousemove", onMouseMove);
+		};
+	}, [yOffset, interactive]);
+
+	return (
+		<motion.svg
+			ref={ref}
+			aria-hidden="true"
+			{...props}
+			exit={{ opacity: 0 }}
+			animate={{ opacity: 1 }}
+			initial={{ opacity: 0 }}
+		>
+			<rect width="100%" height="100%" fill={`url(#${id})`} strokeWidth="0" />
+			<svg x="50%" y={yOffset} strokeWidth="0" className="overflow-visible">
+				{staticBlocks.map((block) => (
+					<Block key={`${block}`} x={block[0]} y={block[1]} />
+				))}
+				{hoveredBlocks.map((block) => (
+					<Block
+						key={block[2]}
+						x={block[0]}
+						y={block[1]}
+						animate={{ opacity: [0, 1, 0] }}
+						transition={{ duration: 1, times: [0, 0, 1] }}
+						onAnimationComplete={() => {
+							setHoveredBlocks((blocks) =>
+								blocks.filter((b) => b[2] !== block[2]),
+							);
+						}}
+					/>
+				))}
+			</svg>
+			<defs>
+				<pattern
+					id={id}
+					width="96"
+					height="480"
+					x="50%"
+					patternUnits="userSpaceOnUse"
+					patternTransform={`translate(0 ${yOffset})`}
+					fill="none"
+				>
+					<path d="M128 0 98.572 147.138A16 16 0 0 1 82.883 160H13.117a16 16 0 0 0-15.69 12.862l-26.855 134.276A16 16 0 0 1-45.117 320H-116M64-160 34.572-12.862A16 16 0 0 1 18.883 0h-69.766a16 16 0 0 0-15.69 12.862l-26.855 134.276A16 16 0 0 1-109.117 160H-180M192 160l-29.428 147.138A15.999 15.999 0 0 1 146.883 320H77.117a16 16 0 0 0-15.69 12.862L34.573 467.138A16 16 0 0 1 18.883 480H-52M-136 480h58.883a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1-18.883 320h69.766a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1 109.117 160H192M-72 640h58.883a16 16 0 0 0 15.69-12.862l26.855-134.276A16 16 0 0 1 45.117 480h69.766a15.999 15.999 0 0 0 15.689-12.862l26.856-134.276A15.999 15.999 0 0 1 173.117 320H256M-200 320h58.883a15.999 15.999 0 0 0 15.689-12.862l26.856-134.276A16 16 0 0 1-82.883 160h69.766a16 16 0 0 0 15.69-12.862L29.427 12.862A16 16 0 0 1 45.117 0H128" />
+				</pattern>
+			</defs>
+		</motion.svg>
+	);
+};
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/hero.tsx</source>
+<document_content>
+"use client";
+
+import { Fragment, useEffect, useId, useState } from "react";
+import useMeasure from "react-use-measure";
+import Link from "next/link";
+import clsx from "clsx";
+import { Button } from "@/components/ui/button";
+import { Check, Copy, CornerRightUp } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Highlight, themes } from "prism-react-renderer";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
+import { Builder } from "../builder";
+import { Spotlight } from "./spotlight";
+import { GradientBG } from "./gradient-bg";
+const tabs: { name: "auth.ts" | "client.ts"; code: string }[] = [
+	{
+		name: "auth.ts",
+		code: `export const auth = betterAuth({
+	database: new Pool({
+		connectionString: DATABASE_URL,
+	}),
+    emailAndPassword: {
+        enabled: true,
+    },
+	plugins: [
+	  organization(),
+      twoFactor(),
+	]
+})`,
+	},
+	{
+		name: "client.ts",
+		code: `const client = createAuthClient({
+    plugins: [passkeyClient()]
+});
+        `,
+	},
+];
+
+function TrafficLightsIcon(props: React.ComponentPropsWithoutRef<"svg">) {
+	return (
+		<svg aria-hidden="true" viewBox="0 0 42 10" fill="none" {...props}>
+			<circle cx="5" cy="5" r="4.5" />
+			<circle cx="21" cy="5" r="4.5" />
+			<circle cx="37" cy="5" r="4.5" />
+		</svg>
+	);
+}
+
+export default function Hero() {
+	return (
+		<section className="max-h-[40rem] relative w-full flex md:items-center md:justify-center dark:bg-black/[0.96] antialiased bg-grid-white/[0.02] overflow-hidden px-8 md:min-h-[40rem]">
+			<Spotlight />
+			<div className="overflow-hidden bg-transparent md:px-10 dark:-mb-32 dark:mt-[-4.75rem] dark:pb-32 dark:pt-[4.75rem]">
+				<div className="lg:max-w-8xl mx-auto grid max-w-full grid-cols-1 items-center gap-x-8 gap-y-16 px-4 py-2 lg:grid-cols-2 lg:px-8 lg:py-4 xl:gap-x-16 xl:px-12">
+					<div className="relative z-10 md:text-center lg:text-left">
+						<div className="relative">
+							<div className="flex flex-col items-start gap-2">
+								<div className="flex items-end gap-1 mt-2 ">
+									<div className="flex items-center gap-1">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="0.8em"
+											height="0.8em"
+											viewBox="0 0 24 24"
+										>
+											<path
+												fill="currentColor"
+												d="M13 4V2c4.66.5 8.33 4.19 8.85 8.85c.6 5.49-3.35 10.43-8.85 11.03v-2c3.64-.45 6.5-3.32 6.96-6.96A7.994 7.994 0 0 0 13 4m-7.33.2A9.8 9.8 0 0 1 11 2v2.06c-1.43.2-2.78.78-3.9 1.68zM2.05 11a9.8 9.8 0 0 1 2.21-5.33L5.69 7.1A8 8 0 0 0 4.05 11zm2.22 7.33A10.04 10.04 0 0 1 2.06 13h2c.18 1.42.75 2.77 1.63 3.9zm1.4 1.41l1.39-1.37h.04c1.13.88 2.48 1.45 3.9 1.63v2c-1.96-.21-3.82-1-5.33-2.26M12 17l1.56-3.42L17 12l-3.44-1.56L12 7l-1.57 3.44L7 12l3.43 1.58z"
+											></path>
+										</svg>
+										<span className="text-xs text-opacity-75">
+											Own Your Auth
+										</span>
+									</div>
+									<Link href={"/changelogs/1-2"}>
+										<span className="bg-gradient-to-tr dark:from-stone-800/50 dark:to-black from-stone-200 to-white  px-2 rounded-none">
+											<span className="text-xs dark:text-zinc-200 tracking-tighter font-mono mb-0 underline underline-offset-4">
+												v1.2 is out
+											</span>
+											<CornerRightUp className="inline ml-1 w-3 h-3" />
+										</span>
+									</Link>
+								</div>
+							</div>
+
+							<p className="text-zinc-800 dark:text-zinc-300 mt-3 tracking-tight text-2xl md:text-3xl">
+								The most comprehensive authentication framework for TypeScript.
+							</p>
+							<div className="relative mt-2 md:flex items-center gap-2 w-10/12 hidden border border-white/5">
+								<GradientBG className="w-full flex items-center justify-between">
+									<div className="w-full flex items-center gap-2">
+										<p className="md:text-sm text-xs font-mono select-none">
+											<span>
+												<span className="text-[#4498c8]">git:</span>
+												<span className="text-[#F07178]">(main) </span>
+											</span>
+											<span className="italic text-amber-600"> x</span>
+										</p>
+										<p className=" relative inline tracking-tight opacity-90 md:text-sm text-xs dark:text-white font-mono text-black">
+											npm add{" "}
+											<span className="relative dark:text-fuchsia-100 text-fuchsia-950">
+												better-auth
+												<span className="absolute h-2 bg-gradient-to-tr from-white via-stone-200 to-stone-300 blur-3xl w-full top-0 left-2"></span>
+											</span>
+										</p>
+									</div>
+									<div className="flex gap-2 items-center">
+										<Link
+											href="https://www.npmjs.com/package/better-auth"
+											target="_blank"
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="1em"
+												height="1em"
+												viewBox="0 0 128 128"
+											>
+												<path
+													fill="#cb3837"
+													d="M0 7.062C0 3.225 3.225 0 7.062 0h113.88c3.838 0 7.063 3.225 7.063 7.062v113.88c0 3.838-3.225 7.063-7.063 7.063H7.062c-3.837 0-7.062-3.225-7.062-7.063zm23.69 97.518h40.395l.05-58.532h19.494l-.05 58.581h19.543l.05-78.075l-78.075-.1l-.1 78.126z"
+												></path>
+												<path
+													fill="#fff"
+													d="M25.105 65.52V26.512H40.96c8.72 0 26.274.034 39.008.075l23.153.075v77.866H83.645v-58.54H64.057v58.54H25.105z"
+												></path>
+											</svg>
+										</Link>
+										<Link
+											href="https://github.com/better-auth/better-auth"
+											target="_blank"
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												width="1em"
+												height="1em"
+												viewBox="0 0 256 256"
+											>
+												<g fill="none">
+													<rect
+														width="256"
+														height="256"
+														fill="#242938"
+														rx="60"
+													></rect>
+													<path
+														fill="#fff"
+														d="M128.001 30C72.779 30 28 74.77 28 130.001c0 44.183 28.653 81.667 68.387 94.89c4.997.926 6.832-2.169 6.832-4.81c0-2.385-.093-10.262-.136-18.618c-27.82 6.049-33.69-11.799-33.69-11.799c-4.55-11.559-11.104-14.632-11.104-14.632c-9.073-6.207.684-6.079.684-6.079c10.042.705 15.33 10.305 15.33 10.305c8.919 15.288 23.394 10.868 29.1 8.313c.898-6.464 3.489-10.875 6.349-13.372c-22.211-2.529-45.56-11.104-45.56-49.421c0-10.918 3.906-19.839 10.303-26.842c-1.039-2.519-4.462-12.69.968-26.464c0 0 8.398-2.687 27.508 10.25c7.977-2.215 16.531-3.326 25.03-3.364c8.498.038 17.06 1.149 25.051 3.365c19.087-12.939 27.473-10.25 27.473-10.25c5.443 13.773 2.019 23.945.98 26.463c6.412 7.003 10.292 15.924 10.292 26.842c0 38.409-23.394 46.866-45.662 49.341c3.587 3.104 6.783 9.189 6.783 18.519c0 13.38-.116 24.149-.116 27.443c0 2.661 1.8 5.779 6.869 4.797C199.383 211.64 228 174.169 228 130.001C228 74.771 183.227 30 128.001 30M65.454 172.453c-.22.497-1.002.646-1.714.305c-.726-.326-1.133-1.004-.898-1.502c.215-.512.999-.654 1.722-.311c.727.326 1.141 1.01.89 1.508m4.919 4.389c-.477.443-1.41.237-2.042-.462c-.654-.697-.777-1.629-.293-2.078c.491-.442 1.396-.235 2.051.462c.654.706.782 1.631.284 2.078m3.374 5.616c-.613.426-1.615.027-2.234-.863c-.613-.889-.613-1.955.013-2.383c.621-.427 1.608-.043 2.236.84c.611.904.611 1.971-.015 2.406m5.707 6.504c-.548.604-1.715.442-2.57-.383c-.874-.806-1.118-1.95-.568-2.555c.555-.606 1.729-.435 2.59.383c.868.804 1.133 1.957.548 2.555m7.376 2.195c-.242.784-1.366 1.14-2.499.807c-1.13-.343-1.871-1.26-1.642-2.052c.235-.788 1.364-1.159 2.505-.803c1.13.341 1.871 1.252 1.636 2.048m8.394.932c.028.824-.932 1.508-2.121 1.523c-1.196.027-2.163-.641-2.176-1.452c0-.833.939-1.51 2.134-1.53c1.19-.023 2.163.639 2.163 1.459m8.246-.316c.143.804-.683 1.631-1.864 1.851c-1.161.212-2.236-.285-2.383-1.083c-.144-.825.697-1.651 1.856-1.865c1.183-.205 2.241.279 2.391 1.097"
+													></path>
+												</g>
+											</svg>
+										</Link>
+									</div>
+								</GradientBG>
+							</div>
+							{
+								<>
+									<div className="mt-8 flex w-fit flex-col gap-4 font-sans md:flex-row md:justify-center lg:justify-start items-center">
+										<Link
+											href="/docs"
+											className="hover:shadow-sm dark:border-stone-100 dark:hover:shadow-sm border-2 border-black bg-white px-4 py-1.5 text-sm uppercase text-black shadow-[1px_1px_rgba(0,0,0),2px_2px_rgba(0,0,0),3px_3px_rgba(0,0,0),4px_4px_rgba(0,0,0),5px_5px_0px_0px_rgba(0,0,0)] transition duration-200 md:px-8 dark:shadow-[1px_1px_rgba(255,255,255),2px_2px_rgba(255,255,255),3px_3px_rgba(255,255,255),4px_4px_rgba(255,255,255),5px_5px_0px_0px_rgba(255,255,255)]"
+										>
+											Get Started
+										</Link>
+										<Builder />
+									</div>
+								</>
+							}
+						</div>
+					</div>
+
+					<div className="relative hidden md:block lg:static xl:pl-10">
+						<div className="relative">
+							<div className="from-sky-300 via-sky-300/70 to-blue-300 absolute inset-0 rounded-none bg-gradient-to-tr opacity-5 blur-lg" />
+							<div className="from-stone-300 via-stone-300/70 to-blue-300 absolute inset-0 rounded-none bg-gradient-to-tr opacity-5" />
+							<CodePreview />
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+function CodePreview() {
+	const [currentTab, setCurrentTab] = useState<"auth.ts" | "client.ts">(
+		"auth.ts",
+	);
+
+	const theme = useTheme();
+
+	const code = tabs.find((tab) => tab.name === currentTab)?.code ?? "";
+	const [copyState, setCopyState] = useState(false);
+	const [ref, { height }] = useMeasure();
+	const copyToClipboard = (text: string) => {
+		navigator.clipboard.writeText(text).then(() => {
+			setCopyState(true);
+			setTimeout(() => {
+				setCopyState(false);
+			}, 2000);
+		});
+	};
+
+	const [codeTheme, setCodeTheme] = useState(themes.synthwave84);
+
+	useEffect(() => {
+		setCodeTheme(
+			theme.resolvedTheme === "light" ? themes.oneLight : themes.synthwave84,
+		);
+	}, [theme.resolvedTheme]);
+
+	return (
+		<AnimatePresence initial={false}>
+			<MotionConfig transition={{ duration: 0.5, type: "spring", bounce: 0 }}>
+				<motion.div
+					animate={{ height: height > 0 ? height : undefined }}
+					className="from-stone-100 to-stone-200 dark:to-black/90 dark:via-stone-950/10 dark:from-stone-950/90 relative overflow-hidden rounded-sm bg-gradient-to-tr ring-1 ring-white/10 backdrop-blur-lg"
+				>
+					<div ref={ref}>
+						<div className="absolute -top-px left-0 right-0 h-px" />
+						<div className="absolute -bottom-px left-11 right-20 h-px" />
+						<div className="pl-4 pt-4">
+							<TrafficLightsIcon className="stroke-slate-500/30 h-2.5 w-auto" />
+
+							<div className="mt-4 flex space-x-2 text-xs">
+								{tabs.map((tab) => (
+									<button
+										key={tab.name}
+										onClick={() => setCurrentTab(tab.name)}
+										className={clsx(
+											"relative isolate flex h-6 cursor-pointer items-center justify-center rounded-full px-2.5",
+											currentTab === tab.name
+												? "text-stone-300"
+												: "text-slate-500",
+										)}
+									>
+										{tab.name}
+										{tab.name === currentTab && (
+											<motion.div
+												layoutId="tab-code-preview"
+												className="bg-stone-800 absolute inset-0 -z-10 rounded-full"
+											/>
+										)}
+									</button>
+								))}
+							</div>
+
+							<div className="mt-6 flex flex-col items-start px-1 text-sm">
+								<div className="absolute top-2 right-4">
+									<Button
+										variant="outline"
+										size="icon"
+										className="absolute w-5 border-none bg-transparent h-5 top-2 right-0"
+										onClick={() => copyToClipboard(code)}
+									>
+										{copyState ? (
+											<Check className="h-3 w-3" />
+										) : (
+											<Copy className="h-3 w-3" />
+										)}
+										<span className="sr-only">Copy code</span>
+									</Button>
+								</div>
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									transition={{ duration: 0.5 }}
+									key={currentTab}
+									className="relative flex items-start px-1 text-sm"
+								>
+									<div
+										aria-hidden="true"
+										className="border-slate-300/5 text-slate-600 select-none border-r pr-4 font-mono"
+									>
+										{Array.from({
+											length: code.split("\n").length,
+										}).map((_, index) => (
+											<Fragment key={index}>
+												{(index + 1).toString().padStart(2, "0")}
+												<br />
+											</Fragment>
+										))}
+									</div>
+									<Highlight
+										key={theme.resolvedTheme}
+										code={code}
+										language={"javascript"}
+										theme={{
+											...codeTheme,
+											plain: {
+												backgroundColor: "transparent",
+											},
+										}}
+									>
+										{({
+											className,
+											style,
+											tokens,
+											getLineProps,
+											getTokenProps,
+										}) => (
+											<pre
+												className={clsx(className, "flex overflow-x-auto pb-6")}
+												style={style}
+											>
+												<code className="px-4">
+													{tokens.map((line, lineIndex) => (
+														<div key={lineIndex} {...getLineProps({ line })}>
+															{line.map((token, tokenIndex) => (
+																<span
+																	key={tokenIndex}
+																	{...getTokenProps({ token })}
+																/>
+															))}
+														</div>
+													))}
+												</code>
+											</pre>
+										)}
+									</Highlight>
+								</motion.div>
+								<motion.div layout className="self-end">
+									<Link
+										href="https://demo.better-auth.com"
+										target="_blank"
+										className="shadow-md  border shadow-primary-foreground mb-4 ml-auto mr-4 mt-auto flex cursor-pointer items-center gap-2 px-3 py-1 transition-all ease-in-out hover:opacity-70"
+									>
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="1em"
+											height="1em"
+											viewBox="0 0 24 24"
+										>
+											<path
+												fill="currentColor"
+												d="M10 20H8V4h2v2h2v3h2v2h2v2h-2v2h-2v3h-2z"
+											></path>
+										</svg>
+										<p className="text-sm">Demo</p>
+									</Link>
+								</motion.div>
+							</div>
+						</div>
+					</div>
+				</motion.div>
+			</MotionConfig>
+		</AnimatePresence>
+	);
+}
+
+export function HeroBackground(props: React.ComponentPropsWithoutRef<"svg">) {
+	const id = useId();
+	return (
+		<svg
+			aria-hidden="true"
+			viewBox="0 0 668 1069"
+			width={668}
+			height={1069}
+			fill="none"
+			{...props}
+		>
+			<defs>
+				<clipPath id={`${id}-clip-path`}>
+					<path
+						fill="#fff"
+						transform="rotate(-180 334 534.4)"
+						d="M0 0h668v1068.8H0z"
+					/>
+				</clipPath>
+			</defs>
+			<g opacity=".4" clipPath={`url(#${id}-clip-path)`} strokeWidth={4}>
+				<path
+					opacity=".3"
+					d="M584.5 770.4v-474M484.5 770.4v-474M384.5 770.4v-474M283.5 769.4v-474M183.5 768.4v-474M83.5 767.4v-474"
+					stroke="#334155"
+				/>
+				<path
+					d="M83.5 221.275v6.587a50.1 50.1 0 0 0 22.309 41.686l55.581 37.054a50.102 50.102 0 0 1 22.309 41.686v6.587M83.5 716.012v6.588a50.099 50.099 0 0 0 22.309 41.685l55.581 37.054a50.102 50.102 0 0 1 22.309 41.686v6.587M183.7 584.5v6.587a50.1 50.1 0 0 0 22.31 41.686l55.581 37.054a50.097 50.097 0 0 1 22.309 41.685v6.588M384.101 277.637v6.588a50.1 50.1 0 0 0 22.309 41.685l55.581 37.054a50.1 50.1 0 0 1 22.31 41.686v6.587M384.1 770.288v6.587a50.1 50.1 0 0 1-22.309 41.686l-55.581 37.054A50.099 50.099 0 0 0 283.9 897.3v6.588"
+					stroke="#334155"
+				/>
+				<path
+					d="M384.1 770.288v6.587a50.1 50.1 0 0 1-22.309 41.686l-55.581 37.054A50.099 50.099 0 0 0 283.9 897.3v6.588M484.3 594.937v6.587a50.1 50.1 0 0 1-22.31 41.686l-55.581 37.054A50.1 50.1 0 0 0 384.1 721.95v6.587M484.3 872.575v6.587a50.1 50.1 0 0 1-22.31 41.686l-55.581 37.054a50.098 50.098 0 0 0-22.309 41.686v6.582M584.501 663.824v39.988a50.099 50.099 0 0 1-22.31 41.685l-55.581 37.054a50.102 50.102 0 0 0-22.309 41.686v6.587M283.899 945.637v6.588a50.1 50.1 0 0 1-22.309 41.685l-55.581 37.05a50.12 50.12 0 0 0-22.31 41.69v6.59M384.1 277.637c0 19.946 12.763 37.655 31.686 43.962l137.028 45.676c18.923 6.308 31.686 24.016 31.686 43.962M183.7 463.425v30.69c0 21.564 13.799 40.709 34.257 47.529l134.457 44.819c18.922 6.307 31.686 24.016 31.686 43.962M83.5 102.288c0 19.515 13.554 36.412 32.604 40.645l235.391 52.309c19.05 4.234 32.605 21.13 32.605 40.646M83.5 463.425v-58.45M183.699 542.75V396.625M283.9 1068.8V945.637M83.5 363.225v-141.95M83.5 179.524v-77.237M83.5 60.537V0M384.1 630.425V277.637M484.301 830.824V594.937M584.5 1068.8V663.825M484.301 555.275V452.988M584.5 622.075V452.988M384.1 728.537v-56.362M384.1 1068.8v-20.88M384.1 1006.17V770.287M283.9 903.888V759.85M183.699 1066.71V891.362M83.5 1068.8V716.012M83.5 674.263V505.175"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="384.1"
+					r="10.438"
+					transform="rotate(-180 83.5 384.1)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="200.399"
+					r="10.438"
+					transform="rotate(-180 83.5 200.399)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="81.412"
+					r="10.438"
+					transform="rotate(-180 83.5 81.412)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="375.75"
+					r="10.438"
+					transform="rotate(-180 183.699 375.75)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="563.625"
+					r="10.438"
+					transform="rotate(-180 183.699 563.625)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="651.3"
+					r="10.438"
+					transform="rotate(-180 384.1 651.3)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="484.301"
+					cy="574.062"
+					r="10.438"
+					transform="rotate(-180 484.301 574.062)"
+					fill="#0EA5E9"
+					fillOpacity=".42"
+					stroke="#0EA5E9"
+				/>
+				<circle
+					cx="384.1"
+					cy="749.412"
+					r="10.438"
+					transform="rotate(-180 384.1 749.412)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="1027.05"
+					r="10.438"
+					transform="rotate(-180 384.1 1027.05)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="283.9"
+					cy="924.763"
+					r="10.438"
+					transform="rotate(-180 283.9 924.763)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="183.699"
+					cy="870.487"
+					r="10.438"
+					transform="rotate(-180 183.699 870.487)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="283.9"
+					cy="738.975"
+					r="10.438"
+					transform="rotate(-180 283.9 738.975)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="695.138"
+					r="10.438"
+					transform="rotate(-180 83.5 695.138)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="83.5"
+					cy="484.3"
+					r="10.438"
+					transform="rotate(-180 83.5 484.3)"
+					fill="#0EA5E9"
+					fillOpacity=".42"
+					stroke="#0EA5E9"
+				/>
+				<circle
+					cx="484.301"
+					cy="432.112"
+					r="10.438"
+					transform="rotate(-180 484.301 432.112)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="584.5"
+					cy="432.112"
+					r="10.438"
+					transform="rotate(-180 584.5 432.112)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="584.5"
+					cy="642.95"
+					r="10.438"
+					transform="rotate(-180 584.5 642.95)"
+					fill="#1E293B"
+					stroke="#334155"
+				/>
+				<circle
+					cx="484.301"
+					cy="851.699"
+					r="10.438"
+					transform="rotate(-180 484.301 851.699)"
+					stroke="#334155"
+				/>
+				<circle
+					cx="384.1"
+					cy="256.763"
+					r="10.438"
+					transform="rotate(-180 384.1 256.763)"
+					stroke="#334155"
+				/>
+			</g>
+		</svg>
+	);
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/people-say.tsx</source>
+<document_content>
+import { cn } from "@/lib/utils";
+import { Icons } from "../icons";
+import Link from "next/link";
+
+const testimonials = [
+	{
+		name: "Dev Ed",
+		profession: "Content Creator",
+		link: "https://x.com/edgarasben/status/1856336936505590160",
+		description:
+			"This has been the best auth experience by a mileee, auto generated my drizzle schemas for users, sessions etc, full type safe and dead simple api, well done @better_auth 👏👏",
+		avatar: "/people-say/dev-ed.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Lazar Nikolov",
+		profession: "Software Engineer & Educator",
+		link: "https://x.com/NikolovLazar/status/1888992999872331985",
+		description:
+			"I didn't know  @better_auth was THAT good. I'm implementing it in TanStack Start and I can't believe how good the DX is. This is my favorite stack now (along with  @DrizzleORM and @shadcn ui).",
+		avatar: "/people-say/lazar-nikolov.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Theo - t3.gg",
+		profession: "CEO of t3.chat",
+		link: "https://x.com/theo/status/1879769267866120341",
+		description: "Very exciting project and a super easy rec",
+		avatar: "/people-say/theo.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Jonathan Wilke",
+		profession: "Creator of Supastarter",
+		link: "https://x.com/jonathan_wilke/status/1853086900279562329",
+		description: "fuck, @better_auth is just so good",
+		avatar: "/people-say/jonathan-wilke.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Sébastien Chopin",
+		profession: "Creator of Nuxt & NuxtLabs",
+		link: "https://x.com/Atinux/status/1853751424561336322",
+		description:
+			"When @better_auth meets @nuxt_hub to build full-stack Nuxt apps on Cloudflare (using D1 & KV).",
+		avatar: "/people-say/sebastien-chopin.png",
+		image: "",
+		social: <Icons.x />,
+	},
+
+	{
+		name: "Dax",
+		profession: "Creator of SST",
+		link: "https://x.com/thdxr/status/1866222656468705426",
+		description:
+			"between better-auth and openauth one of those options should cover how you want to do things for 95% of cases. the problem of defaulting to SaaS for auth in js is finally fixed...",
+		avatar: "/people-say/dax.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Dagmawi Babi",
+		profession: "Developer",
+		link: "https://x.com/DagmawiBabi/status/1845966382703280458",
+		description:
+			"@better_auth exceeded all expectations, and it's just getting started",
+		avatar: "/people-say/dagmawi-babi.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Tech Nerd",
+		profession: "Developer",
+		link: "https://x.com/TechNerd556/status/1863523931614822784",
+		description:
+			"Using @better_auth with custom components feels like having someone hand you the remote while you're comfortably on the sofa. The ease I'm feeling rn is insane Auth done in under 5 minutes 🤌⚡️.",
+		avatar: "/people-say/tech-nerd.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Omar McAdam",
+		profession: "Creator of AugmentedHQ",
+		link: "https://x.com/McPizza0/status/1879526862046839249",
+		description:
+			"if you're building a code project in 2025 use @better_auth. It has everything you need now and everything you'll need at scale. dont take this suggestion lightly..",
+		avatar: "/people-say/omar-mcadam.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Guillermo Rauch",
+		profession: "CEO of Vercel",
+		link: "https://x.com/rauchg/status/1871628287962906846",
+		description: "Great project & maintainer",
+		avatar: "/people-say/guillermo-rauch.png",
+		image: "",
+		social: <Icons.x />,
+	},
+	{
+		name: "Nizzy",
+		profession: "Co-founder of Zero",
+		link: "https://x.com/NizzyABI/status/1889178812459422162",
+		description:
+			"i cant believe how easy @better_auth is compared to @authjs all i had to do was connect it to my drizzle schema and create a sign up page w the auth :)))",
+		avatar: "/people-say/nizzy.png",
+		image: "",
+		social: <Icons.x />,
+	},
+
+	{
+		name: "Vybhav Bhargav",
+		profession: "Founding engineer @glyfspace",
+		link: "https://x.com/vybhavab/status/1891589126513684669",
+		description: "better-auth is a work of art.",
+		avatar: "/people-say/vybhav-bhargav.png",
+		social: <Icons.x />,
+	},
+	{
+		name: "Shreyas Mididoddi",
+		profession: "Senior Developer",
+		link: "https://x.com/Shreyassanthu77/status/1887544964881784927",
+		description:
+			"dang!! Didn't think I would but absolutely loving @better_auth",
+		avatar: "/people-say/shreyas-mididddi.png",
+		social: <Icons.x />,
+	},
+];
+type TestimonialProps = (typeof testimonials)[number];
+const PeopleSay = ({
+	reverse = false,
+	testimonials,
+}: {
+	reverse?: boolean;
+	testimonials: TestimonialProps[];
+}) => {
+	const animeSeconds = testimonials.length * 10;
+	return (
+		<div className="max-w-full mx-auto">
+			<div
+				className={`[--anime-duration:${animeSeconds}s] px-10 mx-auto w-full`}
+			>
+				<div
+					style={{
+						animationDuration: `${animeSeconds}s`,
+					}}
+					className={cn(
+						"scroller flex flex-nowrap w-max min-w-full duration-[1000s] hover:[animation-play-state:paused] overflow-hidden relative gap-5 justify-around shrink-0",
+						reverse ? "animate-hrtl-scroll-reverse " : "animate-hrtl-scroll",
+					)}
+				>
+					{testimonials.map((testimonial, indx) => {
+						return (
+							<div
+								key={indx}
+								className={cn(
+									"flex flex-col justify-between h-[220px] rounded-none border-[1.2px] border-black/20 shrink-0 grow-0 w-[450px] dark:border-white/10",
+								)}
+							>
+								<p className="px-5 py-5 tracking-tight text-md font-extralight sm:text-xl md:text-lg text-pretty text-text-primary dark:text-dark-text-primary">
+									&quot;{testimonial.description}.&quot;
+								</p>
+								<div className="flex overflow-hidden h-[28%] gap-1 w-full border-t-[1.2px]">
+									<div className="flex items-center w-3/4 gap-3 px-4 py-3">
+										<img
+											src={testimonial.avatar}
+											className="w-10 h-10 rounded-full"
+											alt="avatar"
+										/>
+										<div className="flex flex-col items-start justify-start flex-1 gap-0">
+											<h5 className="text-base font-medium md:text-md">
+												{testimonial.name}
+											</h5>
+											<p className="text-sm md:text-base text-black/30 mt-[-4px] text-text-tertiary dark:text-white/50 dark:text-dark-text-tertiary">
+												{testimonial.profession}
+											</p>
+										</div>
+									</div>
+									<div className="w-[1px] bg-black/20 dark:bg-white/20" />
+									<div className="flex items-center justify-center max-w-full mx-auto">
+										<Link href={testimonial.link} target="_blank">
+											{testimonial.social}
+										</Link>
+									</div>
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	);
+};
+
+export const Testimonial = () => {
+	return (
+		<div className="max-w-full py-5 mx-auto overflow-hidden">
+			<div className="flex flex-col gap-3">
+				<div
+					style={{
+						maskImage:
+							"linear-gradient(to left, transparent 0%, black 20%, black 80%, transparent 95%)",
+					}}
+					className="relative flex justify-around gap-5 overflow-hidden shrink-0"
+				>
+					<PeopleSay
+						reverse
+						testimonials={Array(10)
+							.fill(testimonials.slice(0, Math.floor(testimonials.length / 2)))
+							.flat()}
+					/>
+				</div>
+				<div
+					style={{
+						maskImage:
+							"linear-gradient(to left, transparent 0%, black 20%, black 80%, transparent 95%)",
+					}}
+					className="relative flex justify-around gap-5 overflow-hidden shrink-0"
+				>
+					<PeopleSay
+						testimonials={Array(10)
+							.fill(
+								testimonials.slice(
+									Math.floor(testimonials.length / 2) + 1,
+									testimonials.length - 1,
+								),
+							)
+							.flat()}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/section-svg.tsx</source>
+<document_content>
+const SectionSvg = ({
+	crossesOffset,
+}: {
+	crossesOffset: string;
+}) => {
+	return (
+		<>
+			<PlusSvg
+				className={`hidden absolute -top-[0.3125rem] ${
+					crossesOffset && crossesOffset
+				} pointer-events-none lg:block lg:left-[3.6825rem]`}
+			/>
+
+			<PlusSvg
+				className={`hidden absolute  -top-[0.3125rem] right-[1.4625rem] ${
+					crossesOffset && crossesOffset
+				} pointer-events-none lg:block lg:right-[3.20rem]`}
+			/>
+		</>
+	);
+};
+
+export default SectionSvg;
+
+export const PlusSvg = ({ className = "" }) => {
+	return (
+		<svg className={`${className} || ""`} width="11" height="11" fill="none">
+			<path
+				d="M7 1a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v2a1 1 0 0 1-1 1H1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V8a1 1 0 0 1 1-1h2a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1H8a1 1 0 0 1-1-1V1z"
+				fill="#878787"
+			/>
+		</svg>
+	);
+};
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/section.tsx</source>
+<document_content>
+import type React from "react";
+import SectionSvg from "./section-svg";
+
+const Section = ({
+	className,
+	id,
+	crosses,
+	crossesOffset,
+	customPaddings,
+	children,
+}: {
+	className: string;
+	id: string;
+	crosses?: boolean;
+	crossesOffset: string;
+	customPaddings: boolean;
+	children: React.ReactNode;
+}) => {
+	return (
+		<div
+			id={id}
+			className={`
+      relative
+      ${customPaddings || `py-10 lg:py-16  ${crosses ? "" : ""}`}
+      ${className || " "}`}
+		>
+			{children}
+
+			<div className="hidden absolute top-0 left-5 w-[0.0625rem] h-[calc(100%_+_30px)] dark:bg-[#26242C] bg-stone-200  pointer-events-none lg:block lg:left-16 xl:left-16" />
+			<div className="hidden absolute top-0 right-5 w-[0.0625rem] h-[calc(100%_+_30px)]  dark:bg-[#26242C] bg-stone-200  pointer-events-none lg:block lg:right-14 xl:right-14" />
+
+			{crosses && (
+				<>
+					<SectionSvg crossesOffset={crossesOffset} />
+				</>
+			)}
+		</div>
+	);
+};
+
+export default Section;
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/components/landing/spotlight.tsx</source>
+<document_content>
+import { cn } from "@/lib/utils";
+
+type SpotlightProps = {
+	className?: string;
+	fill?: string;
+};
+
+export const Spotlight = ({ className, fill }: SpotlightProps) => {
+	return (
+		<svg
+			className={cn(
+				"animate-spotlight pointer-events-none absolute z-[1] h-[169%] w-[138%] lg:w-[84%] opacity-0",
+				className,
+			)}
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 3787 2842"
+			fill="none"
+		>
+			<g filter="url(#filter)">
+				<ellipse
+					cx="1924.71"
+					cy="273.501"
+					rx="1924.71"
+					ry="273.501"
+					transform="matrix(-0.822377 -0.568943 -0.568943 0.822377 3631.88 2291.09)"
+					fill={fill || "white"}
+					fillOpacity="0.1"
+				></ellipse>
+			</g>
+			<defs>
+				<filter
+					id="filter"
+					x="0.860352"
+					y="0.838989"
+					width="3785.16"
+					height="2840.26"
+					filterUnits="userSpaceOnUse"
+					colorInterpolationFilters="sRGB"
+				>
+					<feFlood floodOpacity="0" result="BackgroundImageFix"></feFlood>
+					<feBlend
+						mode="normal"
+						in="SourceGraphic"
+						in2="BackgroundImageFix"
+						result="shape"
+					></feBlend>
+					<feGaussianBlur
+						stdDeviation="180"
+						result="effect1_foregroundBlur_1065_8"
+					></feGaussianBlur>
+				</filter>
+			</defs>
+		</svg>
+	);
+};
+
+</document_content>
+</document>
+</documents>

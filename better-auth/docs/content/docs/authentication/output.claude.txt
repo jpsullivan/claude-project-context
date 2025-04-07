@@ -1,0 +1,1601 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/apple.mdx</source>
+<document_content>
+---
+title: Apple
+description: Apple provider setup and usage.
+---
+
+<Steps>
+    <Step>
+        ### Get your OAuth credentials
+        To use Apple sign in, you need a client ID and client secret. You can get them from the [Apple Developer Portal](https://developer.apple.com/account/resources/authkeys/list).
+
+        Apple requires a little harder setup to get a client secret. You can use the guide below to get your client secret.
+        <Link href="https://developer.apple.com/documentation/accountorganizationaldatasharing/creating-a-client-secret">
+           Creating a client secret
+        </Link>
+    </Step>
+    <Step>
+        ### Configure the provider
+        To configure the provider, you need to add it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts" 
+        import { betterAuth } from "better-auth"
+
+        export const auth = betterAuth({
+            socialProviders: {
+                apple: { // [!code highlight]
+                    clientId: process.env.APPLE_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.APPLE_CLIENT_SECRET as string, // [!code highlight]
+                    // Optional
+                    appBundleIdentifier: process.env.APPLE_APP_BUNDLE_IDENTIFIER as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+
+        On native iOS, it doesn't use the service id but the app id (bundle id) as client id, so if using the service id as clientId in signIn.social() with idToken, it throws an error: JWTClaimValidationFailed: unexpected "aud" claim value. So you need to provide the appBundleIdentifier when you want to sign in with Apple using the ID Token.
+    </Step>
+</Steps>
+
+
+## Usage
+
+### Sign In with Apple
+
+To sign in with Apple, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+- `provider`: The provider to use. It should be set to `apple`.
+
+```ts title="auth-client.ts"  /
+import { createAuthClient } from "better-auth/client"
+const authClient =  createAuthClient()
+
+const signIn = async () => {
+    const data = await authClient.signIn.social({
+        provider: "apple"
+    })
+}
+```
+
+
+### Sign In with Apple With ID Token
+
+To sign in with Apple using the ID Token, you can use the `signIn.social` function to pass the ID Token. 
+
+This is useful when you have the ID Token from Apple on the client-side and want to use it to sign in on the server.
+
+<Callout>
+ If id token is provided no redirection will happen, and the user will be signed in directly.
+</Callout>
+
+```ts title="auth-client.ts"
+    await authClient.signIn.social({
+        provider: "apple",
+        idToken: {
+            token: // Apple ID Token,
+            nonce: // Nonce (optional)
+            accessToken: // Access Token (optional)
+        }
+    })
+```
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/discord.mdx</source>
+<document_content>
+---
+title: Discord
+description: Discord provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Discord credentials
+        To use Discord sign in, you need a client ID and client secret. You can get them from the [Discord Developer Portal](https://discord.com/developers/applications).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/discord` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts" 
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({ 
+            socialProviders: {
+                discord: { // [!code highlight]
+                    clientId: process.env.DISCORD_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.DISCORD_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Discord 
+        To sign in with Discord, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `discord`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "discord"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/dropbox.mdx</source>
+<document_content>
+---
+title: Dropbox
+description: Dropbox provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Dropbox credentials
+        To use Dropbox sign in, you need a client ID and client secret. You can get them from the [Dropbox Developer Portal](https://www.dropbox.com/developers). You can Allow "Implicit Grant & PKCE" for the application in the App Console.
+        
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/dropbox` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+    If you need deeper dive into Dropbox Authentication, you can check out the [official documentation](https://developers.dropbox.com/oauth-guide).
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+
+        export const auth = betterAuth({
+            socialProviders: {
+                dropbox: { // [!code highlight]
+                    clientId: process.env.DROPBOX_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.DROPBOX_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Dropbox
+        To sign in with Dropbox, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `dropbox`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "dropbox"
+            })
+        }
+        ```
+    </Step>
+
+</Steps>
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/email-password.mdx</source>
+<document_content>
+---
+title: Email & Password
+description: Implementing email and password authentication with Better Auth.
+---
+
+Email and password authentication is a common method used by many applications. Better Auth provides a built-in email and password authenticator that you can easily integrate into your project.
+
+<Callout type="info">
+  If you prefer username-based authentication, check out the{" "}
+  <Link href="/docs/plugins/username">username plugin</Link>. It extends the
+  email and password authenticator with username support.
+</Callout>
+
+## Enable Email and Password
+
+To enable email and password authentication, you need to set the `emailAndPassword.enabled` option to `true` in the `auth` configuration.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+  emailAndPassword: { // [!code highlight]
+    enabled: true, // [!code highlight]
+  }, // [!code highlight]
+});
+```
+
+<Callout type="info">
+  If it's not enabled, it'll not allow you to sign in or sign up with email and
+  password.
+</Callout>
+
+## Usage
+
+### Sign Up
+
+To sign a user up, you can use the `signUp.email` function provided by the client. The `signUp` function takes an object with the following properties:
+
+- `email`: The email address of the user.
+- `password`: The password of the user. It should be at least 8 characters long and max 32 by default.
+- `name`: The name of the user.
+- `image`: The image of the user. (optional)
+
+```ts title="auth-client.ts"
+const { data, error } = await authClient.signUp.email({
+  email: "test@example.com",
+  password: "password1234",
+  name: "test",
+  image: "https://example.com/image.png",
+});
+```
+
+### Sign In
+
+To sign a user in, you can use the `signIn.email` function provided by the client. The `signIn` function takes an object with the following properties:
+
+- `email`: The email address of the user.
+- `password`: The password of the user.
+- `rememberMe`: If false, the user will be signed out when the browser is closed. (optional) (default: true)
+- `callbackURL`: The URL to redirect to after the user signs in. (optional)
+
+```ts title="auth-client.ts"
+const { data, error } = await authClient.signIn.email({
+  email: "test@example.com",
+  password: "password1234",
+});
+```
+
+### Sign Out
+
+To sign a user out, you can use the `signOut` function provided by the client.
+
+```ts title="auth-client.ts"
+await authClient.signOut();
+```
+
+you can pass `fetchOptions` to redirect onSuccess
+  
+```ts title="auth-client.ts" 
+await authClient.signOut({
+  fetchOptions: {
+    onSuccess: () => {
+      router.push("/login"); // redirect to login page
+    },
+  },
+});
+```
+
+### Email Verification
+
+To enable email verification, you need to pass a function that sends a verification email with a link. The `sendVerificationEmail` function takes a data object with the following properties:
+
+- `user`: The user object.
+- `url`: The url to send to the user which contains the token.
+- `token`: A verification token used to complete the email verification.
+
+and a `request` object as the second parameter.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { sendEmail } from "./email"; // your email sending function
+
+export const auth = betterAuth({
+  emailVerification: {
+    sendVerificationEmail: async ( { user, url, token }, request) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Verify your email address",
+        text: `Click the link to verify your email: ${url}`,
+      });
+    },
+  },
+});
+```
+
+On the client side you can use `sendVerificationEmail` function to send verification link to user. This will trigger the `sendVerificationEmail` function you provided in the `auth` configuration.
+
+Once the user clicks on the link in the email, if the token is valid, the user will be redirected to the URL provided in the `callbackURL` parameter. If the token is invalid, the user will be redirected to the URL provided in the `callbackURL` parameter with an error message in the query string `?error=invalid_token`.
+
+#### Require Email Verification
+
+If you enable require email verification, users must verify their email before they can log in. And every time a user tries to sign in, sendVerificationEmail is called.
+
+<Callout>
+  This only works if you have sendVerificationEmail implemented and if the user
+  is trying to sign in with email and password.
+</Callout>
+
+```ts title="auth.ts"
+export const auth = betterAuth({
+  emailAndPassword: {
+    requireEmailVerification: true,
+  },
+});
+```
+
+If a user tries to sign in without verifying their email, you can handle the error and show a message to the user.
+
+```ts title="auth-client.ts"
+await authClient.signIn.email(
+  {
+    email: "email@example.com",
+    password: "password",
+  },
+  {
+    onError: (ctx) => {
+      // Handle the error
+      if (ctx.error.status === 403) {
+        alert("Please verify your email address");
+      }
+      //you can also show the original error message
+      alert(ctx.error.message);
+    },
+  }
+);
+```
+
+#### Triggering manually Email Verification
+
+You can trigger the email verification manually by calling the `sendVerificationEmail` function.
+
+```ts
+await authClient.sendVerificationEmail({
+  email: "user@email.com",
+  callbackURL: "/", // The redirect URL after verification
+});
+```
+
+### Forget Password
+
+To allow users to reset a password first you need to provide `sendResetPassword` function to the email and password authenticator. The `sendResetPassword` function takes a data object with the following properties:
+
+- `user`: The user object.
+- `url`: The url to send to the user which contains the token.
+- `token`: A verification token used to complete the password reset.
+
+and a `request` object as the second parameter.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { sendEmail } from "./email"; // your email sending function
+
+export const auth = betterAuth({
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({user, url, token}, request) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your password",
+        text: `Click the link to reset your password: ${url}`,
+      });
+    },
+  },
+});
+```
+
+Once you configured your server you can call `forgetPassword` function to send reset password link to user. If the user exists, it will trigger the `sendResetPassword` function you provided in the auth config.
+
+It takes an object with the following properties:
+
+- `email`: The email address of the user.
+- `redirectTo`: The URL to redirect to after the user clicks on the link in the email. If the token is valid, the user will be redirected to this URL with the token in the query string. If the token is invalid, the user will be redirected to this URL with an error message in the query string `?error=invalid_token`.
+
+```ts title="auth-client.ts"
+const { data, error } = await authClient.forgetPassword({
+  email: "test@example.com",
+  redirectTo: "/reset-password",
+});
+```
+
+When a user clicks on the link in the email, they will be redirected to the reset password page. You can add the reset password page to your app. Then you can use `resetPassword` function to reset the password. It takes an object with the following properties:
+
+- `newPassword`: The new password of the user.
+
+```ts title="auth-client.ts"
+const token = new URLSearchParams(window.location.search).get("token");
+if (!token) {
+  // Handle the error
+}
+const { data, error } = await authClient.resetPassword({
+  newPassword: "password1234",
+  token,
+});
+```
+
+### Update password
+
+<Callout type="warn">
+  This only works on server-side, and the following code may change over time.
+</Callout>
+
+To set a password, you must hash it first:
+
+```ts
+const ctx = await auth.$context;
+const hash = await ctx.password.hash("your-new-password");
+```
+
+Then, to set the password: 
+```ts
+await ctx.internalAdapter.updatePassword("userId", hash) //(you can also use your orm directly)
+```
+
+### Configuration
+
+**Password**
+
+Better Auth stores passwords inside the `account` table with `providerId` set to `credential`.
+
+**Password Hashing**: Better Auth uses `scrypt` to hash passwords. The `scrypt` algorithm is designed to be slow and memory-intensive to make it difficult for attackers to brute force passwords. OWASP recommends using `scrypt` if `argon2id` is not available. We decided to use `scrypt` because it's natively supported by Node.js.
+
+You can pass custom password hashing algorithm by setting `passwordHasher` option in the `auth` configuration.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth"
+import { scrypt } from "scrypt"
+
+export const auth = betterAuth({
+    //...rest of the options
+    emailAndPassword: {
+        password: {
+            hash: // your custom password hashing function
+            verify: // your custom password verification function
+        }
+    }
+})
+```
+
+<TypeTable
+  type={{
+    enabled: {
+      description: "Enable email and password authentication.",
+      type: "boolean",
+      default: "false",
+    },
+    disableSignUp: {
+      description: "Disable email and password sign up.",
+      type: "boolean",
+      default: "false"
+    },
+    minPasswordLength: {
+      description: "The minimum length of a password.",
+      type: "number",
+      default: 8,
+    },
+    maxPasswordLength: {
+      description: "The maximum length of a password.",
+      type: "number",
+      default: 128,
+    },
+    sendResetPassword: {
+      description:
+        "Sends a password reset email. It takes a function that takes two parameters: token and user.",
+      type: "function",
+    },
+    resetPasswordTokenExpiresIn: {
+      description:
+        "Number of seconds the reset password token is valid for.",
+      type: "number",
+      default: 3600
+    },
+    password: {
+      description: "Password configuration.",
+      type: "object",
+      properties: {
+        hash: {
+          description: "custom password hashing function",
+          type: "function",
+        },
+        verify: {
+          description: "custom password verification function",
+          type: "function",
+        },
+      },
+    },
+  }}
+/>
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/facebook.mdx</source>
+<document_content>
+---
+title: Facebook
+description: Facebook provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Facebook credentials
+        To use Facebook sign in, you need a client ID and client Secret. You can get them from the [Facebook Developer Portal](https://developers.facebook.com/).
+        Select your app, navigate to **App Settings > Basic**, locate the following:  
+        - **App ID**: This is your `clientId`
+        - **App Secret**: This is your `clientSecret`.
+
+        <Callout type="warn">
+        Avoid exposing the `clientSecret` in client-side code (e.g., frontend apps) because it’s sensitive information.
+        </Callout>
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/facebook` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                facebook: { // [!code highlight]
+                    clientId: process.env.FACEBOOK_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.FACEBOOK_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Facebook 
+        To sign in with Facebook, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `facebook`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/auth-client"
+        const authClient = createAuthClient()
+
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "facebook"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+## Additional Configuration
+
+### Scopes
+By default, Facebook provides basic user information. If you need additional permissions, you can specify scopes in your auth configuration:
+
+```ts title="auth.ts"
+export const auth = betterAuth({
+    socialProviders: {
+        facebook: {
+            clientId: process.env.FACEBOOK_CLIENT_ID as string,
+            clientSecret: process.env.FACEBOOK_CLIENT_ID as string,
+            scopes: ["email", "public_profile", "user_friends"], // Overwrites permissions
+            fields: ["user_friends"], // Extending list of fields
+        },
+    },
+})
+```
+
+Additional options:
+- `scopes`: Access basic account information (overwrites).
+    - Default: `"email", "public_profile"`
+- `fields`: Extend list of fields to retrieve from the Facebook user profile (assignment).
+    - Default: `"id", "name", "email", "picture"`
+
+### Sign In with Facebook With ID or Access Token
+
+To sign in with Facebook using the ID Token, you can use the `signIn.social` function to pass the ID Token.
+
+This is useful when you have the ID Token from Facebook on the client-side and want to use it to sign in on the server.
+
+<Callout>
+ If id token is provided no redirection will happen, and the user will be signed in directly.
+</Callout>
+
+For limited login, you need to pass `idToken.token`, for only `accessToken` you need to pass `idToken.accessToken` and `idToken.token` together because of (#1183)[https://github.com/better-auth/better-auth/issues/1183].
+
+
+```ts title="auth-client.ts"
+const data = await authClient.signIn.social({
+    provider: "facebook",
+    idToken: {  // [!code highlight]
+        ...(platform === 'ios' ?  // [!code highlight]
+            { token: idToken }  // [!code highlight]
+            : { token: accessToken, accessToken: accessToken }), // [!code highlight]
+    },
+})
+```
+
+For a complete list of available permissions, refer to the [Permissions Reference](https://developers.facebook.com/docs/permissions).
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/github.mdx</source>
+<document_content>
+---
+title: GitHub
+description: GitHub provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your GitHub credentials
+        To use GitHub sign in, you need a client ID and client secret. You can get them from the [GitHub Developer Portal](https://github.com/settings/developers).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/github` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                github: { // [!code highlight]
+                    clientId: process.env.GITHUB_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.GITHUB_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with GitHub
+        To sign in with GitHub, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `github`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "github"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/gitlab.mdx</source>
+<document_content>
+---
+title: GitLab
+description: GitLab provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your GitLab credentials
+        To use GitLab sign in, you need a client ID and client secret. [GitLab OAuth documentation](https://docs.gitlab.com/ee/api/oauth2.html).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/gitlab` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                gitlab: { // [!code highlight]
+                    clientId: process.env.GITLAB_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.GITLAB_CLIENT_SECRET as string, // [!code highlight]
+                    issuer: process.env.GITLAB_ISSUER as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with GitLab
+        To sign in with GitLab, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `gitlab`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "gitlab"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/google.mdx</source>
+<document_content>
+---
+title: Google
+description: Google provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Google credentials
+        To use Google as a social provider, you need to get your Google credentials. You can get them by creating a new project in the [Google Cloud Console](https://console.cloud.google.com/apis/dashboard).
+
+        In the Google Cloud Console > Credentials > Authorized redirect URIs, make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/google` for local development. For production, make sure to set the redirect URL as your application domain, e.g. `https://example.com/api/auth/callback/google`. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to pass the `clientId` and `clientSecret` to `socialProviders.google` in your auth configuration.
+
+        ```ts title="auth.ts"   
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                google: { // [!code highlight]
+                    clientId: process.env.GOOGLE_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+</Steps>
+
+## Usage
+
+### Sign In with Google
+
+To sign in with Google, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+- `provider`: The provider to use. It should be set to `google`.
+
+```ts title="auth-client.ts"  /
+import { createAuthClient } from "better-auth/client"
+const authClient =  createAuthClient()
+
+const signIn = async () => {
+    const data = await authClient.signIn.social({
+        provider: "google"
+    })
+}
+```
+
+### Sign In with Google With ID Token
+
+To sign in with Google using the ID Token, you can use the `signIn.social` function to pass the ID Token.
+
+This is useful when you have the ID Token from Google on the client-side and want to use it to sign in on the server.
+
+<Callout>
+ If id token is provided no redirection will happen, and the user will be signed in directly.
+</Callout>
+
+```ts title="auth-client.ts"
+const data = await authClient.signIn.social({
+    provider: "google",
+    idToken: {
+        token: // Google ID Token,
+        accessToken: // Google Access Token
+    }
+})
+```
+
+<Callout>
+    If you want to use google one tap, you can use the [One Tap Plugin](/docs/plugins/one-tap) guide.
+</Callout>
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/kick.mdx</source>
+<document_content>
+---
+title: Kick
+description: Kick provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Kick Credentials
+        To use Kick sign in, you need a client ID and client secret. You can get them from the [Kick Developer Portal](https://kick.com/settings/developer).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/kick` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                kick: { // [!code highlight]
+                    clientId: process.env.KICK_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.KICK_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            }
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Kick
+        To sign in with Kick, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `kick`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "kick"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/linkedin.mdx</source>
+<document_content>
+---
+title: LinkedIn
+description: LinkedIn Provider
+---
+
+<Steps>
+    <Step> 
+        ### Get your LinkedIn credentials
+        To use LinkedIn sign in, you need a client ID and client secret. You can get them from the [LinkedIn Developer Portal](https://www.linkedin.com/developers/).
+        
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/linkedin` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+    <Callout type="info">
+     In the LinkedIn portal under products you need the **Sign In with LinkedIn using OpenID Connect** product.
+    </Callout>
+
+    There are some different Guides here:
+        [Authorization Code Flow (3-legged OAuth) (Outdated)](https://learn.microsoft.com/en-us/linkedin/shared/authentication/authorization-code-flow)
+        [Sign In with LinkedIn using OpenID Connect](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2?context=linkedin%2Fconsumer%2Fcontext)
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+
+        export const auth = betterAuth({
+            socialProviders: {
+                linkedin: { // [!code highlight]
+                    clientId: process.env.LINKEDIN_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.LINKEDIN_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with LinkedIn
+        To sign in with LinkedIn, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `linkedin`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "linkedin"
+            })
+        }
+        ```
+    </Step>
+
+</Steps>
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/microsoft.mdx</source>
+<document_content>
+---
+title: Microsoft
+description: Microsoft provider setup and usage.
+---
+
+Enabling OAuth with Microsoft Azure Entra ID (formerly Active Directory) allows your users to sign in and sign up to your application with their Microsoft account.
+
+<Steps>
+    <Step> 
+        ### Get your Microsoft credentials
+        To use Microsoft as a social provider, you need to get your Microsoft credentials. Which involves generating your own Client ID and Client Secret using your Microsoft Entra ID dashboard account.
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/microsoft` for local development. For production, you should change it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+
+        see the [Microsoft Entra ID documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-register-app) for more information.
+    </Step>
+
+    <Step>
+    ### Configure the provider
+    To configure the provider, you need to pass the `clientId` and `clientSecret` to `socialProviders.microsoft` in your auth configuration.
+
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth"
+
+    export const auth = betterAuth({
+        socialProviders: {
+            microsoft: { // [!code highlight]
+                clientId: process.env.MICROSOFT_CLIENT_ID as string, // [!code highlight]
+                clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string, // [!code highlight]
+                // Optional
+                tenantId: 'common', // [!code highlight]
+                requireSelectAccount: true // [!code highlight]
+            }, // [!code highlight]
+        },
+    })
+    ```
+    </Step>
+
+</Steps>
+
+## Sign In with Microsoft
+
+To sign in with Microsoft, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+
+- `provider`: The provider to use. It should be set to `microsoft`.
+
+```ts title="auth-client.ts"  /
+import { createAuthClient } from "better-auth/client";
+
+const authClient = createAuthClient();
+
+const signIn = async () => {
+  const data = await authClient.signIn.social({
+    provider: "microsoft",
+    callbackURL: "/dashboard", //the url to redirect to after the sign in
+  });
+};
+```
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/other-social-providers.mdx</source>
+<document_content>
+---
+title: Other Social Providers
+description: Other social providers setup and usage.
+---
+
+Better Auth providers out of the box support for the [Generic Oauth Plugin](/docs/plugins/generic-oauth) which allows you to use any social provider that implements the OAuth2 protocol or OpenID Connect (OIDC) flows.
+
+To use a provider that is not supported out of the box, you can use the [Generic Oauth Plugin](/docs/plugins/generic-oauth).
+
+## Installation
+
+<Steps>
+  <Step>
+    ### Add the plugin to your auth config
+
+    To use the Generic OAuth plugin, add it to your auth config.
+
+    ```ts title="auth.ts"
+    import { betterAuth } from "better-auth"
+    import { genericOAuth } from "better-auth/plugins" // [!code highlight]
+
+    export const auth = betterAuth({
+        // ... other config options
+        plugins: [
+            genericOAuth({ // [!code highlight]
+                config: [ // [!code highlight]
+                    { // [!code highlight]
+                        providerId: "provider-id", // [!code highlight]
+                        clientId: "test-client-id", // [!code highlight]
+                        clientSecret: "test-client-secret", // [!code highlight]
+                        discoveryUrl: "https://auth.example.com/.well-known/openid-configuration", // [!code highlight]
+                        // ... other config options // [!code highlight]
+                    }, // [!code highlight]
+                    // Add more providers as needed // [!code highlight]
+                ] // [!code highlight]
+            }) // [!code highlight]
+        ]
+    })
+    ```
+
+  </Step>
+
+  <Step>
+    ### Add the client plugin
+
+    Include the Generic OAuth client plugin in your authentication client instance.
+
+    ```ts title="auth-client.ts"
+    import { createAuthClient } from "better-auth/client"
+    import { genericOAuthClient } from "better-auth/client/plugins"
+
+    const authClient = createAuthClient({
+        plugins: [
+            genericOAuthClient()
+        ]
+    })
+    ```
+
+  </Step>
+</Steps>
+
+<Callout>
+  Read more about installation and usage of the Generic Oauth plugin
+  [here](/docs/plugins/generic-oauth#usage).
+</Callout>
+
+## Example usage
+
+### Slack Example
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  // ... other config options
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "slack",
+          clientId: process.env.SLACK_CLIENT_ID as string,
+          clientSecret: process.env.SLACK_CLIENT_SECRET as string,
+          authorizationUrl: "https://slack.com/oauth/v2/authorize",
+          tokenUrl: "https://slack.com/api/oauth.v2.access",
+          scopes: ["users:read", "users:read.email"], // and more...
+        },
+      ],
+    }),
+  ],
+});
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.oauth2({
+  providerId: "slack",
+  callbackURL: "/dashboard", // the path to redirect to after the user is authenticated
+});
+```
+
+### Instagram Example
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  // ... other config options
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "instagram",
+          clientId: process.env.INSTAGRAM_CLIENT_ID as string,
+          clientSecret: process.env.INSTAGRAM_CLIENT_SECRET as string,
+          authorizationUrl: "https://api.instagram.com/oauth/authorize",
+          tokenUrl: "https://api.instagram.com/oauth/access_token",
+          scopes: ["user_profile", "user_media"],
+        },
+      ],
+    }),
+  ],
+});
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.oauth2({
+  providerId: "instagram",
+  callbackURL: "/dashboard", // the path to redirect to after the user is authenticated
+});
+```
+
+### Coinbase Example
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { genericOAuth } from "better-auth/plugins";
+
+export const auth = betterAuth({
+  // ... other config options
+  plugins: [
+    genericOAuth({
+      config: [
+        {
+          providerId: "coinbase",
+          clientId: process.env.COINBASE_CLIENT_ID as string,
+          clientSecret: process.env.COINBASE_CLIENT_SECRET as string,
+          authorizationUrl: "https://www.coinbase.com/oauth/authorize",
+          tokenUrl: "https://api.coinbase.com/oauth/token",
+          scopes: ["wallet:user:read"], // and more...
+        },
+      ],
+    }),
+  ],
+});
+```
+
+```ts title="sign-in.ts"
+const response = await authClient.signIn.oauth2({
+  providerId: "coinbase",
+  callbackURL: "/dashboard", // the path to redirect to after the user is authenticated
+});
+```
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/reddit.mdx</source>
+<document_content>
+---
+title: Reddit
+description: Reddit provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Reddit Credentials
+        To use Reddit sign in, you need a client ID and client secret. You can get them from the [Reddit Developer Portal](https://www.reddit.com/prefs/apps).
+
+        1. Click "Create App" or "Create Another App"
+        2. Select "web app" as the application type
+        3. Set the redirect URL to `http://localhost:3000/api/auth/callback/reddit` for local development
+        4. For production, set it to your application's domain (e.g. `https://example.com/api/auth/callback/reddit`)
+        5. After creating the app, you'll get the client ID (under the app name) and client secret
+
+        If you change the base path of the auth routes, make sure to update the redirect URL accordingly.
+    </Step>
+
+    <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                reddit: {
+                    clientId: process.env.REDDIT_CLIENT_ID as string,
+                    clientSecret: process.env.REDDIT_CLIENT_SECRET as string,
+                },
+            },
+        })
+        ```
+    </Step>
+
+    <Step>
+        ### Sign In with Reddit
+        To sign in with Reddit, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `reddit`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client"
+        const authClient = createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "reddit"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+## Additional Configuration
+
+### Scopes
+By default, Reddit provides basic user information. If you need additional permissions, you can specify scopes in your auth configuration:
+
+```ts title="auth.ts"
+export const auth = betterAuth({
+    socialProviders: {
+        reddit: {
+            clientId: process.env.REDDIT_CLIENT_ID as string,
+            clientSecret: process.env.REDDIT_CLIENT_SECRET as string,
+            duration: "permanent",
+            scope: ["read", "submit"] // Add required scopes
+        },
+    },
+})
+```
+
+Common Reddit scopes include:
+- `identity`: Access basic account information
+- `read`: Access posts and comments
+- `submit`: Submit posts and comments
+- `subscribe`: Manage subreddit subscriptions
+- `history`: Access voting history
+
+For a complete list of available scopes, refer to the [Reddit OAuth2 documentation](https://www.reddit.com/dev/api/oauth).
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/roblox.mdx</source>
+<document_content>
+---
+title: Roblox
+description: Roblox provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Roblox Credentials
+        Get your Roblox credentials from the [Roblox Creator Hub](https://create.roblox.com/dashboard/credentials?activeTab=OAuthTab).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/roblox` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+        
+        <Callout type="info">
+            The Roblox API does not provide email addresses. As a workaround, the user's `email` field uses the `preferred_username` value instead.
+        </Callout>
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth" 
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                roblox: { // [!code highlight]
+                    clientId: process.env.ROBLOX_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.ROBLOX_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Roblox 
+        To sign in with Roblox, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `roblox`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "roblox"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/spotify.mdx</source>
+<document_content>
+---
+title: Spotify
+description: Spotify provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Spotify Credentials
+        To use Spotify sign in, you need a client ID and client secret. You can get them from the [Spotify Developer Portal](https://developer.spotify.com/dashboard/applications).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/spotify` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+           
+            socialProviders: {
+                spotify: { // [!code highlight]
+                    clientId: process.env.SPOTIFY_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.SPOTIFY_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Spotify
+        To sign in with Spotify, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `spotify`.
+
+        ```ts title="auth-client.ts"  /
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "spotify"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/tiktok.mdx</source>
+<document_content>
+---
+title: TikTok
+description: TikTok provider setup and usage.
+---
+
+<Steps>
+    <Step>
+        ### Get your TikTok Credentials
+        To integrate with TikTok, you need to obtain API credentials by creating an application in the [TikTok Developer Portal](https://developers.tiktok.com/apps).
+
+        Follow these steps:
+        1. Create an account on the TikTok Developer Portal
+        2. Create a new application
+        3. Set up a sandbox environment for testing
+        4. Configure your redirect URL (must be HTTPS)
+        5. Note your Client ID, Client Secret and Client Key
+
+        <Callout type="info">
+            - The TikTok API does not work with localhost. You need to use a public domain for the redirect URL and HTTPS for local testing. You can use [NGROK](https://ngrok.com/) or another similar tool for this.
+            - For testing, you will need to use the [Sandbox mode](https://developers.tiktok.com/blog/introducing-sandbox), which you can enable in the TikTok Developer Portal.
+            - The default scope is `user.info.profile`. For additional scopes, refer to the [Available Scopes](https://developers.tiktok.com/doc/tiktok-api-scopes/) documentation.
+        </Callout>
+
+        Make sure to set the redirect URL to a valid HTTPS domain for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+
+        <Callout type="info">
+            - The TikTok API does not provide email addresses. As a workaround, this implementation uses the user's `username` value for the `email` field, which is why it requires the `user.info.profile` scope instead of just `user.info.basic`.
+            - For production use, you will need to request approval from TikTok for the scopes you intend to use.
+        </Callout>
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth"
+
+        export const auth = betterAuth({
+            socialProviders: {
+                tiktok: { // [!code highlight]
+                    clientId: process.env.TIKTOK_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.TIKTOK_CLIENT_SECRET as string, // [!code highlight]
+                    clientKey: process.env.TIKTOK_CLIENT_KEY as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with TikTok
+        To sign in with TikTok, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `tiktok`.
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "tiktok"
+            })
+        }
+        ```
+    </Step>
+
+</Steps>
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/twitch.mdx</source>
+<document_content>
+---
+title: Twitch
+description: Twitch provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Twitch Credentials
+        To use Twitch sign in, you need a client ID and client secret. You can get them from the [Twitch Developer Portal](https://dev.twitch.tv/console/apps).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/twitch` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth"
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                twitch: { // [!code highlight]
+                    clientId: process.env.TWITCH_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.TWITCH_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            }
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Twitch 
+        To sign in with Twitch, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `twitch`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "twitch"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/twitter.mdx</source>
+<document_content>
+---
+title: Twitter (X)
+description: Twitter provider setup and usage.
+---
+
+<Steps>
+    <Step> 
+        ### Get your Twitter Credentials
+        Get your Twitter credentials from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/twitter` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+        
+        {        /*
+                <Callout type="warn">
+                    If twitter doesn't return the email address, the authentication won't be successful. Make sure to ask for the email address when you create the Twitter app.
+                </Callout>
+                */}
+        <Callout type="info">
+            Twitter API v2 does not provide email addresses. As a workaround, the user's `email` field uses the `username` value instead.
+        </Callout>
+    </Step>
+
+  <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+
+        ```ts title="auth.ts"  
+        import { betterAuth } from "better-auth" 
+        
+        export const auth = betterAuth({
+            socialProviders: {
+                twitter: { // [!code highlight]
+                    clientId: process.env.TWITTER_CLIENT_ID as string, // [!code highlight]
+                    clientSecret: process.env.TWITTER_CLIENT_SECRET as string, // [!code highlight]
+                }, // [!code highlight]
+            },
+        })
+        ```
+    </Step>
+       <Step>
+        ### Sign In with Twitter 
+        To sign in with Twitter, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `twitter`.
+
+        ```ts title="auth-client.ts"  
+        import { createAuthClient } from "better-auth/client"
+        const authClient =  createAuthClient()
+        
+        const signIn = async () => {
+            const data = await authClient.signIn.social({
+                provider: "twitter"
+            })
+        }
+        ```
+    </Step>
+</Steps>
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/authentication/vk.mdx</source>
+<document_content>
+---
+title: VK
+description: VK ID Provider
+---
+
+<Steps>
+    <Step>
+        ### Get your VK ID credentials
+        To use VK ID sign in, you need a client ID and client secret. You can get them from the [VK ID Developer Portal](https://id.vk.com/about/business/go/docs).
+
+        Make sure to set the redirect URL to `http://localhost:3000/api/auth/callback/vk` for local development. For production, you should set it to the URL of your application. If you change the base path of the auth routes, you should update the redirect URL accordingly.
+    </Step>
+
+    <Step>
+        ### Configure the provider
+        To configure the provider, you need to import the provider and pass it to the `socialProviders` option of the auth instance.
+        ```ts title="auth.ts"
+        import { betterAuth } from "better-auth";
+
+        export const auth = betterAuth({
+          socialProviders: {
+            vk: { // [!code highlight]
+              clientId: process.env.VK_CLIENT_ID as string, // [!code highlight]
+              clientSecret: process.env.VK_CLIENT_SECRET as string, // [!code highlight]
+            },
+          },
+        });
+        ```
+    </Step>
+    <Step>
+        ### Sign In with VK
+        To sign in with VK, you can use the `signIn.social` function provided by the client. The `signIn` function takes an object with the following properties:
+        - `provider`: The provider to use. It should be set to `vk`.
+
+
+        ```ts title="auth-client.ts"
+        import { createAuthClient } from "better-auth/client";
+        const authClient = createAuthClient();
+
+        const signIn = async () => {
+          const data = await authClient.signIn.social({
+            provider: "vk",
+          });
+        };
+        ```
+    </Step>
+
+</Steps>
+
+</document_content>
+</document>
+</documents>

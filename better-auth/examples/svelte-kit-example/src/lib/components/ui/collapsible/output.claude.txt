@@ -1,0 +1,43 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/collapsible/collapsible-content.svelte</source>
+<document_content>
+<script lang="ts">
+import { Collapsible as CollapsiblePrimitive } from "bits-ui";
+import { slide } from "svelte/transition";
+type $$Props = CollapsiblePrimitive.ContentProps;
+
+export let transition: $$Props["transition"] = slide;
+export let transitionConfig: $$Props["transitionConfig"] = {
+	duration: 150,
+};
+</script>
+
+<CollapsiblePrimitive.Content {transition} {transitionConfig} {...$$restProps}>
+	<slot />
+</CollapsiblePrimitive.Content>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/collapsible/index.ts</source>
+<document_content>
+import { Collapsible as CollapsiblePrimitive } from "bits-ui";
+import Content from "./collapsible-content.svelte";
+
+const Root = CollapsiblePrimitive.Root;
+const Trigger = CollapsiblePrimitive.Trigger;
+
+export {
+	Root,
+	Content,
+	Trigger,
+	//
+	Root as Collapsible,
+	Content as CollapsibleContent,
+	Trigger as CollapsibleTrigger,
+};
+
+</document_content>
+</document>
+</documents>

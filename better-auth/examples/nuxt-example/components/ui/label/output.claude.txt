@@ -1,0 +1,41 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/label/Label.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type LabelProps } from "radix-vue";
+
+const props = defineProps<LabelProps & { class?: HTMLAttributes["class"] }>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <Label
+    v-bind="delegatedProps"
+    :class="
+      cn(
+        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </Label>
+</template>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/label/index.ts</source>
+<document_content>
+export { default as Label } from "./Label.vue";
+
+</document_content>
+</document>
+</documents>

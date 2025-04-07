@@ -1,0 +1,544 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/community-adapters.mdx</source>
+<document_content>
+---
+title: Community Adapters
+description: Integrate Better Auth with community made database adapters.
+---
+
+This page showcases a list of recommended community made database adapters.
+
+We encourage you to create any missing database adapters and maybe get added to the list!
+
+| Adapter                                                                   | Database Dialect                           | Author                                                                                                                                                               |
+| ------------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [convex-better-auth](https://www.better-auth-kit.com/docs/adapters/convex) | [Convex Database](https://www.convex.dev/) | <img src="https://github.com/ping-maxwell.png" className="rounded-full w-6 h-6 border opacity-70 m-0 inline mr-1" /> [ping-maxwell](https://github.com/ping-maxwell) |
+| [surreal-better-auth](https://github.com/oskar-gmerek/surreal-better-auth/) | [Surreal Database](https://surrealdb.com/) | <img src="https://github.com/oskar-gmerek.png" className="rounded-full w-6 h-6 border opacity-70 m-0 inline mr-1" /> [oskar-gmerek](https://github.com/oskar-gmerek) |
+| [payload-better-auth](https://github.com/ForrestDevs/payload-better-auth/tree/main/packages/db-adapter ) | [Payload CMS](https://payloadcms.com/) | <img src="https://github.com/forrestdevs.png" className="rounded-full w-6 h-6 border opacity-70 m-0 inline mr-1" /> [forrestdevs](https://github.com/forrestdevs) |
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/drizzle.mdx</source>
+<document_content>
+---
+title: Drizzle ORM Adapter
+description: Integrate Better Auth with Drizzle ORM.
+---
+
+Drizzle ORM is a powerful and flexible ORM for Node.js and TypeScript. It provides a simple and intuitive API for working with databases, and supports a wide range of databases including MySQL, PostgreSQL, SQLite, and more.
+Read more here: [Drizzle ORM](https://orm.drizzle.team/).
+
+## Example Usage
+
+Make sure you have Drizzle installed and configured.
+Then, you can use the Drizzle adapter to connect to your database.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "./database.ts";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    // [!code highlight]
+    provider: "sqlite", // or "pg" or "mysql" // [!code highlight]
+  }), // [!code highlight]
+  //... the rest of your config
+});
+```
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+To generate the schema required by Better Auth, run the following command:
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+To generate and apply the migration, run the following commands:
+
+```bash title="Schema Migration"
+npx drizzle-kit generate # generate the migration file
+npx drizzle-kit migrate # apply the migration
+```
+
+## Additional Information
+
+The Drizzle adapter expects the schema you define to match the table names. For example, if your Drizzle schema maps the `user` table to `users`, you need to manually pass the schema and map it to the user table.
+
+```ts
+import { betterAuth } from "better-auth";
+import { db } from "./drizzle";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { schema } from "./schema";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "sqlite", // or "pg" or "mysql"
+    schema: {
+      ...schema,
+      user: schema.users,
+    },
+    //if all of them are just using plural form, you can just pass the option below
+    usePlural: true,
+  }),
+});
+```
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/mongo.mdx</source>
+<document_content>
+---
+title: MongoDB Adapter
+description: Integrate Better Auth with MongoDB.
+---
+
+MongoDB is a popular NoSQL database that is widely used for building scalable and flexible applications. It provides a flexible schema that allows for easy data modeling and querying.
+Read more here: [MongoDB](https://www.mongodb.com/).
+
+## Example Usage
+
+Make sure you have MongoDB installed and configured.
+Then, you can use the mongodb adapter.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { MongoClient } from "mongodb";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
+
+const client = new MongoClient("mongodb://localhost:27017/database");
+const db = client.db();
+
+export const auth = betterAuth({
+  database: mongodbAdapter(db),
+});
+```
+
+## Schema generation & migration
+
+For MongoDB, we don't need to generate or migrate the schema.
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/mssql.mdx</source>
+<document_content>
+---
+title: MS SQL
+description: Integrate Better Auth with MS SQL.
+---
+
+Microsoft SQL Server is a relational database management system developed by Microsoft, designed for enterprise-level data storage, management, and analytics with robust security and scalability features.
+Read more [here](https://en.wikipedia.org/wiki/Microsoft_SQL_Server).
+
+## Example Usage
+
+Make sure you have MS SQL installed and configured.
+Then, you can connect it straight into Better Auth.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import * as Tedious from 'tedious'
+import * as Tarn from 'tarn'
+
+const dialect = new MssqlDialect({
+  tarn: {
+    ...Tarn,
+    options: {
+      min: 0,
+      max: 10,
+    },
+  },
+  tedious: {
+    ...Tedious,
+    connectionFactory: () => new Tedious.Connection({
+      authentication: {
+        options: {
+          password: 'password',
+          userName: 'username',
+        },
+        type: 'default',
+      },
+      options: {
+        database: 'some_db',
+        port: 1433,
+        trustServerCertificate: true,
+      },
+      server: 'localhost',
+    }),
+  },
+})
+
+export const auth = betterAuth({
+  database: {
+    dialect,
+    type: "mssql"
+  }
+});
+
+
+```
+<Callout>
+    For more information, read Kysely's documentation to the [MssqlDialect](https://kysely-org.github.io/kysely-apidoc/classes/MssqlDialect.html).
+</Callout>
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <tr className="border-b">
+    <th>
+      <p className="font-bold text-[16px] mb-1">MS SQL Schema Generation</p>
+    </th>
+    <th>
+      <p className="font-bold text-[16px] mb-1">MS SQL Schema Migration</p>
+    </th>
+  </tr>
+  <tr className="h-10">
+    <td>✅ Supported</td>
+    <td>✅ Supported</td>
+  </tr>
+</table>
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+```bash title="Schema Migration"
+npx @better-auth/cli@latest migrate
+```
+
+## Additional Information
+
+MS SQL is supported under the hood via the [Kysely](https://kysely.dev/) adapter, any database supported by Kysely would also be supported. (<Link href="/docs/adapters/other-relational-databases">Read more here</Link>)
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/mysql.mdx</source>
+<document_content>
+---
+title: MySQL
+description: Integrate Better Auth with MySQL.
+---
+
+MySQL is a popular open-source relational database management system (RDBMS) that is widely used for building web applications and other types of software. It provides a flexible and scalable database solution that allows for efficient storage and retrieval of data.
+Read more here: [MySQL](https://www.mysql.com/).
+
+## Example Usage
+
+Make sure you have MySQL installed and configured.
+Then, you can connect it straight into Better Auth.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { createPool } from "mysql2/promise";
+
+export const auth = betterAuth({
+  database: createPool({
+    host: "localhost",
+    user: "root",
+    password: "password",
+    database: "database",
+  }),
+});
+```
+
+<Callout>
+  For more information, read Kysely's documentation to the
+  [MySQLDialect](https://kysely-org.github.io/kysely-apidoc/classes/MysqlDialect.html).
+</Callout>
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <tr className="border-b">
+    <th>
+      <p className="font-bold text-[16px] mb-1">MySQL Schema Generation</p>
+    </th>
+    <th>
+      <p className="font-bold text-[16px] mb-1">MySQL Schema Migration</p>
+    </th>
+  </tr>
+  <tr className="h-10">
+    <td>✅ Supported</td>
+    <td>✅ Supported</td>
+  </tr>
+</table>
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+```bash title="Schema Migration"
+npx @better-auth/cli@latest migrate
+```
+
+## Additional Information
+
+MySQL is supported under the hood via the [Kysely](https://kysely.dev/) adapter, any database supported by Kysely would also be supported. (<Link href="/docs/adapters/other-relational-databases">Read more here</Link>)
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/other-relational-databases.mdx</source>
+<document_content>
+---
+title: Other Relational Databases
+description: Integrate Better Auth with other relational databases.
+---
+
+Better Auth supports a wide range of database dialects out of the box thanks to <Link href="https://kysely.dev/">Kysely</Link>.
+
+Any dialect supported by Kysely can be utilized with Better Auth, including capabilities for generating and migrating database schemas through the <Link href="/docs/concepts/cli">CLI</Link>.
+
+## Core Dialects
+
+- [MySQL](/docs/adapters/mysql)
+- [SQLite](/docs/adapters/sqlite)
+- [PostgreSQL](/docs/adapters/postgresql)
+- [MS SQL](/docs/adapters/mssql)
+
+## Kysely Organization Dialects
+
+- [Postgres.js](https://github.com/kysely-org/kysely-postgres-js)
+- [SingleStore Data API](https://github.com/kysely-org/kysely-singlestore)
+
+## Kysely Community dialects
+
+- [PlanetScale Serverless Driver](https://github.com/depot/kysely-planetscale)
+- [Cloudflare D1](https://github.com/aidenwallis/kysely-d1)
+- [AWS RDS Data API](https://github.com/serverless-stack/kysely-data-api)
+- [SurrealDB](https://github.com/igalklebanov/kysely-surrealdb)
+- [Neon](https://github.com/seveibar/kysely-neon)
+- [Xata](https://github.com/xataio/client-ts/tree/main/packages/plugin-client-kysely)
+- [AWS S3 Select](https://github.com/igalklebanov/kysely-s3-select)
+- [libSQL/sqld](https://github.com/libsql/kysely-libsql)
+- [Fetch driver](https://github.com/andersgee/kysely-fetch-driver)
+- [SQLite WASM](https://github.com/DallasHoff/sqlocal)
+- [Deno SQLite](https://gitlab.com/soapbox-pub/kysely-deno-sqlite)
+- [TiDB Cloud Serverless Driver](https://github.com/tidbcloud/kysely)
+- [Capacitor SQLite Kysely](https://github.com/DawidWetzler/capacitor-sqlite-kysely)
+- [BigQuery](https://github.com/maktouch/kysely-bigquery)
+- [Clickhouse](https://github.com/founderpathcom/kysely-clickhouse)
+- [PGLite](https://github.com/czeidler/kysely-pglite-dialect)
+
+<Callout>
+  You can see the full list of supported Kysely dialects{" "}
+  <Link href="https://kysely.dev/docs/dialects">here</Link>.
+</Callout>
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/postgresql.mdx</source>
+<document_content>
+---
+title: PostgreSQL
+description: Integrate Better Auth with PostgreSQL.
+---
+
+PostgreSQL is a powerful, open-source relational database management system known for its advanced features, extensibility, and support for complex queries and large datasets.
+Read more [here](https://www.postgresql.org/).
+
+## Example Usage
+
+Make sure you have PostgreSQL installed and configured.
+Then, you can connect it straight into Better Auth.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { Pool } from "pg";
+
+export const auth = betterAuth({
+  database: new Pool({
+    connectionString: "postgres://user:password@localhost:5432/database",
+  }),
+});
+```
+
+<Callout>
+  For more information, read Kysely's documentation to the
+  [PostgresDialect](https://kysely-org.github.io/kysely-apidoc/classes/PostgresDialect.html).
+</Callout>
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <tr className="border-b">
+    <th>
+      <p className="font-bold text-[16px] mb-1">PostgreSQL Schema Generation</p>
+    </th>
+    <th>
+      <p className="font-bold text-[16px] mb-1">PostgreSQL Schema Migration</p>
+    </th>
+  </tr>
+  <tr className="h-10">
+    <td>✅ Supported</td>
+    <td>✅ Supported</td>
+  </tr>
+</table>
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+```bash title="Schema Migration"
+npx @better-auth/cli@latest migrate
+```
+
+## Additional Information
+
+PostgreSQL is supported under the hood via the [Kysely](https://kysely.dev/) adapter, any database supported by Kysely would also be supported. (<Link href="/docs/adapters/other-relational-databases">Read more here</Link>)
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/prisma.mdx</source>
+<document_content>
+---
+title: Prisma
+description: Integrate Better Auth with Prisma.
+---
+
+Prisma ORM is an open-source database toolkit that simplifies database access and management in applications by providing a type-safe query builder and an intuitive data modeling interface.
+Read more [here](https://www.prisma.io/).
+
+## Example Usage
+
+Make sure you have Prisma installed and configured.
+Then, you can use the Prisma adapter to connect to your database.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: "sqlite",
+  }),
+});
+```
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <tr className="border-b">
+    <th>
+      <p className="font-bold text-[16px] mb-1">Prisma Schema Generation</p>
+    </th>
+    <th>
+      <p className="font-bold text-[16px] mb-1">Prisma Schema Migration</p>
+    </th>
+  </tr>
+  <tr className="h-10">
+    <td>✅ Supported</td>
+    <td>❌ Not Supported</td>
+  </tr>
+</table>
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+## Additional Information
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/adapters/sqlite.mdx</source>
+<document_content>
+---
+title: SQLite
+description: Integrate Better Auth with SQLite.
+---
+
+SQLite is a lightweight, serverless, self-contained SQL database engine that is widely used for local data storage in applications.
+Read more [here.](https://www.sqlite.org/)
+
+## Example Usage
+
+Make sure you have SQLite installed and configured.
+Then, you can connect it straight into Better Auth.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import Database from "better-sqlite3";
+
+export const auth = betterAuth({
+  database: new Database("database.sqlite"),
+});
+```
+
+<Callout>
+  For more information, read Kysely's documentation to the
+  [SqliteDialect](https://kysely-org.github.io/kysely-apidoc/classes/SqliteDialect.html).
+</Callout>
+
+## Schema generation & migration
+
+The [Better Auth CLI](/docs/concepts/cli) allows you to generate or migrate
+your database schema based on your Better Auth configuration and plugins.
+
+<table>
+  <tr className="border-b">
+    <th>
+      <p className="font-bold text-[16px] mb-1">SQLite Schema Generation</p>
+    </th>
+    <th>
+      <p className="font-bold text-[16px] mb-1">SQLite Schema Migration</p>
+    </th>
+  </tr>
+  <tr className="h-10">
+    <td>✅ Supported</td>
+    <td>✅ Supported</td>
+  </tr>
+</table>
+
+```bash title="Schema Generation"
+npx @better-auth/cli@latest generate
+```
+
+```bash title="Schema Migration"
+npx @better-auth/cli@latest migrate
+```
+
+## Additional Information
+
+SQLite is supported under the hood via the [Kysely](https://kysely.dev/) adapter, any database supported by Kysely would also be supported. (<Link href="/docs/adapters/other-relational-databases">Read more here</Link>)
+
+If you're looking for performance improvements or tips, take a look at our guide to <Link href="/docs/guides/optimizing-for-performance">performance optimizations</Link>.
+
+</document_content>
+</document>
+</documents>

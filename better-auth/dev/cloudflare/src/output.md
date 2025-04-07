@@ -1,0 +1,116 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/dev/cloudflare/src/auth-schema.ts
+```typescript
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+
+export const user = sqliteTable("user", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+	email: text("email").notNull().unique(),
+	emailVerified: integer("email_verified", { mode: "boolean" }).notNull(),
+	image: text("image"),
+	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const session = sqliteTable("session", {
+	id: text("id").primaryKey(),
+	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+	token: text("token").notNull().unique(),
+	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+	ipAddress: text("ip_address"),
+	userAgent: text("user_agent"),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+});
+
+export const account = sqliteTable("account", {
+	id: text("id").primaryKey(),
+	accountId: text("account_id").notNull(),
+	providerId: text("provider_id").notNull(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => user.id, { onDelete: "cascade" }),
+	accessToken: text("access_token"),
+	refreshToken: text("refresh_token"),
+	idToken: text("id_token"),
+	accessTokenExpiresAt: integer("access_token_expires_at", {
+		mode: "timestamp",
+	}),
+	refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+		mode: "timestamp",
+	}),
+	scope: text("scope"),
+	password: text("password"),
+	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+	updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+});
+
+export const verification = sqliteTable("verification", {
+	id: text("id").primaryKey(),
+	identifier: text("identifier").notNull(),
+	value: text("value").notNull(),
+	expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+	createdAt: integer("created_at", { mode: "timestamp" }),
+	updatedAt: integer("updated_at", { mode: "timestamp" }),
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/dev/cloudflare/src/auth.ts
+```typescript
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { createDrizzle } from "./db";
+
+export const createAuth = (env: CloudflareBindings) =>
+	betterAuth({
+		database: drizzleAdapter(createDrizzle(env.DB), { provider: "sqlite" }),
+		secret: "some-secret-value-here",
+		emailAndPassword: {
+			enabled: true,
+		},
+	});
+
+export type Auth = ReturnType<typeof createAuth>;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/dev/cloudflare/src/db.ts
+```typescript
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "./auth-schema";
+
+export const createDrizzle = (db: D1Database) => drizzle(db, { schema });
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/dev/cloudflare/src/index.ts
+```typescript
+import { Hono } from "hono";
+import { Auth, createAuth } from "./auth";
+
+const app = new Hono<{
+	Bindings: CloudflareBindings;
+	Variables: {
+		auth: Auth;
+	};
+}>();
+
+app.use("*", async (c, next) => {
+	const auth = createAuth(c.env);
+	c.set("auth", auth);
+	await next();
+});
+
+app.on(["POST", "GET"], "/api/auth/*", (c) => c.var.auth.handler(c.req.raw));
+
+app.get("/", async (c) => {
+	const session = await c.var.auth.api.getSession({
+		headers: c.req.raw.headers,
+	});
+	if (session) return c.text("Hello " + session.user.name);
+	return c.text("Not logged in");
+});
+
+export default app satisfies ExportedHandler<CloudflareBindings>;
+
+```

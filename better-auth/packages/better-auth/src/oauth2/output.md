@@ -1,0 +1,770 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/create-authorization-url.ts
+```typescript
+import type { ProviderOptions } from "./types";
+import { generateCodeChallenge } from "./utils";
+
+export async function createAuthorizationURL({
+	id,
+	options,
+	authorizationEndpoint,
+	state,
+	codeVerifier,
+	scopes,
+	claims,
+	redirectURI,
+	duration,
+	prompt,
+	accessType,
+	responseType,
+	display,
+	loginHint,
+	hd,
+	responseMode,
+	additionalParams,
+	scopeJoiner,
+}: {
+	id: string;
+	options: ProviderOptions;
+	redirectURI: string;
+	authorizationEndpoint: string;
+	state: string;
+	codeVerifier?: string;
+	scopes: string[];
+	claims?: string[];
+	duration?: string;
+	prompt?: string;
+	accessType?: string;
+	responseType?: string;
+	display?: string;
+	loginHint?: string;
+	hd?: string;
+	responseMode?: string;
+	additionalParams?: Record<string, string>;
+	scopeJoiner?: string;
+}) {
+	const url = new URL(authorizationEndpoint);
+	url.searchParams.set("response_type", responseType || "code");
+	url.searchParams.set("client_id", options.clientId);
+	url.searchParams.set("state", state);
+	url.searchParams.set("scope", scopes.join(scopeJoiner || " "));
+	url.searchParams.set("redirect_uri", options.redirectURI || redirectURI);
+	duration && url.searchParams.set("duration", duration);
+	display && url.searchParams.set("display", display);
+	loginHint && url.searchParams.set("login_hint", loginHint);
+	prompt && url.searchParams.set("prompt", prompt);
+	hd && url.searchParams.set("hd", hd);
+	accessType && url.searchParams.set("access_type", accessType);
+	responseMode && url.searchParams.set("response_mode", responseMode);
+	if (codeVerifier) {
+		const codeChallenge = await generateCodeChallenge(codeVerifier);
+		url.searchParams.set("code_challenge_method", "S256");
+		url.searchParams.set("code_challenge", codeChallenge);
+	}
+	if (claims) {
+		const claimsObj = claims.reduce(
+			(acc, claim) => {
+				acc[claim] = null;
+				return acc;
+			},
+			{} as Record<string, null>,
+		);
+		url.searchParams.set(
+			"claims",
+			JSON.stringify({
+				id_token: { email: null, email_verified: null, ...claimsObj },
+			}),
+		);
+	}
+	if (additionalParams) {
+		Object.entries(additionalParams).forEach(([key, value]) => {
+			url.searchParams.set(key, value);
+		});
+	}
+	return url;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/index.ts
+```typescript
+export * from "./create-authorization-url";
+export * from "./validate-authorization-code";
+export * from "./refresh-access-token";
+export * from "./utils";
+export * from "./state";
+export * from "./types";
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/link-account.ts
+```typescript
+import { APIError, createEmailVerificationToken } from "../api";
+import type { Account } from "../types";
+import type { GenericEndpointContext, User } from "../types";
+import { logger } from "../utils";
+import { isDevelopment } from "../utils/env";
+
+export async function handleOAuthUserInfo(
+	c: GenericEndpointContext,
+	{
+		userInfo,
+		account,
+		callbackURL,
+		disableSignUp,
+	}: {
+		userInfo: Omit<User, "createdAt" | "updatedAt">;
+		account: Omit<Account, "id" | "userId" | "createdAt" | "updatedAt">;
+		callbackURL?: string;
+		disableSignUp?: boolean;
+	},
+) {
+	const dbUser = await c.context.internalAdapter
+		.findOAuthUser(
+			userInfo.email.toLowerCase(),
+			account.accountId,
+			account.providerId,
+		)
+		.catch((e) => {
+			logger.error(
+				"Better auth was unable to query your database.\nError: ",
+				e,
+			);
+			throw c.redirect(
+				`${c.context.baseURL}/error?error=internal_server_error`,
+			);
+		});
+	let user = dbUser?.user;
+	let isRegister = !user;
+
+	if (dbUser) {
+		const hasBeenLinked = dbUser.accounts.find(
+			(a) => a.providerId === account.providerId,
+		);
+		if (!hasBeenLinked) {
+			const trustedProviders =
+				c.context.options.account?.accountLinking?.trustedProviders;
+			const isTrustedProvider = trustedProviders?.includes(
+				account.providerId as "apple",
+			);
+			if (
+				(!isTrustedProvider && !userInfo.emailVerified) ||
+				c.context.options.account?.accountLinking?.enabled === false
+			) {
+				if (isDevelopment) {
+					logger.warn(
+						`User already exist but account isn't linked to ${account.providerId}. To read more about how account linking works in Better Auth see https://www.better-auth.com/docs/concepts/users-accounts#account-linking.`,
+					);
+				}
+				return {
+					error: "account not linked",
+					data: null,
+				};
+			}
+			try {
+				await c.context.internalAdapter.linkAccount(
+					{
+						providerId: account.providerId,
+						accountId: userInfo.id.toString(),
+						userId: dbUser.user.id,
+						accessToken: account.accessToken,
+						idToken: account.idToken,
+						refreshToken: account.refreshToken,
+						accessTokenExpiresAt: account.accessTokenExpiresAt,
+						refreshTokenExpiresAt: account.refreshTokenExpiresAt,
+						scope: account.scope,
+					},
+					c,
+				);
+			} catch (e) {
+				logger.error("Unable to link account", e);
+				return {
+					error: "unable to link account",
+					data: null,
+				};
+			}
+		} else {
+			const updateData = Object.fromEntries(
+				Object.entries({
+					accessToken: account.accessToken,
+					idToken: account.idToken,
+					refreshToken: account.refreshToken,
+					accessTokenExpiresAt: account.accessTokenExpiresAt,
+					refreshTokenExpiresAt: account.refreshTokenExpiresAt,
+					scope: account.scope,
+				}).filter(([_, value]) => value !== undefined),
+			);
+
+			if (Object.keys(updateData).length > 0) {
+				await c.context.internalAdapter.updateAccount(
+					hasBeenLinked.id,
+					updateData,
+					c,
+				);
+			}
+		}
+	} else {
+		if (disableSignUp) {
+			return {
+				error: "signup disabled",
+				data: null,
+				isRegister: false,
+			};
+		}
+		try {
+			user = await c.context.internalAdapter
+				.createOAuthUser(
+					{
+						...userInfo,
+						email: userInfo.email.toLowerCase(),
+						id: undefined,
+					},
+					{
+						accessToken: account.accessToken,
+						idToken: account.idToken,
+						refreshToken: account.refreshToken,
+						accessTokenExpiresAt: account.accessTokenExpiresAt,
+						refreshTokenExpiresAt: account.refreshTokenExpiresAt,
+						scope: account.scope,
+						providerId: account.providerId,
+						accountId: userInfo.id.toString(),
+					},
+					c,
+				)
+				.then((res) => res?.user);
+			if (
+				!userInfo.emailVerified &&
+				user &&
+				c.context.options.emailVerification?.sendOnSignUp
+			) {
+				const token = await createEmailVerificationToken(
+					c.context.secret,
+					user.email,
+					undefined,
+					c.context.options.emailVerification?.expiresIn,
+				);
+				const url = `${c.context.baseURL}/verify-email?token=${token}&callbackURL=${callbackURL}`;
+				await c.context.options.emailVerification?.sendVerificationEmail?.(
+					{
+						user,
+						url,
+						token,
+					},
+					c.request,
+				);
+			}
+		} catch (e: any) {
+			logger.error(e);
+			if (e instanceof APIError) {
+				return {
+					error: e.message,
+					data: null,
+					isRegister: false,
+				};
+			}
+			return {
+				error: "unable to create user",
+				data: null,
+				isRegister: false,
+			};
+		}
+	}
+	if (!user) {
+		return {
+			error: "unable to create user",
+			data: null,
+			isRegister: false,
+		};
+	}
+
+	const session = await c.context.internalAdapter.createSession(
+		user.id,
+		c.request,
+	);
+	if (!session) {
+		return {
+			error: "unable to create session",
+			data: null,
+			isRegister: false,
+		};
+	}
+	return {
+		data: {
+			session,
+			user,
+		},
+		error: null,
+		isRegister,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/refresh-access-token.ts
+```typescript
+import { betterFetch } from "@better-fetch/fetch";
+import type { OAuth2Tokens } from "./types";
+import type { ProviderOptions } from "./types";
+import { base64Url } from "@better-auth/utils/base64";
+
+export async function refreshAccessToken({
+	refreshToken,
+	options,
+	tokenEndpoint,
+	authentication,
+	extraParams,
+	grantType = "refresh_token",
+}: {
+	refreshToken: string;
+	options: ProviderOptions;
+	tokenEndpoint: string;
+	authentication?: "basic" | "post";
+	extraParams?: Record<string, string>;
+	grantType?: string;
+}): Promise<OAuth2Tokens> {
+	const body = new URLSearchParams();
+	const headers: Record<string, any> = {
+		"content-type": "application/x-www-form-urlencoded",
+		accept: "application/json",
+	};
+
+	body.set("grant_type", grantType);
+	body.set("refresh_token", refreshToken);
+	if (authentication === "basic") {
+		const encodedCredentials = base64Url.encode(
+			`${options.clientId}:${options.clientSecret}`,
+		);
+		headers["authorization"] = `Basic ${encodedCredentials}`;
+	} else {
+		body.set("client_id", options.clientId);
+		body.set("client_secret", options.clientSecret);
+	}
+
+	if (extraParams) {
+		for (const [key, value] of Object.entries(extraParams)) {
+			body.set(key, value);
+		}
+	}
+
+	const { data, error } = await betterFetch<{
+		access_token: string;
+		refresh_token?: string;
+		expires_in?: number;
+		token_type?: string;
+		scope?: string;
+		id_token?: string;
+	}>(tokenEndpoint, {
+		method: "POST",
+		body,
+		headers,
+	});
+	if (error) {
+		throw error;
+	}
+	const tokens: OAuth2Tokens = {
+		accessToken: data.access_token,
+		refreshToken: data.refresh_token,
+		tokenType: data.token_type,
+		scopes: data.scope?.split(" "),
+		idToken: data.id_token,
+	};
+
+	if (data.expires_in) {
+		const now = new Date();
+		tokens.accessTokenExpiresAt = new Date(
+			now.getTime() + data.expires_in * 1000,
+		);
+	}
+
+	return tokens;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/state.ts
+```typescript
+import { z } from "zod";
+import type { GenericEndpointContext } from "../types";
+import { APIError } from "better-call";
+import { generateRandomString } from "../crypto";
+
+export async function generateState(
+	c: GenericEndpointContext,
+	link?: {
+		email: string;
+		userId: string;
+	},
+) {
+	const callbackURL = c.body?.callbackURL || c.context.options.baseURL;
+	if (!callbackURL) {
+		throw new APIError("BAD_REQUEST", {
+			message: "callbackURL is required",
+		});
+	}
+	const codeVerifier = generateRandomString(128);
+	const state = generateRandomString(32);
+	const data = JSON.stringify({
+		callbackURL,
+		codeVerifier,
+		errorURL: c.body?.errorCallbackURL,
+		newUserURL: c.body?.newUserCallbackURL,
+		link,
+
+		/**
+		 * This is the actual expiry time of the state
+		 */
+		expiresAt: Date.now() + 10 * 60 * 1000,
+		requestSignUp: c.body?.requestSignUp,
+	});
+	const expiresAt = new Date();
+	expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+	const verification = await c.context.internalAdapter.createVerificationValue({
+		value: data,
+		identifier: state,
+		expiresAt,
+	});
+	if (!verification) {
+		c.context.logger.error(
+			"Unable to create verification. Make sure the database adapter is properly working and there is a verification table in the database",
+		);
+		throw new APIError("INTERNAL_SERVER_ERROR", {
+			message: "Unable to create verification",
+		});
+	}
+	return {
+		state: verification.identifier,
+		codeVerifier,
+	};
+}
+
+export async function parseState(c: GenericEndpointContext) {
+	const state = c.query.state || c.body.state;
+	const data = await c.context.internalAdapter.findVerificationValue(state);
+	if (!data) {
+		c.context.logger.error("State Mismatch. Verification not found", {
+			state,
+		});
+		throw c.redirect(
+			`${c.context.baseURL}/error?error=please_restart_the_process`,
+		);
+	}
+	const parsedData = z
+		.object({
+			callbackURL: z.string(),
+			codeVerifier: z.string(),
+			errorURL: z.string().optional(),
+			newUserURL: z.string().optional(),
+			expiresAt: z.number(),
+			link: z
+				.object({
+					email: z.string(),
+					userId: z.coerce.string(),
+				})
+				.optional(),
+			requestSignUp: z.boolean().optional(),
+		})
+		.parse(JSON.parse(data.value));
+
+	if (!parsedData.errorURL) {
+		parsedData.errorURL = `${c.context.baseURL}/error`;
+	}
+	if (parsedData.expiresAt < Date.now()) {
+		await c.context.internalAdapter.deleteVerificationValue(data.id);
+		throw c.redirect(
+			`${c.context.baseURL}/error?error=please_restart_the_process`,
+		);
+	}
+	await c.context.internalAdapter.deleteVerificationValue(data.id);
+	return parsedData;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/types.ts
+```typescript
+import type { LiteralString } from "../types/helper";
+
+export interface OAuth2Tokens {
+	tokenType?: string;
+	accessToken?: string;
+	refreshToken?: string;
+	accessTokenExpiresAt?: Date;
+	refreshTokenExpiresAt?: Date;
+	scopes?: string[];
+	idToken?: string;
+}
+
+export interface OAuthProvider<
+	T extends Record<string, any> = Record<string, any>,
+> {
+	id: LiteralString;
+	createAuthorizationURL: (data: {
+		state: string;
+		codeVerifier: string;
+		scopes?: string[];
+		redirectURI: string;
+		display?: string;
+		loginHint?: string;
+	}) => Promise<URL> | URL;
+	name: string;
+	validateAuthorizationCode: (data: {
+		code: string;
+		redirectURI: string;
+		codeVerifier?: string;
+		deviceId?: string;
+	}) => Promise<OAuth2Tokens>;
+	getUserInfo: (token: OAuth2Tokens) => Promise<{
+		user: {
+			id: string;
+			name?: string;
+			email?: string | null;
+			image?: string;
+			emailVerified: boolean;
+		};
+		data: T;
+	} | null>;
+	/**
+	 * Custom function to refresh a token
+	 */
+	refreshAccessToken?: (refreshToken: string) => Promise<OAuth2Tokens>;
+	revokeToken?: (token: string) => Promise<void>;
+	/**
+	 * Verify the id token
+	 * @param token - The id token
+	 * @param nonce - The nonce
+	 * @returns True if the id token is valid, false otherwise
+	 */
+	verifyIdToken?: (token: string, nonce?: string) => Promise<boolean>;
+	/**
+	 * Disable implicit sign up for new users. When set to true for the provider,
+	 * sign-in need to be called with with requestSignUp as true to create new users.
+	 */
+	disableImplicitSignUp?: boolean;
+	/**
+	 * Disable sign up for new users.
+	 */
+	disableSignUp?: boolean;
+	options?: ProviderOptions;
+}
+
+export type ProviderOptions<Profile extends Record<string, any> = any> = {
+	/**
+	 * The client ID of your application
+	 */
+	clientId: string;
+	/**
+	 * The client secret of your application
+	 */
+	clientSecret: string;
+	/**
+	 * The scopes you want to request from the provider
+	 */
+	scope?: string[];
+	/**
+	 * Remove default scopes of the provider
+	 */
+	disableDefaultScope?: boolean;
+	/**
+	 * The redirect URL for your application. This is where the provider will
+	 * redirect the user after the sign in process. Make sure this URL is
+	 * whitelisted in the provider's dashboard.
+	 */
+	redirectURI?: string;
+	/**
+	 * The client key of your application
+	 * Tiktok Social Provider uses this field instead of clientId
+	 */
+	clientKey?: string;
+	/**
+	 * Disable provider from allowing users to sign in
+	 * with this provider with an id token sent from the
+	 * client.
+	 */
+	disableIdTokenSignIn?: boolean;
+	/**
+	 * verifyIdToken function to verify the id token
+	 */
+	verifyIdToken?: (token: string, nonce?: string) => Promise<boolean>;
+	/**
+	 * Custom function to get user info from the provider
+	 */
+	getUserInfo?: (token: OAuth2Tokens) => Promise<{
+		user: {
+			id: string;
+			name?: string;
+			email?: string | null;
+			image?: string;
+			emailVerified: boolean;
+			[key: string]: any;
+		};
+		data: any;
+	}>;
+	/**
+	 * Custom function to refresh a token
+	 */
+	refreshAccessToken?: (refreshToken: string) => Promise<OAuth2Tokens>;
+	/**
+	 * Custom function to map the provider profile to a
+	 * user.
+	 */
+	mapProfileToUser?: (profile: Profile) =>
+		| {
+				id?: string;
+				name?: string;
+				email?: string | null;
+				image?: string;
+				emailVerified?: boolean;
+				[key: string]: any;
+		  }
+		| Promise<{
+				id?: string;
+				name?: string;
+				email?: string | null;
+				image?: string;
+				emailVerified?: boolean;
+				[key: string]: any;
+		  }>;
+	/**
+	 * Disable implicit sign up for new users. When set to true for the provider,
+	 * sign-in need to be called with with requestSignUp as true to create new users.
+	 */
+	disableImplicitSignUp?: boolean;
+	/**
+	 * Disable sign up for new users.
+	 */
+	disableSignUp?: boolean;
+	/**
+	 * The prompt to use for the authorization code request
+	 */
+	prompt?:
+		| "select_account"
+		| "consent"
+		| "login"
+		| "none"
+		| "select_account+consent";
+	/**
+	 * The response mode to use for the authorization code request
+	 */
+	responseMode?: "query" | "form_post";
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/utils.ts
+```typescript
+import type { OAuth2Tokens } from "./types";
+import { getDate } from "../utils/date";
+import { createHash } from "@better-auth/utils/hash";
+import { base64Url } from "@better-auth/utils/base64";
+
+export async function generateCodeChallenge(codeVerifier: string) {
+	const codeChallengeBytes = await createHash("SHA-256").digest(codeVerifier);
+	return base64Url.encode(new Uint8Array(codeChallengeBytes), {
+		padding: false,
+	});
+}
+
+export function getOAuth2Tokens(data: Record<string, any>): OAuth2Tokens {
+	return {
+		tokenType: data.token_type,
+		accessToken: data.access_token,
+		refreshToken: data.refresh_token,
+		accessTokenExpiresAt: data.expires_in
+			? getDate(data.expires_in, "sec")
+			: undefined,
+		scopes: data?.scope
+			? typeof data.scope === "string"
+				? data.scope.split(" ")
+				: data.scope
+			: [],
+		idToken: data.id_token,
+	};
+}
+
+export const encodeOAuthParameter = (value: string) =>
+	encodeURIComponent(value).replace(/%20/g, "+");
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/oauth2/validate-authorization-code.ts
+```typescript
+import { betterFetch } from "@better-fetch/fetch";
+import type { ProviderOptions } from "./types";
+import { getOAuth2Tokens } from "./utils";
+import { jwtVerify } from "jose";
+import { base64Url } from "@better-auth/utils/base64";
+
+export async function validateAuthorizationCode({
+	code,
+	codeVerifier,
+	redirectURI,
+	options,
+	tokenEndpoint,
+	authentication,
+	deviceId,
+}: {
+	code: string;
+	redirectURI: string;
+	options: ProviderOptions;
+	codeVerifier?: string;
+	deviceId?: string;
+	tokenEndpoint: string;
+	authentication?: "basic" | "post";
+}) {
+	const body = new URLSearchParams();
+	const headers: Record<string, any> = {
+		"content-type": "application/x-www-form-urlencoded",
+		accept: "application/json",
+		"user-agent": "better-auth",
+	};
+	body.set("grant_type", "authorization_code");
+	body.set("code", code);
+	codeVerifier && body.set("code_verifier", codeVerifier);
+	options.clientKey && body.set("client_key", options.clientKey);
+	deviceId && body.set("device_id", deviceId);
+	body.set("redirect_uri", options.redirectURI || redirectURI);
+	if (authentication === "basic") {
+		const encodedCredentials = base64Url.encode(
+			`${options.clientId}:${options.clientSecret}`,
+		);
+		headers["authorization"] = `Basic ${encodedCredentials}`;
+	} else {
+		body.set("client_id", options.clientId);
+		body.set("client_secret", options.clientSecret);
+	}
+	const { data, error } = await betterFetch<object>(tokenEndpoint, {
+		method: "POST",
+		body: body,
+		headers,
+	});
+
+	if (error) {
+		throw error;
+	}
+	const tokens = getOAuth2Tokens(data);
+	return tokens;
+}
+
+export async function validateToken(token: string, jwksEndpoint: string) {
+	const { data, error } = await betterFetch<{
+		keys: {
+			kid: string;
+			kty: string;
+			use: string;
+			n: string;
+			e: string;
+			x5c: string[];
+		}[];
+	}>(jwksEndpoint, {
+		method: "GET",
+		headers: {
+			accept: "application/json",
+			"user-agent": "better-auth",
+		},
+	});
+	if (error) {
+		throw error;
+	}
+	const keys = data["keys"];
+	const header = JSON.parse(atob(token.split(".")[0]));
+	const key = keys.find((key) => key.kid === header.kid);
+	if (!key) {
+		throw new Error("Key not found");
+	}
+	const verified = await jwtVerify(token, key);
+	return verified;
+}
+
+```

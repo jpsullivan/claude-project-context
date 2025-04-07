@@ -1,0 +1,322 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/_index.tsx
+```
+import type { MetaFunction } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
+import { Button } from "~/components/ui/button";
+import { auth } from "~/lib/auth";
+import { Session } from "~/lib/auth-types";
+
+export const meta: MetaFunction = () => {
+	return [
+		{ title: "Better Auth Remix Example" },
+		{ name: "description", content: "Welcome to Remix!" },
+	];
+};
+
+export async function loader({ request }: { request: Request }) {
+	return auth.api.getSession({
+		headers: request.headers,
+	});
+}
+
+export default function Index() {
+	const session = useLoaderData<Session | null>();
+	return (
+		<div className="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+			<main className="flex flex-col gap-4 row-start-2 items-center justify-center">
+				<div className="flex flex-col gap-1">
+					<h3 className="font-bold text-4xl text-black dark:text-white text-center">
+						Better Auth.
+					</h3>
+					<p className="text-center break-words text-sm md:text-base">
+						Remix demo to showcase{" "}
+						<a
+							href="https://better-auth.com"
+							target="_blank"
+							className="italic underline"
+						>
+							better-auth.
+						</a>{" "}
+						features and capabilities. <br />
+					</p>
+				</div>
+				<Link to={session ? "/dashboard" : "/sign-in"}>
+					<Button className="rounded-none" size="lg">
+						{session ? "Dashboard" : "Sign In"}
+					</Button>
+				</Link>
+			</main>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/api.auth.$.ts
+```typescript
+import { auth } from "../lib/auth";
+
+export async function loader({ request }: { request: Request }) {
+	return auth.handler(request);
+}
+
+export async function action({ request }: { request: Request }) {
+	return auth.handler(request);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/dashboard.tsx
+```
+import UserCard from "~/components/user-card";
+
+export default function Dashboard() {
+	return (
+		<div>
+			<UserCard />
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/sign-in.tsx
+```
+"use client";
+import SignInCard from "~/components/sign-in-card";
+import { SignUp } from "~/components/sign-up-card";
+import { Tabs } from "~/components/tabs";
+
+export default function SignIn() {
+	return (
+		<div className="w-full">
+			<div className="flex items-center flex-col justify-center w-full md:py-10">
+				<div className="md:w-[400px]">
+					<Tabs
+						tabs={[
+							{
+								title: "Sign In",
+								value: "sign-in",
+								content: <SignInCard />,
+							},
+							{
+								title: "Sign Up",
+								value: "sign-up",
+								content: <SignUp />,
+							},
+						]}
+					/>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/two-factor/_index.tsx
+```
+"use client";
+
+import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { authClient } from "~/lib/auth-client";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "@remix-run/react";
+
+export default function Component() {
+	const [totpCode, setTotpCode] = useState("");
+	const [error, setError] = useState("");
+	const [success, setSuccess] = useState(false);
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (totpCode.length !== 6 || !/^\d+$/.test(totpCode)) {
+			setError("TOTP code must be 6 digits");
+			return;
+		}
+		authClient.twoFactor
+			.verifyTotp({
+				code: totpCode,
+			})
+			.then((res) => {
+				if (res.data?.status) {
+					setSuccess(true);
+					setError("");
+				} else {
+					setError("Invalid TOTP code");
+				}
+			});
+	};
+
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>TOTP Verification</CardTitle>
+					<CardDescription>
+						Enter your 6-digit TOTP code to authenticate
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{!success ? (
+						<form onSubmit={handleSubmit}>
+							<div className="space-y-2">
+								<Label htmlFor="totp">TOTP Code</Label>
+								<Input
+									id="totp"
+									type="text"
+									inputMode="numeric"
+									pattern="\d{6}"
+									maxLength={6}
+									value={totpCode}
+									onChange={(e) => setTotpCode(e.target.value)}
+									placeholder="Enter 6-digit code"
+									required
+								/>
+							</div>
+							{error && (
+								<div className="flex items-center mt-2 text-red-500">
+									<AlertCircle className="w-4 h-4 mr-2" />
+									<span className="text-sm">{error}</span>
+								</div>
+							)}
+							<Button type="submit" className="w-full mt-4">
+								Verify
+							</Button>
+						</form>
+					) : (
+						<div className="flex flex-col items-center justify-center space-y-2">
+							<CheckCircle2 className="w-12 h-12 text-green-500" />
+							<p className="text-lg font-semibold">Verification Successful</p>
+						</div>
+					)}
+				</CardContent>
+				<CardFooter className="text-sm text-muted-foreground gap-2">
+					<Link to="/two-factor/otp">
+						<Button variant="link" size="sm">
+							Switch to Email Verification
+						</Button>
+					</Link>
+				</CardFooter>
+			</Card>
+		</main>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/remix-example/app/routes/two-factor/otp/_index.tsx
+```
+"use client";
+
+import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { authClient } from "~/lib/auth-client";
+import { AlertCircle, CheckCircle2, Mail } from "lucide-react";
+import { useState } from "react";
+
+export default function Component() {
+	const [otp, setOtp] = useState("");
+	const [isOtpSent, setIsOtpSent] = useState(false);
+	const [message, setMessage] = useState("");
+	const [isError, setIsError] = useState(false);
+	const [isValidated, setIsValidated] = useState(false);
+
+	// In a real app, this email would come from your authentication context
+	const userEmail = "user@example.com";
+
+	const requestOTP = async () => {
+		const res = await authClient.twoFactor.sendOtp();
+		// In a real app, this would call your backend API to send the OTP
+		setMessage("OTP sent to your email");
+		setIsError(false);
+		setIsOtpSent(true);
+	};
+
+	const validateOTP = async () => {
+		const res = await authClient.twoFactor.verifyOtp({
+			code: otp,
+		});
+		if (res.data) {
+			setMessage("OTP validated successfully");
+			setIsError(false);
+			setIsValidated(true);
+		} else {
+			setIsError(true);
+			setMessage("Invalid OTP");
+		}
+	};
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>Two-Factor Authentication</CardTitle>
+					<CardDescription>
+						Verify your identity with a one-time password
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					<div className="grid w-full items-center gap-4">
+						{!isOtpSent ? (
+							<Button onClick={requestOTP} className="w-full">
+								<Mail className="mr-2 h-4 w-4" /> Send OTP to Email
+							</Button>
+						) : (
+							<>
+								<div className="flex flex-col space-y-1.5">
+									<Label htmlFor="otp">One-Time Password</Label>
+									<Label className="py-2">
+										Check your email at {userEmail} for the OTP
+									</Label>
+									<Input
+										id="otp"
+										placeholder="Enter 6-digit OTP"
+										value={otp}
+										onChange={(e) => setOtp(e.target.value)}
+										maxLength={6}
+									/>
+								</div>
+								<Button
+									onClick={validateOTP}
+									disabled={otp.length !== 6 || isValidated}
+								>
+									Validate OTP
+								</Button>
+							</>
+						)}
+					</div>
+					{message && (
+						<div
+							className={`flex items-center gap-2 mt-4 ${
+								isError ? "text-red-500" : "text-primary"
+							}`}
+						>
+							{isError ? (
+								<AlertCircle className="h-4 w-4" />
+							) : (
+								<CheckCircle2 className="h-4 w-4" />
+							)}
+							<p className="text-sm">{message}</p>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</main>
+	);
+}
+
+```

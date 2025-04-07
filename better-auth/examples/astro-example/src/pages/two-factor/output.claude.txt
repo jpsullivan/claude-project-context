@@ -1,0 +1,14 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/astro-example/src/pages/two-factor/email.astro</source>
+<document_content>
+---
+---
+
+<RootLayout>
+  <TwoFactorEmail client:load />
+</RootLayout>
+
+</document_content>
+</document>
+</documents>

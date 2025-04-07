@@ -1,0 +1,368 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/index.ts
+```typescript
+import Root from "./range-calendar.svelte";
+import Cell from "./range-calendar-cell.svelte";
+import Day from "./range-calendar-day.svelte";
+import Grid from "./range-calendar-grid.svelte";
+import Header from "./range-calendar-header.svelte";
+import Months from "./range-calendar-months.svelte";
+import GridRow from "./range-calendar-grid-row.svelte";
+import Heading from "./range-calendar-heading.svelte";
+import GridBody from "./range-calendar-grid-body.svelte";
+import GridHead from "./range-calendar-grid-head.svelte";
+import HeadCell from "./range-calendar-head-cell.svelte";
+import NextButton from "./range-calendar-next-button.svelte";
+import PrevButton from "./range-calendar-prev-button.svelte";
+
+export {
+	Day,
+	Cell,
+	Grid,
+	Header,
+	Months,
+	GridRow,
+	Heading,
+	GridBody,
+	GridHead,
+	HeadCell,
+	NextButton,
+	PrevButton,
+	//
+	Root as RangeCalendar,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-cell.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.CellProps;
+
+export let date: $$Props["date"];
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Cell
+	{date}
+	class={cn(
+		"[&:has([data-selected])]:bg-accent [&:has([data-selected][data-outside-month])]:bg-accent/50 relative p-0 text-center text-sm focus-within:relative focus-within:z-20 first:[&:has([data-selected])]:rounded-l-md last:[&:has([data-selected])]:rounded-r-md [&:has([data-selected][data-selection-end])]:rounded-r-md [&:has([data-selected][data-selection-start])]:rounded-l-md",
+		className
+	)}
+	{...$$restProps}
+>
+	<slot />
+</RangeCalendarPrimitive.Cell>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-day.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.DayProps;
+type $$Events = RangeCalendarPrimitive.DayEvents;
+
+export let date: $$Props["date"];
+export let month: $$Props["month"];
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Day
+	on:click
+	{date}
+	{month}
+	class={cn(
+		buttonVariants({ variant: "ghost" }),
+		"h-8 w-8 p-0 font-normal data-[selected]:opacity-100",
+		// Today
+		"[&[data-today]:not([data-selected])]:bg-accent [&[data-today]:not([data-selected])]:text-accent-foreground",
+		// Selection Start
+		"data-[selection-start]:bg-primary data-[selection-start]:text-primary-foreground data-[selection-start]:hover:bg-primary data-[selection-start]:hover:text-primary-foreground data-[selection-start]:focus:bg-primary data-[selection-start]:focus:text-primary-foreground",
+		// Selection End
+		"data-[selection-end]:bg-primary data-[selection-end]:text-primary-foreground data-[selection-end]:hover:bg-primary data-[selection-end]:hover:text-primary-foreground data-[selection-end]:focus:bg-primary data-[selection-end]:focus:text-primary-foreground",
+		// Outside months
+		"data-[outside-month]:text-muted-foreground [&[data-outside-month][data-selected]]:bg-accent/50 [&[data-outside-month][data-selected]]:text-muted-foreground data-[outside-month]:pointer-events-none data-[outside-month]:opacity-50 [&[data-outside-month][data-selected]]:opacity-30",
+		// Disabled
+		"data-[disabled]:text-muted-foreground data-[disabled]:opacity-50",
+		// Unavailable
+		"data-[unavailable]:text-destructive-foreground data-[unavailable]:line-through",
+		className
+	)}
+	{...$$restProps}
+	let:disabled
+	let:unavailable
+	let:builder
+>
+	<slot {disabled} {unavailable} {builder}>
+		{date.day}
+	</slot>
+</RangeCalendarPrimitive.Day>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-grid-body.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.GridBodyProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.GridBody class={cn(className)} {...$$restProps}>
+	<slot />
+</RangeCalendarPrimitive.GridBody>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-grid-head.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.GridHeadProps;
+
+let className: string | undefined | null = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.GridHead class={cn(className)} {...$$restProps}>
+	<slot />
+</RangeCalendarPrimitive.GridHead>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-grid-row.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.GridRowProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.GridRow class={cn("flex", className)} {...$$restProps}>
+	<slot />
+</RangeCalendarPrimitive.GridRow>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-grid.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.GridProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Grid
+	class={cn("w-full border-collapse space-y-1", className)}
+	{...$$restProps}
+>
+	<slot />
+</RangeCalendarPrimitive.Grid>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-head-cell.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.HeadCellProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.HeadCell
+	class={cn("text-muted-foreground w-8 rounded-md text-[0.8rem] font-normal", className)}
+	{...$$restProps}
+>
+	<slot />
+</RangeCalendarPrimitive.HeadCell>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-header.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.HeaderProps;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Header
+	class={cn("relative flex w-full items-center justify-between pt-1", className)}
+	{...$$restProps}
+>
+	<slot />
+</RangeCalendarPrimitive.Header>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-heading.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.HeadingProps;
+
+let className: string | undefined | null = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Heading
+	let:headingValue
+	class={cn("text-sm font-medium", className)}
+	{...$$restProps}
+>
+	<slot {headingValue}>
+		{headingValue}
+	</slot>
+</RangeCalendarPrimitive.Heading>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-months.svelte
+```
+<script lang="ts">
+import type { HTMLAttributes } from "svelte/elements";
+
+type $$Props = HTMLAttributes<HTMLDivElement>;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<div
+	class={cn("mt-4 flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0", className)}
+	{...$$restProps}
+>
+	<slot />
+</div>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-next-button.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.NextButtonProps;
+type $$Events = RangeCalendarPrimitive.NextButtonEvents;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.NextButton
+	on:click
+	class={cn(
+		buttonVariants({ variant: "outline" }),
+		"h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+		className
+	)}
+	{...$$restProps}
+	let:builder
+>
+	<slot {builder}>
+		<ChevronRight class="h-4 w-4" />
+	</slot>
+</RangeCalendarPrimitive.NextButton>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar-prev-button.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.PrevButtonProps;
+type $$Events = RangeCalendarPrimitive.PrevButtonEvents;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.PrevButton
+	on:click
+	class={cn(
+		buttonVariants({ variant: "outline" }),
+		"h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+		className
+	)}
+	{...$$restProps}
+	let:builder
+>
+	<slot {builder}>
+		<ChevronLeft class="h-4 w-4" />
+	</slot>
+</RangeCalendarPrimitive.PrevButton>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/range-calendar/range-calendar.svelte
+```
+<script lang="ts">
+import { RangeCalendar as RangeCalendarPrimitive } from "bits-ui";
+
+type $$Props = RangeCalendarPrimitive.Props;
+type $$Events = RangeCalendarPrimitive.Events;
+
+export let value: $$Props["value"] = undefined;
+export let placeholder: $$Props["placeholder"] = undefined;
+export let weekdayFormat: $$Props["weekdayFormat"] = "short";
+export let startValue: $$Props["startValue"] = undefined;
+
+let className: $$Props["class"] = undefined;
+export { className as class };
+</script>
+
+<RangeCalendarPrimitive.Root
+	bind:value
+	bind:placeholder
+	bind:startValue
+	{weekdayFormat}
+	class={cn("p-3", className)}
+	{...$$restProps}
+	on:keydown
+	let:months
+	let:weekdays
+>
+	<RangeCalendar.Header>
+		<RangeCalendar.PrevButton />
+		<RangeCalendar.Heading />
+		<RangeCalendar.NextButton />
+	</RangeCalendar.Header>
+	<RangeCalendar.Months>
+		{#each months as month}
+			<RangeCalendar.Grid>
+				<RangeCalendar.GridHead>
+					<RangeCalendar.GridRow class="flex">
+						{#each weekdays as weekday}
+							<RangeCalendar.HeadCell>
+								{weekday.slice(0, 2)}
+							</RangeCalendar.HeadCell>
+						{/each}
+					</RangeCalendar.GridRow>
+				</RangeCalendar.GridHead>
+				<RangeCalendar.GridBody>
+					{#each month.weeks as weekDates}
+						<RangeCalendar.GridRow class="mt-2 w-full">
+							{#each weekDates as date}
+								<RangeCalendar.Cell {date}>
+									<RangeCalendar.Day {date} month={month.value} />
+								</RangeCalendar.Cell>
+							{/each}
+						</RangeCalendar.GridRow>
+					{/each}
+				</RangeCalendar.GridBody>
+			</RangeCalendar.Grid>
+		{/each}
+	</RangeCalendar.Months>
+</RangeCalendarPrimitive.Root>
+
+```

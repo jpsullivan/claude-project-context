@@ -1,0 +1,434 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenu.vue
+```
+<script setup lang="ts">
+import { useForwardPropsEmits } from "radix-vue";
+import type { ContextMenuRootEmits, ContextMenuRootProps } from "radix-vue";
+
+const props = defineProps<ContextMenuRootProps>();
+const emits = defineEmits<ContextMenuRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuRoot v-bind="forwarded">
+    <slot />
+  </ContextMenuRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuCheckboxItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuCheckboxItemEmits,
+	type ContextMenuCheckboxItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuCheckboxItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuCheckboxItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuCheckboxItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <ContextMenuItemIndicator>
+        <CheckIcon class="h-4 w-4" />
+      </ContextMenuItemIndicator>
+    </span>
+    <slot />
+  </ContextMenuCheckboxItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuContentEmits,
+	type ContextMenuContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuPortal>
+    <ContextMenuContent
+      v-bind="forwarded"
+      :class="cn(
+        'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        props.class,
+      )"
+    >
+      <slot />
+    </ContextMenuContent>
+  </ContextMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuGroup.vue
+```
+<script setup lang="ts">
+import { type ContextMenuGroupProps } from "radix-vue";
+
+const props = defineProps<ContextMenuGroupProps>();
+</script>
+
+<template>
+  <ContextMenuGroup v-bind="props">
+    <slot />
+  </ContextMenuGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuItemEmits,
+	type ContextMenuItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuItemProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+const emits = defineEmits<ContextMenuItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+  </ContextMenuItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuLabel.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuLabelProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuLabelProps & { class?: HTMLAttributes["class"]; inset?: boolean }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ContextMenuLabel
+    v-bind="delegatedProps"
+    :class="
+      cn('px-2 py-1.5 text-sm font-semibold text-foreground',
+         inset && 'pl-8', props.class,
+      )"
+  >
+    <slot />
+  </ContextMenuLabel>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuPortal.vue
+```
+<script setup lang="ts">
+import { type ContextMenuPortalProps } from "radix-vue";
+
+const props = defineProps<ContextMenuPortalProps>();
+</script>
+
+<template>
+  <ContextMenuPortal v-bind="props">
+    <slot />
+  </ContextMenuPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuRadioGroup.vue
+```
+<script setup lang="ts">
+import {
+	type ContextMenuRadioGroupEmits,
+	type ContextMenuRadioGroupProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<ContextMenuRadioGroupProps>();
+const emits = defineEmits<ContextMenuRadioGroupEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuRadioGroup v-bind="forwarded">
+    <slot />
+  </ContextMenuRadioGroup>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuRadioItem.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ContextMenuRadioItemEmits,
+	type ContextMenuRadioItemProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	ContextMenuRadioItemProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<ContextMenuRadioItemEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuRadioItem
+    v-bind="forwarded"
+    :class="cn(
+      'relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      props.class,
+    )"
+  >
+    <span class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+      <ContextMenuItemIndicator>
+        <DotFilledIcon class="h-4 w-4 fill-current" />
+      </ContextMenuItemIndicator>
+    </span>
+    <slot />
+  </ContextMenuRadioItem>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSeparator.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuSeparatorProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuSeparatorProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <ContextMenuSeparator v-bind="delegatedProps" :class="cn('-mx-1 my-1 h-px bg-border', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuShortcut.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <span :class="cn('ml-auto text-xs tracking-widest text-muted-foreground', props.class)">
+    <slot />
+  </span>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSub.vue
+```
+<script setup lang="ts">
+import {
+	type ContextMenuSubEmits,
+	type ContextMenuSubProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<ContextMenuSubProps>();
+const emits = defineEmits<ContextMenuSubEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <ContextMenuSub v-bind="forwarded">
+    <slot />
+  </ContextMenuSub>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSubContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DropdownMenuSubContentEmits,
+	type DropdownMenuSubContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<
+	DropdownMenuSubContentProps & { class?: HTMLAttributes["class"] }
+>();
+const emits = defineEmits<DropdownMenuSubContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <ContextMenuSubContent
+    v-bind="forwarded"
+    :class="
+      cn(
+        'z-50 min-w-32 overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </ContextMenuSubContent>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuSubTrigger.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type ContextMenuSubTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<
+	ContextMenuSubTriggerProps & {
+		class?: HTMLAttributes["class"];
+		inset?: boolean;
+	}
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwardedProps = useForwardProps(delegatedProps);
+</script>
+
+<template>
+  <ContextMenuSubTrigger
+    v-bind="forwardedProps"
+    :class="cn(
+      'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+      inset && 'pl-8',
+      props.class,
+    )"
+  >
+    <slot />
+    <ChevronRightIcon class="ml-auto h-4 w-4" />
+  </ContextMenuSubTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/ContextMenuTrigger.vue
+```
+<script setup lang="ts">
+import { type ContextMenuTriggerProps, useForwardProps } from "radix-vue";
+
+const props = defineProps<ContextMenuTriggerProps>();
+
+const forwardedProps = useForwardProps(props);
+</script>
+
+<template>
+  <ContextMenuTrigger v-bind="forwardedProps">
+    <slot />
+  </ContextMenuTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/context-menu/index.ts
+```typescript
+export { default as ContextMenu } from "./ContextMenu.vue";
+export { default as ContextMenuTrigger } from "./ContextMenuTrigger.vue";
+export { default as ContextMenuContent } from "./ContextMenuContent.vue";
+export { default as ContextMenuGroup } from "./ContextMenuGroup.vue";
+export { default as ContextMenuRadioGroup } from "./ContextMenuRadioGroup.vue";
+export { default as ContextMenuItem } from "./ContextMenuItem.vue";
+export { default as ContextMenuCheckboxItem } from "./ContextMenuCheckboxItem.vue";
+export { default as ContextMenuRadioItem } from "./ContextMenuRadioItem.vue";
+export { default as ContextMenuShortcut } from "./ContextMenuShortcut.vue";
+export { default as ContextMenuSeparator } from "./ContextMenuSeparator.vue";
+export { default as ContextMenuLabel } from "./ContextMenuLabel.vue";
+export { default as ContextMenuSub } from "./ContextMenuSub.vue";
+export { default as ContextMenuSubTrigger } from "./ContextMenuSubTrigger.vue";
+export { default as ContextMenuSubContent } from "./ContextMenuSubContent.vue";
+
+```

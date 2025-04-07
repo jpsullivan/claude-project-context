@@ -1,0 +1,3827 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/api-key.test.ts
+```typescript
+import { describe, expect, it, vi } from "vitest";
+import { getTestInstance } from "../../test-utils/test-instance";
+import { apiKey, ERROR_CODES } from ".";
+import { apiKeyClient } from "./client";
+import type { ApiKey } from "./types";
+import { APIError } from "better-call";
+
+describe("api-key", async () => {
+	const { client, auth, signInWithTestUser } = await getTestInstance(
+		{
+			plugins: [
+				apiKey({
+					enableMetadata: true,
+					permissions: {
+						defaultPermissions: {
+							files: ["read"],
+						},
+					},
+				}),
+			],
+		},
+		{
+			clientOptions: {
+				plugins: [apiKeyClient()],
+			},
+			// testWith: "postgres",
+		},
+	);
+	const { headers, user } = await signInWithTestUser();
+
+	// =========================================================================
+	// CREATE API KEY
+	// =========================================================================
+
+	it("should fail to create API keys from client without headers", async () => {
+		const apiKeyFail = await client.apiKey.create();
+
+		expect(apiKeyFail.data).toBeNull();
+		expect(apiKeyFail.error).toBeDefined();
+		expect(apiKeyFail.error?.status).toEqual(401);
+		expect(apiKeyFail.error?.statusText).toEqual("UNAUTHORIZED");
+		expect(apiKeyFail.error?.message).toEqual(ERROR_CODES.UNAUTHORIZED_SESSION);
+	});
+
+	let firstApiKey: ApiKey;
+
+	it("should successfully create API keys from client with headers", async () => {
+		const apiKey = await client.apiKey.create({}, { headers: headers });
+		if (apiKey.data) {
+			firstApiKey = apiKey.data;
+		}
+
+		expect(apiKey.data).not.toBeNull();
+		expect(apiKey.data?.key).toBeDefined();
+		expect(apiKey.data?.userId).toEqual(user.id);
+		expect(apiKey.data?.name).toBeNull();
+		expect(apiKey.data?.prefix).toBeNull();
+		expect(apiKey.data?.refillInterval).toBeNull();
+		expect(apiKey.data?.refillAmount).toBeNull();
+		expect(apiKey.data?.lastRefillAt).toBeNull();
+		expect(apiKey.data?.enabled).toEqual(true);
+		expect(apiKey.data?.rateLimitTimeWindow).toEqual(86400000);
+		expect(apiKey.data?.rateLimitMax).toEqual(10);
+		expect(apiKey.data?.requestCount).toEqual(0);
+		expect(apiKey.data?.remaining).toBeNull();
+		expect(apiKey.data?.lastRequest).toBeNull();
+		expect(apiKey.data?.expiresAt).toBeNull();
+		expect(apiKey.data?.createdAt).toBeDefined();
+		expect(apiKey.data?.updatedAt).toBeDefined();
+		expect(apiKey.data?.metadata).toBeNull();
+		expect(apiKey.error).toBeNull();
+	});
+
+	interface Err {
+		body: {
+			code: string | undefined;
+			message: string | undefined;
+		};
+		status: string;
+		statusCode: string;
+	}
+
+	it("should fail to create API Keys from server without headers and userId", async () => {
+		let res: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({ body: {} });
+			res.data = apiKey;
+		} catch (error: any) {
+			res.error = error;
+		}
+
+		expect(res.data).toBeNull();
+		expect(res.error).toBeDefined();
+		expect(res.error?.statusCode).toEqual(401);
+		expect(res.error?.status).toEqual("UNAUTHORIZED");
+		expect(res.error?.body.message).toEqual(ERROR_CODES.UNAUTHORIZED_SESSION);
+	});
+
+	it("should successfully create API keys from server with userId", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.key).toBeDefined();
+		expect(apiKey.userId).toEqual(user.id);
+		expect(apiKey.name).toBeNull();
+		expect(apiKey.prefix).toBeNull();
+		expect(apiKey.refillInterval).toBeNull();
+		expect(apiKey.refillAmount).toBeNull();
+		expect(apiKey.lastRefillAt).toBeNull();
+		expect(apiKey.enabled).toEqual(true);
+		expect(apiKey.rateLimitTimeWindow).toEqual(86400000);
+		expect(apiKey.rateLimitMax).toEqual(10);
+		expect(apiKey.requestCount).toEqual(0);
+		expect(apiKey.remaining).toBeNull();
+		expect(apiKey.lastRequest).toBeNull();
+	});
+
+	it("should create the API key with the given name", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				name: "test-api-key",
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.name).toEqual("test-api-key");
+	});
+
+	it("should create the API key with a name that's shorter than the allowed minimum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					name: "test-api-key-that-is-shorter-than-the-allowed-minimum",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(ERROR_CODES.INVALID_NAME_LENGTH);
+	});
+
+	it("should create the API key with a name that's longer than the allowed maximum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					name: "test-api-key-that-is-longer-than-the-allowed-maximum",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(ERROR_CODES.INVALID_NAME_LENGTH);
+	});
+
+	it("should create the API key with the given prefix", async () => {
+		const prefix = "test-api-key_";
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				prefix: prefix,
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.prefix).toEqual(prefix);
+		expect(apiKey.key.startsWith(prefix)).toEqual(true);
+	});
+
+	it("should create the API key with a prefix that's shorter than the allowed minimum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					prefix: "test-api-key-that-is-shorter-than-the-allowed-minimum",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.INVALID_PREFIX_LENGTH,
+		);
+	});
+
+	it("should create the API key with a prefix that's longer than the allowed maximum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					prefix: "test-api-key-that-is-longer-than-the-allowed-maximum",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.INVALID_PREFIX_LENGTH,
+		);
+	});
+
+	it("should create an API key with a custom expiresIn", async () => {
+		const expiresIn = 60 * 60 * 24 * 7; // 7 days
+		const expectedResult = new Date().getTime() + expiresIn;
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				expiresIn: expiresIn,
+			},
+			headers,
+		});
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.expiresAt).toBeDefined();
+		expect(apiKey.expiresAt?.getTime()).toBeGreaterThanOrEqual(expectedResult);
+	});
+
+	it("should fail to create a key with a custom expiresIn value when customExpiresTime is disabled", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						enableMetadata: true,
+						keyExpiration: {
+							disableCustomExpiresTime: true,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+
+		const { headers, user } = await signInWithTestUser();
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey2 = await auth.api.createApiKey({
+				body: {
+					expiresIn: 10000,
+				},
+				headers,
+			});
+			result.data = apiKey2;
+		} catch (error: any) {
+			result.error = error;
+		}
+
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.KEY_DISABLED_EXPIRATION,
+		);
+	});
+
+	it("should create an API key with an expiresIn that's smaller than the allowed minimum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const expiresIn = 60 * 60 * 24 * 0.5; // half a day
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					expiresIn: expiresIn,
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.EXPIRES_IN_IS_TOO_SMALL,
+		);
+	});
+
+	it("should fail to create an API key with an expiresIn that's larger than the allowed maximum", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const expiresIn = 60 * 60 * 24 * 365 * 10; // 10 year
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					expiresIn: expiresIn,
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.EXPIRES_IN_IS_TOO_LARGE,
+		);
+	});
+
+	it("should fail to create API key with custom refillAndAmount from client auth", async () => {
+		const apiKey = await client.apiKey.create(
+			{
+				refillAmount: 10,
+			},
+			{ headers },
+		);
+
+		expect(apiKey.data).toBeNull();
+		expect(apiKey.error).toBeDefined();
+		expect(apiKey.error?.statusText).toEqual("BAD_REQUEST");
+		expect(apiKey.error?.message).toEqual(ERROR_CODES.SERVER_ONLY_PROPERTY);
+
+		const apiKey2 = await client.apiKey.create(
+			{
+				refillInterval: 1001,
+			},
+			{ headers },
+		);
+
+		expect(apiKey2.data).toBeNull();
+		expect(apiKey2.error).toBeDefined();
+		expect(apiKey2.error?.statusText).toEqual("BAD_REQUEST");
+		expect(apiKey2.error?.message).toEqual(ERROR_CODES.SERVER_ONLY_PROPERTY);
+	});
+
+	it("should fail to create API key when refill interval is provided, but no refill amount", async () => {
+		let res: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					refillInterval: 1000,
+					userId: user.id,
+				},
+			});
+			res.data = apiKey;
+		} catch (error: any) {
+			res.error = error;
+		}
+
+		expect(res.data).toBeNull();
+		expect(res.error).toBeDefined();
+		expect(res.error?.status).toEqual("BAD_REQUEST");
+		expect(res.error?.body.message).toEqual(
+			ERROR_CODES.REFILL_INTERVAL_AND_AMOUNT_REQUIRED,
+		);
+	});
+
+	it("should fail to create API key when refill amount is provided, but no refill interval", async () => {
+		let res: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					refillAmount: 10,
+					userId: user.id,
+				},
+			});
+			res.data = apiKey;
+		} catch (error: any) {
+			res.error = error;
+		}
+
+		expect(res.data).toBeNull();
+		expect(res.error).toBeDefined();
+		expect(res.error?.status).toEqual("BAD_REQUEST");
+		expect(res.error?.body.message).toEqual(
+			ERROR_CODES.REFILL_AMOUNT_AND_INTERVAL_REQUIRED,
+		);
+	});
+
+	it("should create the API key with the given refill interval & refill amount", async () => {
+		const refillInterval = 10000;
+		const refillAmount = 10;
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				refillInterval: refillInterval,
+				refillAmount: refillAmount,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.refillInterval).toEqual(refillInterval);
+		expect(apiKey.refillAmount).toEqual(refillAmount);
+	});
+
+	it("should create API Key with custom remaining", async () => {
+		const remaining = 10;
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				remaining: remaining,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.remaining).toEqual(remaining);
+	});
+
+	it("should create API key with invalid metadata", async () => {
+		let result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					metadata: "invalid",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.INVALID_METADATA_TYPE,
+		);
+	});
+
+	it("should create API key with valid metadata", async () => {
+		const metadata = {
+			test: "test",
+		};
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				metadata: metadata,
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.metadata).toEqual(metadata);
+
+		const res = await auth.api.getApiKey({
+			query: {
+				id: apiKey.id,
+			},
+			headers,
+		});
+
+		expect(res).not.toBeNull();
+		if (res) {
+			expect(res.metadata).toEqual(metadata);
+		}
+	});
+
+	it("create API key's returned metadata should be an object", async () => {
+		const metadata = {
+			test: "test-123",
+		};
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				metadata: metadata,
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.metadata.test).toBeDefined();
+		expect(apiKey.metadata.test).toEqual(metadata.test);
+	});
+
+	it("create api key with with metadata when metadata is disabled (should fail)", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						enableMetadata: false,
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const metadata = {
+			test: "test-123",
+		};
+		const result: { data: ApiKey | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.createApiKey({
+				body: {
+					metadata: metadata,
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(ERROR_CODES.METADATA_DISABLED);
+	});
+
+	it("should have the first 6 chracaters of the key as the start property", async () => {
+		const { data: apiKey } = await client.apiKey.create(
+			{},
+			{ headers: headers },
+		);
+
+		expect(apiKey?.start).toBeDefined();
+		expect(apiKey?.start?.length).toEqual(6);
+		expect(apiKey?.start).toEqual(apiKey?.key?.substring(0, 6));
+	});
+
+	it("should have the start property as null if shouldStore is false", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						startingCharactersConfig: {
+							shouldStore: false,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const { data: apiKey2 } = await client.apiKey.create(
+			{},
+			{ headers: headers },
+		);
+
+		expect(apiKey2?.start).toBeNull();
+	});
+
+	it("should use the defined charactersLength if provided", async () => {
+		const customLength = 3;
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						startingCharactersConfig: {
+							shouldStore: true,
+							charactersLength: customLength,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const { data: apiKey2 } = await client.apiKey.create(
+			{},
+			{ headers: headers },
+		);
+
+		expect(apiKey2?.start).toBeDefined();
+		expect(apiKey2?.start?.length).toEqual(customLength);
+		expect(apiKey2?.start).toEqual(apiKey2?.key?.substring(0, customLength));
+	});
+
+	it("should fail to create API key with custom rate-limit options from client auth", async () => {
+		const apiKey = await client.apiKey.create(
+			{
+				rateLimitMax: 15,
+			},
+			{ headers },
+		);
+
+		expect(apiKey.data).toBeNull();
+		expect(apiKey.error).toBeDefined();
+		expect(apiKey.error?.statusText).toEqual("BAD_REQUEST");
+		expect(apiKey.error?.message).toEqual(ERROR_CODES.SERVER_ONLY_PROPERTY);
+
+		const apiKey2 = await client.apiKey.create(
+			{
+				rateLimitTimeWindow: 1001,
+			},
+			{ headers },
+		);
+
+		expect(apiKey2.data).toBeNull();
+		expect(apiKey2.error).toBeDefined();
+		expect(apiKey2.error?.statusText).toEqual("BAD_REQUEST");
+		expect(apiKey2.error?.message).toEqual(ERROR_CODES.SERVER_ONLY_PROPERTY);
+	});
+
+	it("should successfully apply custom rate-limit options on the newly created API key", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				rateLimitMax: 15,
+				rateLimitTimeWindow: 1000,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey?.rateLimitMax).toEqual(15);
+		expect(apiKey?.rateLimitTimeWindow).toEqual(1000);
+	});
+
+	// =========================================================================
+	// VERIFY API KEY
+	// =========================================================================
+
+	it("verify api key without key and userId", async () => {
+		const apiKey = await auth.api.verifyApiKey({
+			body: {
+				userId: user.id,
+				key: firstApiKey.key,
+			},
+		});
+		expect(apiKey.key).not.toBe(null);
+		expect(apiKey.valid).toBe(true);
+	});
+
+	it("verify api key with invalid key (should fail)", async () => {
+		const apiKey = await auth.api.verifyApiKey({
+			body: {
+				key: "invalid",
+				userId: user.id,
+			},
+		});
+		expect(apiKey.valid).toBe(false);
+		expect(apiKey.error?.code).toBe("KEY_NOT_FOUND");
+	});
+
+	let rateLimitedApiKey: ApiKey;
+
+	const {
+		client: rateLimitClient,
+		auth: rateLimitAuth,
+		signInWithTestUser: rateLimitTestUser,
+	} = await getTestInstance(
+		{
+			plugins: [
+				apiKey({
+					rateLimit: {
+						enabled: true,
+						timeWindow: 1000,
+					},
+				}),
+			],
+		},
+		{
+			clientOptions: {
+				plugins: [apiKeyClient()],
+			},
+		},
+	);
+
+	const { headers: rateLimitUserHeaders } = await rateLimitTestUser();
+
+	it("should fail to verify api key 20 times in a row due to rate-limit", async () => {
+		const { data: apiKey2 } = await rateLimitClient.apiKey.create(
+			{},
+			{ headers: rateLimitUserHeaders },
+		);
+		if (!apiKey2) return;
+		rateLimitedApiKey = apiKey2;
+		for (let i = 0; i < 20; i++) {
+			const response = await rateLimitAuth.api.verifyApiKey({
+				body: {
+					key: apiKey2.key,
+					userId: user.id,
+				},
+				headers: rateLimitUserHeaders,
+			});
+			if (i >= 10) {
+				expect(response.error?.code).toBe("RATE_LIMITED");
+			} else {
+				expect(response.error).toBeNull();
+			}
+		}
+	});
+
+	it("should allow us to verify api key after rate-limit window has passed", async () => {
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(1000);
+		const response = await rateLimitAuth.api.verifyApiKey({
+			body: {
+				key: rateLimitedApiKey.key,
+			},
+			headers: rateLimitUserHeaders,
+		});
+		expect(response.error).toBeNull();
+		expect(response?.valid).toBe(true);
+	});
+
+	it("should check if verifying an api key's remaining count does go down", async () => {
+		const remaining = 10;
+		const { data: apiKey } = await client.apiKey.create(
+			{
+				remaining: remaining,
+			},
+			{ headers: headers },
+		);
+		if (!apiKey) return;
+		const afterVerificationOnce = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+			},
+			headers,
+		});
+		expect(afterVerificationOnce?.valid).toEqual(true);
+		expect(afterVerificationOnce?.key?.remaining).toEqual(remaining - 1);
+		const afterVerificationTwice = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+			},
+			headers,
+		});
+		expect(afterVerificationTwice?.valid).toEqual(true);
+		expect(afterVerificationTwice?.key?.remaining).toEqual(remaining - 2);
+	});
+
+	it("should fail if the api key has no remaining", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				remaining: 1,
+				userId: user.id,
+			},
+		});
+		if (!apiKey) return;
+		// run verify once to make the remaining count go down to 0
+		await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+			},
+			headers,
+		});
+		const afterVerification = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+			},
+			headers,
+		});
+		expect(afterVerification.error?.code).toBe("USAGE_EXCEEDED");
+	});
+
+	it("should fail if the api key is expired", async () => {
+		vi.useRealTimers();
+		const { headers } = await signInWithTestUser();
+		const apiKey2 = await client.apiKey.create(
+			{
+				expiresIn: 60 * 60 * 24,
+			},
+			{ headers: headers, throw: true },
+		);
+		vi.useFakeTimers();
+		await vi.advanceTimersByTimeAsync(1000 * 60 * 60 * 24 * 2);
+		const afterVerification = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey2.key,
+			},
+			headers,
+		});
+		expect(afterVerification.error?.code).toEqual("KEY_EXPIRED");
+		vi.useRealTimers();
+	});
+
+	// =========================================================================
+	// UPDATE API KEY
+	// =========================================================================
+
+	it("should fail to update api key name without headers or userId", async () => {
+		let error: APIError | null = null;
+		await auth.api
+			.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					name: "test-api-key",
+				},
+			})
+			.catch((e) => {
+				error = e;
+			});
+		expect(error).not.toBeNull();
+		expect(error).toBeInstanceOf(APIError);
+	});
+
+	it("should update api key name with headers", async () => {
+		const newName = "Hello World";
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				name: newName,
+			},
+			headers,
+		});
+		expect(apiKey).toBeDefined();
+		expect(apiKey.name).not.toEqual(firstApiKey.name);
+		expect(apiKey.name).toEqual(newName);
+	});
+
+	it("should fail to update api key name with a length larger than the allowed maximum", async () => {
+		let error: APIError | null = null;
+		await auth.api
+			.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					name: "test-api-key-that-is-longer-than-the-allowed-maximum",
+				},
+				headers,
+			})
+			.catch((e) => {
+				if (e instanceof APIError) {
+					error = e;
+					expect(error?.status).toEqual("BAD_REQUEST");
+					expect(error?.body?.message).toEqual(ERROR_CODES.INVALID_NAME_LENGTH);
+				}
+			});
+		expect(error).not.toBeNull();
+	});
+
+	it("should fail to update api key name with a length smaller than the allowed minimum", async () => {
+		let error: APIError | null = null;
+		await auth.api
+			.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					name: "",
+				},
+				headers,
+			})
+			.catch((e) => {
+				if (e instanceof APIError) {
+					error = e;
+					expect(error?.status).toEqual("BAD_REQUEST");
+					expect(error?.body?.message).toEqual(ERROR_CODES.INVALID_NAME_LENGTH);
+				}
+			});
+		expect(error).not.toBeNull();
+	});
+
+	it("should fail to update api key with no values to update", async () => {
+		let error: APIError | null = null;
+		await auth.api
+			.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+				},
+				headers,
+			})
+			.catch((e) => {
+				if (e instanceof APIError) {
+					error = e;
+					expect(error?.status).toEqual("BAD_REQUEST");
+					expect(error?.body?.message).toEqual(ERROR_CODES.NO_VALUES_TO_UPDATE);
+				}
+			});
+		expect(error).not.toBeNull();
+	});
+
+	it("should update api key expiresIn value", async () => {
+		const expiresIn = 60 * 60 * 24 * 7; // 7 days
+		const expectedResult = new Date().getTime() + expiresIn;
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				expiresIn: expiresIn,
+			},
+			headers,
+		});
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.expiresAt).toBeDefined();
+		expect(apiKey.expiresAt?.getTime()).toBeGreaterThanOrEqual(expectedResult);
+	});
+
+	it("should fail to update expiresIn value if `disableCustomExpiresTime` is enabled", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						keyExpiration: {
+							disableCustomExpiresTime: true,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const { data: firstApiKey } = await client.apiKey.create({}, { headers });
+
+		if (!firstApiKey) return;
+
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					expiresIn: 1000 * 60 * 60 * 24 * 7, // 7 days
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.KEY_DISABLED_EXPIRATION,
+		);
+	});
+
+	it("should fail to update expiresIn value if it's smaller than the allowed minimum", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						keyExpiration: {
+							minExpiresIn: 1,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const { data: firstApiKey } = await client.apiKey.create({}, { headers });
+
+		if (!firstApiKey) return;
+
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					expiresIn: 1,
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.EXPIRES_IN_IS_TOO_SMALL,
+		);
+	});
+
+	it("should fail to update expiresIn value if it's larger than the allowed maximum", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						keyExpiration: {
+							maxExpiresIn: 1,
+						},
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers } = await signInWithTestUser();
+
+		const { data: firstApiKey } = await client.apiKey.create({}, { headers });
+
+		if (!firstApiKey) return;
+
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					expiresIn: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.EXPIRES_IN_IS_TOO_LARGE,
+		);
+	});
+
+	it("should update API key remaining count", async () => {
+		const remaining = 100;
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				remaining: remaining,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.remaining).toEqual(remaining);
+	});
+
+	it("should fail update the refillInterval value since it requires refillAmount as well", async () => {
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					refillInterval: 1000,
+					userId: user.id,
+				},
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.REFILL_INTERVAL_AND_AMOUNT_REQUIRED,
+		);
+	});
+
+	it("should fail update the refillAmount value since it requires refillInterval as well", async () => {
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					refillAmount: 10,
+					userId: user.id,
+				},
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.REFILL_AMOUNT_AND_INTERVAL_REQUIRED,
+		);
+	});
+
+	it("should update the refillInterval and refillAmount value", async () => {
+		const refillInterval = 10000;
+		const refillAmount = 100;
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				refillInterval: refillInterval,
+				refillAmount: refillAmount,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.refillInterval).toEqual(refillInterval);
+		expect(apiKey.refillAmount).toEqual(refillAmount);
+	});
+
+	it("should update api key enable value", async () => {
+		const newValue = false;
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				enabled: newValue,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.enabled).toEqual(newValue);
+	});
+
+	it("should fail to update metadata with invalid metadata type", async () => {
+		let result: { data: Partial<ApiKey> | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.updateApiKey({
+				body: {
+					keyId: firstApiKey.id,
+					metadata: "invalid",
+					userId: user.id,
+				},
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("BAD_REQUEST");
+		expect(result.error?.body.message).toEqual(
+			ERROR_CODES.INVALID_METADATA_TYPE,
+		);
+	});
+
+	it("should update metadata with valid metadata type", async () => {
+		const metadata = {
+			test: "test-123",
+		};
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				metadata: metadata,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.metadata).toEqual(metadata);
+	});
+
+	it("update api key's returned metadata should be an object", async () => {
+		const metadata = {
+			test: "test-12345",
+		};
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: firstApiKey.id,
+				metadata: metadata,
+				userId: user.id,
+			},
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.metadata?.test).toBeDefined();
+		expect(apiKey.metadata?.test).toEqual(metadata.test);
+	});
+
+	// =========================================================================
+	// GET API KEY
+	// =========================================================================
+
+	it("should get an API key by id", async () => {
+		const apiKey = await client.apiKey.get({
+			query: {
+				id: firstApiKey.id,
+			},
+			fetchOptions: {
+				headers,
+			},
+		});
+		expect(apiKey.data).not.toBeNull();
+		expect(apiKey.data?.id).toBe(firstApiKey.id);
+	});
+
+	it("should fail to get an API key by ID that doesn't exist", async () => {
+		const result = await client.apiKey.get(
+			{
+				query: {
+					id: "invalid",
+				},
+			},
+			{ headers },
+		);
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual(404);
+	});
+
+	it("should successfully receive an object metadata from an API key", async () => {
+		const apiKey = await client.apiKey.get(
+			{
+				query: {
+					id: firstApiKey.id,
+				},
+			},
+			{
+				headers,
+			},
+		);
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.data?.metadata).toBeDefined();
+		expect(apiKey.data?.metadata).toBeInstanceOf(Object);
+	});
+
+	// =========================================================================
+	// LIST API KEY
+	// =========================================================================
+
+	it("should fail to list API keys without headers", async () => {
+		let result: { data: Partial<ApiKey>[] | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.listApiKeys({});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("UNAUTHORIZED");
+	});
+
+	it("should list API keys with headers", async () => {
+		const apiKeys = await auth.api.listApiKeys({
+			headers,
+		});
+
+		expect(apiKeys).not.toBeNull();
+		expect(apiKeys.length).toBeGreaterThan(0);
+	});
+
+	it("should list API keys with metadata as an object", async () => {
+		const apiKeys = await auth.api.listApiKeys({
+			headers,
+		});
+
+		expect(apiKeys).not.toBeNull();
+		expect(apiKeys.length).toBeGreaterThan(0);
+		apiKeys.map((apiKey) => {
+			if (apiKey.metadata) {
+				expect(apiKey.metadata).toBeInstanceOf(Object);
+			}
+		});
+	});
+
+	// =========================================================================
+	// Sessions from API keys
+	// =========================================================================
+
+	it("should get session from an API key", async () => {
+		const headers = new Headers();
+		headers.set("x-api-key", firstApiKey.key);
+
+		const session = await auth.api.getSession({
+			headers: headers,
+		});
+
+		expect(session?.session).toBeDefined();
+	});
+
+	it("should get session from an API key with custom api key getter", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						customAPIKeyGetter: (ctx) => ctx.headers?.get("xyz-api-key")!,
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+
+		const { headers: userHeaders } = await signInWithTestUser();
+
+		const { data: apiKey2 } = await client.apiKey.create(
+			{},
+			{ headers: userHeaders },
+		);
+		if (!apiKey2) return;
+
+		const headers = new Headers();
+		headers.set("xyz-api-key", apiKey2.key);
+		const session = await auth.api.getSession({
+			headers,
+		});
+
+		expect(session?.session).toBeDefined();
+	});
+
+	it("should fail to get session from an API key with invalid api key", async () => {
+		const headers = new Headers();
+		headers.set("x-api-key", "invalid");
+
+		let result: { data: any; error: any | null } = {
+			data: null,
+			error: null,
+		};
+
+		try {
+			const session = await auth.api.getSession({
+				headers,
+			});
+			result.data = session;
+		} catch (error: any) {
+			result.error = error;
+		}
+
+		expect(result.error?.status).toEqual("FORBIDDEN");
+		expect(result.error?.body?.message).toEqual(ERROR_CODES.INVALID_API_KEY);
+	});
+
+	it("should still work if the key headers was an array", async () => {
+		const { client, auth, signInWithTestUser } = await getTestInstance(
+			{
+				plugins: [
+					apiKey({
+						apiKeyHeaders: ["x-api-key", "xyz-api-key"],
+					}),
+				],
+			},
+			{
+				clientOptions: {
+					plugins: [apiKeyClient()],
+				},
+			},
+		);
+		const { headers: userHeaders } = await signInWithTestUser();
+
+		const { data: apiKey2 } = await client.apiKey.create(
+			{},
+			{ headers: userHeaders },
+		);
+		if (!apiKey2) return;
+
+		const headers = new Headers();
+		headers.set("xyz-api-key", apiKey2.key);
+
+		const session = await auth.api.getSession({
+			headers: headers,
+		});
+		expect(session?.session).toBeDefined();
+
+		const headers2 = new Headers();
+		headers2.set("x-api-key", apiKey2.key);
+
+		const session2 = await auth.api.getSession({
+			headers: headers2,
+		});
+		expect(session2?.session).toBeDefined();
+	});
+
+	// =========================================================================
+	// DELETE API KEY
+	// =========================================================================
+
+	it("should fail to delete an API key by ID without headers", async () => {
+		let result: { data: { success: boolean } | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.deleteApiKey({
+				body: {
+					keyId: firstApiKey.id,
+				},
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("UNAUTHORIZED");
+	});
+
+	it("should delete an API key by ID with headers", async () => {
+		const apiKey = await auth.api.deleteApiKey({
+			body: {
+				keyId: firstApiKey.id,
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.success).toEqual(true);
+	});
+
+	it("should delete an API key by ID with headers using auth-client", async () => {
+		const newApiKey = await client.apiKey.create({}, { headers: headers });
+		if (!newApiKey.data) return;
+
+		const apiKey = await client.apiKey.delete(
+			{
+				keyId: newApiKey.data.id,
+			},
+			{ headers },
+		);
+
+		if (!apiKey.data?.success) {
+			console.log(apiKey.error);
+		}
+
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.data?.success).toEqual(true);
+	});
+
+	it("should fail to delete an API key by ID that doesn't exist", async () => {
+		let result: { data: { success: boolean } | null; error: Err | null } = {
+			data: null,
+			error: null,
+		};
+		try {
+			const apiKey = await auth.api.deleteApiKey({
+				body: {
+					keyId: "invalid",
+				},
+				headers,
+			});
+			result.data = apiKey;
+		} catch (error: any) {
+			result.error = error;
+		}
+		expect(result.data).toBeNull();
+		expect(result.error).toBeDefined();
+		expect(result.error?.status).toEqual("NOT_FOUND");
+		expect(result.error?.body.message).toEqual(ERROR_CODES.KEY_NOT_FOUND);
+	});
+
+	it("should create an API key with permissions", async () => {
+		const permissions = {
+			files: ["read", "write"],
+			users: ["read"],
+		};
+
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				permissions,
+				userId: user.id,
+			},
+		});
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.permissions).toEqual(permissions);
+	});
+
+	it("should have permissions as an object from getApiKey", async () => {
+		const permissions = {
+			files: ["read", "write"],
+			users: ["read"],
+		};
+
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				permissions,
+				userId: user.id,
+			},
+			headers,
+		});
+		const apiKeyResults = await auth.api.getApiKey({
+			query: {
+				id: apiKey.id,
+			},
+			headers,
+		});
+
+		expect(apiKeyResults).not.toBeNull();
+		expect(apiKeyResults.permissions).toEqual(permissions);
+	});
+
+	it("should have permissions as an object from verifyApiKey", async () => {
+		const permissions = {
+			files: ["read", "write"],
+			users: ["read"],
+		};
+
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				permissions,
+				userId: user.id,
+			},
+			headers,
+		});
+		const apiKeyResults = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+				permissions: {
+					files: ["read"],
+				},
+			},
+			headers,
+		});
+
+		expect(apiKeyResults).not.toBeNull();
+		expect(apiKeyResults.key?.permissions).toEqual(permissions);
+	});
+
+	it("should create an API key with default permissions", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				userId: user.id,
+			},
+		});
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.permissions).toEqual({
+			files: ["read"],
+		});
+	});
+
+	it("should have valid metadata from key verification results", async () => {
+		const metadata = {
+			test: "hello-world-123",
+		};
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				userId: user.id,
+				metadata: metadata,
+			},
+			headers,
+		});
+
+		expect(apiKey).not.toBeNull();
+		if (apiKey) {
+			const result = await auth.api.verifyApiKey({
+				body: {
+					key: apiKey.key,
+					metadata: metadata,
+				},
+				headers,
+			});
+
+			expect(result.valid).toBe(true);
+			expect(result.error).toBeNull();
+			expect(result.key?.metadata).toEqual(metadata);
+		}
+	});
+
+	it("should verify an API key with matching permissions", async () => {
+		const permissions = {
+			files: ["read", "write"],
+			users: ["read"],
+		};
+
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				permissions,
+				userId: user.id,
+			},
+		});
+
+		const result = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+				permissions: {
+					files: ["read"],
+				},
+			},
+		});
+
+		expect(result.valid).toBe(true);
+		expect(result.error).toBeNull();
+		expect(result.key?.permissions).toEqual(permissions);
+	});
+
+	it("should fail to verify an API key with non-matching permissions", async () => {
+		const permissions = {
+			files: ["read"],
+			users: ["read"],
+		};
+
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				permissions,
+				userId: user.id,
+			},
+		});
+
+		const result = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+				permissions: {
+					files: ["write"],
+				},
+			},
+		});
+
+		expect(result.valid).toBe(false);
+		expect(result.error?.code).toBe("KEY_NOT_FOUND");
+	});
+
+	it("should fail to verify when required permissions are specified but API key has no permissions", async () => {
+		const apiKey = await auth.api.createApiKey({
+			body: {
+				userId: user.id,
+			},
+		});
+
+		const result = await auth.api.verifyApiKey({
+			body: {
+				key: apiKey.key,
+				permissions: {
+					files: ["write"],
+				},
+			},
+		});
+
+		expect(result.valid).toBe(false);
+		expect(result.error?.code).toBe("KEY_NOT_FOUND");
+	});
+
+	it("should update an API key with permissions", async () => {
+		const permissions = {
+			files: ["read", "write"],
+			users: ["read"],
+		};
+		const createdApiKey = await auth.api.createApiKey({
+			body: {
+				userId: user.id,
+			},
+		});
+		expect(createdApiKey.permissions).not.toEqual(permissions);
+		const apiKey = await auth.api.updateApiKey({
+			body: {
+				keyId: createdApiKey.id,
+				permissions,
+				userId: user.id,
+			},
+		});
+		expect(apiKey).not.toBeNull();
+		expect(apiKey.permissions).toEqual(permissions);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/client.ts
+```typescript
+import type { apiKey } from ".";
+import type { BetterAuthClientPlugin } from "../../types";
+
+export const apiKeyClient = () => {
+	return {
+		id: "api-key",
+		$InferServerPlugin: {} as ReturnType<typeof apiKey>,
+		pathMethods: {
+			"/api-key/create": "POST",
+			"/api-key/delete": "POST",
+			"/api-key/delete-all-expired-api-keys": "POST",
+		},
+	} satisfies BetterAuthClientPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/index.ts
+```typescript
+import { base64Url } from "@better-auth/utils/base64";
+import { createHash } from "@better-auth/utils/hash";
+import { APIError, createAuthMiddleware } from "../../api";
+import type { BetterAuthPlugin } from "../../types/plugins";
+import { mergeSchema } from "../../db";
+import { apiKeySchema } from "./schema";
+import { getIp } from "../../utils/get-request-ip";
+import { getDate } from "../../utils/date";
+import type { ApiKey, ApiKeyOptions } from "./types";
+import { createApiKeyRoutes } from "./routes";
+import type { User } from "../../types";
+
+export const ERROR_CODES = {
+	INVALID_METADATA_TYPE: "metadata must be an object or undefined",
+	REFILL_AMOUNT_AND_INTERVAL_REQUIRED:
+		"refillAmount is required when refillInterval is provided",
+	REFILL_INTERVAL_AND_AMOUNT_REQUIRED:
+		"refillInterval is required when refillAmount is provided",
+	USER_BANNED: "User is banned",
+	UNAUTHORIZED_SESSION: "Unauthorized or invalid session",
+	KEY_NOT_FOUND: "API Key not found",
+	KEY_DISABLED: "API Key is disabled",
+	KEY_EXPIRED: "API Key has expired",
+	USAGE_EXCEEDED: "API Key has reached its usage limit",
+	KEY_NOT_RECOVERABLE: "API Key is not recoverable",
+	EXPIRES_IN_IS_TOO_SMALL:
+		"The expiresIn is smaller than the predefined minimum value.",
+	EXPIRES_IN_IS_TOO_LARGE:
+		"The expiresIn is larger than the predefined maximum value.",
+	INVALID_REMAINING: "The remaining count is either too large or too small.",
+	INVALID_PREFIX_LENGTH: "The prefix length is either too large or too small.",
+	INVALID_NAME_LENGTH: "The name length is either too large or too small.",
+	METADATA_DISABLED: "Metadata is disabled.",
+	RATE_LIMIT_EXCEEDED: "Rate limit exceeded.",
+	NO_VALUES_TO_UPDATE: "No values to update.",
+	KEY_DISABLED_EXPIRATION: "Custom key expiration values are disabled.",
+	INVALID_API_KEY: "Invalid API key.",
+	INVALID_USER_ID_FROM_API_KEY: "The user id from the API key is invalid.",
+	INVALID_API_KEY_GETTER_RETURN_TYPE:
+		"API Key getter returned an invalid key type. Expected string.",
+	SERVER_ONLY_PROPERTY:
+		"The property you're trying to set can only be set from the server auth instance only.",
+};
+
+export const apiKey = (options?: ApiKeyOptions) => {
+	const opts = {
+		...options,
+		apiKeyHeaders: options?.apiKeyHeaders ?? "x-api-key",
+		defaultKeyLength: options?.defaultKeyLength || 64,
+		maximumPrefixLength: options?.maximumPrefixLength ?? 32,
+		minimumPrefixLength: options?.minimumPrefixLength ?? 1,
+		maximumNameLength: options?.maximumNameLength ?? 32,
+		minimumNameLength: options?.minimumNameLength ?? 1,
+		enableMetadata: options?.enableMetadata ?? false,
+		rateLimit: {
+			enabled: options?.rateLimit?.enabled ?? true,
+			timeWindow: options?.rateLimit?.timeWindow ?? 1000 * 60 * 60 * 24,
+			maxRequests: options?.rateLimit?.maxRequests ?? 10,
+		},
+		keyExpiration: {
+			defaultExpiresIn: options?.keyExpiration?.defaultExpiresIn ?? null,
+			disableCustomExpiresTime:
+				options?.keyExpiration?.disableCustomExpiresTime ?? false,
+			maxExpiresIn: options?.keyExpiration?.maxExpiresIn ?? 365,
+			minExpiresIn: options?.keyExpiration?.minExpiresIn ?? 1,
+		},
+		startingCharactersConfig: {
+			shouldStore: options?.startingCharactersConfig?.shouldStore ?? true,
+			charactersLength:
+				options?.startingCharactersConfig?.charactersLength ?? 6,
+		},
+		disableSessionForAPIKeys: options?.disableSessionForAPIKeys ?? false,
+	} satisfies ApiKeyOptions;
+
+	const schema = mergeSchema(
+		apiKeySchema({
+			rateLimitMax: opts.rateLimit.maxRequests,
+			timeWindow: opts.rateLimit.timeWindow,
+		}),
+		opts.schema,
+	);
+
+	const getter =
+		opts.customAPIKeyGetter ||
+		((ctx) => {
+			if (Array.isArray(opts.apiKeyHeaders)) {
+				for (const header of opts.apiKeyHeaders) {
+					const value = ctx.headers?.get(header);
+					if (value) {
+						return value;
+					}
+				}
+			} else {
+				return ctx.headers?.get(opts.apiKeyHeaders);
+			}
+		});
+
+	const keyGenerator =
+		opts.customKeyGenerator ||
+		(async (options: { length: number; prefix: string | undefined }) => {
+			const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+			let apiKey = `${options.prefix || ""}`;
+			for (let i = 0; i < options.length; i++) {
+				const randomIndex = Math.floor(Math.random() * characters.length);
+				apiKey += characters[randomIndex];
+			}
+
+			return apiKey;
+		});
+
+	const routes = createApiKeyRoutes({ keyGenerator, opts, schema });
+
+	return {
+		id: "api-key",
+		$ERROR_CODES: ERROR_CODES,
+		hooks: {
+			before: [
+				{
+					matcher: (ctx) =>
+						!!getter(ctx) && opts.disableSessionForAPIKeys === false,
+					handler: createAuthMiddleware(async (ctx) => {
+						const key = getter(ctx)!;
+
+						if (typeof key !== "string") {
+							throw new APIError("BAD_REQUEST", {
+								message: ERROR_CODES.INVALID_API_KEY_GETTER_RETURN_TYPE,
+							});
+						}
+
+						if (key.length < opts.defaultKeyLength) {
+							// if the key is shorter than the default key length, than we know the key is invalid.
+							// we can't check if the key is exactly equal to the default key length, because
+							// a prefix may be added to the key.
+							throw new APIError("FORBIDDEN", {
+								message: ERROR_CODES.INVALID_API_KEY,
+							});
+						}
+
+						if (
+							opts.customAPIKeyValidator &&
+							!opts.customAPIKeyValidator({ ctx, key })
+						) {
+							throw new APIError("FORBIDDEN", {
+								message: ERROR_CODES.INVALID_API_KEY,
+							});
+						}
+
+						const hash = await createHash("SHA-256").digest(
+							new TextEncoder().encode(key),
+						);
+						const hashed = base64Url.encode(new Uint8Array(hash), {
+							padding: false,
+						});
+
+						const apiKey = await ctx.context.adapter.findOne<ApiKey>({
+							model: schema.apikey.modelName,
+							where: [
+								{
+									field: "key",
+									value: hashed,
+								},
+							],
+						});
+
+						if (!apiKey) {
+							throw new APIError("UNAUTHORIZED", {
+								message: ERROR_CODES.INVALID_API_KEY,
+							});
+						}
+						let user: User;
+						try {
+							const userResult = await ctx.context.internalAdapter.findUserById(
+								apiKey.userId,
+							);
+							if (!userResult) {
+								throw new APIError("UNAUTHORIZED", {
+									message: ERROR_CODES.INVALID_USER_ID_FROM_API_KEY,
+								});
+							}
+							user = userResult;
+						} catch (error) {
+							throw error;
+						}
+
+						const session = {
+							user,
+							session: {
+								id: apiKey.id,
+								token: key,
+								userId: user.id,
+								userAgent: ctx.request?.headers.get("user-agent") ?? null,
+								ipAddress: ctx.request
+									? getIp(ctx.request, ctx.context.options)
+									: null,
+								createdAt: new Date(),
+								updatedAt: new Date(),
+								expiresAt:
+									apiKey.expiresAt ||
+									getDate(
+										ctx.context.options.session?.expiresIn || 60 * 60 * 24 * 7, // 7 days
+										"ms",
+									),
+							},
+						};
+						ctx.context.session = session;
+
+						if (ctx.path === "/get-session") {
+							return session;
+						} else {
+							return {
+								context: ctx,
+							};
+						}
+					}),
+				},
+			],
+		},
+		endpoints: {
+			createApiKey: routes.createApiKey,
+			verifyApiKey: routes.verifyApiKey,
+			getApiKey: routes.getApiKey,
+			updateApiKey: routes.updateApiKey,
+			deleteApiKey: routes.deleteApiKey,
+			listApiKeys: routes.listApiKeys,
+		},
+		schema: schema,
+	} satisfies BetterAuthPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/rate-limit.ts
+```typescript
+import { ERROR_CODES } from ".";
+import type { PredefinedApiKeyOptions } from "./routes";
+import type { ApiKey } from "./types";
+
+interface RateLimitResult {
+	success: boolean;
+	message: string | null;
+	tryAgainIn: number | null;
+	update: Partial<ApiKey> | null;
+}
+
+/**
+ * Determines if a request is allowed based on rate limiting parameters.
+ *
+ * @returns An object indicating whether the request is allowed and, if not,
+ *          a message and updated ApiKey data.
+ */
+export function isRateLimited(
+	/**
+	 * The ApiKey object containing rate limiting information
+	 */
+	apiKey: ApiKey,
+	opts: PredefinedApiKeyOptions,
+): RateLimitResult {
+	const now = new Date();
+	const lastRequest = apiKey.lastRequest;
+	const rateLimitTimeWindow = apiKey.rateLimitTimeWindow;
+	const rateLimitMax = apiKey.rateLimitMax;
+	let requestCount = apiKey.requestCount;
+
+	if (opts.rateLimit.enabled === false)
+		return {
+			success: true,
+			message: null,
+			update: { lastRequest: now },
+			tryAgainIn: null,
+		};
+
+	if (apiKey.rateLimitEnabled === false)
+		return {
+			success: true,
+			message: null,
+			update: { lastRequest: now },
+			tryAgainIn: null,
+		};
+
+	if (rateLimitTimeWindow === null || rateLimitMax === null) {
+		// Rate limiting is disabled.
+		return {
+			success: true,
+			message: null,
+			update: null,
+			tryAgainIn: null,
+		};
+	}
+
+	if (lastRequest === null) {
+		// No previous requests, so allow the first one.
+		return {
+			success: true,
+			message: null,
+			update: { lastRequest: now, requestCount: 1 },
+			tryAgainIn: null,
+		};
+	}
+
+	const timeSinceLastRequest = now.getTime() - lastRequest.getTime();
+
+	if (timeSinceLastRequest > rateLimitTimeWindow) {
+		// Time window has passed, reset the request count.
+		return {
+			success: true,
+			message: null,
+			update: { lastRequest: now, requestCount: 1 },
+			tryAgainIn: null,
+		};
+	}
+
+	if (requestCount >= rateLimitMax) {
+		// Rate limit exceeded.
+		return {
+			success: false,
+			message: ERROR_CODES.RATE_LIMIT_EXCEEDED,
+			update: null,
+			tryAgainIn: Math.ceil(rateLimitTimeWindow - timeSinceLastRequest),
+		};
+	}
+
+	// Request is allowed.
+	requestCount++;
+	return {
+		success: true,
+		message: null,
+		tryAgainIn: null,
+		update: { lastRequest: now, requestCount: requestCount },
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/schema.ts
+```typescript
+import type { AuthPluginSchema } from "..";
+import parseJSON from "../../client/parser";
+
+export const apiKeySchema = ({
+	timeWindow,
+	rateLimitMax,
+}: { timeWindow: number; rateLimitMax: number }) =>
+	({
+		apikey: {
+			modelName: "apikey",
+			fields: {
+				/**
+				 * The name of the key.
+				 */
+				name: {
+					type: "string",
+					required: false,
+					input: false,
+				},
+				/**
+				 * Shows the first few characters of the API key
+				 * This allows you to show those few characters in the UI to make it easier for users to identify the API key.
+				 */
+				start: {
+					type: "string",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The prefix of the key.
+				 */
+				prefix: {
+					type: "string",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The hashed key value.
+				 */
+				key: {
+					type: "string",
+					required: true,
+					input: false,
+				},
+				/**
+				 * The user id of the user who created the key.
+				 */
+				userId: {
+					type: "string",
+					references: { model: "user", field: "id" },
+					required: true,
+					input: false,
+				},
+				/**
+				 * The interval to refill the key in milliseconds.
+				 */
+				refillInterval: {
+					type: "number",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The amount to refill the remaining count of the key.
+				 */
+				refillAmount: {
+					type: "number",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The date and time when the key was last refilled.
+				 */
+				lastRefillAt: {
+					type: "date",
+					required: false,
+					input: false,
+				},
+				/**
+				 * Whether the key is enabled.
+				 */
+				enabled: {
+					type: "boolean",
+					required: false,
+					input: false,
+					defaultValue: true,
+				},
+				/**
+				 * Whether the key has rate limiting enabled.
+				 */
+				rateLimitEnabled: {
+					type: "boolean",
+					required: false,
+					input: false,
+					defaultValue: true,
+				},
+				/**
+				 * The time window in milliseconds for the rate limit.
+				 */
+				rateLimitTimeWindow: {
+					type: "number",
+					required: false,
+					input: false,
+					defaultValue: timeWindow,
+				},
+				/**
+				 * The maximum number of requests allowed within the `rateLimitTimeWindow`.
+				 */
+				rateLimitMax: {
+					type: "number",
+					required: false,
+					input: false,
+					defaultValue: rateLimitMax,
+				},
+				/**
+				 * The number of requests made within the rate limit time window
+				 */
+				requestCount: {
+					type: "number",
+					required: false,
+					input: false,
+					defaultValue: 0,
+				},
+				/**
+				 * The remaining number of requests before the key is revoked.
+				 *
+				 * If this is null, then the key is not revoked.
+				 *
+				 * If `refillInterval` & `refillAmount` are provided, than this will refill accordingly.
+				 */
+				remaining: {
+					type: "number",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The date and time of the last request made to the key.
+				 */
+				lastRequest: {
+					type: "date",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The date and time when the key will expire.
+				 */
+				expiresAt: {
+					type: "date",
+					required: false,
+					input: false,
+				},
+				/**
+				 * The date and time when the key was created.
+				 */
+				createdAt: {
+					type: "date",
+					required: true,
+					input: false,
+				},
+				/**
+				 * The date and time when the key was last updated.
+				 */
+				updatedAt: {
+					type: "date",
+					required: true,
+					input: false,
+				},
+				/**
+				 * The permissions of the key.
+				 */
+				permissions: {
+					type: "string",
+					required: false,
+					input: false,
+				},
+				/**
+				 * Any additional metadata you want to store with the key.
+				 */
+				metadata: {
+					type: "string",
+					required: false,
+					input: true,
+					transform: {
+						input(value) {
+							return JSON.stringify(value);
+						},
+						output(value) {
+							if (!value) return null;
+							return parseJSON<any>(value as string);
+						},
+					},
+				},
+			},
+		},
+	}) satisfies AuthPluginSchema;
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/types.ts
+```typescript
+import type { GenericEndpointContext, InferOptionSchema } from "../../types";
+import type { Statements } from "../access";
+import type { apiKeySchema } from "./schema";
+export interface ApiKeyOptions {
+	/**
+	 * The header name to check for api key
+	 * @default "x-api-key"
+	 */
+	apiKeyHeaders?: string | string[];
+	/**
+	 * The function to get the api key from the context
+	 */
+	customAPIKeyGetter?: (ctx: GenericEndpointContext) => string | null;
+	/**
+	 * A custom function to validate the api key
+	 */
+	customAPIKeyValidator?: (options: {
+		ctx: GenericEndpointContext;
+		key: string;
+	}) => boolean;
+	/**
+	 * custom key generation function
+	 */
+	customKeyGenerator?: (options: {
+		/**
+		 * The length of the API key to generate
+		 */
+		length: number;
+		/**
+		 * The prefix of the API key to generate
+		 */
+		prefix: string | undefined;
+	}) => string | Promise<string>;
+	/**
+	 * The configuration for storing the starting characters of the API key in the database.
+	 *
+	 * Useful if you want to display the starting characters of an API key in the UI.
+	 */
+	startingCharactersConfig?: {
+		/**
+		 * Wether to store the starting characters in the database. If false, we will set `start` to `null`.
+		 *
+		 * @default true
+		 */
+		shouldStore?: boolean;
+		/**
+		 * The length of the starting characters to store in the database.
+		 *
+		 * This includes the prefix length.
+		 *
+		 * @default 6
+		 */
+		charactersLength?: number;
+	};
+	/**
+	 * The length of the API key. Longer is better. Default is 64. (Doesn't include the prefix length)
+	 * @default 64
+	 */
+	defaultKeyLength?: number;
+	/**
+	 * The prefix of the API key.
+	 *
+	 * Note: We recommend you append an underscore to the prefix to make the prefix more identifiable. (eg `hello_`)
+	 */
+	defaultPrefix?: string;
+	/**
+	 * The maximum length of the prefix.
+	 *
+	 * @default 32
+	 */
+	maximumPrefixLength?: number;
+	/**
+	 * The minimum length of the prefix.
+	 *
+	 * @default 1
+	 */
+	minimumPrefixLength?: number;
+	/**
+	 * The maximum length of the name.
+	 *
+	 * @default 32
+	 */
+	maximumNameLength?: number;
+	/**
+	 * The minimum length of the name.
+	 *
+	 * @default 1
+	 */
+	minimumNameLength?: number;
+	/**
+	 * Whether to enable metadata for an API key.
+	 *
+	 * @default false
+	 */
+	enableMetadata?: boolean;
+	/**
+	 * Customize the key expiration.
+	 */
+	keyExpiration?: {
+		/**
+		 * The default expires time in milliseconds.
+		 *
+		 * If `null`, then there will be no expiration time.
+		 *
+		 * @default null
+		 */
+		defaultExpiresIn?: number | null;
+		/**
+		 * Wether to disable the expires time passed from the client.
+		 *
+		 * If `true`, the expires time will be based on the default values.
+		 *
+		 * @default false
+		 */
+		disableCustomExpiresTime?: boolean;
+		/**
+		 * The minimum expiresIn value allowed to be set from the client. in days.
+		 *
+		 * @default 1
+		 */
+		minExpiresIn?: number;
+		/**
+		 * The maximum expiresIn value allowed to be set from the client. in days.
+		 *
+		 * @default 365
+		 */
+		maxExpiresIn?: number;
+	};
+	/**
+	 * Default rate limiting options.
+	 */
+	rateLimit?: {
+		/**
+		 * Whether to enable rate limiting.
+		 *
+		 * @default true
+		 */
+		enabled?: boolean;
+		/**
+		 * The duration in milliseconds where each request is counted.
+		 *
+		 * Once the `maxRequests` is reached, the request will be rejected until the `timeWindow` has passed, at which point the `timeWindow` will be reset.
+		 *
+		 * @default 1000 * 60 * 60 * 24 // 1 day
+		 */
+		timeWindow?: number;
+		/**
+		 * Maximum amount of requests allowed within a window
+		 *
+		 * Once the `maxRequests` is reached, the request will be rejected until the `timeWindow` has passed, at which point the `timeWindow` will be reset.
+		 *
+		 * @default 10 // 10 requests per day
+		 */
+		maxRequests?: number;
+	};
+	/**
+	 * custom schema for the api key plugin
+	 */
+	schema?: InferOptionSchema<ReturnType<typeof apiKeySchema>>;
+	/**
+	 * An API Key can represent a valid session, so we automatically mock a session for the user if we find a valid API key in the request headers.
+	 *
+	 * @default false
+	 */
+	disableSessionForAPIKeys?: boolean;
+	/**
+	 * Permissions for the API key.
+	 */
+	permissions?: {
+		/**
+		 * The default permissions for the API key.
+		 */
+		defaultPermissions?:
+			| Statements
+			| ((
+					userId: string,
+					ctx: GenericEndpointContext,
+			  ) => Statements | Promise<Statements>);
+	};
+}
+
+export type ApiKey = {
+	/**
+	 * ID
+	 */
+	id: string;
+	/**
+	 * The name of the key
+	 */
+	name: string | null;
+	/**
+	 * Shows the first few characters of the API key, including the prefix.
+	 * This allows you to show those few characters in the UI to make it easier for users to identify the API key.
+	 */
+	start: string | null;
+	/**
+	 * The API Key prefix. Stored as plain text.
+	 */
+	prefix: string | null;
+	/**
+	 * The hashed API key value
+	 */
+	key: string;
+	/**
+	 * The owner of the user id
+	 */
+	userId: string;
+	/**
+	 * The interval in which the `remaining` count is refilled by day
+	 *
+	 * @example 1 // every day
+	 */
+	refillInterval: number | null;
+	/**
+	 * The amount to refill
+	 */
+	refillAmount: number | null;
+	/**
+	 * The last refill date
+	 */
+	lastRefillAt: Date | null;
+	/**
+	 * Sets if key is enabled or disabled
+	 *
+	 * @default true
+	 */
+	enabled: boolean;
+	/**
+	 * Whether the key has rate limiting enabled.
+	 */
+	rateLimitEnabled: boolean;
+	/**
+	 * The duration in milliseconds
+	 */
+	rateLimitTimeWindow: number | null;
+	/**
+	 * Maximum amount of requests allowed within a window
+	 */
+	rateLimitMax: number | null;
+	/**
+	 * The number of requests made within the rate limit time window
+	 */
+	requestCount: number;
+	/**
+	 * Remaining requests (every time api key is used this should updated and should be updated on refill as well)
+	 */
+	remaining: number | null;
+	/**
+	 * When last request occurred
+	 */
+	lastRequest: Date | null;
+	/**
+	 * Expiry date of a key
+	 */
+	expiresAt: Date | null;
+	/**
+	 * created at
+	 */
+	createdAt: Date;
+	/**
+	 * updated at
+	 */
+	updatedAt: Date;
+	/**
+	 * Extra metadata about the apiKey
+	 */
+	metadata: Record<string, any> | null;
+	/**
+	 * Permissions for the api key
+	 */
+	permissions?: {
+		[key: string]: string[];
+	} | null;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/create-api-key.ts
+```typescript
+import { z } from "zod";
+import { APIError, createAuthEndpoint, getSessionFromCtx } from "../../../api";
+import { ERROR_CODES } from "..";
+import { generateId } from "../../../utils";
+import { getDate } from "../../../utils/date";
+import { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import type { AuthContext } from "../../../types";
+import { createHash } from "@better-auth/utils/hash";
+import { base64Url } from "@better-auth/utils/base64";
+import type { PredefinedApiKeyOptions } from ".";
+import { safeJSONParse } from "../../../utils/json";
+
+export function createApiKey({
+	keyGenerator,
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	keyGenerator: (options: { length: number; prefix: string | undefined }) =>
+		| Promise<string>
+		| string;
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/create",
+		{
+			method: "POST",
+			body: z.object({
+				name: z.string({ description: "Name of the Api Key" }).optional(),
+				expiresIn: z
+					.number({
+						description: "Expiration time of the Api Key in seconds",
+					})
+					.min(1)
+					.optional()
+					.nullable()
+					.default(null),
+
+				userId: z.coerce
+					.string({
+						description:
+							"User Id of the user that the Api Key belongs to. Useful for server-side only.",
+					})
+					.optional(),
+				prefix: z
+					.string({ description: "Prefix of the Api Key" })
+					.regex(/^[a-zA-Z0-9_-]+$/, {
+						message:
+							"Invalid prefix format, must be alphanumeric and contain only underscores and hyphens.",
+					})
+					.optional(),
+				remaining: z
+					.number({
+						description: "Remaining number of requests. Server side only",
+					})
+					.min(0)
+					.optional()
+					.nullable()
+					.default(null),
+				metadata: z.any({ description: "Metadata of the Api Key" }).optional(),
+				refillAmount: z
+					.number({
+						description:
+							"Amount to refill the remaining count of the Api Key. Server Only Property",
+					})
+					.min(1)
+					.optional(),
+				refillInterval: z
+					.number({
+						description:
+							"Interval to refill the Api Key in milliseconds. Server Only Property.",
+					})
+					.optional(),
+				rateLimitTimeWindow: z
+					.number({
+						description:
+							"The duration in milliseconds where each request is counted. Once the `maxRequests` is reached, the request will be rejected until the `timeWindow` has passed, at which point the `timeWindow` will be reset. Server Only Property.",
+					})
+					.optional(),
+				rateLimitMax: z
+					.number({
+						description:
+							"Maximum amount of requests allowed within a window. Once the `maxRequests` is reached, the request will be rejected until the `timeWindow` has passed, at which point the `timeWindow` will be reset. Server Only Property.",
+					})
+					.optional(),
+				rateLimitEnabled: z
+					.boolean({
+						description:
+							"Whether the key has rate limiting enabled. Server Only Property.",
+					})
+					.optional(),
+				permissions: z.record(z.string(), z.array(z.string())).optional(),
+			}),
+		},
+		async (ctx) => {
+			const {
+				name,
+				expiresIn,
+				prefix,
+				remaining,
+				metadata,
+				refillAmount,
+				refillInterval,
+				permissions,
+				rateLimitMax,
+				rateLimitTimeWindow,
+				rateLimitEnabled,
+			} = ctx.body;
+
+			const session = await getSessionFromCtx(ctx);
+			const authRequired = (ctx.request || ctx.headers) && !ctx.body.userId;
+			const user =
+				session?.user ?? (authRequired ? null : { id: ctx.body.userId });
+			if (!user?.id) {
+				throw new APIError("UNAUTHORIZED", {
+					message: ERROR_CODES.UNAUTHORIZED_SESSION,
+				});
+			}
+
+			if (authRequired) {
+				// if this endpoint was being called from the client,
+				// we must make sure they can't use server-only properties.
+				if (
+					refillAmount !== undefined ||
+					refillInterval !== undefined ||
+					rateLimitMax !== undefined ||
+					rateLimitTimeWindow !== undefined ||
+					rateLimitEnabled !== undefined ||
+					permissions !== undefined ||
+					remaining !== null
+				) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.SERVER_ONLY_PROPERTY,
+					});
+				}
+			}
+
+			// if metadata is defined, than check that it's an object.
+			if (metadata) {
+				if (opts.enableMetadata === false) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.METADATA_DISABLED,
+					});
+				}
+				if (typeof metadata !== "object") {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_METADATA_TYPE,
+					});
+				}
+			}
+
+			// make sure that if they pass a refill amount, they also pass a refill interval
+			if (refillAmount && !refillInterval) {
+				throw new APIError("BAD_REQUEST", {
+					message: ERROR_CODES.REFILL_AMOUNT_AND_INTERVAL_REQUIRED,
+				});
+			}
+			// make sure that if they pass a refill interval, they also pass a refill amount
+			if (refillInterval && !refillAmount) {
+				throw new APIError("BAD_REQUEST", {
+					message: ERROR_CODES.REFILL_INTERVAL_AND_AMOUNT_REQUIRED,
+				});
+			}
+
+			if (expiresIn) {
+				if (opts.keyExpiration.disableCustomExpiresTime === true) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.KEY_DISABLED_EXPIRATION,
+					});
+				}
+
+				const expiresIn_in_days = expiresIn / (60 * 60 * 24);
+
+				if (opts.keyExpiration.minExpiresIn > expiresIn_in_days) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.EXPIRES_IN_IS_TOO_SMALL,
+					});
+				} else if (opts.keyExpiration.maxExpiresIn < expiresIn_in_days) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.EXPIRES_IN_IS_TOO_LARGE,
+					});
+				}
+			}
+			if (prefix) {
+				if (prefix.length < opts.minimumPrefixLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_PREFIX_LENGTH,
+					});
+				}
+				if (prefix.length > opts.maximumPrefixLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_PREFIX_LENGTH,
+					});
+				}
+			}
+
+			if (name) {
+				if (name.length < opts.minimumNameLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_NAME_LENGTH,
+					});
+				}
+				if (name.length > opts.maximumNameLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_NAME_LENGTH,
+					});
+				}
+			}
+
+			deleteAllExpiredApiKeys(ctx.context);
+
+			const key = await keyGenerator({
+				length: opts.defaultKeyLength,
+				prefix: prefix || opts.defaultPrefix,
+			});
+
+			const hash = await createHash("SHA-256").digest(key);
+			const hashed = base64Url.encode(hash, {
+				padding: false,
+			});
+
+			let start: string | null = null;
+
+			if (opts.startingCharactersConfig.shouldStore) {
+				start = key.substring(
+					0,
+					opts.startingCharactersConfig.charactersLength,
+				);
+			}
+
+			const defaultPermissions = opts.permissions?.defaultPermissions
+				? typeof opts.permissions.defaultPermissions === "function"
+					? await opts.permissions.defaultPermissions(user.id, ctx)
+					: opts.permissions.defaultPermissions
+				: undefined;
+			const permissionsToApply = permissions
+				? JSON.stringify(permissions)
+				: defaultPermissions
+					? JSON.stringify(defaultPermissions)
+					: undefined;
+			let data: ApiKey = {
+				id: generateId(),
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				name: name ?? null,
+				prefix: prefix ?? opts.defaultPrefix ?? null,
+				start: start,
+				key: hashed,
+				enabled: true,
+				expiresAt: expiresIn
+					? getDate(expiresIn, "sec")
+					: opts.keyExpiration.defaultExpiresIn
+						? getDate(opts.keyExpiration.defaultExpiresIn, "sec")
+						: null,
+				userId: user.id,
+				lastRefillAt: null,
+				lastRequest: null,
+				metadata: null,
+				rateLimitMax: rateLimitMax ?? opts.rateLimit.maxRequests ?? null,
+				rateLimitTimeWindow:
+					rateLimitTimeWindow ?? opts.rateLimit.timeWindow ?? null,
+				remaining: remaining || refillAmount || null,
+				refillAmount: refillAmount ?? null,
+				refillInterval: refillInterval ?? null,
+				rateLimitEnabled: rateLimitEnabled ?? true,
+				requestCount: 0,
+				//@ts-ignore - we intentionally save the permissions as string on DB.
+				permissions: permissionsToApply,
+			};
+
+			if (metadata) {
+				//@ts-expect-error - we intentionally save the metadata as string on DB.
+				data.metadata = schema.apikey.fields.metadata.transform.input(metadata);
+			}
+
+			const apiKey = await ctx.context.adapter.create<ApiKey>({
+				model: schema.apikey.modelName,
+				data: data,
+			});
+			return ctx.json({
+				...apiKey,
+				key: key,
+				metadata: metadata ?? null,
+				permissions: apiKey.permissions
+					? safeJSONParse(
+							//@ts-ignore - from DB, this value is always a string
+							apiKey.permissions,
+						)
+					: null,
+			});
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/delete-all-expired-api-keys.ts
+```typescript
+import { createAuthEndpoint } from "../../../api";
+import type { AuthContext } from "../../../types";
+
+export function deleteAllExpiredApiKeysEndpoint({
+	deleteAllExpiredApiKeys,
+}: {
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/delete-all-expired-api-keys",
+		{
+			method: "POST",
+			metadata: {
+				SERVER_ONLY: true,
+			},
+		},
+		async (ctx) => {
+			try {
+				await deleteAllExpiredApiKeys(ctx.context, true);
+			} catch (error) {
+				ctx.context.logger.error(
+					"[API KEY PLUGIN] Failed to delete expired API keys:",
+					error,
+				);
+				return ctx.json({
+					success: false,
+					error: error,
+				});
+			}
+
+			return ctx.json({ success: true, error: null });
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/delete-api-key.ts
+```typescript
+import { z } from "zod";
+import { APIError, createAuthEndpoint, sessionMiddleware } from "../../../api";
+import { ERROR_CODES } from "..";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import type { AuthContext } from "../../../types";
+import type { PredefinedApiKeyOptions } from ".";
+
+export function deleteApiKey({
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/delete",
+		{
+			method: "POST",
+			body: z.object({
+				keyId: z.string({
+					description: "The id of the Api Key",
+				}),
+			}),
+			use: [sessionMiddleware],
+		},
+		async (ctx) => {
+			const { keyId } = ctx.body;
+			const session = ctx.context.session;
+			if (session.user.banned === true) {
+				throw new APIError("UNAUTHORIZED", {
+					message: ERROR_CODES.USER_BANNED,
+				});
+			}
+			const apiKey = await ctx.context.adapter.findOne<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "id",
+						value: keyId,
+					},
+				],
+			});
+
+			if (!apiKey || apiKey.userId !== session.user.id) {
+				throw new APIError("NOT_FOUND", {
+					message: ERROR_CODES.KEY_NOT_FOUND,
+				});
+			}
+
+			try {
+				await ctx.context.adapter.delete<ApiKey>({
+					model: schema.apikey.modelName,
+					where: [
+						{
+							field: "id",
+							value: apiKey.id,
+						},
+					],
+				});
+			} catch (error: any) {
+				throw new APIError("INTERNAL_SERVER_ERROR", {
+					message: error?.message,
+				});
+			}
+			deleteAllExpiredApiKeys(ctx.context);
+			return ctx.json({
+				success: true,
+			});
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/get-api-key.ts
+```typescript
+import { z } from "zod";
+import { APIError, createAuthEndpoint, sessionMiddleware } from "../../../api";
+import { ERROR_CODES } from "..";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import type { AuthContext } from "../../../types";
+import type { PredefinedApiKeyOptions } from ".";
+import { safeJSONParse } from "../../../utils/json";
+
+export function getApiKey({
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/get",
+		{
+			method: "GET",
+			query: z.object({
+				id: z.string({
+					description: "The id of the Api Key",
+				}),
+			}),
+			use: [sessionMiddleware],
+		},
+		async (ctx) => {
+			const { id } = ctx.query;
+
+			const session = ctx.context.session;
+
+			let apiKey = await ctx.context.adapter.findOne<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "id",
+						value: id,
+					},
+					{
+						field: "userId",
+						value: session.user.id,
+					},
+				],
+			});
+
+			if (!apiKey) {
+				throw new APIError("NOT_FOUND", {
+					message: ERROR_CODES.KEY_NOT_FOUND,
+				});
+			}
+
+			deleteAllExpiredApiKeys(ctx.context);
+
+			// convert metadata string back to object
+			apiKey.metadata = schema.apikey.fields.metadata.transform.output(
+				apiKey.metadata as never as string,
+			);
+
+			const { key, ...returningApiKey } = apiKey;
+
+			return ctx.json({
+				...returningApiKey,
+				permissions: returningApiKey.permissions
+					? safeJSONParse<{
+							[key: string]: string[];
+						}>(
+							//@ts-ignore - From DB this is always a string
+							returningApiKey.permissions,
+						)
+					: null,
+			});
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/index.ts
+```typescript
+import type { AuthContext } from "../../../types";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey, ApiKeyOptions } from "../types";
+import { createApiKey } from "./create-api-key";
+import { deleteApiKey } from "./delete-api-key";
+import { getApiKey } from "./get-api-key";
+import { updateApiKey } from "./update-api-key";
+import { verifyApiKey } from "./verify-api-key";
+import { listApiKeys } from "./list-api-keys";
+import { deleteAllExpiredApiKeysEndpoint } from "./delete-all-expired-api-keys";
+
+export type PredefinedApiKeyOptions = ApiKeyOptions &
+	Required<
+		Pick<
+			ApiKeyOptions,
+			| "apiKeyHeaders"
+			| "defaultKeyLength"
+			| "keyExpiration"
+			| "rateLimit"
+			| "maximumPrefixLength"
+			| "minimumPrefixLength"
+			| "maximumNameLength"
+			| "minimumNameLength"
+			| "enableMetadata"
+			| "disableSessionForAPIKeys"
+			| "startingCharactersConfig"
+		>
+	> & {
+		keyExpiration: Required<ApiKeyOptions["keyExpiration"]>;
+		startingCharactersConfig: Required<
+			ApiKeyOptions["startingCharactersConfig"]
+		>;
+	};
+
+export function createApiKeyRoutes({
+	keyGenerator,
+	opts,
+	schema,
+}: {
+	keyGenerator: (options: { length: number; prefix: string | undefined }) =>
+		| Promise<string>
+		| string;
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+}) {
+	let lastChecked: Date | null = null;
+
+	function deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime = false,
+	) {
+		if (lastChecked && !byPassLastCheckTime) {
+			const now = new Date();
+			const diff = now.getTime() - lastChecked.getTime();
+			if (diff < 10000) {
+				return;
+			}
+		}
+		lastChecked = new Date();
+		try {
+			return ctx.adapter.deleteMany({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "expiresAt" satisfies keyof ApiKey,
+						operator: "lt",
+						value: new Date(),
+					},
+				],
+			});
+		} catch (error) {
+			ctx.logger.error(`Failed to delete expired API keys:`, error);
+		}
+	}
+
+	return {
+		createApiKey: createApiKey({
+			keyGenerator,
+			opts,
+			schema,
+			deleteAllExpiredApiKeys,
+		}),
+		verifyApiKey: verifyApiKey({ opts, schema, deleteAllExpiredApiKeys }),
+		getApiKey: getApiKey({ opts, schema, deleteAllExpiredApiKeys }),
+		updateApiKey: updateApiKey({ opts, schema, deleteAllExpiredApiKeys }),
+		deleteApiKey: deleteApiKey({ opts, schema, deleteAllExpiredApiKeys }),
+		listApiKeys: listApiKeys({ opts, schema, deleteAllExpiredApiKeys }),
+		deleteAllExpiredApiKeys: deleteAllExpiredApiKeysEndpoint({
+			deleteAllExpiredApiKeys,
+		}),
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/list-api-keys.ts
+```typescript
+import { createAuthEndpoint, sessionMiddleware } from "../../../api";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import type { AuthContext } from "../../../types";
+import type { PredefinedApiKeyOptions } from ".";
+import { safeJSONParse } from "../../../utils/json";
+
+export function listApiKeys({
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/list",
+		{
+			method: "GET",
+			use: [sessionMiddleware],
+		},
+		async (ctx) => {
+			const session = ctx.context.session;
+			let apiKeys = await ctx.context.adapter.findMany<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "userId",
+						value: session.user.id,
+					},
+				],
+			});
+
+			deleteAllExpiredApiKeys(ctx.context);
+			apiKeys = apiKeys.map((apiKey) => {
+				return {
+					...apiKey,
+					metadata: schema.apikey.fields.metadata.transform.output(
+						apiKey.metadata as never as string,
+					),
+				};
+			});
+
+			let returningApiKey = apiKeys.map((x) => {
+				const { key, ...returningApiKey } = x;
+				return {
+					...returningApiKey,
+					permissions: returningApiKey.permissions
+						? safeJSONParse<{
+								[key: string]: string[];
+							}>(
+								//@ts-ignore - From DB this is always a string
+								returningApiKey.permissions,
+							)
+						: null,
+				};
+			});
+
+			return ctx.json(returningApiKey);
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/update-api-key.ts
+```typescript
+import { z } from "zod";
+import { APIError, createAuthEndpoint, getSessionFromCtx } from "../../../api";
+import { ERROR_CODES } from "..";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import { getDate } from "../../../utils/date";
+import type { AuthContext } from "../../../types";
+import type { PredefinedApiKeyOptions } from ".";
+import { safeJSONParse } from "../../../utils/json";
+
+export function updateApiKey({
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/update",
+		{
+			method: "POST",
+			body: z.object({
+				keyId: z.string({
+					description: "The id of the Api Key",
+				}),
+				userId: z.coerce.string().optional(),
+				name: z
+					.string({
+						description: "The name of the key",
+					})
+					.optional(),
+				enabled: z
+					.boolean({
+						description: "Whether the Api Key is enabled or not",
+					})
+					.optional(),
+				remaining: z
+					.number({
+						description: "The number of remaining requests",
+					})
+					.min(1)
+					.optional(),
+				refillAmount: z
+					.number({
+						description: "The refill amount",
+					})
+					.optional(),
+				refillInterval: z
+					.number({
+						description: "The refill interval",
+					})
+					.optional(),
+				metadata: z
+					.any({
+						description: "The metadata of the Api Key",
+					})
+					.optional(),
+				expiresIn: z
+					.number({
+						description: "Expiration time of the Api Key in seconds",
+					})
+					.min(1)
+					.optional()
+					.nullable(),
+				rateLimitEnabled: z
+					.boolean({
+						description: "Whether the key has rate limiting enabled.",
+					})
+					.optional(),
+				rateLimitTimeWindow: z
+					.number({
+						description:
+							"The duration in milliseconds where each request is counted.",
+					})
+					.optional(),
+				rateLimitMax: z
+					.number({
+						description:
+							"Maximum amount of requests allowed within a window. Once the `maxRequests` is reached, the request will be rejected until the `timeWindow` has passed, at which point the `timeWindow` will be reset.",
+					})
+					.optional(),
+				permissions: z
+					.record(z.string(), z.array(z.string()))
+					.optional()
+					.nullable(),
+			}),
+		},
+		async (ctx) => {
+			const {
+				keyId,
+				expiresIn,
+				enabled,
+				metadata,
+				refillAmount,
+				refillInterval,
+				remaining,
+				name,
+				permissions,
+				rateLimitEnabled,
+				rateLimitTimeWindow,
+				rateLimitMax,
+			} = ctx.body;
+
+			const session = await getSessionFromCtx(ctx);
+			const authRequired = (ctx.request || ctx.headers) && !ctx.body.userId;
+			const user =
+				session?.user ?? (authRequired ? null : { id: ctx.body.userId });
+			if (!user?.id) {
+				throw new APIError("UNAUTHORIZED", {
+					message: ERROR_CODES.UNAUTHORIZED_SESSION,
+				});
+			}
+
+			if (authRequired) {
+				// if this endpoint was being called from the client,
+				// we must make sure they can't use server-only properties.
+				if (
+					refillAmount !== undefined ||
+					refillInterval !== undefined ||
+					rateLimitMax !== undefined ||
+					rateLimitTimeWindow !== undefined ||
+					rateLimitEnabled !== undefined ||
+					remaining !== undefined ||
+					permissions !== undefined
+				) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.SERVER_ONLY_PROPERTY,
+					});
+				}
+			}
+
+			const apiKey = await ctx.context.adapter.findOne<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "id",
+						value: keyId,
+					},
+					{
+						field: "userId",
+						value: user.id,
+					},
+				],
+			});
+
+			if (!apiKey) {
+				throw new APIError("NOT_FOUND", {
+					message: ERROR_CODES.KEY_NOT_FOUND,
+				});
+			}
+
+			let newValues: Partial<ApiKey> = {};
+
+			if (name !== undefined) {
+				if (name.length < opts.minimumNameLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_NAME_LENGTH,
+					});
+				} else if (name.length > opts.maximumNameLength) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_NAME_LENGTH,
+					});
+				}
+				newValues.name = name;
+			}
+
+			if (enabled !== undefined) {
+				newValues.enabled = enabled;
+			}
+			if (expiresIn !== undefined) {
+				if (opts.keyExpiration.disableCustomExpiresTime === true) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.KEY_DISABLED_EXPIRATION,
+					});
+				}
+				if (expiresIn !== null) {
+					// if expires is not null, check if it's under the valid range
+					// if it IS null, this means the user wants to disable expiration time on the key
+					const expiresIn_in_days = expiresIn / (60 * 60 * 24);
+
+					if (expiresIn_in_days < opts.keyExpiration.minExpiresIn) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.EXPIRES_IN_IS_TOO_SMALL,
+						});
+					} else if (expiresIn_in_days > opts.keyExpiration.maxExpiresIn) {
+						throw new APIError("BAD_REQUEST", {
+							message: ERROR_CODES.EXPIRES_IN_IS_TOO_LARGE,
+						});
+					}
+				}
+				newValues.expiresAt = expiresIn ? getDate(expiresIn, "sec") : null;
+			}
+			if (metadata !== undefined) {
+				if (typeof metadata !== "object") {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.INVALID_METADATA_TYPE,
+					});
+				}
+				//@ts-ignore - we need this to be a string to save into DB.
+				newValues.metadata =
+					schema.apikey.fields.metadata.transform.input(metadata);
+			}
+			if (remaining !== undefined) {
+				newValues.remaining = remaining;
+			}
+			if (refillAmount !== undefined || refillInterval !== undefined) {
+				if (refillAmount !== undefined && refillInterval === undefined) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.REFILL_AMOUNT_AND_INTERVAL_REQUIRED,
+					});
+				} else if (refillInterval !== undefined && refillAmount === undefined) {
+					throw new APIError("BAD_REQUEST", {
+						message: ERROR_CODES.REFILL_INTERVAL_AND_AMOUNT_REQUIRED,
+					});
+				}
+				newValues.refillAmount = refillAmount;
+				newValues.refillInterval = refillInterval;
+			}
+
+			if (rateLimitEnabled !== undefined) {
+				newValues.rateLimitEnabled = rateLimitEnabled;
+			}
+			if (rateLimitTimeWindow !== undefined) {
+				newValues.rateLimitTimeWindow = rateLimitTimeWindow;
+			}
+			if (rateLimitMax !== undefined) {
+				newValues.rateLimitMax = rateLimitMax;
+			}
+
+			if (permissions !== undefined) {
+				//@ts-ignore - we need this to be a string to save into DB.
+				newValues.permissions = JSON.stringify(permissions);
+			}
+
+			if (Object.keys(newValues).length === 0) {
+				throw new APIError("BAD_REQUEST", {
+					message: ERROR_CODES.NO_VALUES_TO_UPDATE,
+				});
+			}
+
+			let newApiKey: ApiKey = apiKey;
+			try {
+				let result = await ctx.context.adapter.update<ApiKey>({
+					model: schema.apikey.modelName,
+					where: [
+						{
+							field: "id",
+							value: apiKey.id,
+						},
+						{
+							field: "userId",
+							value: user.id,
+						},
+					],
+					update: {
+						lastRequest: new Date(),
+						remaining: apiKey.remaining === null ? null : apiKey.remaining - 1,
+						...newValues,
+					},
+				});
+				if (result) newApiKey = result;
+			} catch (error: any) {
+				throw new APIError("INTERNAL_SERVER_ERROR", {
+					message: error?.message,
+				});
+			}
+
+			deleteAllExpiredApiKeys(ctx.context);
+
+			// transform metadata from string back to object
+			newApiKey.metadata = schema.apikey.fields.metadata.transform.output(
+				newApiKey.metadata as never as string,
+			);
+
+			const { key, ...returningApiKey } = newApiKey;
+
+			return ctx.json({
+				...returningApiKey,
+				permissions: returningApiKey.permissions
+					? safeJSONParse<{
+							[key: string]: string[];
+						}>(
+							//@ts-ignore - from DB, this value is always a string
+							returningApiKey.permissions,
+						)
+					: null,
+			});
+		},
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
+```typescript
+import { z } from "zod";
+import { createAuthEndpoint } from "../../../api";
+import { ERROR_CODES } from "..";
+import type { apiKeySchema } from "../schema";
+import type { ApiKey } from "../types";
+import { base64Url } from "@better-auth/utils/base64";
+import { createHash } from "@better-auth/utils/hash";
+import { isRateLimited } from "../rate-limit";
+import type { AuthContext } from "../../../types";
+import type { PredefinedApiKeyOptions } from ".";
+import { safeJSONParse } from "../../../utils/json";
+import { role } from "../../access";
+
+export function verifyApiKey({
+	opts,
+	schema,
+	deleteAllExpiredApiKeys,
+}: {
+	opts: PredefinedApiKeyOptions;
+	schema: ReturnType<typeof apiKeySchema>;
+	deleteAllExpiredApiKeys(
+		ctx: AuthContext,
+		byPassLastCheckTime?: boolean,
+	): Promise<number> | undefined;
+}) {
+	return createAuthEndpoint(
+		"/api-key/verify",
+		{
+			method: "POST",
+			body: z.object({
+				key: z.string({
+					description: "The key to verify",
+				}),
+				permissions: z.record(z.string(), z.array(z.string())).optional(),
+			}),
+			metadata: {
+				SERVER_ONLY: true,
+			},
+		},
+		async (ctx) => {
+			const { key } = ctx.body;
+
+			if (key.length < opts.defaultKeyLength) {
+				// if the key is shorter than the default key length, than we know the key is invalid.
+				// we can't check if the key is exactly equal to the default key length, because
+				// a prefix may be added to the key.
+				return ctx.json({
+					valid: false,
+					error: {
+						message: ERROR_CODES.INVALID_API_KEY,
+						code: "KEY_NOT_FOUND" as const,
+					},
+					key: null,
+				});
+			}
+
+			if (
+				opts.customAPIKeyValidator &&
+				!opts.customAPIKeyValidator({ ctx, key })
+			) {
+				return ctx.json({
+					valid: false,
+					error: {
+						message: ERROR_CODES.INVALID_API_KEY,
+						code: "KEY_NOT_FOUND" as const,
+					},
+					key: null,
+				});
+			}
+
+			const hash = await createHash("SHA-256").digest(
+				new TextEncoder().encode(key),
+			);
+			const hashed = base64Url.encode(new Uint8Array(hash), {
+				padding: false,
+			});
+
+			const apiKey = await ctx.context.adapter.findOne<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "key",
+						value: hashed,
+					},
+				],
+			});
+
+			// No api key found
+			if (!apiKey) {
+				return ctx.json({
+					valid: false,
+					error: {
+						message: ERROR_CODES.KEY_NOT_FOUND,
+						code: "KEY_NOT_FOUND" as const,
+					},
+					key: null,
+				});
+			}
+
+			// key is disabled
+			if (apiKey.enabled === false) {
+				return ctx.json({
+					valid: false,
+					error: {
+						message: ERROR_CODES.USAGE_EXCEEDED,
+						code: "KEY_DISABLED" as const,
+					},
+					key: null,
+				});
+			}
+
+			// key is expired
+			if (apiKey.expiresAt) {
+				const now = new Date().getTime();
+				const expiresAt = apiKey.expiresAt.getTime();
+				if (now > expiresAt) {
+					try {
+						ctx.context.adapter.delete({
+							model: schema.apikey.modelName,
+							where: [
+								{
+									field: "id",
+									value: apiKey.id,
+								},
+							],
+						});
+					} catch (error) {
+						ctx.context.logger.error(
+							`Failed to delete expired API keys:`,
+							error,
+						);
+					}
+
+					return ctx.json({
+						valid: false,
+						error: {
+							message: ERROR_CODES.KEY_EXPIRED,
+							code: "KEY_EXPIRED" as const,
+						},
+						key: null,
+					});
+				}
+			}
+
+			const requiredPermissions = ctx.body.permissions;
+			const apiKeyPermissions = apiKey.permissions
+				? safeJSONParse<{
+						[key: string]: string[];
+					}>(
+						//@ts-ignore - from DB, this value is always a string
+						apiKey.permissions,
+					)
+				: null;
+
+			if (requiredPermissions) {
+				if (!apiKeyPermissions) {
+					return ctx.json({
+						valid: false,
+						error: {
+							message: ERROR_CODES.KEY_NOT_FOUND,
+							code: "KEY_NOT_FOUND" as const,
+						},
+						key: null,
+					});
+				}
+				const r = role(apiKeyPermissions as any);
+				const result = r.authorize(requiredPermissions);
+				if (!result.success) {
+					return ctx.json({
+						valid: false,
+						error: {
+							message: ERROR_CODES.KEY_NOT_FOUND,
+							code: "KEY_NOT_FOUND" as const,
+						},
+						key: null,
+					});
+				}
+			}
+
+			let remaining = apiKey.remaining;
+			let lastRefillAt = apiKey.lastRefillAt;
+
+			if (apiKey.remaining === 0 && apiKey.refillAmount === null) {
+				// if there is no more remaining requests, and there is no refill amount, than the key is revoked
+				try {
+					ctx.context.adapter.delete({
+						model: schema.apikey.modelName,
+						where: [
+							{
+								field: "id",
+								value: apiKey.id,
+							},
+						],
+					});
+				} catch (error) {
+					ctx.context.logger.error(`Failed to delete expired API keys:`, error);
+				}
+
+				return ctx.json({
+					valid: false,
+					error: {
+						message: ERROR_CODES.USAGE_EXCEEDED,
+						code: "USAGE_EXCEEDED" as const,
+					},
+					key: null,
+				});
+			} else if (remaining !== null) {
+				let now = new Date().getTime();
+				const refillInterval = apiKey.refillInterval;
+				const refillAmount = apiKey.refillAmount;
+				let lastTime = (lastRefillAt ?? apiKey.createdAt).getTime();
+
+				if (refillInterval && refillAmount) {
+					// if they provide refill info, then we should refill once the interval is reached.
+
+					const timeSinceLastRequest = (now - lastTime) / (1000 * 60 * 60 * 24); // in days
+					if (timeSinceLastRequest > refillInterval) {
+						remaining = refillAmount;
+						lastRefillAt = new Date();
+					}
+				}
+
+				if (remaining === 0) {
+					// if there are no more remaining requests, than the key is invalid
+
+					// throw new APIError("FORBIDDEN", {
+					// 	message: ERROR_CODES.USAGE_EXCEEDED,
+					// });
+					return ctx.json({
+						valid: false,
+						error: {
+							message: ERROR_CODES.USAGE_EXCEEDED,
+							code: "USAGE_EXCEEDED" as const,
+						},
+						key: null,
+					});
+				} else {
+					remaining--;
+				}
+			}
+
+			const { message, success, update, tryAgainIn } = isRateLimited(
+				apiKey,
+				opts,
+			);
+			const newApiKey = await ctx.context.adapter.update<ApiKey>({
+				model: schema.apikey.modelName,
+				where: [
+					{
+						field: "id",
+						value: apiKey.id,
+					},
+				],
+				update: {
+					...update,
+					remaining,
+					lastRefillAt,
+				},
+			});
+			if (success === false) {
+				return ctx.json({
+					valid: false,
+					error: {
+						message,
+						code: "RATE_LIMITED" as const,
+						details: {
+							tryAgainIn,
+						},
+					},
+					key: null,
+				});
+			}
+			deleteAllExpiredApiKeys(ctx.context);
+
+			const { key: _, ...returningApiKey } = newApiKey ?? {
+				key: 1,
+				permissions: undefined,
+			};
+			if ("metadata" in returningApiKey) {
+				returningApiKey.metadata =
+					schema.apikey.fields.metadata.transform.output(
+						returningApiKey.metadata as never as string,
+					);
+			}
+
+			returningApiKey.permissions = returningApiKey.permissions
+				? safeJSONParse<{
+						[key: string]: string[];
+					}>(
+						//@ts-ignore - from DB, this value is always a string
+						returningApiKey.permissions,
+					)
+				: null;
+
+			return ctx.json({
+				valid: true,
+				error: null,
+				key:
+					newApiKey === null ? null : (returningApiKey as Omit<ApiKey, "key">),
+			});
+		},
+	);
+}
+
+```

@@ -1,0 +1,244 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/buffer.ts</source>
+<document_content>
+/**
+ * Compare two buffers in constant time.
+ */
+export function constantTimeEqual(
+	a: ArrayBuffer | Uint8Array,
+	b: ArrayBuffer | Uint8Array,
+): boolean {
+	const aBuffer = new Uint8Array(a);
+	const bBuffer = new Uint8Array(b);
+	if (aBuffer.length !== bBuffer.length) {
+		return false;
+	}
+	let c = 0;
+	for (let i = 0; i < aBuffer.length; i++) {
+		c |= aBuffer[i]! ^ bBuffer[i]!;
+	}
+	return c === 0;
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/hash.ts</source>
+<document_content>
+import { constantTimeEqual } from "./buffer";
+import { createHash } from "@better-auth/utils/hash";
+import { base64 } from "@better-auth/utils/base64";
+
+export async function hashToBase64(
+	data: string | ArrayBuffer,
+): Promise<string> {
+	const buffer = await createHash("SHA-256").digest(data);
+	return base64.encode(buffer);
+}
+
+export async function compareHash(
+	data: string | ArrayBuffer,
+	hash: string,
+): Promise<boolean> {
+	const buffer = await createHash("SHA-256").digest(
+		typeof data === "string" ? new TextEncoder().encode(data) : data,
+	);
+	const hashBuffer = base64.decode(hash);
+	return constantTimeEqual(buffer, hashBuffer);
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/index.ts</source>
+<document_content>
+import { createHash } from "@better-auth/utils/hash";
+import { xchacha20poly1305 } from "@noble/ciphers/chacha";
+import { bytesToHex, hexToBytes, utf8ToBytes } from "@noble/ciphers/utils";
+import { managedNonce } from "@noble/ciphers/webcrypto";
+
+export type SymmetricEncryptOptions = {
+	key: string;
+	data: string;
+};
+
+export const symmetricEncrypt = async ({
+	key,
+	data,
+}: SymmetricEncryptOptions) => {
+	const keyAsBytes = await createHash("SHA-256").digest(key);
+	const dataAsBytes = utf8ToBytes(data);
+	const chacha = managedNonce(xchacha20poly1305)(new Uint8Array(keyAsBytes));
+	return bytesToHex(chacha.encrypt(dataAsBytes));
+};
+
+export type SymmetricDecryptOptions = {
+	key: string;
+	data: string;
+};
+
+export const symmetricDecrypt = async ({
+	key,
+	data,
+}: SymmetricDecryptOptions) => {
+	const keyAsBytes = await createHash("SHA-256").digest(key);
+	const dataAsBytes = hexToBytes(data);
+	const chacha = managedNonce(xchacha20poly1305)(new Uint8Array(keyAsBytes));
+	return new TextDecoder().decode(chacha.decrypt(dataAsBytes));
+};
+
+export * from "./buffer";
+export * from "./hash";
+export * from "./jwt";
+export * from "./password";
+export * from "./random";
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/jwt.ts</source>
+<document_content>
+import { SignJWT } from "jose";
+
+export async function signJWT(
+	payload: any,
+	secret: string,
+	expiresIn: number = 3600,
+): Promise<string> {
+	const jwt = await new SignJWT(payload)
+		.setProtectedHeader({ alg: "HS256" })
+		.setIssuedAt()
+		.setExpirationTime(Math.floor(Date.now() / 1000) + expiresIn)
+		.sign(new TextEncoder().encode(secret));
+
+	return jwt;
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/password.test.ts</source>
+<document_content>
+import { describe, it, expect } from "vitest";
+import { hashPassword, verifyPassword } from "./password";
+
+describe("Password hashing and verification", () => {
+	it("should hash a password", async () => {
+		const password = "mySecurePassword123!";
+		const hash = await hashPassword(password);
+		expect(hash).toBeTruthy();
+		expect(hash.split(":").length).toBe(2);
+	});
+
+	it("should verify a correct password", async () => {
+		const password = "correctPassword123!";
+		const hash = await hashPassword(password);
+		const isValid = await verifyPassword({ hash, password });
+		expect(isValid).toBe(true);
+	});
+
+	it("should reject an incorrect password", async () => {
+		const correctPassword = "correctPassword123!";
+		const incorrectPassword = "wrongPassword456!";
+		const hash = await hashPassword(correctPassword);
+		const isValid = await verifyPassword({ hash, password: incorrectPassword });
+		expect(isValid).toBe(false);
+	});
+
+	it("should generate different hashes for the same password", async () => {
+		const password = "samePassword123!";
+		const hash1 = await hashPassword(password);
+		const hash2 = await hashPassword(password);
+		expect(hash1).not.toBe(hash2);
+	});
+
+	it("should handle long passwords", async () => {
+		const password = "a".repeat(1000);
+		const hash = await hashPassword(password);
+		const isValid = await verifyPassword({ hash, password });
+		expect(isValid).toBe(true);
+	});
+
+	it("should be case-sensitive", async () => {
+		const password = "CaseSensitivePassword123!";
+		const hash = await hashPassword(password);
+		const isValidLower = await verifyPassword({
+			hash,
+			password: password.toLowerCase(),
+		});
+		const isValidUpper = await verifyPassword({
+			hash,
+			password: password.toUpperCase(),
+		});
+		expect(isValidLower).toBe(false);
+		expect(isValidUpper).toBe(false);
+	});
+
+	it("should handle Unicode characters", async () => {
+		const password = "пароль123!";
+		const hash = await hashPassword(password);
+		const isValid = await verifyPassword({ hash, password });
+		expect(isValid).toBe(true);
+	});
+});
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/password.ts</source>
+<document_content>
+import { constantTimeEqual } from "./buffer";
+import { scryptAsync } from "@noble/hashes/scrypt";
+import { getRandomValues } from "@better-auth/utils";
+import { hex } from "@better-auth/utils/hex";
+import { hexToBytes } from "@noble/hashes/utils";
+
+const config = {
+	N: 16384,
+	r: 16,
+	p: 1,
+	dkLen: 64,
+};
+
+async function generateKey(password: string, salt: string) {
+	return await scryptAsync(password.normalize("NFKC"), salt, {
+		N: config.N,
+		p: config.p,
+		r: config.r,
+		dkLen: config.dkLen,
+		maxmem: 128 * config.N * config.r * 2,
+	});
+}
+
+export const hashPassword = async (password: string) => {
+	const salt = hex.encode(getRandomValues(new Uint8Array(16)));
+	const key = await generateKey(password, salt);
+	return `${salt}:${hex.encode(key)}`;
+};
+
+export const verifyPassword = async ({
+	hash,
+	password,
+}: { hash: string; password: string }) => {
+	const [salt, key] = hash.split(":");
+	const targetKey = await generateKey(password, salt!);
+	return constantTimeEqual(targetKey, hexToBytes(key));
+};
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/crypto/random.ts</source>
+<document_content>
+import { createRandomStringGenerator } from "@better-auth/utils/random";
+export const generateRandomString = createRandomStringGenerator(
+	"a-z",
+	"0-9",
+	"A-Z",
+	"-_",
+);
+
+</document_content>
+</document>
+</documents>

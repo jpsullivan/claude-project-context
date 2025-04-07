@@ -1,0 +1,236 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/Sheet.vue
+```
+<script setup lang="ts">
+import {
+	type DialogRootEmits,
+	type DialogRootProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+
+const props = defineProps<DialogRootProps>();
+const emits = defineEmits<DialogRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DialogRoot v-bind="forwarded">
+    <slot />
+  </DialogRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetClose.vue
+```
+<script setup lang="ts">
+import { type DialogCloseProps } from "radix-vue";
+
+const props = defineProps<DialogCloseProps>();
+</script>
+
+<template>
+  <DialogClose v-bind="props">
+    <slot />
+  </DialogClose>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetContent.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type DialogContentEmits,
+	type DialogContentProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+import { type SheetVariants } from ".";
+
+interface SheetContentProps extends DialogContentProps {
+	class?: HTMLAttributes["class"];
+	side?: SheetVariants["side"];
+}
+
+defineOptions({
+	inheritAttrs: false,
+});
+
+const props = defineProps<SheetContentProps>();
+
+const emits = defineEmits<DialogContentEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, side, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <DialogPortal>
+    <DialogOverlay
+      class="fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+    />
+    <DialogContent
+      :class="cn(sheetVariants({ side }), props.class)"
+      v-bind="{ ...forwarded, ...$attrs }"
+    >
+      <slot />
+
+      <DialogClose
+        class="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary"
+      >
+        <Cross2Icon class="w-4 h-4" />
+      </DialogClose>
+    </DialogContent>
+  </DialogPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetDescription.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogDescriptionProps } from "radix-vue";
+
+const props = defineProps<
+	DialogDescriptionProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DialogDescription
+    :class="cn('text-sm text-muted-foreground', props.class)"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </DialogDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetFooter.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn(
+        'flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-x-2',
+        props.class,
+      )
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetHeader.vue
+```
+<script setup lang="ts">
+import type { HTMLAttributes } from "vue";
+
+const props = defineProps<{ class?: HTMLAttributes["class"] }>();
+</script>
+
+<template>
+  <div
+    :class="
+      cn('flex flex-col gap-y-2 text-center sm:text-left', props.class)
+    "
+  >
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetTitle.vue
+```
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import { type DialogTitleProps } from "radix-vue";
+
+const props = defineProps<
+	DialogTitleProps & { class?: HTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DialogTitle
+    :class="cn('text-lg font-semibold text-foreground', props.class)"
+    v-bind="delegatedProps"
+  >
+    <slot />
+  </DialogTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/SheetTrigger.vue
+```
+<script setup lang="ts">
+import { type DialogTriggerProps } from "radix-vue";
+
+const props = defineProps<DialogTriggerProps>();
+</script>
+
+<template>
+  <DialogTrigger v-bind="props">
+    <slot />
+  </DialogTrigger>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/sheet/index.ts
+```typescript
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Sheet } from "./Sheet.vue";
+export { default as SheetTrigger } from "./SheetTrigger.vue";
+export { default as SheetClose } from "./SheetClose.vue";
+export { default as SheetContent } from "./SheetContent.vue";
+export { default as SheetHeader } from "./SheetHeader.vue";
+export { default as SheetTitle } from "./SheetTitle.vue";
+export { default as SheetDescription } from "./SheetDescription.vue";
+export { default as SheetFooter } from "./SheetFooter.vue";
+
+export const sheetVariants = cva(
+	"fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+	{
+		variants: {
+			side: {
+				top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+				bottom:
+					"inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+				left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+				right:
+					"inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+			},
+		},
+		defaultVariants: {
+			side: "right",
+		},
+	},
+);
+
+export type SheetVariants = VariantProps<typeof sheetVariants>;
+
+```

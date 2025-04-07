@@ -1,0 +1,17 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/api/auth/[...route]+api.ts</source>
+<document_content>
+import { auth } from "@/lib/auth";
+
+export const GET = (request: Request) => {
+	return auth.handler(request);
+};
+
+export const POST = (request: Request) => {
+	return auth.handler(request);
+};
+
+</document_content>
+</document>
+</documents>

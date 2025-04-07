@@ -1,0 +1,417 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/one-tap/client.ts</source>
+<document_content>
+import type { BetterFetchOption } from "@better-fetch/fetch";
+import type { BetterAuthClientPlugin } from "../../types";
+
+declare global {
+	interface Window {
+		google?: {
+			accounts: {
+				id: {
+					initialize: (config: any) => void;
+					prompt: (callback?: (notification: any) => void) => void;
+				};
+			};
+		};
+		googleScriptInitialized?: boolean;
+	}
+}
+
+export interface GoogleOneTapOptions {
+	/**
+	 * Google client ID
+	 */
+	clientId: string;
+	/**
+	 * Auto select the account if the user is already signed in
+	 */
+	autoSelect?: boolean;
+	/**
+	 * Cancel the flow when the user taps outside the prompt
+	 */
+	cancelOnTapOutside?: boolean;
+	/**
+	 * The mode to use for the Google One Tap flow
+	 *
+	 * popup: Use a popup window
+	 * redirect: Redirect the user to the Google One Tap flow
+	 *
+	 * @default "popup"
+	 */
+	uxMode?: "popup" | "redirect";
+	/**
+	 * The context to use for the Google One Tap flow
+	 *
+	 * @default "signin"
+	 */
+	context?: string;
+	/**
+	 * Additional configuration options to pass to the Google One Tap API.
+	 */
+	additionalOptions?: Record<string, any>;
+	/**
+	 * Configuration options for the prompt and exponential backoff behavior.
+	 */
+	promptOptions?: {
+		/**
+		 * Base delay (in milliseconds) for exponential backoff.
+		 * @default 1000
+		 */
+		baseDelay?: number;
+		/**
+		 * Maximum number of prompt attempts before calling onPromptNotification.
+		 * @default 5
+		 */
+		maxAttempts?: number;
+	};
+}
+
+export interface GoogleOneTapActionOptions
+	extends Omit<GoogleOneTapOptions, "clientId" | "promptOptions"> {
+	fetchOptions?: BetterFetchOption;
+	/**
+	 * Callback URL.
+	 */
+	callbackURL?: string;
+	/**
+	 * Optional callback that receives the prompt notification if (or when) the prompt is dismissed or skipped.
+	 * This lets you render an alternative UI (e.g. a Google Sign-In button) to restart the process.
+	 */
+	onPromptNotification?: (notification: any) => void;
+}
+
+let isRequestInProgress = false;
+
+export const oneTapClient = (options: GoogleOneTapOptions) => {
+	return {
+		id: "one-tap",
+		getActions: ($fetch, _) => ({
+			oneTap: async (
+				opts?: GoogleOneTapActionOptions,
+				fetchOptions?: BetterFetchOption,
+			) => {
+				if (isRequestInProgress) {
+					console.warn(
+						"A Google One Tap request is already in progress. Please wait.",
+					);
+					return;
+				}
+
+				isRequestInProgress = true;
+
+				try {
+					if (typeof window === "undefined" || !window.document) {
+						console.warn(
+							"Google One Tap is only available in browser environments",
+						);
+						return;
+					}
+
+					const { autoSelect, cancelOnTapOutside, context } = opts ?? {};
+					const contextValue = context ?? options.context ?? "signin";
+
+					await loadGoogleScript();
+
+					await new Promise<void>((resolve, reject) => {
+						let isResolved = false;
+						const baseDelay = options.promptOptions?.baseDelay ?? 1000;
+						const maxAttempts = options.promptOptions?.maxAttempts ?? 5;
+
+						window.google?.accounts.id.initialize({
+							client_id: options.clientId,
+							callback: async (response: { credential: string }) => {
+								isResolved = true;
+								try {
+									await $fetch("/one-tap/callback", {
+										method: "POST",
+										body: { idToken: response.credential },
+										...opts?.fetchOptions,
+										...fetchOptions,
+									});
+
+									if (
+										(!opts?.fetchOptions && !fetchOptions) ||
+										opts?.callbackURL
+									) {
+										window.location.href = opts?.callbackURL ?? "/";
+									}
+									resolve();
+								} catch (error) {
+									console.error("Error during One Tap callback:", error);
+									reject(error);
+								}
+							},
+							auto_select: autoSelect,
+							cancel_on_tap_outside: cancelOnTapOutside,
+							context: contextValue,
+
+							...options.additionalOptions,
+						});
+
+						const handlePrompt = (attempt: number) => {
+							if (isResolved) return;
+
+							window.google?.accounts.id.prompt((notification: any) => {
+								if (isResolved) return;
+
+								if (
+									notification.isDismissedMoment &&
+									notification.isDismissedMoment()
+								) {
+									if (attempt < maxAttempts) {
+										const delay = Math.pow(2, attempt) * baseDelay;
+										setTimeout(() => handlePrompt(attempt + 1), delay);
+									} else {
+										opts?.onPromptNotification?.(notification);
+									}
+								} else if (
+									notification.isSkippedMoment &&
+									notification.isSkippedMoment()
+								) {
+									if (attempt < maxAttempts) {
+										const delay = Math.pow(2, attempt) * baseDelay;
+										setTimeout(() => handlePrompt(attempt + 1), delay);
+									} else {
+										opts?.onPromptNotification?.(notification);
+									}
+								}
+							});
+						};
+
+						handlePrompt(0);
+					});
+				} catch (error) {
+					console.error("Error during Google One Tap flow:", error);
+					throw error;
+				} finally {
+					isRequestInProgress = false;
+				}
+			},
+		}),
+		getAtoms($fetch) {
+			return {};
+		},
+	} satisfies BetterAuthClientPlugin;
+};
+
+const loadGoogleScript = (): Promise<void> => {
+	return new Promise((resolve) => {
+		if (window.googleScriptInitialized) {
+			resolve();
+			return;
+		}
+
+		const script = document.createElement("script");
+		script.src = "https://accounts.google.com/gsi/client";
+		script.async = true;
+		script.defer = true;
+		script.onload = () => {
+			window.googleScriptInitialized = true;
+			resolve();
+		};
+		document.head.appendChild(script);
+	});
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/one-tap/index.ts</source>
+<document_content>
+import { z } from "zod";
+import { APIError, createAuthEndpoint } from "../../api";
+import { setSessionCookie } from "../../cookies";
+import type { BetterAuthPlugin } from "../../types";
+import { jwtVerify, createRemoteJWKSet } from "jose";
+import { toBoolean } from "../../utils/boolean";
+
+interface OneTapOptions {
+	/**
+	 * Disable the signup flow
+	 *
+	 * @default false
+	 */
+	disableSignup?: boolean;
+	/**
+	 * Google Client ID
+	 *
+	 * If a client ID is provided in the social provider configuration,
+	 * it will be used.
+	 */
+	clientId?: string;
+}
+
+export const oneTap = (options?: OneTapOptions) =>
+	({
+		id: "one-tap",
+		endpoints: {
+			oneTapCallback: createAuthEndpoint(
+				"/one-tap/callback",
+				{
+					method: "POST",
+					body: z.object({
+						idToken: z.string({
+							description:
+								"Google ID token, which the client obtains from the One Tap API",
+						}),
+					}),
+					metadata: {
+						openapi: {
+							summary: "One tap callback",
+							description:
+								"Use this endpoint to authenticate with Google One Tap",
+							responses: {
+								200: {
+									description: "Successful response",
+									content: {
+										"application/json": {
+											schema: {
+												type: "object",
+												properties: {
+													session: {
+														$ref: "#/components/schemas/Session",
+													},
+													user: {
+														$ref: "#/components/schemas/User",
+													},
+												},
+											},
+										},
+									},
+								},
+								400: {
+									description: "Invalid token",
+								},
+							},
+						},
+					},
+				},
+				async (ctx) => {
+					const { idToken } = ctx.body;
+					let payload: any;
+					try {
+						const JWKS = createRemoteJWKSet(
+							new URL("https://www.googleapis.com/oauth2/v3/certs"),
+						);
+						const { payload: verifiedPayload } = await jwtVerify(
+							idToken,
+							JWKS,
+							{
+								issuer: ["https://accounts.google.com", "accounts.google.com"],
+								audience:
+									options?.clientId ||
+									ctx.context.options.socialProviders?.google?.clientId,
+							},
+						);
+						payload = verifiedPayload;
+					} catch (error) {
+						throw new APIError("BAD_REQUEST", {
+							message: "invalid id token",
+						});
+					}
+					const { email, email_verified, name, picture, sub } = payload;
+					if (!email) {
+						return ctx.json({ error: "Email not available in token" });
+					}
+
+					const user = await ctx.context.internalAdapter.findUserByEmail(email);
+					if (!user) {
+						if (options?.disableSignup) {
+							throw new APIError("BAD_GATEWAY", {
+								message: "User not found",
+							});
+						}
+						const newUser = await ctx.context.internalAdapter.createOAuthUser(
+							{
+								email,
+								emailVerified:
+									typeof email_verified === "boolean"
+										? email_verified
+										: toBoolean(email_verified),
+								name,
+								image: picture,
+							},
+							{
+								providerId: "google",
+								accountId: sub,
+							},
+							ctx,
+						);
+						if (!newUser) {
+							throw new APIError("INTERNAL_SERVER_ERROR", {
+								message: "Could not create user",
+							});
+						}
+						const session = await ctx.context.internalAdapter.createSession(
+							newUser.user.id,
+							ctx.request,
+						);
+						await setSessionCookie(ctx, {
+							user: newUser.user,
+							session,
+						});
+						return ctx.json({
+							token: session.token,
+							user: {
+								id: newUser.user.id,
+								email: newUser.user.email,
+								emailVerified: newUser.user.emailVerified,
+								name: newUser.user.name,
+								image: newUser.user.image,
+								createdAt: newUser.user.createdAt,
+								updatedAt: newUser.user.updatedAt,
+							},
+						});
+					}
+					const account = await ctx.context.internalAdapter.findAccount(sub);
+					if (!account) {
+						const accountLinking = ctx.context.options.account?.accountLinking;
+						const shouldLinkAccount =
+							accountLinking?.enabled &&
+							(accountLinking.trustedProviders?.includes("google") ||
+								email_verified);
+						if (shouldLinkAccount) {
+							await ctx.context.internalAdapter.linkAccount({
+								userId: user.user.id,
+								providerId: "google",
+								accountId: sub,
+								scope: "openid,profile,email",
+								idToken,
+							});
+						} else {
+							throw new APIError("UNAUTHORIZED", {
+								message: "Google sub doesn't match",
+							});
+						}
+					}
+					const session = await ctx.context.internalAdapter.createSession(
+						user.user.id,
+						ctx.request,
+					);
+
+					await setSessionCookie(ctx, {
+						user: user.user,
+						session,
+					});
+					return ctx.json({
+						token: session.token,
+						user: {
+							id: user.user.id,
+							email: user.user.email,
+							emailVerified: user.user.emailVerified,
+							name: user.user.name,
+							image: user.user.image,
+							createdAt: user.user.createdAt,
+							updatedAt: user.user.updatedAt,
+						},
+					});
+				},
+			),
+		},
+	}) satisfies BetterAuthPlugin;
+
+</document_content>
+</document>
+</documents>

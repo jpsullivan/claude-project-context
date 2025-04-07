@@ -1,0 +1,473 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/add-svelte-kit-env-modules.ts
+```typescript
+export function addSvelteKitEnvModules(aliases: Record<string, string>) {
+	aliases["$env/dynamic/private"] = createDataUriModule(
+		createDynamicEnvModule(),
+	);
+	aliases["$env/dynamic/public"] = createDataUriModule(
+		createDynamicEnvModule(),
+	);
+	aliases["$env/static/private"] = createDataUriModule(
+		createStaticEnvModule(filterPrivateEnv("PUBLIC_", "")),
+	);
+	aliases["$env/static/public"] = createDataUriModule(
+		createStaticEnvModule(filterPublicEnv("PUBLIC_", "")),
+	);
+}
+
+function createDataUriModule(module: string) {
+	return `data:text/javascript;charset=utf-8,${encodeURIComponent(module)}`;
+}
+
+function createStaticEnvModule(env: Record<string, string>) {
+	const declarations = Object.keys(env)
+		.filter((k) => validIdentifier.test(k) && !reserved.has(k))
+		.map((k) => `export const ${k} = ${JSON.stringify(env[k])};`);
+
+	return `
+  ${declarations.join("\n")}
+  // jiti dirty hack: .unknown
+  `;
+}
+
+function createDynamicEnvModule() {
+	return `
+  export const env = process.env;
+  // jiti dirty hack: .unknown
+  `;
+}
+
+export function filterPrivateEnv(publicPrefix: string, privatePrefix: string) {
+	return Object.fromEntries(
+		Object.entries(process.env).filter(
+			([k]) =>
+				k.startsWith(privatePrefix) &&
+				(publicPrefix === "" || !k.startsWith(publicPrefix)),
+		),
+	) as Record<string, string>;
+}
+
+export function filterPublicEnv(publicPrefix: string, privatePrefix: string) {
+	return Object.fromEntries(
+		Object.entries(process.env).filter(
+			([k]) =>
+				k.startsWith(publicPrefix) &&
+				(privatePrefix === "" || !k.startsWith(privatePrefix)),
+		),
+	) as Record<string, string>;
+}
+
+const validIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+const reserved = new Set([
+	"do",
+	"if",
+	"in",
+	"for",
+	"let",
+	"new",
+	"try",
+	"var",
+	"case",
+	"else",
+	"enum",
+	"eval",
+	"null",
+	"this",
+	"true",
+	"void",
+	"with",
+	"await",
+	"break",
+	"catch",
+	"class",
+	"const",
+	"false",
+	"super",
+	"throw",
+	"while",
+	"yield",
+	"delete",
+	"export",
+	"import",
+	"public",
+	"return",
+	"static",
+	"switch",
+	"typeof",
+	"default",
+	"extends",
+	"finally",
+	"package",
+	"private",
+	"continue",
+	"debugger",
+	"function",
+	"arguments",
+	"interface",
+	"protected",
+	"implements",
+	"instanceof",
+]);
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/check-package-managers.ts
+```typescript
+import { exec } from "child_process";
+
+function checkCommand(command: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		exec(`${command} --version`, (error) => {
+			if (error) {
+				resolve(false); // Command not found or error occurred
+			} else {
+				resolve(true); // Command exists
+			}
+		});
+	});
+}
+
+export async function checkPackageManagers(): Promise<{
+	hasPnpm: boolean;
+	hasBun: boolean;
+}> {
+	const hasPnpm = await checkCommand("pnpm");
+	const hasBun = await checkCommand("bun");
+
+	return {
+		hasPnpm,
+		hasBun,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/format-ms.ts
+```typescript
+/**
+ * Only supports up to seconds.
+ */
+export function formatMilliseconds(ms: number) {
+	if (ms < 0) {
+		throw new Error("Milliseconds cannot be negative");
+	}
+	if (ms < 1000) {
+		return `${ms}ms`;
+	}
+
+	const seconds = Math.floor(ms / 1000);
+	const milliseconds = ms % 1000;
+
+	return `${seconds}s ${milliseconds}ms`;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/get-config.ts
+```typescript
+import { loadConfig } from "c12";
+import type { BetterAuthOptions } from "better-auth";
+import { logger } from "better-auth";
+import path from "path";
+// @ts-ignore
+import babelPresetTypescript from "@babel/preset-typescript";
+// @ts-ignore
+import babelPresetReact from "@babel/preset-react";
+import fs, { existsSync } from "fs";
+import { BetterAuthError } from "better-auth";
+import { addSvelteKitEnvModules } from "./add-svelte-kit-env-modules";
+import { getTsconfigInfo } from "./get-tsconfig-info";
+
+let possiblePaths = [
+	"auth.ts",
+	"auth.tsx",
+	"auth.js",
+	"auth.jsx",
+	"auth.server.js",
+	"auth.server.ts",
+];
+
+possiblePaths = [
+	...possiblePaths,
+	...possiblePaths.map((it) => `lib/server/${it}`),
+	...possiblePaths.map((it) => `server/${it}`),
+	...possiblePaths.map((it) => `lib/${it}`),
+	...possiblePaths.map((it) => `utils/${it}`),
+];
+possiblePaths = [
+	...possiblePaths,
+	...possiblePaths.map((it) => `src/${it}`),
+	...possiblePaths.map((it) => `app/${it}`),
+];
+
+function getPathAliases(cwd: string): Record<string, string> | null {
+	const tsConfigPath = path.join(cwd, "tsconfig.json");
+	if (!fs.existsSync(tsConfigPath)) {
+		return null;
+	}
+	try {
+		const tsConfig = getTsconfigInfo(cwd);
+		const { paths = {}, baseUrl = "." } = tsConfig.compilerOptions || {};
+		const result: Record<string, string> = {};
+		const obj = Object.entries(paths) as [string, string[]][];
+		for (const [alias, aliasPaths] of obj) {
+			for (const aliasedPath of aliasPaths) {
+				const resolvedBaseUrl = path.join(cwd, baseUrl);
+				const finalAlias = alias.slice(-1) === "*" ? alias.slice(0, -1) : alias;
+				const finalAliasedPath =
+					aliasedPath.slice(-1) === "*"
+						? aliasedPath.slice(0, -1)
+						: aliasedPath;
+
+				result[finalAlias || ""] = path.join(resolvedBaseUrl, finalAliasedPath);
+			}
+		}
+		addSvelteKitEnvModules(result);
+		return result;
+	} catch (error) {
+		console.error(error);
+		throw new BetterAuthError("Error parsing tsconfig.json");
+	}
+}
+/**
+ * .tsx files are not supported by Jiti.
+ */
+const jitiOptions = (cwd: string) => {
+	const alias = getPathAliases(cwd) || {};
+	return {
+		transformOptions: {
+			babel: {
+				presets: [
+					[
+						babelPresetTypescript,
+						{
+							isTSX: true,
+							allExtensions: true,
+						},
+					],
+					[babelPresetReact, { runtime: "automatic" }],
+				],
+			},
+		},
+		extensions: [".ts", ".tsx", ".js", ".jsx"],
+		alias,
+	};
+};
+export async function getConfig({
+	cwd,
+	configPath,
+	shouldThrowOnError = false,
+}: {
+	cwd: string;
+	configPath?: string;
+	shouldThrowOnError?: boolean;
+}) {
+	try {
+		let configFile: BetterAuthOptions | null = null;
+		if (configPath) {
+			let resolvedPath: string = path.join(cwd, configPath);
+			if (existsSync(configPath)) resolvedPath = configPath; // If the configPath is a file, use it as is, as it means the path wasn't relative.
+			const { config } = await loadConfig<{
+				auth: {
+					options: BetterAuthOptions;
+				};
+				default?: {
+					options: BetterAuthOptions;
+				};
+			}>({
+				configFile: resolvedPath,
+				dotenv: true,
+				jitiOptions: jitiOptions(cwd),
+			});
+			if (!config.auth && !config.default) {
+				if (shouldThrowOnError) {
+					throw new Error(
+						`Couldn't read your auth config in ${resolvedPath}. Make sure to default export your auth instance or to export as a variable named auth.`,
+					);
+				}
+				logger.error(
+					`[#better-auth]: Couldn't read your auth config in ${resolvedPath}. Make sure to default export your auth instance or to export as a variable named auth.`,
+				);
+				process.exit(1);
+			}
+			configFile = config.auth?.options || config.default?.options || null;
+		}
+
+		if (!configFile) {
+			for (const possiblePath of possiblePaths) {
+				try {
+					const { config } = await loadConfig<{
+						auth: {
+							options: BetterAuthOptions;
+						};
+						default?: {
+							options: BetterAuthOptions;
+						};
+					}>({
+						configFile: possiblePath,
+						jitiOptions: jitiOptions(cwd),
+					});
+					const hasConfig = Object.keys(config).length > 0;
+					if (hasConfig) {
+						configFile =
+							config.auth?.options || config.default?.options || null;
+						if (!configFile) {
+							if (shouldThrowOnError) {
+								throw new Error(
+									"Couldn't read your auth config. Make sure to default export your auth instance or to export as a variable named auth.",
+								);
+							}
+							logger.error("[#better-auth]: Couldn't read your auth config.");
+							console.log("");
+							logger.info(
+								"[#better-auth]: Make sure to default export your auth instance or to export as a variable named auth.",
+							);
+							process.exit(1);
+						}
+						break;
+					}
+				} catch (e) {
+					if (
+						typeof e === "object" &&
+						e &&
+						"message" in e &&
+						typeof e.message === "string" &&
+						e.message.includes(
+							"This module cannot be imported from a Client Component module",
+						)
+					) {
+						if (shouldThrowOnError) {
+							throw new Error(
+								`Please remove import 'server-only' from your auth config file temporarily. The CLI cannot resolve the configuration with it included. You can re-add it after running the CLI.`,
+							);
+						}
+						logger.error(
+							`Please remove import 'server-only' from your auth config file temporarily. The CLI cannot resolve the configuration with it included. You can re-add it after running the CLI.`,
+						);
+						process.exit(1);
+					}
+					if (shouldThrowOnError) {
+						throw e;
+					}
+					logger.error("[#better-auth]: Couldn't read your auth config.", e);
+					process.exit(1);
+				}
+			}
+		}
+		return configFile;
+	} catch (e) {
+		if (
+			typeof e === "object" &&
+			e &&
+			"message" in e &&
+			typeof e.message === "string" &&
+			e.message.includes(
+				"This module cannot be imported from a Client Component module",
+			)
+		) {
+			if (shouldThrowOnError) {
+				throw new Error(
+					`Please remove import 'server-only' from your auth config file temporarily. The CLI cannot resolve the configuration with it included. You can re-add it after running the CLI.`,
+				);
+			}
+			logger.error(
+				`Please remove import 'server-only' from your auth config file temporarily. The CLI cannot resolve the configuration with it included. You can re-add it after running the CLI.`,
+			);
+			process.exit(1);
+		}
+		if (shouldThrowOnError) {
+			throw e;
+		}
+
+		logger.error("Couldn't read your auth config.", e);
+		process.exit(1);
+	}
+}
+
+export { possiblePaths };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/get-package-info.ts
+```typescript
+import path from "path";
+import fs from "fs-extra";
+
+export function getPackageInfo(cwd?: string) {
+	const packageJsonPath = cwd
+		? path.join(cwd, "package.json")
+		: path.join("package.json");
+	try {
+		return fs.readJSONSync(packageJsonPath);
+	} catch (error) {
+		throw error;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/get-tsconfig-info.ts
+```typescript
+import path from "path";
+import fs from "fs-extra";
+
+export function stripJsonComments(jsonString: string): string {
+	return jsonString
+		.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) =>
+			g ? "" : m,
+		)
+		.replace(/,(?=\s*[}\]])/g, "");
+}
+
+export function getTsconfigInfo(cwd?: string) {
+	const packageJsonPath = cwd
+		? path.join(cwd, "tsconfig.json")
+		: path.join("tsconfig.json");
+	try {
+		const text = fs.readFileSync(packageJsonPath, "utf-8");
+		return JSON.parse(stripJsonComments(text));
+	} catch (error) {
+		throw error;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/cli/src/utils/install-dependencies.ts
+```typescript
+import { exec } from "child_process";
+
+export function installDependencies({
+	dependencies,
+	packageManager,
+	cwd,
+}: {
+	dependencies: string[];
+	packageManager: "npm" | "pnpm" | "bun" | "yarn";
+	cwd: string;
+}): Promise<boolean> {
+	let installCommand: string;
+	switch (packageManager) {
+		case "npm":
+			installCommand = "npm install --force";
+			break;
+		case "pnpm":
+			installCommand = "pnpm install";
+			break;
+		case "bun":
+			installCommand = "bun install";
+			break;
+		case "yarn":
+			installCommand = "yarn install";
+			break;
+		default:
+			throw new Error("Invalid package manager");
+	}
+	const command = `${installCommand} ${dependencies.join(" ")}`;
+
+	return new Promise((resolve, reject) => {
+		exec(command, { cwd }, (error, stdout, stderr) => {
+			if (error) {
+				reject(new Error(stderr));
+				return;
+			}
+			resolve(true);
+		});
+	});
+}
+
+```

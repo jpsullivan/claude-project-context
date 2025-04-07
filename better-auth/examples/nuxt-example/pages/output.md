@@ -1,0 +1,382 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/dashboard.vue
+```
+<script setup lang="ts">
+import { useSession } from "~/lib/auth-client";
+const { data: session } = await useSession(useFetch);
+</script>
+
+
+<template>
+    <div class="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+        <Card class="w-[350px]">
+            <CardHeader>
+                <CardTitle>
+                    User
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div class="flex gap-2 items-center">
+                    <Avatar>
+                        <AvatarImage :src="session?.user.image || ''" alt="User profile" />
+                        <AvatarFallback>{{ session?.user.name[0] }}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p class="text-sm">
+                            {{ session?.user?.name }}
+                        </p>
+                        <p class="text-xs">
+                            {{ session?.user?.email }}
+                        </p>
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter>
+                <Button @click="async () => {
+                    await signOut()
+                    // router.push('/')
+                }" variant="secondary">
+                    Sing Out
+                </Button>
+            </CardFooter>
+        </Card>
+    </div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/forget-password.vue
+```
+<script lang="ts" setup>
+import { forgetPassword } from "~/lib/auth-client.js";
+
+const email = ref("");
+
+const handleForgetPassword = async () => {
+	if (!email.value) {
+		alert("Please enter your email address");
+		return;
+	}
+	await forgetPassword(
+		{
+			email: email.value,
+			redirectTo: "/reset-password",
+		},
+		{
+			// onSuccess find the url with token in server console. For detail check forgetPassword section: https://www.better-auth.com/docs/authentication/email-password
+			onSuccess() {
+				alert("Password reset link sent to your email");
+				window.location.href = "/sign-in";
+			},
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	);
+};
+</script>
+
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<CardRoot class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-2xl">Reset Password</CardTitle>
+				<CardDescription>
+					Enter your email below to reset your password
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="email">Email</Label>
+						<Input id="email" type="email" placeholder="m@example.com" required v-model="email" />
+					</div>
+					<Button type="button" class="w-full" @click="handleForgetPassword">
+						Reset Password
+					</Button>
+				</div>
+				<div class="mt-4 text-center text-sm">
+					<a href="/sign-in" class="underline">Back to Sign In </a>
+				</div>
+			</CardContent>
+		</CardRoot>
+	</div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/index.vue
+```
+<script setup lang="ts">
+import { useSession } from "~/lib/auth-client";
+
+definePageMeta({
+	layout: "default",
+});
+
+const features = [
+	"Email & Password",
+	"Organization | Teams",
+	"Passkeys",
+	"Multi Factor",
+	"Password Reset",
+	"Email Verification",
+	"Roles & Permissions",
+	"Rate Limiting",
+	"Session Management",
+];
+const { data: session } = await useSession(useFetch);
+</script>
+
+<template>
+    <div class="min-h-[80vh] flex items-center justify-center overflow-hidden no-visible-scrollbar px-6 md:px-0">
+        <main class="flex flex-col gap-4 row-start-2 items-center justify-center">
+            <div class="flex flex-col gap-1">
+                <h3 class="font-bold text-4xl text-black dark:text-white text-center">
+                    Better Auth.
+                </h3>
+
+                <p class="text-center break-words text-sm md:text-base">
+                    Official demo to showcase
+                    <a
+							href="https://better-auth.com"
+							target="_blank"
+							className="italic underline"
+						>better-auth
+                    </a>
+                    features and capabilities. <br />
+                </p>
+
+
+                <div class="flex flex-col gap-3 pt-2 flex-wrap">
+                    <div class="border-y py-2 border-dotted bg-secondary/60 opacity-80">
+                        <div class="text-xs flex items-center gap-2 justify-center text-muted-foreground">
+                            <span class="text-center">
+                                All features on this demo are Implemented with better auth without
+                                any custom backend code
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 justify-center flex-wrap">
+                        <div v-for="feature in features" :key="feature">
+                            <span
+                                class="border-b pb-1 text-muted-foreground text-xs cursor-pointer hover:text-foreground duration-150 ease-in-out transition-all hover:border-foreground flex items-center gap-1">{{
+                                    feature }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 mt-2 mx-auto">
+                    <NuxtLink to="/sign-in" v-if="!session">
+                        <Button variant="outline" class="rounded-none">
+                            Sign In
+                        </Button>
+                    </NuxtLink>
+                    <NuxtLink to="/dashboard" v-if="session">
+                        <Button variant="outline" class="rounded-none">
+                            Dashboard
+                        </Button>
+                    </NuxtLink>
+                </div>
+            </div>
+        </main>
+    </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/reset-password.vue
+```
+<script lang="ts" setup>
+import { resetPassword } from "~/lib/auth-client.js";
+
+const confirmPassword = ref("");
+const password = ref("");
+
+const handleResetPassword = async () => {
+	if (confirmPassword.value !== password.value) {
+		alert("Please enter same passwords");
+		return;
+	}
+
+	await resetPassword({
+		newPassword: password.value,
+		fetchOptions: {
+			onSuccess(context) {
+				window.location.href = "/sign-in";
+			},
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	});
+};
+</script>
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<CardRoot class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-2xl">Reset Password</CardTitle>
+				<CardDescription>Enter your new password below</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid gap-2">
+						<Label for="password">New Password</Label>
+						<Input id="password" type="password" required v-model="password" placeholder="New Password" />
+					</div>
+					<div class="grid gap-2">
+						<Label for="password">Confirm Password</Label>
+						<Input id="password" type="password" required placeholder="Confirm Password"
+							v-model="confirmPassword" />
+					</div>
+					<Button type="button" class="w-full" @click="handleResetPassword">Reset</Button>
+				</div>
+			</CardContent>
+		</CardRoot>
+	</div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/sign-in.vue
+```
+<script setup lang="ts">
+import { signIn } from "~/lib/auth-client.js";
+
+const email = ref("");
+const password = ref("");
+
+const handleSignIn = async () => {
+	await signIn.email(
+		{
+			email: email.value,
+			password: password.value,
+			callbackURL: "/",
+		},
+		{
+			onError(context) {
+				alert(context.error.message);
+			},
+		},
+	);
+};
+</script>
+
+<template>
+    <div class="h-screen flex justify-center items-center">
+        <Card class="mx-auto max-w-sm">
+            <CardHeader>
+                <CardTitle class="text-2xl">
+                    Login
+                </CardTitle>
+                <CardDescription>
+                    Enter your email below to login to your account
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div class="grid gap-4">
+                    <div class="grid gap-2">
+                        <Label for="email">Email</Label>
+                        <Input id="email" type="email" placeholder="m@example.com" v-model="email" required />
+                    </div>
+                    <div class="grid gap-2">
+                        <div class="flex items-center">
+                            <Label for="password">Password</Label>
+                            <a href="/forget-password" class="ml-auto inline-block text-sm underline">
+                                Forgot your password?
+                            </a>
+                        </div>
+                        <Input id="password" type="password" placeholder="password" v-model="password" required />
+                    </div>
+                    <Button type="submit" class="w-full" @click="handleSignIn">
+                        Login
+                    </Button>
+                    <Button variant="outline" class="w-full" @click="async () => {
+                        await signIn.social({
+                            provider: 'google',
+                            callbackURL: '/'
+                        })
+                    }">
+                        Login with Google
+                    </Button>
+                </div>
+                <div class="mt-4 text-center text-sm">
+                    Don't have an account?
+                    <a href="/sign-up" class="underline">
+                        Sign up
+                    </a>
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+</template>
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/pages/sign-up.vue
+```
+<script lang="ts" setup>
+import { signUp } from "~/lib/auth-client.js";
+
+const firstName = ref("");
+const lastName = ref("");
+const email = ref("");
+const password = ref("");
+
+const handleSignUp = async () => {
+	const user = {
+		firstName: firstName.value,
+		lastName: lastName.value,
+		email: email.value,
+		password: password.value,
+	};
+	await signUp.email({
+		email: user.email,
+		password: user.password,
+		name: `${user.firstName} ${user.lastName}`,
+		callbackURL: "/",
+		fetchOptions: {
+			onError(context) {
+				alert(context.error.message);
+			},
+			onSuccess() {
+				useRouter().push("/dashboard");
+			},
+		},
+	});
+};
+</script>
+
+<template>
+	<div class="h-screen flex justify-center items-center">
+		<Card class="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle class="text-xl">Sign Up</CardTitle>
+				<CardDescription>
+					Enter your information to create an account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<div class="grid gap-4">
+					<div class="grid grid-cols-2 gap-4">
+						<div class="grid gap-2">
+							<Label for="first-name">First name</Label>
+							<Input id="first-name" placeholder="Max" required v-model="firstName" />
+						</div>
+						<div class="grid gap-2">
+							<Label for="last-name">Last name</Label>
+							<Input id="last-name" placeholder="Robinson" required v-model="lastName" />
+						</div>
+					</div>
+					<div class="grid gap-2">
+						<Label for="email">Email</Label>
+						<Input id="email" type="email" placeholder="m@example.com" required v-model="email" />
+					</div>
+					<div class="grid gap-2">
+						<Label for="password">Password</Label>
+						<Input id="password" type="password" v-model="password" />
+					</div>
+					<Button type="button" class="w-full" @click="handleSignUp">Create an account</Button>
+				</div>
+				<div class="mt-4 text-center text-sm">
+					Already have an account?
+					<a href="/sign-in" class="underline"> Sign in </a>
+				</div>
+			</CardContent>
+		</Card>
+	</div>
+</template>
+```

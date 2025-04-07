@@ -1,0 +1,84 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle/Toggle.vue</source>
+<document_content>
+<script setup lang="ts">
+import { type HTMLAttributes, computed } from "vue";
+import {
+	type ToggleEmits,
+	type ToggleProps,
+	useForwardPropsEmits,
+} from "radix-vue";
+import { type ToggleVariants } from ".";
+
+const props = withDefaults(
+	defineProps<
+		ToggleProps & {
+			class?: HTMLAttributes["class"];
+			variant?: ToggleVariants["variant"];
+			size?: ToggleVariants["size"];
+		}
+	>(),
+	{
+		variant: "default",
+		size: "default",
+		disabled: false,
+	},
+);
+
+const emits = defineEmits<ToggleEmits>();
+
+const delegatedProps = computed(() => {
+	const { class: _, size, variant, ...delegated } = props;
+
+	return delegated;
+});
+
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
+</script>
+
+<template>
+  <Toggle
+    v-bind="forwarded"
+    :class="cn(toggleVariants({ variant, size }), props.class)"
+  >
+    <slot />
+  </Toggle>
+</template>
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/toggle/index.ts</source>
+<document_content>
+import { type VariantProps, cva } from "class-variance-authority";
+
+export { default as Toggle } from "./Toggle.vue";
+
+export const toggleVariants = cva(
+	"inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-muted hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
+	{
+		variants: {
+			variant: {
+				default: "bg-transparent",
+				outline:
+					"border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground",
+			},
+			size: {
+				default: "h-9 px-3",
+				sm: "h-8 px-2",
+				lg: "h-10 px-3",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+export type ToggleVariants = VariantProps<typeof toggleVariants>;
+
+</document_content>
+</document>
+</documents>

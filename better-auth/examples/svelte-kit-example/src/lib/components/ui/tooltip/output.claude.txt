@@ -1,0 +1,57 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/tooltip/index.ts</source>
+<document_content>
+import { Tooltip as TooltipPrimitive } from "bits-ui";
+import Content from "./tooltip-content.svelte";
+
+const Root = TooltipPrimitive.Root;
+const Trigger = TooltipPrimitive.Trigger;
+
+export {
+	Root,
+	Trigger,
+	Content,
+	//
+	Root as Tooltip,
+	Content as TooltipContent,
+	Trigger as TooltipTrigger,
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/tooltip/tooltip-content.svelte</source>
+<document_content>
+<script lang="ts">
+import { Tooltip as TooltipPrimitive } from "bits-ui";
+import { flyAndScale } from "$lib/utils.js";
+
+type $$Props = TooltipPrimitive.ContentProps;
+
+let className: $$Props["class"] = undefined;
+export let sideOffset: $$Props["sideOffset"] = 4;
+export let transition: $$Props["transition"] = flyAndScale;
+export let transitionConfig: $$Props["transitionConfig"] = {
+	y: 8,
+	duration: 150,
+};
+export { className as class };
+</script>
+
+<TooltipPrimitive.Content
+	{transition}
+	{transitionConfig}
+	{sideOffset}
+	class={cn(
+		"bg-primary text-primary-foreground z-50 overflow-hidden rounded-md px-3 py-1.5 text-xs",
+		className
+	)}
+	{...$$restProps}
+>
+	<slot />
+</TooltipPrimitive.Content>
+
+</document_content>
+</document>
+</documents>

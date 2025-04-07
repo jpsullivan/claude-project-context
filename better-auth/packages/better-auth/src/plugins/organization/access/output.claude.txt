@@ -1,0 +1,52 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/organization/access/index.ts</source>
+<document_content>
+export * from "./statement";
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/plugins/organization/access/statement.ts</source>
+<document_content>
+import { createAccessControl } from "../../access";
+
+export const defaultStatements = {
+	organization: ["update", "delete"],
+	member: ["create", "update", "delete"],
+	invitation: ["create", "cancel"],
+	team: ["create", "update", "delete"],
+} as const;
+
+export const defaultAc = createAccessControl(defaultStatements);
+
+export const adminAc = defaultAc.newRole({
+	organization: ["update"],
+	invitation: ["create", "cancel"],
+	member: ["create", "update", "delete"],
+	team: ["create", "update", "delete"],
+});
+
+export const ownerAc = defaultAc.newRole({
+	organization: ["update", "delete"],
+	member: ["create", "update", "delete"],
+	invitation: ["create", "cancel"],
+	team: ["create", "update", "delete"],
+});
+
+export const memberAc = defaultAc.newRole({
+	organization: [],
+	member: [],
+	invitation: [],
+	team: [],
+});
+
+export const defaultRoles = {
+	admin: adminAc,
+	owner: ownerAc,
+	member: memberAc,
+};
+
+</document_content>
+</document>
+</documents>

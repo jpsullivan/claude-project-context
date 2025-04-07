@@ -1,0 +1,169 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/Drawer.vue
+```
+<script lang="ts" setup>
+import type { DrawerRootEmits, DrawerRootProps } from "vaul-vue";
+import { useForwardPropsEmits } from "radix-vue";
+
+const props = withDefaults(defineProps<DrawerRootProps>(), {
+	shouldScaleBackground: true,
+});
+
+const emits = defineEmits<DrawerRootEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DrawerRoot v-bind="forwarded">
+    <slot />
+  </DrawerRoot>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerContent.vue
+```
+<script lang="ts" setup>
+import type { DialogContentEmits, DialogContentProps } from "radix-vue";
+import { useForwardPropsEmits } from "radix-vue";
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<
+	DialogContentProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+const emits = defineEmits<DialogContentEmits>();
+
+const forwarded = useForwardPropsEmits(props, emits);
+</script>
+
+<template>
+  <DrawerPortal>
+    <DrawerOverlay />
+    <DrawerContent
+      v-bind="forwarded" :class="cn(
+        'fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border bg-background',
+        props.class,
+      )"
+    >
+      <div class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />
+      <slot />
+    </DrawerContent>
+  </DrawerPortal>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerDescription.vue
+```
+<script lang="ts" setup>
+import type { DrawerDescriptionProps } from "vaul-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DrawerDescriptionProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerDescription v-bind="delegatedProps" :class="cn('text-sm text-muted-foreground', props.class)">
+    <slot />
+  </DrawerDescription>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerFooter.vue
+```
+<script lang="ts" setup>
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HtmlHTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('mt-auto flex flex-col gap-2 p-4', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerHeader.vue
+```
+<script lang="ts" setup>
+import type { HtmlHTMLAttributes } from "vue";
+
+const props = defineProps<{
+	class?: HtmlHTMLAttributes["class"];
+}>();
+</script>
+
+<template>
+  <div :class="cn('grid gap-1.5 p-4 text-center sm:text-left', props.class)">
+    <slot />
+  </div>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerOverlay.vue
+```
+<script lang="ts" setup>
+import type { DialogOverlayProps } from "radix-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DialogOverlayProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerOverlay v-bind="delegatedProps" :class="cn('fixed inset-0 z-50 bg-black/80', props.class)" />
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/DrawerTitle.vue
+```
+<script lang="ts" setup>
+import type { DrawerTitleProps } from "vaul-vue";
+import { type HtmlHTMLAttributes, computed } from "vue";
+
+const props = defineProps<
+	DrawerTitleProps & { class?: HtmlHTMLAttributes["class"] }
+>();
+
+const delegatedProps = computed(() => {
+	const { class: _, ...delegated } = props;
+
+	return delegated;
+});
+</script>
+
+<template>
+  <DrawerTitle v-bind="delegatedProps" :class="cn('text-lg font-semibold leading-none tracking-tight', props.class)">
+    <slot />
+  </DrawerTitle>
+</template>
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/nuxt-example/components/ui/drawer/index.ts
+```typescript
+export { DrawerPortal, DrawerTrigger, DrawerClose } from "vaul-vue";
+export { default as Drawer } from "./Drawer.vue";
+export { default as DrawerOverlay } from "./DrawerOverlay.vue";
+export { default as DrawerContent } from "./DrawerContent.vue";
+export { default as DrawerHeader } from "./DrawerHeader.vue";
+export { default as DrawerFooter } from "./DrawerFooter.vue";
+export { default as DrawerTitle } from "./DrawerTitle.vue";
+export { default as DrawerDescription } from "./DrawerDescription.vue";
+
+```

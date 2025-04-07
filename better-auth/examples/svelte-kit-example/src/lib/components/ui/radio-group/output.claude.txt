@@ -1,0 +1,76 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/radio-group/index.ts</source>
+<document_content>
+import { RadioGroup as RadioGroupPrimitive } from "bits-ui";
+
+import Root from "./radio-group.svelte";
+import Item from "./radio-group-item.svelte";
+const Input = RadioGroupPrimitive.Input;
+
+export {
+	Root,
+	Input,
+	Item,
+	//
+	Root as RadioGroup,
+	Input as RadioGroupInput,
+	Item as RadioGroupItem,
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/radio-group/radio-group-item.svelte</source>
+<document_content>
+<script lang="ts">
+import { RadioGroup as RadioGroupPrimitive } from "bits-ui";
+
+type $$Props = RadioGroupPrimitive.ItemProps & {
+	value: string;
+};
+type $$Events = RadioGroupPrimitive.ItemEvents;
+
+let className: $$Props["class"] = undefined;
+export let value: $$Props["value"];
+export { className as class };
+</script>
+
+<RadioGroupPrimitive.Item
+	{value}
+	class={cn(
+		"border-primary text-primary focus-visible:ring-ring aspect-square h-4 w-4 rounded-full border shadow focus:outline-none focus-visible:ring-1 disabled:cursor-not-allowed disabled:opacity-50",
+		className
+	)}
+	{...$$restProps}
+	on:click
+>
+	<div class="flex items-center justify-center">
+		<RadioGroupPrimitive.ItemIndicator>
+			<Check class="fill-primary h-3.5 w-3.5" />
+		</RadioGroupPrimitive.ItemIndicator>
+	</div>
+</RadioGroupPrimitive.Item>
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/svelte-kit-example/src/lib/components/ui/radio-group/radio-group.svelte</source>
+<document_content>
+<script lang="ts">
+import { RadioGroup as RadioGroupPrimitive } from "bits-ui";
+
+type $$Props = RadioGroupPrimitive.Props;
+
+let className: $$Props["class"] = undefined;
+export let value: $$Props["value"] = undefined;
+export { className as class };
+</script>
+
+<RadioGroupPrimitive.Root bind:value class={cn("grid gap-2", className)} {...$$restProps}>
+	<slot />
+</RadioGroupPrimitive.Root>
+
+</document_content>
+</document>
+</documents>

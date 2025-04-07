@@ -1,0 +1,738 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/adapters/kysely-adapter/dialect.ts</source>
+<document_content>
+import { Kysely, MssqlDialect } from "kysely";
+import {
+	type Dialect,
+	MysqlDialect,
+	PostgresDialect,
+	SqliteDialect,
+} from "kysely";
+import type { BetterAuthOptions } from "../../types";
+import type { KyselyDatabaseType } from "./types";
+
+function getDatabaseType(
+	db: BetterAuthOptions["database"],
+): KyselyDatabaseType | null {
+	if (!db) {
+		return null;
+	}
+	if ("dialect" in db) {
+		return getDatabaseType(db.dialect as Dialect);
+	}
+	if ("createDriver" in db) {
+		if (db instanceof SqliteDialect) {
+			return "sqlite";
+		}
+		if (db instanceof MysqlDialect) {
+			return "mysql";
+		}
+		if (db instanceof PostgresDialect) {
+			return "postgres";
+		}
+		if (db instanceof MssqlDialect) {
+			return "mssql";
+		}
+	}
+	if ("aggregate" in db) {
+		return "sqlite";
+	}
+
+	if ("getConnection" in db) {
+		return "mysql";
+	}
+	if ("connect" in db) {
+		return "postgres";
+	}
+
+	return null;
+}
+
+export const createKyselyAdapter = async (config: BetterAuthOptions) => {
+	const db = config.database;
+
+	if (!db) {
+		return {
+			kysely: null,
+			databaseType: null,
+		};
+	}
+
+	if ("db" in db) {
+		return {
+			kysely: db.db,
+			databaseType: db.type,
+		};
+	}
+
+	if ("dialect" in db) {
+		return {
+			kysely: new Kysely<any>({ dialect: db.dialect }),
+			databaseType: db.type,
+		};
+	}
+
+	let dialect: Dialect | undefined = undefined;
+
+	const databaseType = getDatabaseType(db);
+
+	if ("createDriver" in db) {
+		dialect = db;
+	}
+
+	if ("aggregate" in db) {
+		dialect = new SqliteDialect({
+			database: db,
+		});
+	}
+
+	if ("getConnection" in db) {
+		// @ts-ignore - mysql2/promise
+		dialect = new MysqlDialect(db);
+	}
+
+	if ("connect" in db) {
+		dialect = new PostgresDialect({
+			pool: db,
+		});
+	}
+
+	return {
+		kysely: dialect ? new Kysely<any>({ dialect }) : null,
+		databaseType,
+	};
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/adapters/kysely-adapter/index.ts</source>
+<document_content>
+export * from "./dialect";
+export * from "./types";
+export * from "./kysely-adapter";
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/adapters/kysely-adapter/kysely-adapter.ts</source>
+<document_content>
+import { getAuthTables } from "../../db";
+import type { Adapter, BetterAuthOptions, Where } from "../../types";
+import { generateId } from "../../utils";
+import { withApplyDefault } from "../utils";
+import type { KyselyDatabaseType } from "./types";
+import type { InsertQueryBuilder, Kysely, UpdateQueryBuilder } from "kysely";
+
+interface KyselyAdapterConfig {
+	/**
+	 * Database type.
+	 */
+	type?: KyselyDatabaseType;
+}
+
+const createTransform = (
+	db: Kysely<any>,
+	options: BetterAuthOptions,
+	config?: KyselyAdapterConfig,
+) => {
+	const schema = getAuthTables(options);
+
+	function getField(model: string, field: string) {
+		if (field === "id") {
+			return field;
+		}
+		const f = schema[model].fields[field];
+		if (!f) {
+			console.log("Field not found", model, field);
+		}
+		return f.fieldName || field;
+	}
+
+	function transformValueToDB(value: any, model: string, field: string) {
+		if (field === "id") {
+			return value;
+		}
+		const { type = "sqlite" } = config || {};
+		const f = schema[model].fields[field];
+		if (
+			f.type === "boolean" &&
+			(type === "sqlite" || type === "mssql") &&
+			value !== null &&
+			value !== undefined
+		) {
+			return value ? 1 : 0;
+		}
+		if (f.type === "date" && value && value instanceof Date) {
+			return type === "sqlite" ? value.toISOString() : value;
+		}
+		return value;
+	}
+
+	function transformValueFromDB(value: any, model: string, field: string) {
+		const { type = "sqlite" } = config || {};
+
+		const f = schema[model].fields[field];
+		if (
+			f.type === "boolean" &&
+			(type === "sqlite" || type === "mssql") &&
+			value !== null
+		) {
+			return value === 1;
+		}
+		if (f.type === "date" && value) {
+			return new Date(value);
+		}
+		return value;
+	}
+
+	function getModelName(model: string) {
+		return schema[model].modelName;
+	}
+
+	const useDatabaseGeneratedId = options?.advanced?.generateId === false;
+	return {
+		transformInput(
+			data: Record<string, any>,
+			model: string,
+			action: "create" | "update",
+		) {
+			const transformedData: Record<string, any> =
+				useDatabaseGeneratedId || action === "update"
+					? {}
+					: {
+							id: options.advanced?.generateId
+								? options.advanced.generateId({
+										model,
+									})
+								: data.id || generateId(),
+						};
+			const fields = schema[model].fields;
+			for (const field in fields) {
+				const value = data[field];
+				transformedData[fields[field].fieldName || field] = withApplyDefault(
+					transformValueToDB(value, model, field),
+					fields[field],
+					action,
+				);
+			}
+			return transformedData;
+		},
+		transformOutput(
+			data: Record<string, any>,
+			model: string,
+			select: string[] = [],
+		) {
+			if (!data) return null;
+			const transformedData: Record<string, any> = data.id
+				? select.length === 0 || select.includes("id")
+					? {
+							id: data.id,
+						}
+					: {}
+				: {};
+			const tableSchema = schema[model].fields;
+			for (const key in tableSchema) {
+				if (select.length && !select.includes(key)) {
+					continue;
+				}
+				const field = tableSchema[key];
+				if (field) {
+					transformedData[key] = transformValueFromDB(
+						data[field.fieldName || key],
+						model,
+						key,
+					);
+				}
+			}
+			return transformedData as any;
+		},
+		convertWhereClause(model: string, w?: Where[]) {
+			if (!w)
+				return {
+					and: null,
+					or: null,
+				};
+
+			const conditions = {
+				and: [] as any[],
+				or: [] as any[],
+			};
+
+			w.forEach((condition) => {
+				let {
+					field: _field,
+					value,
+					operator = "=",
+					connector = "AND",
+				} = condition;
+				const field = getField(model, _field);
+				value = transformValueToDB(value, model, _field);
+				const expr = (eb: any) => {
+					if (operator.toLowerCase() === "in") {
+						return eb(field, "in", Array.isArray(value) ? value : [value]);
+					}
+
+					if (operator === "contains") {
+						return eb(field, "like", `%${value}%`);
+					}
+
+					if (operator === "starts_with") {
+						return eb(field, "like", `${value}%`);
+					}
+
+					if (operator === "ends_with") {
+						return eb(field, "like", `%${value}`);
+					}
+
+					if (operator === "eq") {
+						return eb(field, "=", value);
+					}
+
+					if (operator === "ne") {
+						return eb(field, "<>", value);
+					}
+
+					if (operator === "gt") {
+						return eb(field, ">", value);
+					}
+
+					if (operator === "gte") {
+						return eb(field, ">=", value);
+					}
+
+					if (operator === "lt") {
+						return eb(field, "<", value);
+					}
+
+					if (operator === "lte") {
+						return eb(field, "<=", value);
+					}
+
+					return eb(field, operator, value);
+				};
+
+				if (connector === "OR") {
+					conditions.or.push(expr);
+				} else {
+					conditions.and.push(expr);
+				}
+			});
+
+			return {
+				and: conditions.and.length ? conditions.and : null,
+				or: conditions.or.length ? conditions.or : null,
+			};
+		},
+		async withReturning(
+			values: Record<string, any>,
+			builder:
+				| InsertQueryBuilder<any, any, any>
+				| UpdateQueryBuilder<any, string, string, any>,
+			model: string,
+			where: Where[],
+		) {
+			let res: any;
+			if (config?.type === "mysql") {
+				//this isn't good, but kysely doesn't support returning in mysql and it doesn't return the inserted id. Change this if there is a better way.
+				await builder.execute();
+				const field = values.id ? "id" : where[0].field ? where[0].field : "id";
+				const value = values[field] || where[0].value;
+				res = await db
+					.selectFrom(getModelName(model))
+					.selectAll()
+					.where(getField(model, field), "=", value)
+					.executeTakeFirst();
+				return res;
+			}
+			if (config?.type === "mssql") {
+				res = await builder.outputAll("inserted").executeTakeFirst();
+				return res;
+			}
+			res = await builder.returningAll().executeTakeFirst();
+			return res;
+		},
+		getModelName,
+		getField,
+	};
+};
+
+export const kyselyAdapter =
+	(db: Kysely<any>, config?: KyselyAdapterConfig) =>
+	(opts: BetterAuthOptions) => {
+		const {
+			transformInput,
+			withReturning,
+			transformOutput,
+			convertWhereClause,
+			getModelName,
+			getField,
+		} = createTransform(db, opts, config);
+		return {
+			id: "kysely",
+			async create(data) {
+				const { model, data: values, select } = data;
+				const transformed = transformInput(values, model, "create");
+				const builder = db.insertInto(getModelName(model)).values(transformed);
+				return transformOutput(
+					await withReturning(transformed, builder, model, []),
+					model,
+					select,
+				);
+			},
+			async findOne(data) {
+				const { model, where, select } = data;
+				const { and, or } = convertWhereClause(model, where);
+				let query = db.selectFrom(getModelName(model)).selectAll();
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				const res = await query.executeTakeFirst();
+				if (!res) return null;
+				return transformOutput(res, model, select);
+			},
+			async findMany(data) {
+				const { model, where, limit, offset, sortBy } = data;
+				const { and, or } = convertWhereClause(model, where);
+				let query = db.selectFrom(getModelName(model));
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				if (config?.type === "mssql") {
+					if (!offset) {
+						query = query.top(limit || 100);
+					}
+				} else {
+					query = query.limit(limit || 100);
+				}
+				if (sortBy) {
+					query = query.orderBy(
+						getField(model, sortBy.field),
+						sortBy.direction,
+					);
+				}
+				if (offset) {
+					if (config?.type === "mssql") {
+						if (!sortBy) {
+							query = query.orderBy(getField(model, "id"));
+						}
+						query = query.offset(offset).fetch(limit || 100);
+					} else {
+						query = query.offset(offset);
+					}
+				}
+
+				const res = await query.selectAll().execute();
+				if (!res) return [];
+				return res.map((r) => transformOutput(r, model));
+			},
+			async update(data) {
+				const { model, where, update: values } = data;
+				const { and, or } = convertWhereClause(model, where);
+				const transformedData = transformInput(values, model, "update");
+
+				let query = db.updateTable(getModelName(model)).set(transformedData);
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				const res = await transformOutput(
+					await withReturning(transformedData, query, model, where),
+					model,
+				);
+				return res;
+			},
+			async updateMany(data) {
+				const { model, where, update: values } = data;
+				const { and, or } = convertWhereClause(model, where);
+				const transformedData = transformInput(values, model, "update");
+				let query = db.updateTable(getModelName(model)).set(transformedData);
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				const res = await query.execute();
+				return res.length;
+			},
+			async count(data) {
+				const { model, where } = data;
+				const { and, or } = convertWhereClause(model, where);
+				let query = db
+					.selectFrom(getModelName(model))
+					// a temporal solution for counting other than "*" - see more - https://www.sqlite.org/quirks.html#double_quoted_string_literals_are_accepted
+					.select(db.fn.count("id").as("count"));
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				const res = await query.execute();
+				return res[0].count as number;
+			},
+			async delete(data) {
+				const { model, where } = data;
+				const { and, or } = convertWhereClause(model, where);
+				let query = db.deleteFrom(getModelName(model));
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				await query.execute();
+			},
+			async deleteMany(data) {
+				const { model, where } = data;
+				const { and, or } = convertWhereClause(model, where);
+				let query = db.deleteFrom(getModelName(model));
+				if (and) {
+					query = query.where((eb) => eb.and(and.map((expr) => expr(eb))));
+				}
+				if (or) {
+					query = query.where((eb) => eb.or(or.map((expr) => expr(eb))));
+				}
+				return (await query.execute()).length;
+			},
+			options: config,
+		} satisfies Adapter;
+	};
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/adapters/kysely-adapter/types.ts</source>
+<document_content>
+export type KyselyDatabaseType = "postgres" | "mysql" | "sqlite" | "mssql";
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/adapters/kysely-adapter/test/adapter.kysley.test.ts</source>
+<document_content>
+import fs from "fs/promises";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { runAdapterTest } from "../../test";
+import { getMigrations } from "../../../db/get-migration";
+import path from "path";
+import Database from "better-sqlite3";
+import { kyselyAdapter } from "..";
+import { Kysely, MysqlDialect, sql, SqliteDialect } from "kysely";
+import type { BetterAuthOptions } from "../../../types";
+import { createPool } from "mysql2/promise";
+
+import * as tedious from "tedious";
+import * as tarn from "tarn";
+import { MssqlDialect } from "kysely";
+import { getTestInstance } from "../../../test-utils/test-instance";
+
+describe("adapter test", async () => {
+	const sqlite = new Database(path.join(__dirname, "test.db"));
+	const mysql = createPool("mysql://user:password@localhost:3306/better_auth");
+	const sqliteKy = new Kysely({
+		dialect: new SqliteDialect({
+			database: sqlite,
+		}),
+	});
+	const mysqlKy = new Kysely({
+		dialect: new MysqlDialect(mysql),
+	});
+	const opts = (database: BetterAuthOptions["database"]) =>
+		({
+			database: database,
+			user: {
+				fields: {
+					email: "email_address",
+				},
+				additionalFields: {
+					test: {
+						type: "string",
+						defaultValue: "test",
+					},
+				},
+			},
+			session: {
+				modelName: "sessions",
+			},
+		}) satisfies BetterAuthOptions;
+	const mysqlOptions = opts({
+		db: mysqlKy,
+		type: "mysql",
+	});
+	const sqliteOptions = opts({
+		db: sqliteKy,
+		type: "sqlite",
+	});
+	beforeAll(async () => {
+		const { runMigrations } = await getMigrations(mysqlOptions);
+		await runMigrations();
+		const { runMigrations: runMigrationsSqlite } =
+			await getMigrations(sqliteOptions);
+		await runMigrationsSqlite();
+	});
+
+	afterAll(async () => {
+		await mysql.query("DROP DATABASE IF EXISTS better_auth");
+		await mysql.query("CREATE DATABASE better_auth");
+		await mysql.end();
+		await fs.unlink(path.join(__dirname, "test.db"));
+	});
+
+	const mysqlAdapter = kyselyAdapter(mysqlKy, {
+		type: "mysql",
+	});
+	await runAdapterTest({
+		getAdapter: async (customOptions = {}) => {
+			return mysqlAdapter({ ...mysqlOptions, ...customOptions });
+		},
+	});
+
+	const sqliteAdapter = kyselyAdapter(sqliteKy, {
+		type: "sqlite",
+	});
+	await runAdapterTest({
+		getAdapter: async (customOptions = {}) => {
+			return sqliteAdapter({ ...sqliteOptions, ...customOptions });
+		},
+	});
+});
+
+describe("mssql", async () => {
+	const dialect = new MssqlDialect({
+		tarn: {
+			...tarn,
+			options: {
+				min: 0,
+				max: 10,
+			},
+		},
+		tedious: {
+			...tedious,
+			connectionFactory: () =>
+				new tedious.Connection({
+					authentication: {
+						options: {
+							password: "Password123!",
+							userName: "sa",
+						},
+						type: "default",
+					},
+					options: {
+						port: 1433,
+						trustServerCertificate: true,
+					},
+					server: "localhost",
+				}),
+		},
+	});
+	const opts = {
+		database: dialect,
+		user: {
+			modelName: "users",
+		},
+	} satisfies BetterAuthOptions;
+	beforeAll(async () => {
+		const { runMigrations, toBeAdded, toBeCreated } = await getMigrations(opts);
+		await runMigrations();
+	});
+	const mssql = new Kysely({
+		dialect: dialect,
+	});
+	const getAdapter = kyselyAdapter(mssql, {
+		type: "mssql",
+	});
+
+	const adapter = getAdapter(opts);
+
+	async function resetDB() {
+		await sql`DROP TABLE dbo.session;`.execute(mssql);
+		await sql`DROP TABLE dbo.verification;`.execute(mssql);
+		await sql`DROP TABLE dbo.account;`.execute(mssql);
+		await sql`DROP TABLE dbo.users;`.execute(mssql);
+	}
+
+	afterAll(async () => {
+		await resetDB();
+	});
+
+	await runAdapterTest({
+		getAdapter: async (customOptions = {}) => {
+			return adapter;
+		},
+		skipGenerateIdTest: true,
+	});
+
+	describe("simple flow", async () => {
+		const { auth } = await getTestInstance(
+			{
+				database: dialect,
+				user: {
+					modelName: "users",
+				},
+			},
+			{
+				disableTestUser: true,
+			},
+		);
+		it("should sign-up", async () => {
+			const res = await auth.api.signUpEmail({
+				body: {
+					name: "test",
+					password: "password",
+					email: "test-2@email.com",
+				},
+			});
+			expect(res.user.name).toBe("test");
+			expect(res.token?.length).toBeTruthy();
+		});
+
+		let token = "";
+		it("should sign in", async () => {
+			//sign in
+			const signInRes = await auth.api.signInEmail({
+				body: {
+					password: "password",
+					email: "test-2@email.com",
+				},
+			});
+
+			expect(signInRes.token?.length).toBeTruthy();
+			expect(signInRes.user.name).toBe("test");
+			token = signInRes.token;
+		});
+
+		it("should return session", async () => {
+			const session = await auth.api.getSession({
+				headers: new Headers({
+					Authorization: `Bearer ${token}`,
+				}),
+			});
+			expect(session).toMatchObject({
+				session: {
+					token,
+					userId: expect.any(String),
+				},
+				user: {
+					name: "test",
+					email: "test-2@email.com",
+				},
+			});
+		});
+	});
+});
+
+</document_content>
+</document>
+</documents>

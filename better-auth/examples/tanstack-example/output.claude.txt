@@ -1,0 +1,2226 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/README.md</source>
+<document_content>
+![Banner](./header.webp)
+An example of using Better Auth with [TanStack Start](https://tanstack.com/start).
+
+## Setup
+
+1. Move .env.example to .env and provide necessary variables
+
+2. install dependencies:
+
+```bash
+pnpm install
+```
+
+3. migrate required tables:
+
+```bash
+pnpx @better-auth/cli migrate
+```
+
+To run:
+
+```bash
+pnpm dev
+```
+
+## Preview
+![Sign In Preview](./preview.webp)
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app.config.ts</source>
+<document_content>
+import { defineConfig } from "@tanstack/start/config";
+import viteTsConfigPaths from "vite-tsconfig-paths";
+
+export default defineConfig({
+	vite: {
+		plugins: [
+			viteTsConfigPaths({
+				projects: ["./tsconfig.json"],
+			}),
+		],
+	},
+});
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/biome.json</source>
+<document_content>
+{
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"ignore": []
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/components.json</source>
+<document_content>
+{
+	"$schema": "https://ui.shadcn.com/schema.json",
+	"style": "default",
+	"rsc": true,
+	"tsx": true,
+	"tailwind": {
+		"config": "tailwind.config.js",
+		"css": "app/lib/style/global.css",
+		"baseColor": "slate",
+		"cssVariables": true
+	},
+	"aliases": {
+		"components": "~/components",
+		"utils": "~/lib/utils"
+	}
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/package.json</source>
+<document_content>
+{
+  "name": "tanstack-example",
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/bun": "latest",
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.14",
+    "@types/react-dom": "^18.3.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.2",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.1",
+    "@radix-ui/react-dialog": "^1.1.2",
+    "@radix-ui/react-label": "^2.1.0",
+    "@radix-ui/react-navigation-menu": "^1.2.1",
+    "@radix-ui/react-slot": "^1.1.0",
+    "@rn-primitives/dialog": "^1.1.0",
+    "@tanstack/react-router": "^1.86.1",
+    "@tanstack/start": "^1.86.1",
+    "@types/ua-parser-js": "^0.7.39",
+    "@vitejs/plugin-react": "^4.3.4",
+    "better-auth": "workspace:*",
+    "better-sqlite3": "^11.6.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.454.0",
+    "next-themes": "^0.3.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-qr-code": "^2.0.15",
+    "sonner": "^1.7.0",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
+    "ua-parser-js": "^0.7.39",
+    "vinxi": "^0.4.3"
+  }
+}
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/postcss.config.js</source>
+<document_content>
+export default {
+	plugins: {
+		tailwindcss: {},
+		autoprefixer: {},
+	},
+};
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/tailwind.config.js</source>
+<document_content>
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+	darkMode: ["class"],
+	content: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
+	theme: {
+		container: {
+			center: true,
+			padding: "2rem",
+			screens: {
+				"2xl": "1400px",
+			},
+		},
+		extend: {
+			colors: {
+				border: "hsl(var(--border))",
+				input: "hsl(var(--input))",
+				ring: "hsl(var(--ring))",
+				background: "hsl(var(--background))",
+				foreground: "hsl(var(--foreground))",
+				primary: {
+					DEFAULT: "hsl(var(--primary))",
+					foreground: "hsl(var(--primary-foreground))",
+				},
+				secondary: {
+					DEFAULT: "hsl(var(--secondary))",
+					foreground: "hsl(var(--secondary-foreground))",
+				},
+				destructive: {
+					DEFAULT: "hsl(var(--destructive))",
+					foreground: "hsl(var(--destructive-foreground))",
+				},
+				muted: {
+					DEFAULT: "hsl(var(--muted))",
+					foreground: "hsl(var(--muted-foreground))",
+				},
+				accent: {
+					DEFAULT: "hsl(var(--accent))",
+					foreground: "hsl(var(--accent-foreground))",
+				},
+				popover: {
+					DEFAULT: "hsl(var(--popover))",
+					foreground: "hsl(var(--popover-foreground))",
+				},
+				card: {
+					DEFAULT: "hsl(var(--card))",
+					foreground: "hsl(var(--card-foreground))",
+				},
+			},
+			borderRadius: {
+				lg: "var(--radius)",
+				md: "calc(var(--radius) - 2px)",
+				sm: "calc(var(--radius) - 4px)",
+			},
+			fontFamily: {
+				sans: [
+					'"GeistMono"',
+					"ui-monospace",
+					"SFMono-Regular",
+					"Roboto Mono",
+					"Menlo",
+					"Monaco",
+					"Liberation Mono",
+					"DejaVu Sans Mono",
+					"Courier New",
+					"monospace",
+				],
+			},
+			keyframes: {
+				"accordion-down": {
+					from: { height: "0" },
+					to: { height: "var(--radix-accordion-content-height)" },
+				},
+				"accordion-up": {
+					from: { height: "var(--radix-accordion-content-height)" },
+					to: { height: "0" },
+				},
+			},
+			animation: {
+				"accordion-down": "accordion-down 0.2s ease-out",
+				"accordion-up": "accordion-up 0.2s ease-out",
+			},
+		},
+	},
+	plugins: [require("tailwindcss-animate")],
+};
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		// Enable latest features
+		"lib": ["ESNext", "DOM"],
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleDetection": "force",
+		"jsx": "react-jsx",
+		"allowJs": true,
+
+		// Bundler mode
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"verbatimModuleSyntax": true,
+		"noEmit": true,
+
+		// Best practices
+		"strict": true,
+		"skipLibCheck": true,
+		"noFallthroughCasesInSwitch": true,
+
+		// Some stricter flags (disabled by default)
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false,
+		"baseUrl": ".",
+		"paths": {
+			"~/*": ["app/*"]
+		}
+	},
+	"exclude": ["node_modules", ".output"]
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/api.ts</source>
+<document_content>
+import {
+	createStartAPIHandler,
+	defaultAPIFileRouteHandler,
+} from "@tanstack/start/api";
+
+export default createStartAPIHandler(defaultAPIFileRouteHandler);
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/client.tsx</source>
+<document_content>
+import { StartClient } from "@tanstack/start";
+import { hydrateRoot } from "react-dom/client";
+import { createRouter } from "./router";
+
+const router = createRouter();
+
+const root = document.getElementById("root");
+if (!root) {
+	throw new Error("Root element not found");
+}
+
+hydrateRoot(root, <StartClient router={router} />);
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routeTree.gen.ts</source>
+<document_content>
+/* eslint-disable */
+
+// @ts-nocheck
+
+// noinspection JSUnusedGlobalSymbols
+
+// This file was automatically generated by TanStack Router.
+// You should NOT make any changes in this file as it will be overwritten.
+// Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
+
+// Import Routes
+
+import { Route as rootRoute } from "./routes/__root";
+import { Route as IndexImport } from "./routes/index";
+import { Route as AuthTwoFactorImport } from "./routes/auth/two-factor";
+import { Route as AuthSignupImport } from "./routes/auth/signup";
+import { Route as AuthSigninImport } from "./routes/auth/signin";
+
+// Create/Update Routes
+
+const IndexRoute = IndexImport.update({
+	id: "/",
+	path: "/",
+	getParentRoute: () => rootRoute,
+} as any);
+
+const AuthTwoFactorRoute = AuthTwoFactorImport.update({
+	id: "/auth/two-factor",
+	path: "/auth/two-factor",
+	getParentRoute: () => rootRoute,
+} as any);
+
+const AuthSignupRoute = AuthSignupImport.update({
+	id: "/auth/signup",
+	path: "/auth/signup",
+	getParentRoute: () => rootRoute,
+} as any);
+
+const AuthSigninRoute = AuthSigninImport.update({
+	id: "/auth/signin",
+	path: "/auth/signin",
+	getParentRoute: () => rootRoute,
+} as any);
+
+// Populate the FileRoutesByPath interface
+
+declare module "@tanstack/react-router" {
+	interface FileRoutesByPath {
+		"/": {
+			id: "/";
+			path: "/";
+			fullPath: "/";
+			preLoaderRoute: typeof IndexImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/auth/signin": {
+			id: "/auth/signin";
+			path: "/auth/signin";
+			fullPath: "/auth/signin";
+			preLoaderRoute: typeof AuthSigninImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/auth/signup": {
+			id: "/auth/signup";
+			path: "/auth/signup";
+			fullPath: "/auth/signup";
+			preLoaderRoute: typeof AuthSignupImport;
+			parentRoute: typeof rootRoute;
+		};
+		"/auth/two-factor": {
+			id: "/auth/two-factor";
+			path: "/auth/two-factor";
+			fullPath: "/auth/two-factor";
+			preLoaderRoute: typeof AuthTwoFactorImport;
+			parentRoute: typeof rootRoute;
+		};
+	}
+}
+
+// Create and export the route tree
+
+export interface FileRoutesByFullPath {
+	"/": typeof IndexRoute;
+	"/auth/signin": typeof AuthSigninRoute;
+	"/auth/signup": typeof AuthSignupRoute;
+	"/auth/two-factor": typeof AuthTwoFactorRoute;
+}
+
+export interface FileRoutesByTo {
+	"/": typeof IndexRoute;
+	"/auth/signin": typeof AuthSigninRoute;
+	"/auth/signup": typeof AuthSignupRoute;
+	"/auth/two-factor": typeof AuthTwoFactorRoute;
+}
+
+export interface FileRoutesById {
+	__root__: typeof rootRoute;
+	"/": typeof IndexRoute;
+	"/auth/signin": typeof AuthSigninRoute;
+	"/auth/signup": typeof AuthSignupRoute;
+	"/auth/two-factor": typeof AuthTwoFactorRoute;
+}
+
+export interface FileRouteTypes {
+	fileRoutesByFullPath: FileRoutesByFullPath;
+	fullPaths: "/" | "/auth/signin" | "/auth/signup" | "/auth/two-factor";
+	fileRoutesByTo: FileRoutesByTo;
+	to: "/" | "/auth/signin" | "/auth/signup" | "/auth/two-factor";
+	id: "__root__" | "/" | "/auth/signin" | "/auth/signup" | "/auth/two-factor";
+	fileRoutesById: FileRoutesById;
+}
+
+export interface RootRouteChildren {
+	IndexRoute: typeof IndexRoute;
+	AuthSigninRoute: typeof AuthSigninRoute;
+	AuthSignupRoute: typeof AuthSignupRoute;
+	AuthTwoFactorRoute: typeof AuthTwoFactorRoute;
+}
+
+const rootRouteChildren: RootRouteChildren = {
+	IndexRoute: IndexRoute,
+	AuthSigninRoute: AuthSigninRoute,
+	AuthSignupRoute: AuthSignupRoute,
+	AuthTwoFactorRoute: AuthTwoFactorRoute,
+};
+
+export const routeTree = rootRoute
+	._addFileChildren(rootRouteChildren)
+	._addFileTypes<FileRouteTypes>();
+
+/* ROUTE_MANIFEST_START
+{
+  "routes": {
+    "__root__": {
+      "filePath": "__root.tsx",
+      "children": [
+        "/",
+        "/auth/signin",
+        "/auth/signup",
+        "/auth/two-factor"
+      ]
+    },
+    "/": {
+      "filePath": "index.tsx"
+    },
+    "/auth/signin": {
+      "filePath": "auth/signin.tsx"
+    },
+    "/auth/signup": {
+      "filePath": "auth/signup.tsx"
+    },
+    "/auth/two-factor": {
+      "filePath": "auth/two-factor.tsx"
+    }
+  }
+}
+ROUTE_MANIFEST_END */
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/router.tsx</source>
+<document_content>
+import { createRouter as createTanStackRouter } from "@tanstack/react-router";
+import { routeTree } from "./routeTree.gen";
+
+export function createRouter() {
+	const router = createTanStackRouter({
+		routeTree,
+	});
+
+	return router;
+}
+
+declare module "@tanstack/react-router" {
+	interface Register {
+		router: ReturnType<typeof createRouter>;
+	}
+}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/ssr.tsx</source>
+<document_content>
+import { getRouterManifest } from "@tanstack/start/router-manifest";
+import {
+	createStartHandler,
+	defaultStreamHandler,
+} from "@tanstack/start/server";
+
+import { createRouter } from "./router";
+
+export default createStartHandler({
+	createRouter,
+	getRouterManifest,
+})(defaultStreamHandler);
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/login-form.tsx</source>
+<document_content>
+"use client";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
+
+import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { signIn } from "~/lib/auth-client";
+
+export function LoginForm() {
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		const form = e.target as HTMLFormElement;
+		const data = new FormData(form);
+		signIn.email(
+			{
+				email: data.get("email") as string,
+				password: data.get("password") as string,
+			},
+			{
+				onError: (error) => {
+					console.warn(error);
+					toast.error(error.error.message);
+				},
+				onSuccess: () => {
+					toast.success("You have been logged in!");
+				},
+			},
+		);
+	}
+
+	return (
+		<Card className="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle className="text-2xl">Sign In</CardTitle>
+				<CardDescription>
+					Enter your email below to sign in to your account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit} className="grid gap-4">
+					<div className="grid gap-2">
+						<Label htmlFor="email">Email</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							placeholder="m@example.com"
+							required
+						/>
+					</div>
+					<div className="grid gap-2">
+						<div className="flex items-center">
+							<Label htmlFor="password">Password</Label>
+						</div>
+						<Input id="password" name="password" type="password" required />
+					</div>
+					<Button type="submit" className="w-full">
+						Sign In
+					</Button>
+				</form>
+				<div className="mt-4 border-t py-2 flex flex-col gap-2">
+					<Button
+						className="w-full gap-2"
+						variant="outline"
+						onClick={() => {
+							signIn.social({
+								provider: "discord",
+							});
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="1em"
+							height="1em"
+							viewBox="0 0 24 24"
+						>
+							<path
+								fill="currentColor"
+								d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.1.1 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.1 16.1 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"
+							></path>
+						</svg>
+						Continue with Discord
+					</Button>
+					<Button
+						className="gap-2 w-full"
+						variant="outline"
+						onClick={() => {
+							signIn.social({
+								provider: "github",
+								callbackURL: "/",
+							});
+						}}
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="1em"
+							height="1em"
+							viewBox="0 0 24 24"
+						>
+							<path
+								fill="currentColor"
+								d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"
+							></path>
+						</svg>
+						Continue with GitHub
+					</Button>
+				</div>
+				<div className="mt-4 text-center text-sm">
+					Don&apos;t have an account?{" "}
+					<Link to="/auth/signup" className="underline">
+						Sign up
+					</Link>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/register-form.tsx</source>
+<document_content>
+"use client";
+import { Link } from "@tanstack/react-router";
+import { toast } from "sonner";
+
+import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { signUp } from "~/lib/auth-client";
+
+export function RegisterForm() {
+	function handleSubmit(e: React.FormEvent) {
+		e.preventDefault();
+		const form = e.target as HTMLFormElement;
+		const data = new FormData(form);
+		console.log(data);
+		signUp.email(
+			{
+				name: data.get("name") as string,
+				email: data.get("email") as string,
+				password: data.get("password") as string,
+			},
+			{
+				onError: (error) => {
+					console.warn(error);
+					toast.error(error.error.message);
+				},
+				onSuccess: () => {
+					toast.success("Account has been created!");
+				},
+			},
+		);
+	}
+
+	return (
+		<Card className="mx-auto max-w-sm">
+			<CardHeader>
+				<CardTitle className="text-2xl">Sign Up</CardTitle>
+				<CardDescription>
+					Enter your email below to sign up to an account
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				<form onSubmit={handleSubmit} className="grid gap-4">
+					<div className="grid gap-2">
+						<Label htmlFor="name">Name</Label>
+						<Input
+							name="name"
+							id="name"
+							type="name"
+							placeholder="John Doe"
+							required
+						/>
+					</div>
+					<div className="grid gap-2">
+						<Label htmlFor="email">Email</Label>
+						<Input
+							id="email"
+							name="email"
+							type="email"
+							placeholder="m@example.com"
+							required
+						/>
+					</div>
+					<div className="grid gap-2">
+						<div className="flex items-center">
+							<Label htmlFor="password">Password</Label>
+						</div>
+						<Input id="password" name="password" type="password" required />
+					</div>
+					<Button type="submit" className="w-full">
+						Sign Up
+					</Button>
+				</form>
+				<div className="mt-4 text-center text-sm">
+					Already have an account?{" "}
+					<Link to="/auth/signin" className="underline">
+						Sign in
+					</Link>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/avatar.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+import * as AvatarPrimitive from "@radix-ui/react-avatar";
+
+import { cn } from "~/lib/utils";
+
+const Avatar = React.forwardRef<
+	React.ElementRef<typeof AvatarPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Root>
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Root
+		ref={ref}
+		className={cn(
+			"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+			className,
+		)}
+		{...props}
+	/>
+));
+Avatar.displayName = AvatarPrimitive.Root.displayName;
+
+const AvatarImage = React.forwardRef<
+	React.ElementRef<typeof AvatarPrimitive.Image>,
+	React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Image
+		ref={ref}
+		className={cn("aspect-square h-full w-full", className)}
+		{...props}
+	/>
+));
+AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+
+const AvatarFallback = React.forwardRef<
+	React.ElementRef<typeof AvatarPrimitive.Fallback>,
+	React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Fallback>
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Fallback
+		ref={ref}
+		className={cn(
+			"flex h-full w-full items-center justify-center rounded-full bg-muted",
+			className,
+		)}
+		{...props}
+	/>
+));
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+
+export { Avatar, AvatarImage, AvatarFallback };
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/button.tsx</source>
+<document_content>
+"use client";
+
+import { Slot } from "@radix-ui/react-slot";
+import { type VariantProps, cva } from "class-variance-authority";
+import * as React from "react";
+
+import { cn } from "~/lib/utils";
+
+const buttonVariants = cva(
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+	{
+		variants: {
+			variant: {
+				default: "bg-primary text-primary-foreground hover:bg-primary/90",
+				destructive:
+					"bg-destructive text-destructive-foreground hover:bg-destructive/90",
+				outline:
+					"border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+				secondary:
+					"bg-secondary text-secondary-foreground hover:bg-secondary/80",
+				ghost: "hover:bg-accent hover:text-accent-foreground",
+				link: "text-primary underline-offset-4 hover:underline",
+			},
+			size: {
+				default: "h-10 px-4 py-2",
+				sm: "h-9 rounded-md px-3",
+				lg: "h-11 rounded-md px-8",
+				icon: "h-10 w-10",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+export interface ButtonProps
+	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+		VariantProps<typeof buttonVariants> {
+	asChild?: boolean;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+	({ className, variant, size, asChild = false, ...props }, ref) => {
+		const Comp = asChild ? Slot : "button";
+		return (
+			<Comp
+				className={cn(buttonVariants({ variant, size, className }))}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/card.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+
+import { cn } from "~/lib/utils";
+
+const Card = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn(
+			"rounded-lg border bg-card text-card-foreground shadow-sm",
+			className,
+		)}
+		{...props}
+	/>
+));
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("flex flex-col space-y-1.5 p-6", className)}
+		{...props}
+	/>
+));
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<
+	HTMLParagraphElement,
+	React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+	<h3
+		ref={ref}
+		className={cn(
+			"text-2xl font-semibold leading-none tracking-tight",
+			className,
+		)}
+		{...props}
+	/>
+));
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<
+	HTMLParagraphElement,
+	React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+	<p
+		ref={ref}
+		className={cn("text-sm text-muted-foreground", className)}
+		{...props}
+	/>
+));
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+));
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<
+	HTMLDivElement,
+	React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+	<div
+		ref={ref}
+		className={cn("flex items-center p-6 pt-0", className)}
+		{...props}
+	/>
+));
+CardFooter.displayName = "CardFooter";
+
+export {
+	Card,
+	CardHeader,
+	CardFooter,
+	CardTitle,
+	CardDescription,
+	CardContent,
+};
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/dialog.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+
+import { cn } from "~/lib/utils";
+
+const Dialog = DialogPrimitive.Root;
+
+const DialogTrigger = DialogPrimitive.Trigger;
+
+const DialogPortal = DialogPrimitive.Portal;
+
+const DialogClose = DialogPrimitive.Close;
+
+const DialogOverlay = React.forwardRef<
+	React.ElementRef<typeof DialogPrimitive.Overlay>,
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Overlay
+		ref={ref}
+		className={cn(
+			"fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+			className,
+		)}
+		{...props}
+	/>
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+const DialogContent = React.forwardRef<
+	React.ElementRef<typeof DialogPrimitive.Content>,
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+	<DialogPortal>
+		<DialogOverlay />
+		<DialogPrimitive.Content
+			ref={ref}
+			className={cn(
+				"fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+				className,
+			)}
+			{...props}
+		>
+			{children}
+			<DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+				<X className="h-4 w-4" />
+				<span className="sr-only">Close</span>
+			</DialogPrimitive.Close>
+		</DialogPrimitive.Content>
+	</DialogPortal>
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+const DialogHeader = ({
+	className,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className={cn(
+			"flex flex-col space-y-1.5 text-center sm:text-left",
+			className,
+		)}
+		{...props}
+	/>
+);
+DialogHeader.displayName = "DialogHeader";
+
+const DialogFooter = ({
+	className,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className={cn(
+			"flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+			className,
+		)}
+		{...props}
+	/>
+);
+DialogFooter.displayName = "DialogFooter";
+
+const DialogTitle = React.forwardRef<
+	React.ElementRef<typeof DialogPrimitive.Title>,
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Title
+		ref={ref}
+		className={cn(
+			"text-lg font-semibold leading-none tracking-tight",
+			className,
+		)}
+		{...props}
+	/>
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+const DialogDescription = React.forwardRef<
+	React.ElementRef<typeof DialogPrimitive.Description>,
+	React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Description
+		ref={ref}
+		className={cn("text-sm text-muted-foreground", className)}
+		{...props}
+	/>
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
+
+export {
+	Dialog,
+	DialogPortal,
+	DialogOverlay,
+	DialogClose,
+	DialogTrigger,
+	DialogContent,
+	DialogHeader,
+	DialogFooter,
+	DialogTitle,
+	DialogDescription,
+};
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/input.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+
+import { cn } from "~/lib/utils";
+
+export interface InputProps
+	extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+	({ className, type, ...props }, ref) => {
+		return (
+			<input
+				type={type}
+				className={cn(
+					"flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+					className,
+				)}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Input.displayName = "Input";
+
+export { Input };
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/label.tsx</source>
+<document_content>
+"use client";
+
+import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "~/lib/utils";
+
+const labelVariants = cva(
+	"text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+);
+
+const Label = React.forwardRef<
+	React.ElementRef<typeof LabelPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
+		VariantProps<typeof labelVariants>
+>(({ className, ...props }, ref) => (
+	<LabelPrimitive.Root
+		ref={ref}
+		className={cn(labelVariants(), className)}
+		{...props}
+	/>
+));
+Label.displayName = LabelPrimitive.Root.displayName;
+
+export { Label };
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/navigation-menu.tsx</source>
+<document_content>
+"use client";
+import * as NavigationMenuPrimitive from "@radix-ui/react-navigation-menu";
+import { cva } from "class-variance-authority";
+import { ChevronDown } from "lucide-react";
+import * as React from "react";
+
+import { cn } from "~/lib/utils";
+
+const NavigationMenu = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.Root>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root>
+>(({ className, children, ...props }, ref) => (
+	<NavigationMenuPrimitive.Root
+		ref={ref}
+		className={cn(
+			"relative z-10 flex max-w-max flex-1 items-center justify-center",
+			className,
+		)}
+		{...props}
+	>
+		{children}
+		<NavigationMenuViewport />
+	</NavigationMenuPrimitive.Root>
+));
+NavigationMenu.displayName = NavigationMenuPrimitive.Root.displayName;
+
+const NavigationMenuList = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.List>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.List>
+>(({ className, ...props }, ref) => (
+	<NavigationMenuPrimitive.List
+		ref={ref}
+		className={cn(
+			"group flex flex-1 list-none items-center justify-center space-x-1",
+			className,
+		)}
+		{...props}
+	/>
+));
+NavigationMenuList.displayName = NavigationMenuPrimitive.List.displayName;
+
+const NavigationMenuItem = NavigationMenuPrimitive.Item;
+
+const navigationMenuTriggerStyle = cva(
+	"group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50",
+);
+
+const NavigationMenuTrigger = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.Trigger>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+	<NavigationMenuPrimitive.Trigger
+		ref={ref}
+		className={cn(navigationMenuTriggerStyle(), "group", className)}
+		{...props}
+	>
+		{children}{" "}
+		<ChevronDown
+			className="relative top-[1px] ml-1 h-3 w-3 transition duration-200 group-data-[state=open]:rotate-180"
+			aria-hidden="true"
+		/>
+	</NavigationMenuPrimitive.Trigger>
+));
+NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName;
+
+const NavigationMenuContent = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.Content>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Content>
+>(({ className, ...props }, ref) => (
+	<NavigationMenuPrimitive.Content
+		ref={ref}
+		className={cn(
+			"left-0 top-0 w-full data-[motion^=from-]:animate-in data-[motion^=to-]:animate-out data-[motion^=from-]:fade-in data-[motion^=to-]:fade-out data-[motion=from-end]:slide-in-from-right-52 data-[motion=from-start]:slide-in-from-left-52 data-[motion=to-end]:slide-out-to-right-52 data-[motion=to-start]:slide-out-to-left-52 md:absolute md:w-auto ",
+			className,
+		)}
+		{...props}
+	/>
+));
+NavigationMenuContent.displayName = NavigationMenuPrimitive.Content.displayName;
+
+const NavigationMenuLink = NavigationMenuPrimitive.Link;
+
+const NavigationMenuViewport = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.Viewport>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Viewport>
+>(({ className, ...props }, ref) => (
+	<div className={cn("absolute left-0 top-full flex justify-center")}>
+		<NavigationMenuPrimitive.Viewport
+			className={cn(
+				"origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-90 md:w-[var(--radix-navigation-menu-viewport-width)]",
+				className,
+			)}
+			ref={ref}
+			{...props}
+		/>
+	</div>
+));
+NavigationMenuViewport.displayName =
+	NavigationMenuPrimitive.Viewport.displayName;
+
+const NavigationMenuIndicator = React.forwardRef<
+	React.ElementRef<typeof NavigationMenuPrimitive.Indicator>,
+	React.ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Indicator>
+>(({ className, ...props }, ref) => (
+	<NavigationMenuPrimitive.Indicator
+		ref={ref}
+		className={cn(
+			"top-full z-[1] flex h-1.5 items-end justify-center overflow-hidden data-[state=visible]:animate-in data-[state=hidden]:animate-out data-[state=hidden]:fade-out data-[state=visible]:fade-in",
+			className,
+		)}
+		{...props}
+	>
+		<div className="relative top-[60%] h-2 w-2 rotate-45 rounded-tl-sm bg-border shadow-md" />
+	</NavigationMenuPrimitive.Indicator>
+));
+NavigationMenuIndicator.displayName =
+	NavigationMenuPrimitive.Indicator.displayName;
+
+export {
+	navigationMenuTriggerStyle,
+	NavigationMenu,
+	NavigationMenuList,
+	NavigationMenuItem,
+	NavigationMenuContent,
+	NavigationMenuTrigger,
+	NavigationMenuLink,
+	NavigationMenuIndicator,
+	NavigationMenuViewport,
+};
+
+</document_content>
+</document>
+<document index="23">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/components/ui/sonner.tsx</source>
+<document_content>
+"use client";
+
+import { useTheme } from "next-themes";
+import { Toaster as Sonner } from "sonner";
+
+type ToasterProps = React.ComponentProps<typeof Sonner>;
+
+const Toaster = ({ ...props }: ToasterProps) => {
+	const { theme = "system" } = useTheme();
+
+	return (
+		<Sonner
+			theme={theme as ToasterProps["theme"]}
+			className="toaster group"
+			toastOptions={{
+				classNames: {
+					toast:
+						"group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+					description: "group-[.toast]:text-muted-foreground",
+					actionButton:
+						"group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+					cancelButton:
+						"group-[.toast]:bg-muted group-[.toast]:text-muted-foreground",
+				},
+			}}
+			{...props}
+		/>
+	);
+};
+
+export { Toaster };
+
+</document_content>
+</document>
+<document index="24">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/auth-client.ts</source>
+<document_content>
+import { twoFactorClient } from "better-auth/client/plugins";
+import { createAuthClient } from "better-auth/react";
+
+export const { useSession, signIn, signOut, signUp, twoFactor } =
+	createAuthClient({
+		baseURL: "http://localhost:3000",
+		plugins: [twoFactorClient()],
+	});
+
+</document_content>
+</document>
+<document index="25">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/auth.ts</source>
+<document_content>
+import { twoFactor } from "better-auth/plugins";
+import { betterAuth } from "better-auth";
+import Database from "better-sqlite3";
+
+export const auth = betterAuth({
+	database: new Database("data.db"),
+	emailAndPassword: {
+		enabled: true,
+	},
+	socialProviders: {
+		discord: {
+			enabled: true,
+			clientId: process.env.DISCORD_CLIENT_ID!,
+			clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+		},
+		github: {
+			enabled: true,
+			clientId: process.env.GITHUB_CLIENT_ID!,
+			clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+		},
+	},
+	plugins: [twoFactor()],
+});
+
+</document_content>
+</document>
+<document index="26">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/utils.ts</source>
+<document_content>
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+
+</document_content>
+</document>
+<document index="27">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/style/global.css</source>
+<document_content>
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 222.2 47.4% 11.2%;
+
+		--muted: 210 40% 96.1%;
+		--muted-foreground: 215.4 16.3% 46.9%;
+
+		--popover: 0 0% 100%;
+		--popover-foreground: 222.2 47.4% 11.2%;
+
+		--border: 214.3 31.8% 91.4%;
+		--input: 214.3 31.8% 91.4%;
+
+		--card: 0 0% 100%;
+		--card-foreground: 222.2 47.4% 11.2%;
+
+		--primary: 222.2 47.4% 11.2%;
+		--primary-foreground: 210 40% 98%;
+
+		--secondary: 210 40% 96.1%;
+		--secondary-foreground: 222.2 47.4% 11.2%;
+
+		--accent: 210 40% 96.1%;
+		--accent-foreground: 222.2 47.4% 11.2%;
+
+		--destructive: 0 100% 50%;
+		--destructive-foreground: 210 40% 98%;
+
+		--ring: 215 20.2% 65.1%;
+
+		--radius: 0.5rem;
+	}
+
+	.dark {
+		--background: 224 71% 4%;
+		--foreground: 213 31% 91%;
+
+		--muted: 223 47% 11%;
+		--muted-foreground: 215.4 16.3% 56.9%;
+
+		--accent: 216 34% 17%;
+		--accent-foreground: 210 40% 98%;
+
+		--popover: 224 71% 4%;
+		--popover-foreground: 215 20.2% 65.1%;
+
+		--border: 216 34% 17%;
+		--input: 216 34% 17%;
+
+		--card: 224 71% 4%;
+		--card-foreground: 213 31% 91%;
+
+		--primary: 210 40% 98%;
+		--primary-foreground: 222.2 47.4% 1.2%;
+
+		--secondary: 222.2 47.4% 11.2%;
+		--secondary-foreground: 210 40% 98%;
+
+		--destructive: 0 63% 31%;
+		--destructive-foreground: 210 40% 98%;
+
+		--ring: 216 34% 17%;
+
+		--radius: 0.5rem;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+		font-feature-settings: "rlig" 1, "calt" 1;
+	}
+}
+
+</document_content>
+</document>
+<document index="28">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/icons/X.tsx</source>
+<document_content>
+import { X } from "lucide-react-native";
+import { iconWithClassName } from "./iconWithClassName";
+iconWithClassName(X);
+export { X };
+
+</document_content>
+</document>
+<document index="29">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/lib/icons/iconWithClassName.ts</source>
+<document_content>
+import type { LucideIcon } from "lucide-react-native";
+import { cssInterop } from "nativewind";
+
+export function iconWithClassName(icon: LucideIcon) {
+	cssInterop(icon, {
+		className: {
+			target: "style",
+			nativeStyleToProp: {
+				color: true,
+				opacity: true,
+			},
+		},
+	});
+}
+
+</document_content>
+</document>
+<document index="30">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/__root.tsx</source>
+<document_content>
+import { Link, createRootRoute, useRouter } from "@tanstack/react-router";
+import { Outlet, ScrollRestoration } from "@tanstack/react-router";
+import { Body, Head, Html, Meta, Scripts } from "@tanstack/start";
+import type * as React from "react";
+import { useEffect, useState } from "react";
+import { signOut, useSession } from "~/lib/auth-client";
+import globalStylesheet from "~/lib/style/global.css?url";
+import "~/lib/style/global.css";
+import { DoorOpen, Moon, Sun } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "~/components/ui/button";
+import {
+	NavigationMenu,
+	NavigationMenuItem,
+	NavigationMenuLink,
+	NavigationMenuList,
+	navigationMenuTriggerStyle,
+} from "~/components/ui/navigation-menu";
+import { Toaster } from "~/components/ui/sonner";
+
+export const Route = createRootRoute({
+	meta: () => [
+		{
+			charSet: "utf-8",
+		},
+		{
+			name: "viewport",
+			content: "width=device-width, initial-scale=1",
+		},
+		{
+			title: "Better Auth - TanStack Start Example",
+		},
+	],
+	links: () => [
+		{
+			rel: "stylesheet",
+			href: globalStylesheet,
+		},
+	],
+	component: RootComponent,
+});
+
+function RootComponent() {
+	const [theme, setTheme] = useState<"light" | "dark">("light");
+	const { data, isPending, error } = useSession();
+	const { navigate } = useRouter();
+	console.log();
+
+	useEffect(() => {
+		if (!data?.user) {
+			if (!location.pathname.includes("auth/")) {
+				navigate({ to: "/auth/signin" });
+			}
+		} else {
+			navigate({ to: "/" });
+		}
+		setTheme(
+			window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light",
+		);
+	}, [data, navigate]);
+
+	useEffect(() => {
+		const root = window.document.documentElement;
+
+		root.classList.remove("light", "dark");
+
+		root.classList.add(theme);
+	}, [theme]);
+
+	return (
+		<RootDocument>
+			<>
+				<nav className="grid grid-cols-3 items-center w-full p-4">
+					<div className="flex items-center justify-center gap-2">
+						<svg
+							width="60"
+							height="45"
+							viewBox="0 0 60 45"
+							fill="none"
+							className="w-5 h-5"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<title>Better Auth</title>
+							<path
+								fillRule="evenodd"
+								clipRule="evenodd"
+								d="M0 0H15V15H30V30H15V45H0V30V15V0ZM45 30V15H30V0H45H60V15V30V45H45H30V30H45Z"
+								className="fill-black dark:fill-white"
+							/>
+						</svg>
+						<p>BETTER-AUTH</p>
+						<p>x</p>
+						<svg
+							className="w-5 h-5"
+							xmlns="http://www.w3.org/2000/svg"
+							width="45"
+							height="45"
+							viewBox="0 0 100 100"
+							fill="none"
+						>
+							<title>TanStack Start</title>
+							<mask
+								id="a"
+								style={{ maskType: "alpha" }}
+								maskUnits="userSpaceOnUse"
+								x="0"
+								y="0"
+								width="100"
+								height="100"
+							>
+								<circle cx="50" cy="50" r="50" className="fill-foreground" />
+							</mask>
+							<g mask="url(#a)">
+								<circle
+									cx="11"
+									cy="119"
+									r="52"
+									className="fill-muted-foreground stroke-foreground"
+									strokeWidth="4"
+								/>
+								<circle
+									cx="10"
+									cy="125"
+									r="52"
+									className="fill-muted-foreground stroke-foreground"
+									strokeWidth="4"
+								/>
+								<circle
+									cx="9"
+									cy="131"
+									r="52"
+									className="fill-muted-foreground stroke-muted-foreground"
+									strokeWidth="4"
+								/>
+								<circle
+									cx="88"
+									cy="119"
+									r="52"
+									className="fill-muted-foreground stroke-foreground"
+									strokeWidth="4"
+								/>
+								<path
+									className="fill-foreground"
+									d="M89 35h2v5h-2zM83 34l2 1-1 4h-2zM77 31l2 1-3 4-2-1zM73 27l1 1-3 4-1-2zM70 23l1 1-4 3-1-2zM68 18v2l-4 1-1-2zM68 11l1 2-5 1-1-2zM69 6v2h-5V6z"
+								/>
+								<circle
+									cx="89"
+									cy="125"
+									r="52"
+									className="fill-muted-foreground stroke-foreground"
+									strokeWidth="4"
+								/>
+								<circle
+									cx="90"
+									cy="131"
+									r="52"
+									className="fill-muted-foreground stroke-muted-foreground"
+									strokeWidth="4"
+								/>
+								<ellipse
+									cx="49.5"
+									cy="119"
+									rx="41.5"
+									ry="51"
+									className="fill-muted-foreground"
+								/>
+								<path
+									d="M34 38v-9c1 1 2 4 5 6l7 30-8 2c-1-23-2-23-4-29Z"
+									className="fill-foreground stroke-muted-foreground"
+								/>
+								<path
+									fillRule="evenodd"
+									clipRule="evenodd"
+									d="M95 123c0 31-20 57-45 57S5 154 5 123c0-27 14-50 33-56l12-2c25 0 45 26 45 58Zm-45 47c22 0 39-22 39-50S72 70 50 70s-39 22-39 50 17 50 39 50Z"
+									className="fill-foreground"
+								/>
+								<path
+									d="M34 29c-4-8-11-5-14-4 2 3 5 4 9 4h5Z"
+									className="fill-foreground stroke-muted-foreground"
+								/>
+								<path
+									d="M25 38c-1 6 0 14 2 18 5-7 7-13 7-18v-9c-5 1-7 5-9 9Z"
+									className="fill-muted-foreground"
+								/>
+								<path
+									d="M34 29c-1 3-5 11-5 16m5-16c-5 1-7 5-9 9-1 6 0 14 2 18 5-7 7-13 7-18v-9Z"
+									className="stroke-muted-foreground"
+								/>
+								<path
+									d="M44 18c-10 1-11 7-10 11l4-3c5-4 6-7 6-8Z"
+									className="fill-foreground stroke-muted-foreground"
+								/>
+								<path
+									d="M34 29h7l18 4c-3-6-9-14-21-7l-4 3Z"
+									className="fill-foreground"
+								/>
+								<path
+									d="M34 29c4-2 12-5 18-1m-18 1h7l18 4c-3-6-9-14-21-7l-4 3Z"
+									className="stroke-muted-foreground"
+								/>
+								<path
+									d="M32 29a1189 1189 0 0 1-16 19c0-17 7-18 13-19h5a14 14 0 0 1-2 0Z"
+									className="fill-foreground"
+								/>
+								<path
+									d="M34 29c-5 1-7 5-9 9l-9 10c0-17 7-18 13-19h5Zm0 0c-5 2-11 3-14 10"
+									className="stroke-muted-foreground"
+								/>
+								<path
+									d="M41 29c9 2 13 10 15 14a25 25 0 0 1-22-14h7Z"
+									className="fill-foreground"
+								/>
+								<path
+									d="M34 29c3 1 11 5 15 9m-15-9h7c9 2 13 10 15 14a25 25 0 0 1-22-14Z"
+									className="stroke-muted-foreground"
+								/>
+								<circle
+									cx="91.5"
+									cy="12.5"
+									r="18.5"
+									className="fill-foreground stroke-muted-foreground"
+									strokeWidth="2"
+								/>
+							</g>
+						</svg>
+						<p>TANSTACK START.</p>
+					</div>
+					<div className="flex items-center justify-center gap-4">
+						{data?.user ? (
+							<p>Hello {data.user.name}</p>
+						) : (
+							<NavigationMenu>
+								<NavigationMenuList>
+									<NavigationMenuItem>
+										<NavigationMenuLink asChild>
+											<Link
+												to="/auth/signin"
+												className={navigationMenuTriggerStyle()}
+												activeProps={{ className: "bg-accent/50" }}
+											>
+												Sign In
+											</Link>
+										</NavigationMenuLink>
+									</NavigationMenuItem>
+									<NavigationMenuItem>
+										<NavigationMenuLink asChild>
+											<Link
+												to="/auth/signup"
+												className={navigationMenuTriggerStyle()}
+												activeProps={{ className: "bg-accent/50" }}
+											>
+												Sign Up
+											</Link>
+										</NavigationMenuLink>
+									</NavigationMenuItem>
+								</NavigationMenuList>
+							</NavigationMenu>
+						)}
+					</div>
+					<div className="flex items-center gap-4 justify-center">
+						{data?.user && (
+							<Button
+								onClick={() =>
+									signOut(
+										{},
+										{
+											onError: (error) => {
+												console.warn(error);
+												toast.error(error.error.message);
+											},
+											onSuccess: () => {
+												toast.success("You have been signed out!");
+											},
+										},
+									)
+								}
+								variant="destructive"
+							>
+								<DoorOpen className="w-5 h-5" />
+							</Button>
+						)}
+						<Button
+							onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+						>
+							{theme === "light" ? (
+								<Moon onClick={() => setTheme("dark")} className="w-5 h-5" />
+							) : (
+								<Sun onClick={() => setTheme("light")} className="w-5 h-5" />
+							)}
+						</Button>
+					</div>
+				</nav>
+				<Outlet />
+			</>
+			<Toaster richColors position="bottom-center" />
+		</RootDocument>
+	);
+}
+
+function RootDocument({ children }: { children: React.ReactNode }) {
+	return (
+		<Html>
+			<Head>
+				<Meta />
+			</Head>
+			<Body>
+				{children}
+				<ScrollRestoration />
+				<Scripts />
+			</Body>
+		</Html>
+	);
+}
+
+</document_content>
+</document>
+<document index="31">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/index.tsx</source>
+<document_content>
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+
+import { twoFactor, useSession } from "~/lib/auth-client";
+import { UAParser } from "ua-parser-js";
+import { Laptop, Loader2, Phone, ShieldCheck, ShieldOff } from "lucide-react";
+import { useState } from "react";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
+import { toast } from "sonner";
+import QRCode from "react-qr-code";
+import { createFileRoute } from "@tanstack/react-router";
+
+export const Route = createFileRoute("/")({
+	component: Home,
+});
+
+function Home() {
+	const { data } = useSession();
+	const [twoFactorDialog, setTwoFactorDialog] = useState(false);
+	const [twoFaPassword, setTwoFaPassword] = useState("");
+	const [isPendingTwoFa, setIsPendingTwoFa] = useState(false);
+	const [twoFactorVerifyURI, setTwoFactorVerifyURI] = useState<string>("");
+	return (
+		<div className="container flex justify-center items-center min-h-[80vh]">
+			<Card className="w-fit">
+				{data?.user && (
+					<>
+						<CardHeader>
+							<CardTitle>Welcome, {data.user.name}!</CardTitle>
+							<CardDescription>
+								You are signed in as {data.user.email}.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="flex flex-col gap-2 justify-start">
+							<div className="flex flex-col">
+								<div className="flex items-center gap-2">
+									{new UAParser(data.session.userAgent).getDevice().type ===
+									"mobile" ? (
+										<Phone />
+									) : (
+										<Laptop size={16} />
+									)}
+									{new UAParser(data.session.userAgent).getOS().name},{" "}
+									{new UAParser(data.session.userAgent).getBrowser().name}
+								</div>
+							</div>
+							<div className="flex flex-col gap-2">
+								<div className="flex gap-2">
+									<Dialog
+										open={twoFactorDialog}
+										onOpenChange={setTwoFactorDialog}
+									>
+										<DialogTrigger asChild>
+											<Button
+												variant={
+													data?.user.twoFactorEnabled
+														? "destructive"
+														: "outline"
+												}
+												className="gap-2"
+											>
+												{data?.user.twoFactorEnabled ? (
+													<ShieldOff size={16} />
+												) : (
+													<ShieldCheck size={16} />
+												)}
+												<span className="md:text-sm text-xs">
+													{data?.user.twoFactorEnabled
+														? "Disable 2FA"
+														: "Enable 2FA"}
+												</span>
+											</Button>
+										</DialogTrigger>
+										<DialogContent className="sm:max-w-[425px] w-11/12">
+											<DialogHeader>
+												<DialogTitle>
+													{data?.user.twoFactorEnabled
+														? "Disable 2FA"
+														: "Enable 2FA"}
+												</DialogTitle>
+												<DialogDescription>
+													{data?.user.twoFactorEnabled
+														? "Disable the second factor authentication from your account"
+														: "Enable 2FA to secure your account"}
+												</DialogDescription>
+											</DialogHeader>
+
+											{twoFactorVerifyURI ? (
+												<div className="flex flex-col gap-2">
+													<div className="flex items-center justify-center">
+														<QRCode value={twoFactorVerifyURI} />
+													</div>
+													<Label htmlFor="password">
+														Scan the QR code with your TOTP app
+													</Label>
+													<Input
+														value={twoFaPassword}
+														onChange={(e) => setTwoFaPassword(e.target.value)}
+														placeholder="Enter OTP"
+													/>
+												</div>
+											) : (
+												<div className="flex flex-col gap-2">
+													<Label htmlFor="password">Password</Label>
+													<Input
+														id="password"
+														type="password"
+														placeholder="Password"
+														value={twoFaPassword}
+														onChange={(e) => setTwoFaPassword(e.target.value)}
+													/>
+												</div>
+											)}
+											<DialogFooter>
+												<Button
+													disabled={isPendingTwoFa}
+													onClick={async () => {
+														if (
+															twoFaPassword.length < 8 &&
+															!twoFactorVerifyURI
+														) {
+															toast.error(
+																"Password must be at least 8 characters",
+															);
+															return;
+														}
+														setIsPendingTwoFa(true);
+														if (data?.user.twoFactorEnabled) {
+															const res = await twoFactor.disable({
+																//@ts-ignore
+																password: twoFaPassword,
+																fetchOptions: {
+																	onError(context) {
+																		toast.error(context.error.message);
+																	},
+																	onSuccess() {
+																		toast("2FA disabled successfully");
+																		setTwoFactorDialog(false);
+																	},
+																},
+															});
+														} else {
+															if (twoFactorVerifyURI) {
+																await twoFactor.verifyTotp({
+																	code: twoFaPassword,
+																	fetchOptions: {
+																		onError(context) {
+																			setIsPendingTwoFa(false);
+																			setTwoFaPassword("");
+																			toast.error(context.error.message);
+																		},
+																		onSuccess() {
+																			toast("2FA enabled successfully");
+																			setTwoFactorVerifyURI("");
+																			setIsPendingTwoFa(false);
+																			setTwoFaPassword("");
+																			setTwoFactorDialog(false);
+																		},
+																	},
+																});
+																return;
+															}
+															await twoFactor.enable({
+																password: twoFaPassword,
+																fetchOptions: {
+																	onError(context) {
+																		toast.error(context.error.message);
+																	},
+																	onSuccess(ctx) {
+																		setTwoFactorVerifyURI(ctx.data.totpURI);
+																	},
+																},
+															});
+														}
+														setIsPendingTwoFa(false);
+														setTwoFaPassword("");
+													}}
+												>
+													{isPendingTwoFa ? (
+														<Loader2 size={15} className="animate-spin" />
+													) : data?.user.twoFactorEnabled ? (
+														"Disable 2FA"
+													) : (
+														"Enable 2FA"
+													)}
+												</Button>
+											</DialogFooter>
+										</DialogContent>
+									</Dialog>
+								</div>
+							</div>
+						</CardContent>
+					</>
+				)}
+			</Card>
+		</div>
+	);
+}
+
+</document_content>
+</document>
+<document index="32">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/auth/signin.tsx</source>
+<document_content>
+import { createFileRoute } from "@tanstack/react-router";
+import { LoginForm } from "~/components/login-form";
+
+export const Route = createFileRoute("/auth/signin")({
+	component: SignIn,
+});
+
+function SignIn() {
+	return (
+		<div className="container">
+			<LoginForm />
+		</div>
+	);
+}
+
+</document_content>
+</document>
+<document index="33">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/auth/signup.tsx</source>
+<document_content>
+import { createFileRoute } from "@tanstack/react-router";
+import { RegisterForm } from "~/components/register-form";
+
+export const Route = createFileRoute("/auth/signup")({
+	component: SignUp,
+});
+
+function SignUp() {
+	return (
+		<div className="container">
+			<RegisterForm />
+		</div>
+	);
+}
+
+</document_content>
+</document>
+<document index="34">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/auth/two-factor.tsx</source>
+<document_content>
+import { createFileRoute } from "@tanstack/react-router";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState } from "react";
+import { Button } from "~/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { twoFactor } from "~/lib/auth-client";
+
+export const Route = createFileRoute("/auth/two-factor")({
+	component: TwoFactor,
+});
+
+function TwoFactor() {
+	const [totpCode, setTotpCode] = useState("");
+	const [error, setError] = useState("");
+	const [success, setSuccess] = useState(false);
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		if (totpCode.length !== 6 || !/^\d+$/.test(totpCode)) {
+			setError("TOTP code must be 6 digits");
+			return;
+		}
+		twoFactor
+			.verifyTotp({
+				code: totpCode,
+			})
+			.then((res) => {
+				if (res.data?.session) {
+					setSuccess(true);
+					setError("");
+				} else {
+					setError("Invalid TOTP code");
+				}
+			});
+	};
+	return (
+		<main className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
+			<Card className="w-[350px]">
+				<CardHeader>
+					<CardTitle>TOTP Verification</CardTitle>
+					<CardDescription>
+						Enter your 6-digit TOTP code to authenticate
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{!success ? (
+						<form onSubmit={handleSubmit}>
+							<div className="space-y-2">
+								<Label htmlFor="totp">TOTP Code</Label>
+								<Input
+									id="totp"
+									type="text"
+									pattern="\d{6}"
+									maxLength={6}
+									value={totpCode}
+									onChange={(e) => setTotpCode(e.target.value)}
+									placeholder="Enter 6-digit code"
+									required
+								/>
+							</div>
+							{error && (
+								<div className="flex items-center mt-2 text-red-500">
+									<AlertCircle className="w-4 h-4 mr-2" />
+									<span className="text-sm">{error}</span>
+								</div>
+							)}
+							<Button type="submit" className="w-full mt-4">
+								Verify
+							</Button>
+						</form>
+					) : (
+						<div className="flex flex-col items-center justify-center space-y-2">
+							<CheckCircle2 className="w-12 h-12 text-green-500" />
+							<p className="text-lg font-semibold">Verification Successful</p>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		</main>
+	);
+}
+
+</document_content>
+</document>
+<document index="35">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/routes/api/auth/$.ts</source>
+<document_content>
+import { createAPIFileRoute } from "@tanstack/start/api";
+import { auth } from "~/lib/auth";
+
+export const APIRoute = createAPIFileRoute("/api/auth/$")({
+	GET: ({ request }) => {
+		return auth.handler(request);
+	},
+	POST: ({ request }) => {
+		return auth.handler(request);
+	},
+});
+
+</document_content>
+</document>
+<document index="36">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/examples/tanstack-example/app/login/page.tsx</source>
+<document_content>
+import { LoginForm } from "~/components/login-form";
+
+export default function Page() {
+	return (
+		<div className="flex h-screen w-full items-center justify-center px-4">
+			<LoginForm />
+		</div>
+	);
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,1809 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/astro.mdx</source>
+<document_content>
+---
+title: Astro Integration
+description: Integrate Better Auth with Astro.
+---
+
+Better Auth comes with first class support for Astro. This guide will show you how to integrate Better Auth with Astro.
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+To enable Better Auth to handle requests, we need to mount the handler to a catch all API route. Create a file inside `/pages/api/auth` called `[...all].ts` and add the following code:
+
+```ts title="pages/api/auth/[...all].ts"
+import { auth } from "~/auth";
+import type { APIRoute } from "astro";
+
+export const ALL: APIRoute = async (ctx) => {
+	return auth.handler(ctx.request);
+};
+```
+
+<Callout>
+    You can change the path on your better-auth configuration but it's recommended to keep it as `/api/auth/[...all]`
+</Callout>
+
+## Create a client
+
+Astro supports multiple frontend frameworks, so you can easily import your client based on the framework you're using.
+
+If you're not using a frontend framework, you can still import the vanilla client.
+
+
+<Tabs items={[ "vanilla", "react", "vue", "svelte", "solid",
+ ]} defaultValue="react">
+    <Tab value="vanilla">
+            ```ts  title="lib/auth-client.ts"
+            import { createAuthClient } from "better-auth/client"
+            export const authClient =  createAuthClient()
+            ```
+    </Tab>
+    <Tab value="react" title="lib/auth-client.ts">
+            ```ts  title="lib/auth-client.ts"
+            import { createAuthClient } from "better-auth/react"
+            export const authClient =  createAuthClient()
+            ```
+    </Tab>
+    <Tab value="vue" title="lib/auth-client.ts">
+            ```ts  title="lib/auth-client.ts"
+            import { createAuthClient } from "better-auth/vue"
+            export const authClient =  createAuthClient()
+            ```
+    </Tab>
+    <Tab value="svelte" title="lib/auth-client.ts">
+            ```ts  title="lib/auth-client.ts"
+            import { createAuthClient } from "better-auth/svelte"
+            export const authClient =  createAuthClient()
+            ```
+    </Tab>
+    <Tab value="solid" title="lib/auth-client.ts">
+            ```ts title="lib/auth-client.ts"
+            import { createAuthClient } from "better-auth/solid"
+            export const authClient =  createAuthClient()
+            ```
+    </Tab>
+</Tabs>
+
+## Auth Middleware
+
+### Astro Locals types
+
+To have types for your Astro locals, you need to set it inside the `env.d.ts` file.
+
+```ts title="env.d.ts"
+
+/// <reference path="../.astro/types.d.ts" />
+
+declare namespace App {
+    // Note: 'import {} from ""' syntax does not work in .d.ts files.
+    interface Locals {
+        user: import("better-auth").User | null;
+        session: import("better-auth").Session | null;
+    }
+}
+```
+
+### Middleware
+
+To protect your routes, you can check if the user is authenticated using the `getSession` method in middleware and set the user and session data using the Astro locals with the types we set before. Start by creating a `middleware.ts` file in the root of your project and follow the example below:
+
+```ts title="middleware.ts"
+import { auth } from "@/auth";
+import { defineMiddleware } from "astro:middleware";
+
+export const onRequest = defineMiddleware(async (context, next) => {
+    const isAuthed = await auth.api
+        .getSession({
+            headers: context.request.headers,
+        })
+
+    if (isAuthed) {
+        context.locals.user = isAuthed.user;
+        context.locals.session = isAuthed.session;
+    } else {
+        context.locals.user = null;
+        context.locals.session = null;
+    }
+
+    return next();
+});
+```
+
+### Getting session on the server inside `.astro` file
+
+You can use `Astro.locals` to check if the user has session and get the user data from the server side. Here is an example of how you can get the session inside an `.astro` file:
+
+```astro
+---
+import { UserCard } from "@/components/user-card";
+
+const session = () => {
+    if (Astro.locals.session) {
+        return Astro.locals.session;
+    } else {
+        // Redirect to login page if the user is not authenticated
+        return Astro.redirect("/login");
+    }
+}
+
+---
+
+<UserCard initialSession={session} />
+```
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/elysia.mdx</source>
+<document_content>
+---
+title: Elysia Integration
+description: Integrate Better Auth with Elysia.
+---
+
+This integration guide is assuming you are using Elysia with bun server.
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+We need to mount the handler to Elysia endpoint.
+
+```ts
+import { Elysia } from "elysia";
+import { auth } from "./auth";
+
+const app = new Elysia().mount(auth.handler).listen(3000);
+
+console.log(
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+);
+```
+
+### CORS
+
+To configure cors, you can use the `cors` plugin from `@elysiajs/cors`.
+
+```ts
+import { Elysia } from "elysia";
+import { cors } from "@elysiajs/cors";
+
+import { auth } from "./auth";
+
+const app = new Elysia()
+  .use(
+    cors({
+      origin: "http://localhost:3001",
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+    }),
+  )
+  .mount(auth.handler)
+  .listen(3000);
+
+console.log(
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+);
+```
+
+### Macro
+
+You can use [macro](https://elysiajs.com/patterns/macro.html#macro) with [resolve](https://elysiajs.com/essential/handler.html#resolve) to provide session and user information before pass to view.
+
+```ts
+import { Elysia } from "elysia";
+import { auth } from "./auth";
+
+// user middleware (compute user and session and pass to routes)
+const betterAuth = new Elysia({ name: "better-auth" })
+  .mount(auth.handler)
+  .macro({
+    auth: {
+      async resolve({ error, request: { headers } }) {
+        const session = await auth.api.getSession({
+          headers,
+        });
+
+        if (!session) return error(401);
+
+        return {
+          user: session.user,
+          session: session.session,
+        };
+      },
+    },
+  });
+
+const app = new Elysia()
+  .use(betterAuth)
+  .get("/user", ({ user }) => user, {
+    auth: true,
+  })
+  .listen(3000);
+
+console.log(
+  `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`,
+);
+```
+
+This will allow you to access the `user` and `session` object in all of your routes.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/expo.mdx</source>
+<document_content>
+---
+title: Expo Integration
+description: Integrate Better Auth with Expo.
+---
+
+Expo is a popular framework for building cross-platform apps with React Native. Better Auth supports both Expo native and web apps.
+
+## Installation
+
+<Steps>
+    <Step>
+        ## Configure A Better Auth Backend
+        Before using Better Auth with Expo, make sure you have a Better Auth backend set up. You can either use a separate server or leverage Expo's new [API Routes](https://docs.expo.dev/router/reference/api-routes) feature to host your Better Auth instance.
+
+        To get started, check out our [installation](/docs/installation) guide for setting up Better Auth on your server. If you prefer to check out the full example, you can find it [here](https://github.com/better-auth/better-auth/tree/main/examples/expo-example).
+
+        To use the new API routes feature in Expo to host your Better Auth instance you can create a new API route in your Expo app and mount the Better Auth handler.
+
+        ```ts title="app/api/auth/[...auth]+api.ts"
+        import { auth } from "@/lib/auth"; // import Better Auth handler
+        
+        const handler = auth.handler;
+        export { handler as GET, handler as POST }; // export handler for both GET and POST requests
+        ```
+    </Step>
+    <Step>
+        ## Install Better Auth and Expo Plugin
+
+        Install both the expo plugin in your server and both the Better Auth package and the Expo plugin in your Expo app.
+
+        ```package-install
+        @better-auth/expo
+        ```
+
+        ```package-install
+        better-auth
+        ```
+    </Step>
+    
+    <Step>
+        ## Add the Expo Plugin on Your Server
+
+        Add the Expo plugin to your Better Auth server.
+
+        ```ts title="server.ts"
+        import { betterAuth } from "better-auth";
+        import { expo } from "@better-auth/expo";
+
+        export const auth = betterAuth({
+            plugins: [
+                expo()
+            ]
+        });
+        ```
+    </Step>
+
+    <Step>
+        ## Initialize Better Auth Client
+        
+        To initialize Better Auth in your Expo app, you need to call `createAuthClient` with the base url of your Better Auth backend. Make sure to import the client from `/react`.
+
+        You need to also import client plugin from `@better-auth/expo/client` and pass it to the `plugins` array when initializing the auth client.
+
+        This is important because:
+
+        - **Social Authentication Support:** enables social auth flows by handling authorization URLs and callbacks within the Expo web browser.
+        - **Secure Cookie Management:** stores cookies securely and automatically adds them to the headers of your auth requests.
+
+        ```ts title="src/auth-client.ts"
+        import { createAuthClient } from "better-auth/react";
+        import { expoClient } from "@better-auth/expo/client";
+        import * as SecureStore from "expo-secure-store";
+
+        export const authClient = createAuthClient({
+            baseURL: "http://localhost:8081", /* base url of your Better Auth backend. */
+            plugins: [
+                expoClient({
+                    scheme: "myapp",
+                    storagePrefix: "myapp",
+                    storage: SecureStore,
+                })
+            ]
+        });
+        ```
+        <Callout>
+         Be sure to include the full URL, including the path, if you've changed the default path from `/api/auth`.
+        </Callout>
+    </Step>
+
+     <Step>
+        ## Scheme and Trusted Origins
+
+        Better Auth uses deep links to redirect users back to your app after authentication. To enable this, you need to add your app's scheme to the `trustedOrigins` list in your Better Auth config. 
+
+        First, make sure you have a scheme defined in your `app.json` file.
+
+        ```json title="app.json"
+        {
+            "expo": {
+                "scheme": "myapp"
+            }
+        }
+        ```
+
+        Then, update your Better Auth config to include the scheme in the `trustedOrigins` list.
+
+        ```ts title="auth.ts"
+        export const auth = betterAuth({
+            trustedOrigins: ["myapp://"]
+        })
+        ```
+    </Step>
+ 
+    <Step>
+        ## Configure Metro Bundler
+
+        To resolve better auth exports you'll need to enable `unstable_enablePackageExports` in your metro config. 
+
+        ```js title="metro.config.js"
+        const { getDefaultConfig } = require("expo/metro-config");
+
+        const config = getDefaultConfig(__dirname)
+
+        config.resolver.unstable_enablePackageExports = true; // [!code highlight]
+
+        module.exports = config;
+        ```
+
+        If you can't enable `unstable_enablePackageExports` option, you can use [babel-plugin-module-resolver](https://github.com/tleunen/babel-plugin-module-resolver) to manually resolve the paths.
+
+        ```ts title="babel.config.js"
+        module.exports = function (api) {
+            api.cache(true);
+            return {
+                presets: ["babel-preset-expo"],
+                plugins: [
+                    [
+                        "module-resolver",
+                        {
+                            alias: {
+                                "better-auth/react": "./node_modules/better-auth/dist/client/react/index.cjs",
+                                "better-auth/client/plugins": "./node_modules/better-auth/dist/client/plugins/index.cjs",
+                                "@better-auth/expo/client": "./node_modules/@better-auth/expo/dist/client.cjs",
+                            },
+                        },
+                    ],
+                ],
+            }
+        }
+        ```
+
+        Don't forget to clear the cache after making changes.
+
+        ```bash
+        npx expo start --clear
+        ```
+
+    </Step>
+</Steps>
+
+
+## Usage
+
+### Authenticating Users
+
+With Better Auth initialized, you can now use the `authClient` to authenticate users in your Expo app.
+
+<Tabs items={["sign-in", "sign-up"]}>
+    <Tab value="sign-in">
+        ```tsx title="app/sign-in.tsx"
+        import { useState } from "react"; 
+        import { View, TextInput, Button } from "react-native";
+        import { authClient } from "./auth-client";
+
+        export default function App() {
+            const [email, setEmail] = useState("");
+            const [password, setPassword] = useState("");
+
+            const handleLogin = async () => {
+            await authClient.signIn.email({
+                    email,
+                    password,
+            })
+            };
+
+            return (
+                <View>
+                    <TextInput
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={setEmail}
+                    />
+                    <TextInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                    <Button title="Login" onPress={handleLogin} />
+                </View>
+            );
+        }
+        ```
+    </Tab>
+    <Tab value="sign-up">
+        ```tsx title="app/sign-up.tsx"
+        import { useState } from "react";
+        import { View, TextInput, Button } from "react-native";
+        import { authClient } from "./auth-client";
+
+        export default function App() {
+            const [email, setEmail] = useState("");
+            const [name, setName] = useState("");
+            const [password, setPassword] = useState("");
+
+            const handleLogin = async () => {
+                await authClient.signUp.email({
+                        email,
+                        password,
+                        name
+                })
+            };
+
+            return (
+                <View>
+                    <TextInput
+                        placeholder="Name"
+                        value={name}
+                        onChangeText={setName}
+                    />
+                    <TextInput
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={setEmail}
+                    />
+                    <TextInput
+                        placeholder="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                    <Button title="Login" onPress={handleLogin} />
+                </View>
+            );
+        }
+        ```
+    </Tab>
+</Tabs>
+
+For social sign-in, you can use the `authClient.signIn.social` method with the provider name and a callback URL.
+
+```tsx title="app/social-sign-in.tsx"
+
+import { Button } from "react-native";
+
+export default function App() {
+    const handleLogin = async () => {
+        await authClient.signIn.social({
+            provider: "google",
+            callbackURL: "/dashboard" // this will be converted to a deep link (eg. `myapp://dashboard`) on native
+        })
+    };
+    return <Button title="Login with Google" onPress={handleLogin} />;
+}
+```
+
+### Session
+
+Better Auth provides a `useSession` hook to access the current user's session in your app.
+
+```tsx title="src/App.tsx"
+
+import { authClient } from "@/lib/auth-client";
+
+export default function App() {
+    const { data: session } = authClient.useSession();
+
+    return <Text>Welcome, {session.user.name}</Text>;
+}
+```
+
+On native, the session data will be cached in SecureStore. This will allow you to remove the need for a loading spinner when the app is reloaded. You can disable this behavior by passing the `disableCache` option to the client.
+
+
+### Making Authenticated Requests to Your Server
+
+To make authenticated requests to your server that require the user's session, you have two options:
+
+1. Use the fetch client provided by Better Auth.
+2. Retrieve the session cookie from `SecureStore` and manually add it to your request headers.
+
+---
+
+#### Option 1: Using the Fetch Client
+
+Better Auth provides a built-in fetch client powered by [Better Fetch](http://better-fetch.vercel.app). This client automatically includes the session cookie in the headers of your requests.
+
+```tsx
+import { authClient } from "@/lib/auth-client";
+
+const $fetch = authClient.$fetch;
+
+// Example usage
+$fetch("/api/secure-endpoint", {
+  method: "GET",
+});
+```
+
+For more details, see the [Better Fetch documentation](http://better-fetch.vercel.app/docs).
+
+#### Option 2: Adding the Cookie to Request Headers
+
+If you prefer using your own fetch client, you can retrieve the session cookie stored in the device using `authClient.getCookie` and manually add it to your request headers.
+
+```tsx
+import { authClient } from "@/lib/auth-client";
+
+const makeAuthenticatedRequest = async () => {
+  const cookies = authClient.getCookie(); // [!code highlight]
+  const headers = {
+    "Cookie": cookies, // [!code highlight]
+  };
+  const response = await fetch("http://localhost:8081/api/secure-endpoint", { headers });
+  const data = await response.json();
+  return data;
+};
+```
+
+**Example: Usage With TRPC**
+    
+```tsx title="lib/trpc-provider.tsx"
+//...other imports
+import { authClient } from "@/lib/auth-client"; // [!code highlight]
+
+export const api = createTRPCReact<AppRouter>();
+
+export function TRPCProvider(props: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  const [trpcClient] = useState(() =>
+    api.createClient({
+      links: [
+        httpBatchLink({
+          //...your other options
+          headers() {
+            const headers = new Map<string, string>(); // [!code highlight]
+            const cookies = authClient.getCookie(); // [!code highlight]
+            if (cookies) { // [!code highlight]
+              headers.set("Cookie", cookies); // [!code highlight]
+            } // [!code highlight]
+            return Object.fromEntries(headers); // [!code highlight]
+          },
+        }),
+      ],
+    }),
+  );
+
+  return (
+    <api.Provider client={trpcClient} queryClient={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        {props.children}
+      </QueryClientProvider>
+    </api.Provider>
+  );
+}
+```
+
+
+## Options
+
+### Expo Client
+
+**storage**: the storage mechanism used to cache the session data and cookies.
+
+```ts title="src/auth-client.ts"
+import { createAuthClient } from "better-auth/react";
+import SecureStorage from "expo-secure-store";
+
+const authClient = createAuthClient({
+    baseURL: "http://localhost:8081",
+    storage: SecureStorage
+});
+```
+
+**scheme**: scheme is used to deep link back to your app after a user has authenticated using oAuth providers. By default, Better Auth tries to read the scheme from the `app.json` file. If you need to override this, you can pass the scheme option to the client.
+
+```ts title="src/auth-client.ts"
+import { createAuthClient } from "better-auth/react";
+
+const authClient = createAuthClient({
+    baseURL: "http://localhost:8081",
+    scheme: "myapp"
+});
+```
+
+**disableCache**: By default, the client will cache the session data in SecureStore. You can disable this behavior by passing the `disableCache` option to the client.
+
+```ts title="src/auth-client.ts"
+import { createAuthClient } from "better-auth/react";
+
+const authClient = createAuthClient({
+    baseURL: "http://localhost:8081",
+    disableCache: true
+});
+```
+
+
+### Expo Servers
+
+Server plugin options:
+
+**overrideOrigin**: Override the origin for expo API routes (default: false). Enable this if you're facing cors origin issues with expo API routes.
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/express.mdx</source>
+<document_content>
+---
+title: Express Integration
+description: Integrate Better Auth with Express.
+---
+
+This guide will show you how to integrate Better Auth with [express.js](https://expressjs.com/).
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+<Callout>
+Note that CommonJS (cjs) isn't supported. Use ECMAScript Modules (ESM) by setting `"type": "module"` in your `package.json` or configuring your `tsconfig.json` to use ES modules.
+</Callout>
+
+### Mount the handler
+
+To enable Better Auth to handle requests, we need to mount the handler to an API route. Create a catch-all route to manage all requests to `/api/auth/*` in case of ExpressJS v4 or `/api/auth/*splat` in case of ExpressJS v5 (or any other path specified in your Better Auth options).
+
+<Callout type="warn">
+Don’t use `express.json()` before the Better Auth handler. Use it only for other routes, or the client API will get stuck on "pending".
+</Callout>
+
+```ts title="server.ts"
+import express from "express";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth";
+
+const app = express();
+const port = 3005;
+
+app.all("/api/auth/*", toNodeHandler(auth)); // For ExpressJS v4
+// app.all("/api/auth/*splat", toNodeHandler(auth)); For ExpressJS v5 
+
+// Mount express json middleware after Better Auth handler
+// or only apply it to routes that don't interact with Better Auth
+app.use(express.json());
+
+app.listen(port, () => {
+	console.log(`Example app listening on port ${port}`);
+});
+```
+
+After completing the setup, start your server. Better Auth will be ready to use. You can send a `GET` request to the `/ok` endpoint (`/api/auth/ok`) to verify that the server is running.
+
+
+### Cors Configuration
+
+To add CORS (Cross-Origin Resource Sharing) support to your Express server when integrating Better Auth, you can use the `cors` middleware. Below is an updated example showing how to configure CORS for your server:
+
+```ts
+import express from "express";
+import cors from "cors"; // Import the CORS middleware
+import { toNodeHandler, fromNodeHeaders } from "better-auth/node";
+import { auth } from "./auth";
+
+const app = express();
+const port = 3005;
+
+// Configure CORS middleware
+app.use(
+  cors({
+    origin: "http://your-frontend-domain.com", // Replace with your frontend's origin
+    methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed HTTP methods
+    credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  })
+);
+```
+
+### Getting the User Session
+
+To retrieve the user's session, you can use the `getSession` method provided by the `auth` object. This method requires the request headers to be passed in a specific format. To simplify this process, Better Auth provides a `fromNodeHeaders` helper function that converts Node.js request headers to the format expected by Better Auth (a `Headers` object).
+
+Here's an example of how to use `getSession` in an Express route:
+
+```ts title="server.ts"
+import { fromNodeHeaders } from "better-auth/node";
+import { auth } from "./auth"; //your better auth instance
+
+app.get("/api/me", async (req, res) => {
+ 	const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+	return res.json(session);
+});
+```
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/hono.mdx</source>
+<document_content>
+---
+title: Hono Integration
+description: Integrate Better Auth with Hono.
+---
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+We need to mount the handler to Hono endpoint.
+
+```ts
+import { Hono } from "hono";
+import { auth } from "./auth";
+import { serve } from "@hono/node-server";
+import { cors } from "hono/cors";
+
+const app = new Hono();
+
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+	return auth.handler(c.req.raw);
+});
+
+serve(app);
+```
+
+### Cors
+
+To configure cors, you need to use the `cors` plugin from `hono/cors`.
+
+```ts
+import { Hono } from "hono";
+import { auth } from "./auth";
+import { serve } from "@hono/node-server";
+import { cors } from "hono/cors";
+ 
+const app = new Hono();
+
+app.use(
+	"/api/auth/*", // or replace with "*" to enable cors for all routes
+	cors({
+		origin: "http://localhost:3001", // replace with your origin
+		allowHeaders: ["Content-Type", "Authorization"],
+		allowMethods: ["POST", "GET", "OPTIONS"],
+		exposeHeaders: ["Content-Length"],
+		maxAge: 600,
+		credentials: true,
+	}),
+);
+
+```
+
+
+### Middleware
+
+You can add a middleware to save the `session` and `user` in a `context` and also add validations for every route.
+
+```ts
+import { Hono } from "hono";
+import { auth } from "./auth";
+import { serve } from "@hono/node-server";
+import { cors } from "hono/cors";
+ 
+const app = new Hono<{
+	Variables: {
+		user: typeof auth.$Infer.Session.user | null;
+		session: typeof auth.$Infer.Session.session | null
+	}
+}>();
+
+app.use("*", async (c, next) => {
+	const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+  	if (!session) {
+    	c.set("user", null);
+    	c.set("session", null);
+    	return next();
+  	}
+
+  	c.set("user", session.user);
+  	c.set("session", session.session);
+  	return next();
+});
+
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
+	return auth.handler(c.req.raw);
+});
+
+
+serve(app);
+```
+
+This will allow you to access the `user` and `session` object in all of your routes.
+
+```ts
+app.get("/session", async (c) => {
+	const session = c.get("session")
+	const user = c.get("user")
+	
+	if(!user) return c.body(null, 401);
+
+  	return c.json({
+	  session,
+	  user
+	});
+});
+```
+
+### Cross-Domain Cookies
+
+By default, all Better Auth cookies are set with `SameSite=Lax`. If you need to use cookies across different domains, you’ll need to set `SameSite=None` and `Secure=true`. However, we recommend using subdomains whenever possible, as this allows you to keep `SameSite=Lax`. To enable cross-subdomain cookies, simply turn on `crossSubDomainCookies` in your auth config.
+
+```ts title="auth.ts"
+export const auth = createAuth({
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true
+    }
+  }
+})
+```
+
+If you still need to set `SameSite=None` and `Secure=true`, you can adjust these attributes globally through `cookieOptions` in the `createAuth` configuration.
+
+```ts title="auth.ts"
+export const auth = createAuth({
+  advanced: {
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
+      partitioned: true // New browser standards will mandate this for foreign cookies
+    }
+  }
+})
+```
+
+You can also customize cookie attributes individually by setting them within `cookies` in your auth config.
+
+```ts title="auth.ts"
+export const auth = createAuth({
+  advanced: {
+    cookies: {
+      sessionToken: {
+        sameSite: "none",
+        secure: true,
+        partitioned: true // New browser standards will mandate this for foreign cookies
+      }
+    }
+  }
+})
+```
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/next.mdx</source>
+<document_content>
+---
+title: Next.js integration
+description: Integrate Better Auth with Next.js.
+---
+
+Better Auth can be easily integrated with Next.js. It'll also comes with utilities to make it easier to use Better Auth with Next.js.
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Create API Route
+
+We need to mount the handler to an API route. Create a route file inside `/api/auth/[...all]` directory. And add the following code:
+
+```ts title="api/auth/[...all]/route.ts"
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+
+export const { GET, POST } = toNextJsHandler(auth.handler);
+```
+
+<Callout type="info">
+ You can change the path on your better-auth configuration but it's recommended to keep it as `/api/auth/[...all]`
+</Callout>
+
+
+For `pages` route, you need to use `toNodeHandler` instead of `toNextJsHandler` and set `bodyParser` to `false` in the `config` object. Here is an example:
+
+```ts title="pages/api/auth/[...all].ts"
+import { toNodeHandler } from "better-auth/node"
+import { auth } from "@/lib/auth"
+
+// Disallow body parsing, we will parse it manually
+export const config = { api: { bodyParser: false } }
+
+export default toNodeHandler(auth.handler)
+```
+
+## Create a client
+
+Create a client instance. You can name the file anything you want. Here we are creating `client.ts` file inside the `lib/` directory.
+
+```ts title="auth-client.ts"
+import { createAuthClient } from "better-auth/react" // make sure to import from better-auth/react
+
+export const authClient =  createAuthClient({
+    //you can pass client configuration here
+})
+```
+
+Once you have created the client, you can use it to sign up, sign in, and perform other actions.
+Some of the actions are reactive. The client uses [nano-store](https://github.com/nanostores/nanostores) to store the state and re-render the components when the state changes.
+
+The client also uses [better-fetch](https://github.com/bekacru/better-fetch) to make the requests. You can pass the fetch configuration to the client.
+
+
+## RSC and Server actions
+
+The `api` object exported from the auth instance contains all the actions that you can perform on the server. Every endpoint made inside Better Auth is a invocable as a function. Including plugins endpoints.
+
+**Example: Getting Session on a server action**
+
+```tsx title="server.ts"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+
+const someAuthenticatedAction = async () => {
+    "use server";
+    const session = await auth.api.getSession({
+        headers: await headers()
+    })
+};
+```
+
+**Example: Getting Session on a RSC**
+
+
+```tsx
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
+
+export async function ServerComponent() {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    })
+    if(!session) {
+        return <div>Not authenticated</div>
+    }
+    return (
+        <div>
+            <h1>Welcome {session.user.name}</h1>
+        </div>
+    )
+}
+```
+
+### Server Action Cookies
+
+When you call a function that needs to set cookies, like `signInEmail` or `signUpEmail` in a server action, cookies won’t be set. This is because server actions need to use the `cookies` helper from Next.js to set cookies.
+
+To simplify this, you can use the `nextCookies` plugin, which will automatically set cookies for you whenever a `Set-Cookie` header is present in the response.
+
+```ts title="auth.ts"
+import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
+
+export const auth = betterAuth({
+    //...your config
+    plugins: [nextCookies()] // make sure this is the last plugin in the array // [!code highlight]
+})
+```
+
+Now, when you call functions that set cookies, they will be automatically set.
+
+```ts
+"use server";
+import { auth } from "@/lib/auth"
+
+const signIn = async () => {
+    await auth.api.signInEmail({
+        body: {
+            email: "user@email.com",
+            password: "password",
+        }
+    })
+}
+```
+
+## Middleware
+
+In Next.js middleware, it's recommended to only check for the existence of a session cookie to handle redirection. To avoid blocking requests by making API or database calls.
+
+You can use the `getSessionCookie` helper from Better Auth for this purpose:
+
+<Callout type="warn">
+The <code>getSessionCookie()</code> function does not automatically reference the auth config specified in <code>auth.ts</code>. Therefore, you need to ensure that the configuration in <code>getSessionCookie()</code> matches the config defined in your <code>auth.ts</code>.
+</Callout>
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
+
+export async function middleware(request: NextRequest) {
+	const sessionCookie = getSessionCookie(request, {
+        // Optionally pass config if cookie name or prefix is customized in auth config.
+		cookieName: "session_token",
+		cookiePrefix: "better-auth"
+    });
+
+	if (!sessionCookie) {
+		return NextResponse.redirect(new URL("/", request.url));
+	}
+
+	return NextResponse.next();
+}
+
+export const config = {
+	matcher: ["/dashboard"], // Specify the routes the middleware applies to
+};
+```
+
+### For Next.js release `15.1.7` and below
+
+If you need the full session object, you'll have to fetch it from the `/get-session` API route. Since Next.js middleware doesn't support running Node.js APIs directly, you must make an HTTP request.
+
+<Callout>
+The example uses [better-fetch](https://better-fetch.vercel.app), but you can use any fetch library.
+</Callout>
+
+```ts
+import { betterFetch } from "@better-fetch/fetch";
+import type { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+
+type Session = typeof auth.$Infer.Session;
+
+export async function middleware(request: NextRequest) {
+	const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
+		baseURL: request.nextUrl.origin,
+		headers: {
+			cookie: request.headers.get("cookie") || "", // Forward the cookies from the request
+		},
+	});
+
+	if (!session) {
+		return NextResponse.redirect(new URL("/sign-in", request.url));
+	}
+
+	return NextResponse.next();
+}
+
+export const config = {
+	matcher: ["/dashboard"], // Apply middleware to specific routes
+};
+```
+
+### For Next.js release `15.2.0` and above
+
+From the version 15.2.0, Next.js allows you to use the `Node.js` runtime in middleware. This means you can use the `auth.api` object directly in middleware.
+
+<Callout type="warn">
+You may refer to the [Next.js documentation](https://nextjs.org/docs/app/building-your-application/routing/middleware#runtime) for more information about runtime configuration, and how to enable it.
+Be careful when using the new runtime. It's an experimental feature and it may be subject to breaking changes.
+</Callout>
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+export async function middleware(request: NextRequest) {
+    const session = await auth.api.getSession({
+        headers: await headers()
+    })
+
+    if(!session) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+
+    return NextResponse.next();
+}
+
+export const config = {
+  runtime: "nodejs",
+  matcher: ["/dashboard"], // Apply middleware to specific routes
+};
+```
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/nitro.mdx</source>
+<document_content>
+---
+title: Nitro Integration
+description: Integrate Better Auth with Nitro.
+---
+
+Better Auth can be integrated with your [Nitro Application](https://nitro.build/) (an open source framework to build web servers).
+
+This guide aims to help you integrate Better Auth with your Nitro application in a few simple steps.
+
+## Create a new Nitro Application
+
+Start by scaffolding a new Nitro application using the following command:
+
+```bash title="Terminal"
+npx giget@latest nitro nitro-app --install
+```
+
+This will create the `nitro-app` directory and install all the dependencies. You can now open the `nitro-app` directory in your code editor.
+
+### Prisma Adapter Setup
+
+<Callout>
+  This guide assumes that you have a basic understanding of Prisma. If you are new to Prisma, you can check out the [Prisma documentation](https://www.prisma.io/docs/getting-started).
+
+  The `sqlite` database used in this guide will not work in a production environment. You should replace it with a production-ready database like `PostgreSQL`.
+</Callout>
+
+For this guide, we will be using the Prisma adapter. You can install prisma client by running the following command:
+
+```package-install
+@prisma/client
+```
+
+`prisma` can be installed as a dev dependency using the following command:
+
+```package-install
+-D prisma
+```
+
+Generate a `schema.prisma` file in the `prisma` directory by running the following command:
+
+```bash title="Terminal"
+npx prisma init
+```
+
+You can now replace the contents of the `schema.prisma` file with the following:
+
+```prisma title="prisma/schema.prisma"
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Will be deleted. Just need it to generate the prisma client
+model Test {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+```
+
+Ensure that you update the `DATABASE_URL` in your `.env` file to point to the location of your database.
+
+```env title=".env"
+DATABASE_URL="file:./dev.db"
+```
+
+Run the following command to generate the Prisma client & sync the database:
+
+```bash title="Terminal"
+npx prisma db push
+```
+
+### Install & Configure Better Auth
+
+Follow steps 1 & 2 from the [installation guide](/docs/installation) to install Better Auth in your Nitro application & set up the environment variables.
+
+Once that is done, create your better auth instance within the `server/utils/auth.ts` file.
+
+```ts title="server/utils/auth.ts"
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, { provider: "sqlite" }),
+  emailAndPassword: { enabled: true },
+});
+```
+
+### Update Prisma Schema
+
+Use the Better Auth CLI to update your Prisma schema with the required models by running the following command:
+
+```bash title="Terminal"
+npx @better-auth/cli generate --config server/utils/auth.ts
+```
+
+<Callout>
+  The `--config` flag is used to specify the path to the file where you have created your Better Auth instance.
+</Callout>
+
+Head over to the `prisma/schema.prisma` file & save the file to trigger the format on save.
+
+After saving the file, you can run the `npx prisma db push` command to update the database schema.
+
+## Mount The Handler
+
+You can now mount the Better Auth handler in your Nitro application. You can do this by adding the following code to your `server/routes/api/auth/[...all].ts` file:
+
+```ts title="server/routes/api/auth/[...all].ts"
+export default defineEventHandler((event) => {
+  return auth.handler(toWebRequest(event));
+});
+```
+<Callout>
+  This is a [catch-all](https://nitro.build/guide/routing#catch-all-route) route that will handle all requests to `/api/auth/*`.
+</Callout>
+
+### CORS
+
+You can configure CORS for your Nitro app by creating a plugin.
+
+Start by installing the cors package:
+
+```package-install
+cors
+```
+
+You can now create a new file `server/plugins/cors.ts` and add the following code:
+
+```ts title="server/plugins/cors.ts"
+import cors from "cors";
+export default defineNitroPlugin((plugin) => {
+  plugin.h3App.use(
+    fromNodeMiddleware(
+      cors({
+        origin: "*",
+      }),
+    ),
+  );
+});
+```
+<Callout>
+  This will enable CORS for all routes. You can customize the `origin` property to allow requests from specific domains. Ensure that the config is in sync with your frontend application.
+</Callout>
+
+### Auth Guard/Middleware
+
+You can add an auth guard to your Nitro application to protect routes that require authentication. You can do this by creating a new file `server/utils/require-auth.ts` and adding the following code:
+
+```ts title="server/utils/require-auth.ts"
+import { EventHandler, H3Event } from "h3";
+import { fromNodeHeaders } from "better-auth/node";
+
+/**
+ * Middleware used to require authentication for a route.
+ *
+ * Can be extended to check for specific roles or permissions.
+ */
+export const requireAuth: EventHandler = async (event: H3Event) => {
+  const headers = event.headers;
+
+  const session = await auth.api.getSession({
+    headers: headers,
+  });
+  if (!session)
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized",
+    });
+  // You can save the session to the event context for later use
+  event.context.auth = session;
+};
+```
+
+You can now use this event handler/middleware in your routes to protect them:
+
+```ts title="server/routes/api/secret.get.ts"
+// Object syntax of the route handler
+export default defineEventHandler({
+  // The user has to be logged in to access this route
+  onRequest: [requireAuth],
+  handler: async (event) => {
+    setResponseStatus(event, 201, "Secret data");
+    return { message: "Secret data" };
+  },
+});
+```
+
+### Example
+
+You can find an example of a Nitro application integrated with Better Auth & Prisma [here](https://github.com/BayBreezy/nitrojs-better-auth-prisma).
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/nuxt.mdx</source>
+<document_content>
+---
+title: Nuxt Integration
+description: Integrate Better Auth with Nuxt.
+---
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Create API Route
+
+We need to mount the handler to an API route. Create a file inside `/server/api` called `[...auth].ts` and add the following code:
+
+```ts title="server/api/[...auth].ts"
+import { auth } from "~/utils/auth"; // import your auth config
+
+export default defineEventHandler((event) => {
+	return auth.handler(toWebRequest(event));
+});
+```
+<Callout type="info">
+ You can change the path on your better-auth configuration but it's recommended to keep it as `/api/[...auth]`
+</Callout>
+
+### Migrate the database
+
+Run the following command to create the necessary tables in your database:
+
+```bash
+npx @better-auth/cli migrate
+```
+
+## Create a client
+
+Create a client instance. You can name the file anything you want. Here we are creating `client.ts` file inside the `lib/` directory.
+
+```ts title="auth-client.ts"
+import { createAuthClient } from "better-auth/vue" // make sure to import from better-auth/vue
+
+export const authClient = createAuthClient({
+    //you can pass client configuration here
+})
+```
+
+Once you have created the client, you can use it to sign up, sign in, and perform other actions.
+Some of the actions are reactive.
+
+### Example usage
+
+```vue title="index.vue"
+<script setup lang="ts">
+import { authClient } from "~/lib/client"
+const session = authClient.useSession()
+</script>
+
+<template>
+    <div>
+        <button v-if="!session?.data" @click="() => authClient.signIn.social({
+            provider: 'github'
+        })">
+            Continue with github
+        </button>
+        <div>
+            <pre>{{ session.data }}</pre>
+            <button v-if="session.data" @click="authClient.signOut()">
+                Sign out
+            </button>
+        </div>
+    </div>
+</template>
+```
+
+### Server Usage
+
+The `api` object exported from the auth instance contains all the actions that you can perform on the server. Every endpoint made inside Better Auth is a invocable as a function. Including plugins endpoints.
+
+**Example: Getting Session on a server API route**
+
+```tsx title="server/api/example.ts"
+import { auth } from "~/lib/auth";
+
+export default defineEventHandler((event) => {
+    const session = await auth.api.getSession({
+      headers: event.headers
+    });
+
+   if(session) {
+     // access the session.session && session.user
+   }
+});
+```
+
+
+### SSR Usage
+
+If you are using Nuxt with SSR, you can use the `useSession` function in the `setup` function of your page component and pass `useFetch` to make it work with SSR.
+
+```vue title="index.vue"
+<script setup lang="ts">
+import { authClient } from "~/lib/auth-client";
+
+const { data: session } = await authClient.useSession(useFetch);
+</script>
+
+<template>
+    <p>
+        {{ session }}
+    </p>
+</template>
+```
+
+
+### Middleware
+
+To add middleware to your Nuxt project, you can use the `useSession` method from the client.
+
+```ts title="middleware/auth.global.ts"
+import { authClient } from "~/lib/auth-client";
+export default defineNuxtRouteMiddleware(async (to, from) => {
+	const { data: session } = await authClient.useSession(useFetch); 
+	if (!session.value) {
+		if (to.path === "/dashboard") {
+			return navigateTo("/");
+		}
+	}
+});
+```
+
+### Resources & Examples
+
+- [Nuxt and Nuxt Hub example](https://github.com/atinux/nuxthub-better-auth) on GitHub.
+- [NuxtZzle is Nuxt,Drizzle ORM example](https://github.com/leamsigc/nuxt-better-auth-drizzle) on github [preview](https://nuxt-better-auth.giessen.dev/)
+- [Nuxt example](https://stackblitz.com/github/better-auth/better-auth/tree/main/examples/nuxt-example) on StackBlitz.
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/remix.mdx</source>
+<document_content>
+---
+title: Remix Integration
+description: Integrate Better Auth with Remix.
+---
+
+Better Auth can be easily integrated with Remix. This guide will show you how to integrate Better Auth with Remix.
+
+You can follow the steps from [installation](/docs/installation) to get started or you can follow this guide to make it the Remix-way.
+
+If you have followed the installation steps, you can skip the first step.
+
+## Create auth instance
+
+
+Create a file named `auth.server.ts` in one of these locations:
+   - Project root
+   - `lib/` folder
+   - `utils/` folder
+
+You can also nest any of these folders under `app/` folder. (e.g. `app/lib/auth.server.ts`)
+
+And in this file, import Better Auth and create your instance.
+
+<Callout type="warn">
+Make sure to export the auth instance with the variable name `auth` or as a `default` export.
+</Callout>
+
+```ts title="app/lib/auth.server.ts"
+import { betterAuth } from "better-auth"
+
+export const auth = betterAuth({
+    database: {
+        provider: "postgres", //change this to your database provider
+        url: process.env.DATABASE_URL, // path to your database or connection string
+    }
+})
+```
+
+## Create API Route
+
+We need to mount the handler to a API route. Create a resource route file `api.auth.$.ts` inside `app/routes/` directory. And add the following code:
+
+```ts title="app/routes/api.auth.$.ts"
+import { auth } from '~/lib/auth.server' // Adjust the path as necessary
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node"
+
+export async function loader({ request }: LoaderFunctionArgs) {
+    return auth.handler(request)
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+    return auth.handler(request)
+}
+```
+
+<Callout type="info">
+ You can change the path on your better-auth configuration but it's recommended to keep it as `routes/api.auth.$.ts`
+</Callout>
+
+## Create a client
+
+Create a client instance. Here we are creating `auth-client.ts` file inside the `lib/` directory.
+
+```ts title="app/lib/auth-client.ts"
+import { createAuthClient } from "better-auth/react" // make sure to import from better-auth/react
+
+export const authClient = createAuthClient({
+    //you can pass client configuration here
+})
+```
+
+Once you have created the client, you can use it to sign up, sign in, and perform other actions.
+
+### Example usage
+
+#### Sign Up
+
+```ts title="app/routes/signup.tsx"
+import { Form } from "@remix-run/react"
+import { useState } from "react"
+import { authClient } from "~/lib/auth.client"
+
+export default function SignUp() {
+  const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
+
+  const signUp = async () => {
+    await authClient.signUp.email(
+      {
+        email,
+        password,
+        name,
+      },
+      {
+        onRequest: (ctx) => {
+          // show loading state
+        },
+        onSuccess: (ctx) => {
+          // redirect to home
+        },
+        onError: (ctx) => {
+          alert(ctx.error)
+        },
+      },
+    )
+  }
+
+  return (
+    <div>
+      <h2>
+        Sign Up
+      </h2>
+      <Form
+        onSubmit={signUp}
+      >
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name"
+        />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+        />
+        <button
+          type="submit"
+        >
+          Sign Up
+        </button>
+      </Form>
+    </div>
+  )
+}
+
+```
+
+#### Sign In
+
+```ts title="app/routes/signin.tsx"
+import { Form } from "@remix-run/react"
+import { useState } from "react"
+import { authClient } from "~/services/auth.client"
+
+export default function SignIn() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+
+  const signIn = async () => {
+    await authClient.signIn.email(
+      {
+        email,
+        password,
+      },
+      {
+        onRequest: (ctx) => {
+          // show loading state
+        },
+        onSuccess: (ctx) => {
+          // redirect to home
+        },
+        onError: (ctx) => {
+          alert(ctx.error)
+        },
+      },
+    )
+  }
+
+  return (
+    <div>
+      <h2>
+        Sign In
+      </h2>
+      <Form onSubmit={signIn}>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button
+          type="submit"
+        >
+          Sign In
+        </button>
+      </Form>
+    </div>
+  )
+}
+```
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/solid-start.mdx</source>
+<document_content>
+---
+title: SolidStart Integration
+description: Integrate Better Auth with SolidStart.
+---
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+We need to mount the handler to SolidStart server. Put the following code in your `*auth.ts` file inside `/routes/api/auth` folder.
+
+```ts title="*auth.ts"
+import { auth } from "~/lib/auth";
+import { toSolidStartHandler } from "better-auth/solid-start";
+
+export const { GET, POST } = toSolidStartHandler(auth);
+```
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/svelte-kit.mdx</source>
+<document_content>
+---
+title: SvelteKit Integration
+description: Integrate Better Auth with SvelteKit.
+---
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+We need to mount the handler to SvelteKit server hook.
+
+```ts title="hooks.server.ts"
+import { auth } from "$lib/auth";
+import { svelteKitHandler } from "better-auth/svelte-kit";
+
+export async function handle({ event, resolve }) {
+	return svelteKitHandler({ event, resolve, auth });
+}
+```
+
+## Create a client
+
+Create a client instance. You can name the file anything you want. Here we are creating `client.ts` file inside the `lib/` directory.
+
+```ts title="auth-client.ts"
+import { createAuthClient } from "better-auth/svelte" // make sure to import from better-auth/svelte
+
+export const authClient = createAuthClient({
+    // you can pass client configuration here
+})
+```
+
+Once you have created the client, you can use it to sign up, sign in, and perform other actions.
+Some of the actions are reactive. The client use [nano-store](https://github.com/nanostores/nanostores) to store the state and reflect changes when there is a change like a user signing in or out affecting the session state.
+
+### Example usage
+```svelte
+<script lang="ts">
+  import { authClient } from "$lib/client";
+  const session = authClient.useSession();
+</script>
+    <div>
+      {#if $session.data}
+        <div>
+          <p>
+            {$session?.data?.user.name}
+          </p>
+          <button
+            on:click={async () => {
+              await authClient.signOut();
+            }}
+          >
+            Sign Out
+          </button>
+        </div>
+      {:else}
+        <button
+          on:click={async () => {
+            await authClient.signIn.social({
+              provider: "github",
+            });
+          }}
+        >
+          Continue with github
+        </button>
+      {/if}
+    </div>
+```
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/better-auth/better-auth/docs/content/docs/integrations/tanstack.mdx</source>
+<document_content>
+---
+title: TanStack Start Integration
+description: Integrate Better Auth with TanStack Start.
+---
+
+This integration guide is assuming you are using TanStack Start.
+
+Before you start, make sure you have a Better Auth instance configured. If you haven't done that yet, check out the [installation](/docs/installation).
+
+### Mount the handler
+
+We need to mount the handler to a TanStack API endpoint.
+Create a new file: `/app/routes/api/auth/$.ts`
+
+```ts title="routes/api/auth/$.ts"
+import { auth } from '@/lib/auth' // import your auth instance
+import { createAPIFileRoute } from '@tanstack/react-start/api'
+
+export const APIRoute = createAPIFileRoute('/api/auth/$')({
+  GET: ({ request }) => {
+    return auth.handler(request)
+  },
+  POST: ({ request }) => {
+    return auth.handler(request)
+  },
+})
+```
+</document_content>
+</document>
+</documents>

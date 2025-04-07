@@ -1,0 +1,177 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/integrations/next-js.ts
+```typescript
+import type { BetterAuthPlugin } from "../types";
+import { parseSetCookieHeader } from "../cookies";
+import { createAuthMiddleware } from "../plugins";
+
+export function toNextJsHandler(
+	auth:
+		| {
+				handler: (request: Request) => Promise<Response>;
+		  }
+		| ((request: Request) => Promise<Response>),
+) {
+	const handler = async (request: Request) => {
+		return "handler" in auth ? auth.handler(request) : auth(request);
+	};
+	return {
+		GET: handler,
+		POST: handler,
+	};
+}
+
+export const nextCookies = () => {
+	return {
+		id: "next-cookies",
+		hooks: {
+			after: [
+				{
+					matcher(ctx) {
+						return true;
+					},
+					handler: createAuthMiddleware(async (ctx) => {
+						const returned = ctx.context.responseHeaders;
+						if ("_flag" in ctx && ctx._flag === "router") {
+							return;
+						}
+						if (returned instanceof Headers) {
+							const setCookies = returned?.get("set-cookie");
+							if (!setCookies) return;
+							const parsed = parseSetCookieHeader(setCookies);
+							const { cookies } = await import("next/headers");
+							const cookieHelper = await cookies();
+							parsed.forEach((value, key) => {
+								if (!key) return;
+								const opts = {
+									sameSite: value.samesite,
+									secure: value.secure,
+									maxAge: value["max-age"],
+									httpOnly: value.httponly,
+									domain: value.domain,
+									path: value.path,
+								} as const;
+								try {
+									cookieHelper.set(key, decodeURIComponent(value.value), opts);
+								} catch (e) {
+									// this will fail if the cookie is being set on server component
+								}
+							});
+							return;
+						}
+					}),
+				},
+			],
+		},
+	} satisfies BetterAuthPlugin;
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/integrations/node.ts
+```typescript
+import { toNodeHandler as toNode } from "better-call/node";
+import type { Auth } from "../auth";
+import type { IncomingHttpHeaders } from "http";
+
+export const toNodeHandler = (
+	auth:
+		| {
+				handler: Auth["handler"];
+		  }
+		| Auth["handler"],
+) => {
+	return "handler" in auth ? toNode(auth.handler) : toNode(auth);
+};
+
+export function fromNodeHeaders(nodeHeaders: IncomingHttpHeaders): Headers {
+	const webHeaders = new Headers();
+	for (const [key, value] of Object.entries(nodeHeaders)) {
+		if (value !== undefined) {
+			if (Array.isArray(value)) {
+				value.forEach((v) => webHeaders.append(key, v));
+			} else {
+				webHeaders.set(key, value);
+			}
+		}
+	}
+	return webHeaders;
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/integrations/solid-start.ts
+```typescript
+export function toSolidStartHandler(
+	auth:
+		| {
+				handler: (request: Request) => Promise<Response>;
+		  }
+		| ((request: Request) => Promise<Response>),
+) {
+	const handler = async (event: {
+		request: Request;
+	}) => {
+		return "handler" in auth
+			? auth.handler(event.request)
+			: auth(event.request);
+	};
+	return {
+		GET: handler,
+		POST: handler,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/packages/better-auth/src/integrations/svelte-kit.ts
+```typescript
+import type { BetterAuthOptions } from "../types";
+
+export const toSvelteKitHandler = (auth: {
+	handler: (request: Request) => any;
+	options: BetterAuthOptions;
+}) => {
+	return (event: { request: Request }) => auth.handler(event.request);
+};
+
+export const svelteKitHandler = async ({
+	auth,
+	event,
+	resolve,
+}: {
+	auth: {
+		handler: (request: Request) => any;
+		options: BetterAuthOptions;
+	};
+	event: { request: Request; url: URL };
+	resolve: (event: any) => any;
+}) => {
+	//@ts-expect-error
+	const { building } = await import("$app/environment")
+		.catch((e) => {})
+		.then((m) => m || {});
+	if (building) {
+		return resolve(event);
+	}
+	const { request, url } = event;
+	if (isAuthPath(url.toString(), auth.options)) {
+		return auth.handler(request);
+	}
+	return resolve(event);
+};
+
+export function isAuthPath(url: string, options: BetterAuthOptions) {
+	const _url = new URL(url);
+	const baseURL = new URL(
+		`${options.baseURL || _url.origin}${options.basePath || "/api/auth"}`,
+	);
+	if (_url.origin !== baseURL.origin) return false;
+	if (
+		!_url.pathname.startsWith(
+			baseURL.pathname.endsWith("/")
+				? baseURL.pathname
+				: `${baseURL.pathname}/`,
+		)
+	)
+		return false;
+	return true;
+}
+
+```

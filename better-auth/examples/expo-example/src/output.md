@@ -1,0 +1,1128 @@
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/global.css
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 224 71.4% 4.1%;
+		--card: 0 0% 100%;
+		--card-foreground: 224 71.4% 4.1%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 224 71.4% 4.1%;
+		--primary: 220.9 39.3% 11%;
+		--primary-foreground: 210 20% 98%;
+		--secondary: 220 14.3% 95.9%;
+		--secondary-foreground: 220.9 39.3% 11%;
+		--muted: 220 14.3% 95.9%;
+		--muted-foreground: 220 8.9% 46.1%;
+		--accent: 220 14.3% 95.9%;
+		--accent-foreground: 220.9 39.3% 11%;
+		--destructive: 0 84.2% 60.2%;
+		--destructive-foreground: 210 20% 98%;
+		--border: 220 13% 91%;
+		--input: 220 13% 91%;
+		--ring: 224 71.4% 4.1%;
+		--radius: 0.5rem;
+		--chart-1: 12 76% 61%;
+		--chart-2: 173 58% 39%;
+		--chart-3: 197 37% 24%;
+		--chart-4: 43 74% 66%;
+		--chart-5: 27 87% 67%;
+	}
+
+	.dark {
+		--background: 224 71.4% 4.1%;
+		--foreground: 210 20% 98%;
+		--card: 224 71.4% 4.1%;
+		--card-foreground: 210 20% 98%;
+		--popover: 224 71.4% 4.1%;
+		--popover-foreground: 210 20% 98%;
+		--primary: 210 20% 98%;
+		--primary-foreground: 220.9 39.3% 11%;
+		--secondary: 215 27.9% 16.9%;
+		--secondary-foreground: 210 20% 98%;
+		--muted: 215 27.9% 16.9%;
+		--muted-foreground: 217.9 10.6% 64.9%;
+		--accent: 215 27.9% 16.9%;
+		--accent-foreground: 210 20% 98%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 210 20% 98%;
+		--border: 215 27.9% 16.9%;
+		--input: 215 27.9% 16.9%;
+		--ring: 216 12.2% 83.9%;
+		--chart-1: 220 70% 50%;
+		--chart-2: 160 60% 45%;
+		--chart-3: 30 80% 55%;
+		--chart-4: 280 65% 60%;
+		--chart-5: 340 75% 55%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/_layout.tsx
+```
+import { Slot } from "expo-router";
+import "../global.css";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ImageBackground, View } from "react-native";
+import { StyleSheet } from "react-native";
+
+export default function RootLayout() {
+	return (
+		<SafeAreaProvider>
+			<ImageBackground
+				className="z-0 flex items-center justify-center"
+				source={require("../../assets/bg-image.jpeg")}
+				resizeMode="cover"
+				style={{
+					...(StyleSheet.absoluteFill as any),
+					width: "100%",
+				}}
+			>
+				<View
+					style={{
+						position: "absolute",
+						top: 0,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						backgroundColor: "black",
+						opacity: 0.2,
+					}}
+				/>
+				<Slot />
+			</ImageBackground>
+		</SafeAreaProvider>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/dashboard.tsx
+```
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter, CardHeader } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
+import { authClient } from "@/lib/auth-client";
+import { View } from "react-native";
+import Ionicons from "@expo/vector-icons/AntDesign";
+import { router } from "expo-router";
+import { useEffect } from "react";
+
+export default function Dashboard() {
+	const { data: session, isPending } = authClient.useSession();
+	useEffect(() => {
+		if (!session && !isPending) {
+			router.push("/");
+		}
+	}, [session, isPending]);
+	return (
+		<Card className="w-10/12">
+			<CardHeader>
+				<View className="flex-row items-center gap-2">
+					<Avatar alt="user-image">
+						<AvatarImage
+							source={{
+								uri: session?.user?.image || "",
+							}}
+						/>
+						<AvatarFallback>
+							<Text>{session?.user?.name[0]}</Text>
+						</AvatarFallback>
+					</Avatar>
+					<View>
+						<Text className="font-bold">{session?.user?.name}</Text>
+						<Text className="text-sm">{session?.user?.email}</Text>
+					</View>
+				</View>
+			</CardHeader>
+			<CardFooter className="justify-between">
+				<Button
+					variant="default"
+					size="sm"
+					className="flex-row items-center gap-2	"
+				>
+					<Ionicons name="edit" size={16} color="white" />
+					<Text>Edit User</Text>
+				</Button>
+				<Button
+					variant="secondary"
+					className="flex-row items-center gap-2"
+					size="sm"
+					onPress={async () => {
+						await authClient.signOut({
+							fetchOptions: {
+								onSuccess: () => {
+									router.push("/");
+								},
+							},
+						});
+					}}
+				>
+					<Ionicons name="logout" size={14} color="black" />
+					<Text>Sign Out</Text>
+				</Button>
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/forget-password.tsx
+```
+import { Button } from "@/components/ui/button";
+import {
+	Card,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { authClient } from "@/lib/auth-client";
+import { useState } from "react";
+import { View } from "react-native";
+import Icons from "@expo/vector-icons/AntDesign";
+import { router } from "expo-router";
+
+export default function ForgetPassword() {
+	const [email, setEmail] = useState("");
+	return (
+		<Card className="w-10/12 ">
+			<CardHeader>
+				<CardTitle>Forget Password</CardTitle>
+				<CardDescription>
+					Enter your email to reset your password
+				</CardDescription>
+			</CardHeader>
+			<View className="px-6 mb-2">
+				<Input
+					autoCapitalize="none"
+					placeholder="Email"
+					value={email}
+					onChangeText={(text) => setEmail(text)}
+				/>
+			</View>
+			<CardFooter>
+				<View className="w-full gap-2">
+					<Button
+						onPress={() => {
+							authClient.forgetPassword({
+								email,
+								redirectTo: "/reset-password",
+							});
+						}}
+						className="w-full"
+						variant="default"
+					>
+						<Text>Send Email</Text>
+					</Button>
+					<Button
+						onPress={() => {
+							router.push("/");
+						}}
+						className="w-full flex-row gap-4 items-center"
+						variant="outline"
+					>
+						<Icons name="arrowleft" size={18} />
+						<Text>Back to Sign In</Text>
+					</Button>
+				</View>
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/index.tsx
+```
+import Ionicons from "@expo/vector-icons/AntDesign";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Text } from "@/components/ui/text";
+import { authClient } from "@/lib/auth-client";
+import { Image, View } from "react-native";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import { router, useNavigationContainerRef } from "expo-router";
+
+export default function Index() {
+	const { data: isAuthenticated } = authClient.useSession();
+	const navContainerRef = useNavigationContainerRef();
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+
+	useEffect(() => {
+		if (isAuthenticated) {
+			if (navContainerRef.isReady()) {
+				router.push("/dashboard");
+			}
+		}
+	}, [isAuthenticated, navContainerRef.isReady()]);
+	return (
+		<Card className="z-50 mx-6 backdrop-blur-lg bg-gray-200/70">
+			<CardHeader className="flex items-center justify-center gap-8">
+				<Image
+					source={require("../../assets/images/logo.png")}
+					style={{
+						width: 40,
+						height: 40,
+					}}
+				/>
+				<CardTitle>Sign In to your account</CardTitle>
+			</CardHeader>
+			<View className="px-6 flex gap-2">
+				<Button
+					onPress={() => {
+						authClient.signIn.social({
+							provider: "google",
+							callbackURL: "/dashboard",
+						});
+					}}
+					variant="secondary"
+					className="flex flex-row gap-2 items-center bg-white/50"
+				>
+					<Ionicons name="google" size={16} />
+					<Text>Sign In with Google</Text>
+				</Button>
+				<Button
+					variant="secondary"
+					className="flex flex-row gap-2 items-center bg-white/50"
+					onPress={() => {
+						authClient.signIn.social({
+							provider: "github",
+							callbackURL: "/dashboard",
+						});
+					}}
+				>
+					<Ionicons name="github" size={16} />
+					<Text>Sign In with Github</Text>
+				</Button>
+			</View>
+			<View className="flex-row gap-2 w-full items-center px-6 my-4">
+				<Separator className="flex-grow w-3/12" />
+				<Text>or continue with</Text>
+				<Separator className="flex-grow w-3/12" />
+			</View>
+			<View className="px-6">
+				<Input
+					placeholder="Email Address"
+					className="rounded-b-none border-b-0"
+					value={email}
+					onChangeText={(text) => {
+						setEmail(text);
+					}}
+				/>
+				<Input
+					placeholder="Password"
+					className="rounded-t-none"
+					secureTextEntry
+					value={password}
+					onChangeText={(text) => {
+						setPassword(text);
+					}}
+				/>
+			</View>
+			<CardFooter>
+				<View className="w-full">
+					<Button
+						variant="link"
+						className="w-full"
+						onPress={() => {
+							router.push("/forget-password");
+						}}
+					>
+						<Text className="underline text-center">Forget Password?</Text>
+					</Button>
+					<Button
+						onPress={() => {
+							authClient.signIn.email(
+								{
+									email,
+									password,
+								},
+								{
+									onError: (ctx) => {
+										alert(ctx.error.message);
+									},
+								},
+							);
+						}}
+					>
+						<Text>Continue</Text>
+					</Button>
+					<Text className="text-center mt-2">
+						Don't have an account?{" "}
+						<Text
+							className="underline"
+							onPress={() => {
+								router.push("/sign-up");
+							}}
+						>
+							Create Account
+						</Text>
+					</Text>
+				</View>
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/sign-up.tsx
+```
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { authClient } from "@/lib/auth-client";
+import { KeyboardAvoidingView, View } from "react-native";
+import { Image } from "react-native";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+
+export default function SignUp() {
+	const router = useRouter();
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [name, setName] = useState("");
+	return (
+		<Card className="z-50 mx-6">
+			<CardHeader className="flex items-center justify-center gap-8">
+				<Image
+					source={require("../../assets/images/logo.png")}
+					style={{
+						width: 40,
+						height: 40,
+					}}
+				/>
+				<CardTitle>Create new Account</CardTitle>
+			</CardHeader>
+			<View className="px-6">
+				<KeyboardAvoidingView>
+					<Input
+						placeholder="Name"
+						className="rounded-b-none border-b-0"
+						value={name}
+						onChangeText={(text) => {
+							setName(text);
+						}}
+					/>
+				</KeyboardAvoidingView>
+				<KeyboardAvoidingView>
+					<Input
+						placeholder="Email"
+						className="rounded-b-none border-b-0"
+						value={email}
+						onChangeText={(text) => {
+							setEmail(text);
+						}}
+						autoCapitalize="none"
+					/>
+				</KeyboardAvoidingView>
+
+				<KeyboardAvoidingView>
+					<Input
+						placeholder="Password"
+						secureTextEntry
+						className="rounded-t-none"
+						value={password}
+						onChangeText={(text) => {
+							setPassword(text);
+						}}
+					/>
+				</KeyboardAvoidingView>
+			</View>
+			<CardFooter>
+				<View className="w-full mt-2">
+					<Button
+						onPress={async () => {
+							const res = await authClient.signUp.email(
+								{
+									email,
+									password,
+									name,
+								},
+								{
+									onError: (ctx) => {
+										alert(ctx.error.message);
+									},
+									onSuccess: (ctx) => {
+										router.push("/dashboard");
+									},
+								},
+							);
+							console.log(res);
+						}}
+					>
+						<Text>Sign Up</Text>
+					</Button>
+					<Text className="text-center mt-2">
+						Already have an account?{" "}
+						<Text
+							className="underline"
+							onPress={() => {
+								router.push("/");
+							}}
+						>
+							Sign In
+						</Text>
+					</Text>
+				</View>
+			</CardFooter>
+		</Card>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/app/api/auth/[...route]+api.ts
+```typescript
+import { auth } from "@/lib/auth";
+
+export const GET = (request: Request) => {
+	return auth.handler(request);
+};
+
+export const POST = (request: Request) => {
+	return auth.handler(request);
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/avatar.tsx
+```
+import * as AvatarPrimitive from "@rn-primitives/avatar";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Avatar = React.forwardRef<
+	AvatarPrimitive.RootRef,
+	AvatarPrimitive.RootProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Root
+		ref={ref}
+		className={cn(
+			"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+			className,
+		)}
+		{...props}
+	/>
+));
+Avatar.displayName = AvatarPrimitive.Root.displayName;
+
+const AvatarImage = React.forwardRef<
+	AvatarPrimitive.ImageRef,
+	AvatarPrimitive.ImageProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Image
+		ref={ref}
+		className={cn("aspect-square h-full w-full", className)}
+		{...props}
+	/>
+));
+AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+
+const AvatarFallback = React.forwardRef<
+	AvatarPrimitive.FallbackRef,
+	AvatarPrimitive.FallbackProps
+>(({ className, ...props }, ref) => (
+	<AvatarPrimitive.Fallback
+		ref={ref}
+		className={cn(
+			"flex h-full w-full items-center justify-center rounded-full bg-muted",
+			className,
+		)}
+		{...props}
+	/>
+));
+AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+
+export { Avatar, AvatarFallback, AvatarImage };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/button.tsx
+```
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
+import { Pressable } from "react-native";
+import { cn } from "@/lib/utils";
+import { TextClassContext } from "@/components/ui/text";
+
+const buttonVariants = cva(
+	"group flex items-center justify-center rounded-md web:ring-offset-background web:transition-colors web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+	{
+		variants: {
+			variant: {
+				default: "bg-primary web:hover:opacity-90 active:opacity-90",
+				destructive: "bg-destructive web:hover:opacity-90 active:opacity-90",
+				outline:
+					"border border-input bg-background web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				secondary: "bg-secondary web:hover:opacity-80 active:opacity-80",
+				ghost:
+					"web:hover:bg-accent web:hover:text-accent-foreground active:bg-accent",
+				link: "web:underline-offset-4 web:hover:underline web:focus:underline ",
+			},
+			size: {
+				default: "h-10 px-4 py-2 native:h-12 native:px-5 native:py-3",
+				sm: "h-9 rounded-md px-3",
+				lg: "h-11 rounded-md px-8 native:h-14",
+				icon: "h-10 w-10",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+const buttonTextVariants = cva(
+	"web:whitespace-nowrap text-sm native:text-base font-medium text-foreground web:transition-colors",
+	{
+		variants: {
+			variant: {
+				default: "text-primary-foreground",
+				destructive: "text-destructive-foreground",
+				outline: "group-active:text-accent-foreground",
+				secondary:
+					"text-secondary-foreground group-active:text-secondary-foreground",
+				ghost: "group-active:text-accent-foreground",
+				link: "text-primary group-active:underline",
+			},
+			size: {
+				default: "",
+				sm: "",
+				lg: "native:text-lg",
+				icon: "",
+			},
+		},
+		defaultVariants: {
+			variant: "default",
+			size: "default",
+		},
+	},
+);
+
+type ButtonProps = React.ComponentPropsWithoutRef<typeof Pressable> &
+	VariantProps<typeof buttonVariants>;
+
+const Button = React.forwardRef<
+	React.ElementRef<typeof Pressable>,
+	ButtonProps
+>(({ className, variant, size, ...props }, ref) => {
+	return (
+		<TextClassContext.Provider
+			value={buttonTextVariants({
+				variant,
+				size,
+				className: "web:pointer-events-none",
+			})}
+		>
+			<Pressable
+				className={cn(
+					props.disabled && "opacity-50 web:pointer-events-none",
+					buttonVariants({ variant, size, className }),
+				)}
+				ref={ref}
+				role="button"
+				{...props}
+			/>
+		</TextClassContext.Provider>
+	);
+});
+Button.displayName = "Button";
+
+export { Button, buttonTextVariants, buttonVariants };
+export type { ButtonProps };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/card.tsx
+```
+import { TextRef, ViewRef } from "@rn-primitives/types";
+import * as React from "react";
+import { Text, type TextProps, View, type ViewProps } from "react-native";
+import { cn } from "@/lib/utils";
+import { TextClassContext } from "@/components/ui/text";
+
+const Card = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn(
+				"rounded-lg border border-border bg-card shadow-sm shadow-foreground/10",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Card.displayName = "Card";
+
+const CardHeader = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn("flex flex-col space-y-1.5 p-6", className)}
+			{...props}
+		/>
+	),
+);
+CardHeader.displayName = "CardHeader";
+
+const CardTitle = React.forwardRef<TextRef, TextProps>(
+	({ className, ...props }, ref) => (
+		<Text
+			role="heading"
+			aria-level={3}
+			ref={ref}
+			className={cn(
+				"text-2xl text-card-foreground font-semibold leading-none tracking-tight",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+CardTitle.displayName = "CardTitle";
+
+const CardDescription = React.forwardRef<TextRef, TextProps>(
+	({ className, ...props }, ref) => (
+		<Text
+			ref={ref}
+			className={cn("text-sm text-muted-foreground", className)}
+			{...props}
+		/>
+	),
+);
+CardDescription.displayName = "CardDescription";
+
+const CardContent = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<TextClassContext.Provider value="text-card-foreground">
+			<View ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+		</TextClassContext.Provider>
+	),
+);
+CardContent.displayName = "CardContent";
+
+const CardFooter = React.forwardRef<ViewRef, ViewProps>(
+	({ className, ...props }, ref) => (
+		<View
+			ref={ref}
+			className={cn("flex flex-row items-center p-6 pt-0", className)}
+			{...props}
+		/>
+	),
+);
+CardFooter.displayName = "CardFooter";
+
+export {
+	Card,
+	CardContent,
+	CardDescription,
+	CardFooter,
+	CardHeader,
+	CardTitle,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/dialog.tsx
+```
+import * as DialogPrimitive from "@rn-primitives/dialog";
+import * as React from "react";
+import { Platform, StyleSheet, View, type ViewProps } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { X } from "@/lib/icons/X";
+import { cn } from "@/lib/utils";
+
+const Dialog = DialogPrimitive.Root;
+
+const DialogTrigger = DialogPrimitive.Trigger;
+
+const DialogPortal = DialogPrimitive.Portal;
+
+const DialogClose = DialogPrimitive.Close;
+
+const DialogOverlayWeb = React.forwardRef<
+	DialogPrimitive.OverlayRef,
+	DialogPrimitive.OverlayProps
+>(({ className, ...props }, ref) => {
+	const { open } = DialogPrimitive.useRootContext();
+	return (
+		<DialogPrimitive.Overlay
+			className={cn(
+				"bg-black/80 flex justify-center items-center p-2 absolute top-0 right-0 bottom-0 left-0",
+				open
+					? "web:animate-in web:fade-in-0"
+					: "web:animate-out web:fade-out-0",
+				className,
+			)}
+			{...props}
+			ref={ref}
+		/>
+	);
+});
+
+DialogOverlayWeb.displayName = "DialogOverlayWeb";
+
+const DialogOverlayNative = React.forwardRef<
+	DialogPrimitive.OverlayRef,
+	DialogPrimitive.OverlayProps
+>(({ className, children, ...props }, ref) => {
+	return (
+		<DialogPrimitive.Overlay
+			style={StyleSheet.absoluteFill}
+			className={cn(
+				"flex bg-black/80 justify-center items-center p-2",
+				className,
+			)}
+			{...props}
+			ref={ref}
+		>
+			<Animated.View
+				entering={FadeIn.duration(150)}
+				exiting={FadeOut.duration(150)}
+			>
+				<>{children}</>
+			</Animated.View>
+		</DialogPrimitive.Overlay>
+	);
+});
+
+DialogOverlayNative.displayName = "DialogOverlayNative";
+
+const DialogOverlay = Platform.select({
+	web: DialogOverlayWeb,
+	default: DialogOverlayNative,
+});
+
+const DialogContent = React.forwardRef<
+	DialogPrimitive.ContentRef,
+	DialogPrimitive.ContentProps & { portalHost?: string }
+>(({ className, children, portalHost, ...props }, ref) => {
+	const { open } = DialogPrimitive.useRootContext();
+	return (
+		<DialogPortal hostName={portalHost}>
+			<DialogOverlay>
+				<DialogPrimitive.Content
+					ref={ref}
+					className={cn(
+						"max-w-lg gap-4 border border-border web:cursor-default bg-background p-6 shadow-lg web:duration-200 rounded-lg",
+						open
+							? "web:animate-in web:fade-in-0 web:zoom-in-95"
+							: "web:animate-out web:fade-out-0 web:zoom-out-95",
+						className,
+					)}
+					{...props}
+				>
+					{children}
+					<DialogPrimitive.Close
+						className={
+							"absolute right-4 top-4 p-0.5 web:group rounded-sm opacity-70 web:ring-offset-background web:transition-opacity web:hover:opacity-100 web:focus:outline-none web:focus:ring-2 web:focus:ring-ring web:focus:ring-offset-2 web:disabled:pointer-events-none"
+						}
+					>
+						<X
+							size={Platform.OS === "web" ? 16 : 18}
+							className={cn(
+								"text-muted-foreground",
+								open && "text-accent-foreground",
+							)}
+						/>
+					</DialogPrimitive.Close>
+				</DialogPrimitive.Content>
+			</DialogOverlay>
+		</DialogPortal>
+	);
+});
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+const DialogHeader = ({ className, ...props }: ViewProps) => (
+	<View
+		className={cn("flex flex-col gap-1.5 text-center sm:text-left", className)}
+		{...props}
+	/>
+);
+DialogHeader.displayName = "DialogHeader";
+
+const DialogFooter = ({ className, ...props }: ViewProps) => (
+	<View
+		className={cn(
+			"flex flex-col-reverse sm:flex-row sm:justify-end gap-2",
+			className,
+		)}
+		{...props}
+	/>
+);
+DialogFooter.displayName = "DialogFooter";
+
+const DialogTitle = React.forwardRef<
+	DialogPrimitive.TitleRef,
+	DialogPrimitive.TitleProps
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Title
+		ref={ref}
+		className={cn(
+			"text-lg native:text-xl text-foreground font-semibold leading-none tracking-tight",
+			className,
+		)}
+		{...props}
+	/>
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+const DialogDescription = React.forwardRef<
+	DialogPrimitive.DescriptionRef,
+	DialogPrimitive.DescriptionProps
+>(({ className, ...props }, ref) => (
+	<DialogPrimitive.Description
+		ref={ref}
+		className={cn("text-sm native:text-base text-muted-foreground", className)}
+		{...props}
+	/>
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
+
+export {
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogOverlay,
+	DialogPortal,
+	DialogTitle,
+	DialogTrigger,
+};
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/input.tsx
+```
+import * as React from "react";
+import { TextInput, type TextInputProps } from "react-native";
+import { cn } from "@/lib/utils";
+
+const Input = React.forwardRef<
+	React.ElementRef<typeof TextInput>,
+	TextInputProps
+>(({ className, placeholderClassName, ...props }, ref) => {
+	return (
+		<TextInput
+			ref={ref}
+			className={cn(
+				"web:flex h-10 native:h-12 web:w-full rounded-md border border-input bg-background px-3 web:py-2 text-base lg:text-sm native:text-lg native:leading-[1.25] text-foreground placeholder:text-muted-foreground web:ring-offset-background file:border-0 file:bg-transparent file:font-medium web:focus-visible:outline-none web:focus-visible:ring-2 web:focus-visible:ring-ring web:focus-visible:ring-offset-2",
+				props.editable === false && "opacity-50 web:cursor-not-allowed",
+				className,
+			)}
+			placeholderClassName={cn("text-muted-foreground", placeholderClassName)}
+			{...props}
+		/>
+	);
+});
+
+Input.displayName = "Input";
+
+export { Input };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/separator.tsx
+```
+import * as SeparatorPrimitive from "@rn-primitives/separator";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+const Separator = React.forwardRef<
+	SeparatorPrimitive.RootRef,
+	SeparatorPrimitive.RootProps
+>(
+	(
+		{ className, orientation = "horizontal", decorative = true, ...props },
+		ref,
+	) => (
+		<SeparatorPrimitive.Root
+			ref={ref}
+			decorative={decorative}
+			orientation={orientation}
+			className={cn(
+				"shrink-0 bg-border",
+				orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Separator.displayName = SeparatorPrimitive.Root.displayName;
+
+export { Separator };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/ui/text.tsx
+```
+import * as Slot from "@rn-primitives/slot";
+import { SlottableTextProps, TextRef } from "@rn-primitives/types";
+import * as React from "react";
+import { Text as RNText } from "react-native";
+import { cn } from "@/lib/utils";
+
+const TextClassContext = React.createContext<string | undefined>(undefined);
+
+const Text = React.forwardRef<TextRef, SlottableTextProps>(
+	({ className, asChild = false, ...props }, ref) => {
+		const textClass = React.useContext(TextClassContext);
+		const Component = asChild ? Slot.Text : RNText;
+		return (
+			<Component
+				className={cn(
+					"text-base text-foreground web:select-text",
+					textClass,
+					className,
+				)}
+				ref={ref}
+				{...props}
+			/>
+		);
+	},
+);
+Text.displayName = "Text";
+
+export { Text, TextClassContext };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/components/icons/google.tsx
+```
+import Svg, { Path, SvgProps } from "react-native-svg";
+
+export function GoogleIcon(props: SvgProps) {
+	return (
+		<Svg width="1em" height="1em" viewBox="0 0 128 128">
+			<Path
+				fill="#fff"
+				d="M44.59 4.21a63.28 63.28 0 0 0 4.33 120.9a67.6 67.6 0 0 0 32.36.35a57.13 57.13 0 0 0 25.9-13.46a57.44 57.44 0 0 0 16-26.26a74.3 74.3 0 0 0 1.61-33.58H65.27v24.69h34.47a29.72 29.72 0 0 1-12.66 19.52a36.2 36.2 0 0 1-13.93 5.5a41.3 41.3 0 0 1-15.1 0A37.2 37.2 0 0 1 44 95.74a39.3 39.3 0 0 1-14.5-19.42a38.3 38.3 0 0 1 0-24.63a39.25 39.25 0 0 1 9.18-14.91A37.17 37.17 0 0 1 76.13 27a34.3 34.3 0 0 1 13.64 8q5.83-5.8 11.64-11.63c2-2.09 4.18-4.08 6.15-6.22A61.2 61.2 0 0 0 87.2 4.59a64 64 0 0 0-42.61-.38"
+			></Path>
+			<Path
+				fill="#e33629"
+				d="M44.59 4.21a64 64 0 0 1 42.61.37a61.2 61.2 0 0 1 20.35 12.62c-2 2.14-4.11 4.14-6.15 6.22Q95.58 29.23 89.77 35a34.3 34.3 0 0 0-13.64-8a37.17 37.17 0 0 0-37.46 9.74a39.25 39.25 0 0 0-9.18 14.91L8.76 35.6A63.53 63.53 0 0 1 44.59 4.21"
+			></Path>
+			<Path
+				fill="#f8bd00"
+				d="M3.26 51.5a63 63 0 0 1 5.5-15.9l20.73 16.09a38.3 38.3 0 0 0 0 24.63q-10.36 8-20.73 16.08a63.33 63.33 0 0 1-5.5-40.9"
+			></Path>
+			<Path
+				fill="#587dbd"
+				d="M65.27 52.15h59.52a74.3 74.3 0 0 1-1.61 33.58a57.44 57.44 0 0 1-16 26.26c-6.69-5.22-13.41-10.4-20.1-15.62a29.72 29.72 0 0 0 12.66-19.54H65.27c-.01-8.22 0-16.45 0-24.68"
+			></Path>
+			<Path
+				fill="#319f43"
+				d="M8.75 92.4q10.37-8 20.73-16.08A39.3 39.3 0 0 0 44 95.74a37.2 37.2 0 0 0 14.08 6.08a41.3 41.3 0 0 0 15.1 0a36.2 36.2 0 0 0 13.93-5.5c6.69 5.22 13.41 10.4 20.1 15.62a57.13 57.13 0 0 1-25.9 13.47a67.6 67.6 0 0 1-32.36-.35a63 63 0 0 1-23-11.59A63.7 63.7 0 0 1 8.75 92.4"
+			></Path>
+		</Svg>
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/lib/auth-client.ts
+```typescript
+import { createAuthClient } from "better-auth/react";
+import { expoClient } from "@better-auth/expo/client";
+import * as SecureStore from "expo-secure-store";
+
+export const authClient = createAuthClient({
+	baseURL: "http://localhost:8081",
+	disableDefaultFetchPlugins: true,
+	plugins: [
+		expoClient({
+			scheme: "better-auth",
+			storage: SecureStore,
+		}),
+	],
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/lib/auth.ts
+```typescript
+import { betterAuth } from "better-auth";
+import { expo } from "@better-auth/expo";
+import { Pool } from "pg";
+
+export const auth = betterAuth({
+	database: new Pool({
+		connectionString: process.env.DATABASE_URL,
+	}),
+	emailAndPassword: {
+		enabled: true,
+	},
+	plugins: [expo()],
+	socialProviders: {
+		github: {
+			clientId: process.env.GITHUB_CLIENT_ID!,
+			clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+		},
+		google: {
+			clientId: process.env.GOOGLE_CLIENT_ID!,
+			clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+		},
+	},
+	trustedOrigins: ["exp://"],
+});
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/lib/utils.ts
+```typescript
+import { type ClassValue, clsx } from "clsx";
+import { PressableStateCallbackType } from "react-native";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+	return twMerge(clsx(inputs));
+}
+export function isTextChildren(
+	children:
+		| React.ReactNode
+		| ((state: PressableStateCallbackType) => React.ReactNode),
+) {
+	return Array.isArray(children)
+		? children.every((child) => typeof child === "string")
+		: typeof children === "string";
+}
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/lib/icons/X.tsx
+```
+import { X } from "lucide-react-native";
+import { iconWithClassName } from "./iconWithClassName";
+iconWithClassName(X);
+export { X };
+
+```
+/Users/josh/Documents/GitHub/better-auth/better-auth/examples/expo-example/src/lib/icons/iconWithClassName.ts
+```typescript
+import type { LucideIcon } from "lucide-react-native";
+import { cssInterop } from "nativewind";
+
+export function iconWithClassName(icon: LucideIcon) {
+	cssInterop(icon, {
+		className: {
+			target: "style",
+			nativeStyleToProp: {
+				color: true,
+				opacity: true,
+			},
+		},
+	});
+}
+
+```

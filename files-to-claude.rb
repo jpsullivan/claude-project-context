@@ -6,7 +6,9 @@ require 'fileutils'
 
 options = {
   output_dir: nil,
-  repo_url: "git+https://github.com/simonw/files-to-prompt"
+  repo_url: "git+https://github.com/simonw/files-to-prompt",
+  max_depth: nil,
+  ignore_dirs: []
 }
 
 # Parse command line options
@@ -19,6 +21,14 @@ option_parser = OptionParser.new do |opts|
   
   opts.on("-r", "--repo URL", "Repository URL for files-to-prompt (default: #{options[:repo_url]})") do |url|
     options[:repo_url] = url
+  end
+  
+  opts.on("-d", "--max-depth DEPTH", Integer, "Maximum depth for directory traversal (default: unlimited)") do |depth|
+    options[:max_depth] = depth
+  end
+  
+  opts.on("-i", "--ignore PATTERN", "Directories to ignore (can be specified multiple times)") do |pattern|
+    options[:ignore_dirs] << pattern
   end
   
   opts.on("-h", "--help", "Show this help message") do
@@ -66,15 +76,18 @@ end
 command_base = "uvx --with #{options[:repo_url]} files-to-prompt"
 
 # Helper method to run files-to-prompt with different formats
-def run_files_to_prompt(command_base, path, output_path, format)
+def run_files_to_prompt(command_base, path, output_path, format, ignore_patterns=[])
   # Determine file extension based on format
   ext = format == "--cxml" ? "claude.txt" : "md"
   
   # Append appropriate extension to output path
   output_file = "#{output_path}.#{ext}"
   
+  # Create the ignore flags
+  ignore_flags = ignore_patterns.map { |pattern| "--ignore \"#{pattern}\"" }.join(" ")
+  
   # Create the command to run
-  command = "#{command_base} #{path} --ignore \"stories\" --ignore \"__tests__\" #{format} -o #{output_file}"
+  command = "#{command_base} #{path} #{ignore_flags} #{format} -o #{output_file}"
   
   puts "Running: #{command}"
   
@@ -90,6 +103,56 @@ def run_files_to_prompt(command_base, path, output_path, format)
   return result
 end
 
+# Helper method to check if a directory should be ignored
+def should_ignore?(dir_name, ignore_patterns)
+  ignore_patterns.any? do |pattern|
+    File.fnmatch(pattern, dir_name, File::FNM_PATHNAME)
+  end
+end
+
+# Process directories recursively
+def process_directory(path, base_output_dir, command_base, options, current_depth=0)
+  # Check if max depth is set and reached
+  if options[:max_depth] && current_depth > options[:max_depth]
+    puts "Max depth reached for: #{path}"
+    return
+  end
+  
+  rel_path = options[:output_dir] ? path.sub(/^#{Regexp.escape(File.expand_path(ARGV[0]))}\//, '') : path
+  
+  # Determine output path base for this directory
+  if options[:output_dir]
+    # Create directory with the same structure in the output directory
+    output_path = File.join(base_output_dir, rel_path)
+    FileUtils.mkdir_p(output_path) unless Dir.exist?(output_path)
+    output_base = File.join(output_path, "output")
+  else
+    # Use the original directory
+    output_base = File.join(path, "output")
+  end
+  
+  puts "\nProcessing directory: #{path} (depth: #{current_depth})"
+  
+  # Run files-to-prompt for both formats on this directory
+  run_files_to_prompt(command_base, path, output_base, "--cxml", options[:ignore_dirs])
+  run_files_to_prompt(command_base, path, output_base, "--markdown", options[:ignore_dirs])
+  
+  # Get all subdirectories
+  subdirs = Dir.entries(path).select do |entry|
+    full_path = File.join(path, entry)
+    File.directory?(full_path) && ![".", ".."].include?(entry) && !should_ignore?(entry, options[:ignore_dirs])
+  end
+  
+  # Process each subdirectory recursively
+  if subdirs.any?
+    puts "Found #{subdirs.length} subdirectories in '#{path}'..."
+    subdirs.each do |dir|
+      full_dir_path = File.join(path, dir)
+      process_directory(full_dir_path, base_output_dir, command_base, options, current_depth + 1)
+    end
+  end
+end
+
 # First, process the entire input path
 puts "Processing the entire directory: #{input_path}"
 
@@ -101,39 +164,13 @@ complete_output_base = if options[:output_dir]
                        end
 
 # Run files-to-prompt for both formats on the entire directory
-run_files_to_prompt(command_base, input_path, complete_output_base, "--cxml")
-run_files_to_prompt(command_base, input_path, complete_output_base, "--markdown")
+ignore_patterns = ["stories", "__tests__"] + options[:ignore_dirs]
+run_files_to_prompt(command_base, input_path, complete_output_base, "--cxml", ignore_patterns)
+run_files_to_prompt(command_base, input_path, complete_output_base, "--markdown", ignore_patterns)
 
-# Get all subdirectories in the specified path
-subdirs = Dir.entries(input_path).select do |entry|
-  full_path = File.join(input_path, entry)
-  File.directory?(full_path) && ![".", ".."].include?(entry)
-end
+# Now process all directories recursively
+puts "\nStarting recursive directory processing..."
+options[:ignore_dirs] += ["stories", "__tests__"] unless options[:ignore_dirs].include?("stories") || options[:ignore_dirs].include?("__tests__")
+process_directory(input_path, options[:output_dir] || input_path, command_base, options)
 
-if subdirs.empty?
-  puts "No subdirectories found in '#{input_path}'."
-  exit 0
-end
-
-# Process each subdirectory
-puts "Processing #{subdirs.length} subdirectories..."
-subdirs.each do |dir|
-  full_dir_path = File.join(input_path, dir)
-  
-  # Determine output path base based on options
-  output_base = if options[:output_dir]
-                  # Use the output directory with subdirectory name
-                  output_subdir = File.join(options[:output_dir], dir)
-                  FileUtils.mkdir_p(output_subdir) unless Dir.exist?(output_subdir)
-                  File.join(output_subdir, "output")
-                else
-                  # Use the original directory
-                  File.join(dir, "output")
-                end
-  
-  # Run files-to-prompt for both formats on each subdirectory
-  run_files_to_prompt(command_base, full_dir_path, output_base, "--cxml")
-  run_files_to_prompt(command_base, full_dir_path, output_base, "--markdown")
-end
-
-puts "All directories processed."
+puts "\nAll directories processed."

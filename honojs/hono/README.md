@@ -1,0 +1,1 @@
+./files-to-claude.rb /Users/josh/Documents/GitHub/honojs/hono -o ./honojs/hono

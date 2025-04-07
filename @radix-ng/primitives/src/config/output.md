@@ -1,0 +1,89 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/config/index.ts
+```typescript
+export * from './src/config';
+export * from './src/config.provider';
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/config/ng-package.json
+```json
+{
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/config/src/config.provider.ts
+```typescript
+import {
+    EnvironmentProviders,
+    inject,
+    InjectionToken,
+    makeEnvironmentProviders,
+    provideAppInitializer
+} from '@angular/core';
+import { RadixNG, type RadixNGConfig } from './config';
+
+export const RADIX_NG_CONFIG = new InjectionToken<RadixNGConfig>('RADIX_NG_CONFIG');
+
+/**
+ * Provides RadixNG configuration as environment providers.
+ *
+ * @param features One or more RadixNG configuration objects.
+ * @returns A set of environment providers that register the RadixNG configs.
+ */
+export function provideRadixNG(...features: RadixNGConfig[]): EnvironmentProviders {
+    const providers = features?.map((feature) => ({
+        provide: RADIX_NG_CONFIG,
+        useValue: feature,
+        multi: false
+    }));
+
+    /**
+     * Creates an AppInitializer to load and apply each RadixNG configuration
+     * to the global RadixNG service before the app starts.
+     */
+    const initializer = provideAppInitializer(() => {
+        const config = inject(RadixNG);
+        features?.forEach((feature) => config.setConfig(feature));
+        return;
+    });
+
+    return makeEnvironmentProviders([...providers, initializer]);
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/config/src/config.ts
+```typescript
+import { Direction } from '@angular/cdk/bidi';
+import { Injectable, signal } from '@angular/core';
+
+export type RadixNGConfig = {
+    /**
+     * The global reading direction of your application. This will be inherited by all primitives.
+     * @defaultValue 'ltr'
+     */
+    dir?: Direction;
+
+    /**
+     * The global locale of your application. This will be inherited by all primitives.
+     * @defaultValue 'en'
+     */
+    locale?: string;
+};
+
+@Injectable({ providedIn: 'root' })
+export class RadixNG {
+    readonly dir = signal<Direction>('ltr');
+
+    readonly locale = signal<string>('en');
+
+    setConfig(config: RadixNGConfig): void {
+        const { dir, locale } = config || {};
+
+        if (dir) this.dir.set(dir);
+        if (locale) this.locale.set(locale);
+    }
+}
+
+```

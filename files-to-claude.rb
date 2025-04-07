@@ -65,29 +65,44 @@ end
 # Command base with uvx
 command_base = "uvx --with #{options[:repo_url]} files-to-prompt"
 
+# Helper method to run files-to-prompt with different formats
+def run_files_to_prompt(command_base, path, output_path, format)
+  # Determine file extension based on format
+  ext = format == "--cxml" ? "claude.txt" : "md"
+  
+  # Append appropriate extension to output path
+  output_file = "#{output_path}.#{ext}"
+  
+  # Create the command to run
+  command = "#{command_base} #{path} --ignore \"stories\" --ignore \"__tests__\" #{format} -o #{output_file}"
+  
+  puts "Running: #{command}"
+  
+  # Execute the command
+  result = system(command)
+  
+  if result
+    puts "✓ Successfully generated #{format} output for: #{path}"
+  else
+    puts "✗ Error generating #{format} output for: #{path} (exit code: #{$?.exitstatus})"
+  end
+  
+  return result
+end
+
 # First, process the entire input path
 puts "Processing the entire directory: #{input_path}"
 
-# Determine output path for the complete source code
-complete_output_path = if options[:output_dir]
-                         File.join(options[:output_dir], "complete_source_code.txt")
+# Determine output path base for the complete source code
+complete_output_base = if options[:output_dir]
+                         File.join(options[:output_dir], "complete_source_code")
                        else
-                         File.join(input_path, "complete_source_code.txt")
+                         File.join(input_path, "complete_source_code")
                        end
 
-# Create the command to run on the entire directory
-complete_command = "#{command_base} #{input_path} --ignore \"stories\" --ignore \"__tests__\" --cxml -o #{complete_output_path}"
-
-puts "Running: #{complete_command}"
-
-# Execute the command
-complete_result = system(complete_command)
-
-if complete_result
-  puts "✓ Successfully processed entire directory: #{input_path}"
-else
-  puts "✗ Error processing entire directory: #{input_path} (exit code: #{$?.exitstatus})"
-end
+# Run files-to-prompt for both formats on the entire directory
+run_files_to_prompt(command_base, input_path, complete_output_base, "--cxml")
+run_files_to_prompt(command_base, input_path, complete_output_base, "--markdown")
 
 # Get all subdirectories in the specified path
 subdirs = Dir.entries(input_path).select do |entry|
@@ -105,30 +120,20 @@ puts "Processing #{subdirs.length} subdirectories..."
 subdirs.each do |dir|
   full_dir_path = File.join(input_path, dir)
   
-  # Determine output path based on options
-  output_path = if options[:output_dir]
+  # Determine output path base based on options
+  output_base = if options[:output_dir]
                   # Use the output directory with subdirectory name
                   output_subdir = File.join(options[:output_dir], dir)
                   FileUtils.mkdir_p(output_subdir) unless Dir.exist?(output_subdir)
-                  File.join(output_subdir, "output.txt")
+                  File.join(output_subdir, "output")
                 else
                   # Use the original directory
-                  File.join(dir, "output.txt")
+                  File.join(dir, "output")
                 end
   
-  # Create the command to run
-  command = "#{command_base} #{full_dir_path} --cxml -o #{output_path}"
-  
-  puts "Running: #{command}"
-  
-  # Execute the command
-  result = system(command)
-  
-  if result
-    puts "✓ Successfully processed subdirectory: #{dir}"
-  else
-    puts "✗ Error processing subdirectory: #{dir} (exit code: #{$?.exitstatus})"
-  end
+  # Run files-to-prompt for both formats on each subdirectory
+  run_files_to_prompt(command_base, full_dir_path, output_base, "--cxml")
+  run_files_to_prompt(command_base, full_dir_path, output_base, "--markdown")
 end
 
 puts "All directories processed."

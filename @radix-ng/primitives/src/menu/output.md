@@ -1,0 +1,624 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/README.md
+```
+# @radix-ng/primitives/menu
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+import { RdxMenuContentDirective } from './src/menu-content.directive';
+import { RdxMenuDirective } from './src/menu-directive';
+import { RdxMenuGroupDirective } from './src/menu-group.directive';
+import { RdxMenuItemCheckboxDirective } from './src/menu-item-checkbox.directive';
+import { RdxMenuItemIndicatorDirective } from './src/menu-item-indicator.directive';
+import { RdxMenuItemRadioDirective } from './src/menu-item-radio.directive';
+import { RdxMenuItemDirective } from './src/menu-item.directive';
+import { RdxMenuLabelDirective } from './src/menu-label.directive';
+import { RdxMenuRadioGroupDirective } from './src/menu-radio-group.directive';
+import { RdxMenuSeparatorDirective } from './src/menu-separator.directive';
+import { RdxMenuTriggerDirective } from './src/menu-trigger.directive';
+
+export * from './src/menu-content.directive';
+export * from './src/menu-directive';
+export * from './src/menu-group.directive';
+export * from './src/menu-item-checkbox.directive';
+export * from './src/menu-item-indicator.directive';
+export * from './src/menu-item-radio.directive';
+export * from './src/menu-item.directive';
+export * from './src/menu-label.directive';
+export * from './src/menu-radio-group.directive';
+export * from './src/menu-separator.directive';
+export * from './src/menu-trigger.directive';
+
+export type { RdxMenuAlign, RdxMenuSide } from './src/menu-trigger.directive';
+
+const menuImports = [
+    RdxMenuDirective,
+    RdxMenuItemCheckboxDirective,
+    RdxMenuItemRadioDirective,
+    RdxMenuItemIndicatorDirective,
+    RdxMenuTriggerDirective,
+    RdxMenuGroupDirective,
+    RdxMenuRadioGroupDirective,
+    RdxMenuItemDirective,
+    RdxMenuSeparatorDirective,
+    RdxMenuContentDirective,
+    RdxMenuLabelDirective
+];
+
+@NgModule({
+    imports: [...menuImports],
+    exports: [...menuImports]
+})
+export class RdxMenuModule {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/ng-package.json
+```json
+{
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-content.directive.ts
+```typescript
+import { CdkMenu } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuContent]',
+    hostDirectives: [CdkMenu],
+    host: {
+        role: 'menu',
+        '[attr.aria-orientation]': '"vertical"'
+    }
+})
+export class RdxMenuContentDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-directive.ts
+```typescript
+import { CdkMenu } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuRoot],[RdxMenuSub]',
+    hostDirectives: [CdkMenu]
+})
+export class RdxMenuDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-group.directive.ts
+```typescript
+import { CdkMenuGroup } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuGroup]',
+    hostDirectives: [CdkMenuGroup],
+    host: {
+        role: 'group'
+    }
+})
+export class RdxMenuGroupDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-item-checkbox.directive.ts
+```typescript
+import { BooleanInput } from '@angular/cdk/coercion';
+import { CdkMenuItemCheckbox } from '@angular/cdk/menu';
+import { booleanAttribute, computed, Directive, effect, inject, input, signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+import { getCheckedState, isIndeterminate } from './utils';
+
+@Directive({
+    selector: '[RdxMenuItemCheckbox]',
+    hostDirectives: [
+        {
+            directive: CdkMenuItemCheckbox,
+            outputs: ['cdkMenuItemTriggered: menuItemTriggered']
+        }
+    ],
+    host: {
+        role: 'menuitemcheckbox',
+        '[attr.aria-checked]': 'isIndeterminate(checked()) ? "mixed" : checked()',
+        '[attr.data-state]': 'getCheckedState(checked())',
+        '[attr.data-highlighted]': "highlightedState() ? '' : undefined",
+
+        '(focus)': 'onFocus()',
+        '(blur)': 'onBlur()',
+        '(pointermove)': 'onPointerMove($event)'
+    }
+})
+export class RdxMenuItemCheckboxDirective {
+    private readonly cdkMenuItemCheckbox = inject(CdkMenuItemCheckbox, { host: true });
+
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly checked = input<boolean | 'indeterminate'>(false);
+
+    readonly onCheckedChange = outputFromObservable(this.cdkMenuItemCheckbox.triggered);
+
+    protected readonly disabledState = computed(() => this.disabled);
+
+    protected readonly highlightedState = computed(() => this.isFocused());
+
+    private readonly isFocused = signal(false);
+
+    constructor() {
+        effect(() => {
+            if (isIndeterminate(this.checked())) {
+                this.cdkMenuItemCheckbox.checked = true;
+            } else {
+                this.cdkMenuItemCheckbox.checked = !this.checked();
+            }
+
+            this.cdkMenuItemCheckbox.disabled = this.disabled();
+        });
+    }
+
+    onFocus(): void {
+        if (!this.disabled()) {
+            this.isFocused.set(true);
+        }
+    }
+
+    onBlur(): void {
+        this.isFocused.set(false);
+    }
+
+    onPointerMove(event: PointerEvent) {
+        if (event.defaultPrevented) return;
+
+        if (!(event.pointerType === 'mouse')) return;
+
+        if (!this.disabled()) {
+            const item = event.currentTarget;
+            (item as HTMLElement)?.focus({ preventScroll: true });
+        }
+    }
+
+    protected readonly isIndeterminate = isIndeterminate;
+    protected readonly getCheckedState = getCheckedState;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-item-indicator.directive.ts
+```typescript
+import { Directive, inject } from '@angular/core';
+import { RdxMenuItemCheckboxDirective } from './menu-item-checkbox.directive';
+import { RdxMenuItemRadioDirective } from './menu-item-radio.directive';
+import { getCheckedState, isIndeterminate } from './utils';
+
+@Directive({
+    selector: '[RdxMenuItemIndicator]',
+    host: {
+        '[attr.data-state]': 'getCheckedState(isChecked)',
+
+        '[style.display]': 'isChecked ? "" : "none"'
+    }
+})
+export class RdxMenuItemIndicatorDirective {
+    private readonly menuItemRadio = inject(RdxMenuItemRadioDirective, { host: true, optional: true });
+
+    private readonly menuCheckboxItem = inject(RdxMenuItemCheckboxDirective, { host: true, optional: true });
+
+    get isChecked(): boolean {
+        if (this.menuItemRadio) {
+            return this.menuItemRadio.checked();
+        }
+        if (this.menuCheckboxItem) {
+            return isIndeterminate(this.menuCheckboxItem.checked()) || this.menuCheckboxItem.checked() === true;
+        }
+        return false;
+    }
+
+    protected readonly getCheckedState = getCheckedState;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-item-radio.directive.ts
+```typescript
+import { BooleanInput } from '@angular/cdk/coercion';
+import { CdkMenuItemRadio } from '@angular/cdk/menu';
+import { booleanAttribute, computed, Directive, effect, inject, input, signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+import { getCheckedState } from './utils';
+
+@Directive({
+    selector: '[RdxMenuItemRadio]',
+    hostDirectives: [
+        {
+            directive: CdkMenuItemRadio,
+            outputs: ['cdkMenuItemTriggered: menuItemTriggered']
+        }
+    ],
+    host: {
+        role: 'menuitemradio',
+        '[attr.aria-checked]': 'checked()',
+        '[attr.data-state]': 'getCheckedState(checked())',
+        '[attr.data-highlighted]': "highlightedState() ? '' : undefined",
+
+        '(focus)': 'onFocus()',
+        '(blur)': 'onBlur()',
+        '(pointermove)': 'onPointerMove($event)'
+    }
+})
+export class RdxMenuItemRadioDirective {
+    private readonly cdkMenuItemRadio = inject(CdkMenuItemRadio, { host: true });
+
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly checked = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly onValueChange = outputFromObservable(this.cdkMenuItemRadio.triggered);
+
+    protected readonly disabledState = computed(() => this.disabled());
+
+    protected readonly highlightedState = computed(() => this.isFocused());
+
+    private readonly isFocused = signal(false);
+
+    constructor() {
+        effect(() => {
+            this.cdkMenuItemRadio.checked = this.checked();
+            this.cdkMenuItemRadio.disabled = this.disabled();
+        });
+    }
+
+    onFocus(): void {
+        if (!this.disabled()) {
+            this.isFocused.set(true);
+        }
+    }
+
+    onBlur(): void {
+        this.isFocused.set(false);
+    }
+
+    onPointerMove(event: PointerEvent) {
+        if (event.defaultPrevented) return;
+
+        if (!(event.pointerType === 'mouse')) return;
+
+        if (!this.disabled()) {
+            const item = event.currentTarget;
+            (item as HTMLElement)?.focus({ preventScroll: true });
+        }
+    }
+
+    protected readonly getCheckedState = getCheckedState;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-item.directive.ts
+```typescript
+import { BooleanInput } from '@angular/cdk/coercion';
+import { CdkMenuItem } from '@angular/cdk/menu';
+import { booleanAttribute, computed, Directive, effect, inject, input, signal } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+
+@Directive({
+    selector: '[RdxMenuItem]',
+    hostDirectives: [
+        {
+            directive: CdkMenuItem,
+            outputs: ['cdkMenuItemTriggered: menuItemTriggered']
+        }
+    ],
+    host: {
+        role: 'menuitem',
+        tabindex: '-1',
+        '[attr.data-orientation]': "'horizontal'",
+        '[attr.data-state]': 'isOpenState()',
+        '[attr.aria-disabled]': "disabledState() ? '' : undefined",
+        '[attr.data-disabled]': "disabledState() ? '' : undefined",
+        '[attr.data-highlighted]': "highlightedState() ? '' : undefined",
+
+        '(focus)': 'onFocus()',
+        '(blur)': 'onBlur()',
+        '(pointermove)': 'onPointerMove($event)'
+    }
+})
+export class RdxMenuItemDirective {
+    private readonly cdkMenuItem = inject(CdkMenuItem, { host: true });
+
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly onSelect = outputFromObservable(this.cdkMenuItem.triggered);
+
+    private readonly isFocused = signal(false);
+
+    protected readonly disabledState = computed(() => this.disabled());
+
+    protected readonly isOpenState = signal(false);
+
+    protected readonly highlightedState = computed(() => this.isFocused());
+
+    constructor() {
+        effect(() => {
+            this.cdkMenuItem.disabled = this.disabled();
+            this.isOpenState.set(this.cdkMenuItem.isMenuOpen());
+        });
+    }
+
+    onFocus(): void {
+        if (!this.disabled()) {
+            this.isFocused.set(true);
+        }
+    }
+
+    onBlur(): void {
+        this.isFocused.set(false);
+    }
+
+    onPointerMove(event: PointerEvent) {
+        if (event.defaultPrevented) return;
+
+        if (!(event.pointerType === 'mouse')) return;
+
+        if (!this.disabled()) {
+            const item = event.currentTarget;
+            (item as HTMLElement)?.focus({ preventScroll: true });
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-label.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuLabel]'
+})
+export class RdxMenuLabelDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-radio-group.directive.ts
+```typescript
+import { CdkMenuGroup } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuRadioGroup]',
+    hostDirectives: [CdkMenuGroup]
+})
+export class RdxMenuRadioGroupDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-separator.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuSeparator]',
+    host: {
+        role: 'separator',
+        '[attr.aria-orientation]': "'horizontal'"
+    }
+})
+export class RdxMenuSeparatorDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/menu-trigger.directive.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { CdkMenuTrigger } from '@angular/cdk/menu';
+import {
+    booleanAttribute,
+    computed,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    SimpleChange,
+    untracked
+} from '@angular/core';
+
+export type RdxMenuAlign = 'start' | 'center' | 'end';
+export type RdxMenuSide = 'top' | 'right' | 'bottom' | 'left';
+
+@Directive({
+    selector: '[RdxMenuTrigger]',
+    hostDirectives: [
+        {
+            directive: CdkMenuTrigger,
+            inputs: ['cdkMenuTriggerFor: menuTriggerFor', 'cdkMenuPosition: menuPosition']
+        }
+    ],
+    host: {
+        role: 'menuitem',
+        '[attr.aria-haspopup]': "'menu'",
+        '[attr.aria-expanded]': 'cdkTrigger.isOpen()',
+        '[attr.data-state]': "cdkTrigger.isOpen() ? 'open': 'closed'",
+        '[attr.data-disabled]': "disabled() ? '' : undefined",
+
+        '(pointerdown)': 'onPointerDown($event)'
+    }
+})
+export class RdxMenuTriggerDirective {
+    protected readonly cdkTrigger = inject(CdkMenuTrigger, { host: true });
+
+    readonly menuTriggerFor = input.required();
+
+    /**
+     * @description The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
+     */
+    readonly side = input<RdxMenuSide>();
+
+    readonly align = input<RdxMenuAlign>();
+
+    /**
+     * @description The distance in pixels from the trigger.
+     */
+    readonly sideOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+
+    /**
+     * @description An offset in pixels from the "start" or "end" alignment options.
+     */
+    readonly alignOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+
+    readonly disabled = input<boolean, BooleanInput>(false, {
+        transform: booleanAttribute
+    });
+
+    private enablePositions = false;
+
+    // TODO
+    private readonly positions = computed(() => this.computePositions());
+
+    private computePositions() {
+        if (this.align() || this.sideOffset() || this.alignOffset() || this.side()) {
+            this.enablePositions = true;
+        }
+
+        const side = this.side() || 'bottom';
+        const align = this.align() || 'center';
+        const sideOffset = this.sideOffset() || 0;
+        const alignOffset = this.alignOffset() || 0;
+
+        let originX: 'start' | 'center' | 'end' = 'center';
+        let originY: 'top' | 'center' | 'bottom' = 'center';
+        let overlayX: 'start' | 'center' | 'end' = 'center';
+        let overlayY: 'top' | 'center' | 'bottom' = 'center';
+        let offsetX = 0;
+        let offsetY = 0;
+
+        switch (side) {
+            case 'top':
+                originY = 'top';
+                overlayY = 'bottom';
+                offsetY = -sideOffset;
+                break;
+            case 'bottom':
+                originY = 'bottom';
+                overlayY = 'top';
+                offsetY = sideOffset;
+                break;
+            case 'left':
+                originX = 'start';
+                overlayX = 'end';
+                offsetX = -sideOffset;
+                break;
+            case 'right':
+                originX = 'end';
+                overlayX = 'start';
+                offsetX = sideOffset;
+                break;
+        }
+
+        switch (align) {
+            case 'start':
+                if (side === 'top' || side === 'bottom') {
+                    originX = 'start';
+                    overlayX = 'start';
+                    offsetX = alignOffset;
+                } else {
+                    originY = 'top';
+                    overlayY = 'top';
+                    offsetY = alignOffset;
+                }
+                break;
+            case 'end':
+                if (side === 'top' || side === 'bottom') {
+                    originX = 'end';
+                    overlayX = 'end';
+                    offsetX = -alignOffset;
+                } else {
+                    originY = 'bottom';
+                    overlayY = 'bottom';
+                    offsetY = -alignOffset;
+                }
+                break;
+            case 'center':
+            default:
+                if (side === 'top' || side === 'bottom') {
+                    originX = 'center';
+                    overlayX = 'center';
+                } else {
+                    originY = 'center';
+                    overlayY = 'center';
+                }
+                break;
+        }
+
+        return {
+            originX,
+            originY,
+            overlayX,
+            overlayY,
+            offsetX,
+            offsetY
+        };
+    }
+
+    constructor() {
+        this.onMenuPositionEffect();
+    }
+
+    /** @ignore */
+    onPointerDown($event: MouseEvent) {
+        // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
+        // but not when the control key is pressed (avoiding MacOS right click)
+        if (!this.disabled() && $event.button === 0 && !$event.ctrlKey) {
+            /* empty */
+            if (!this.cdkTrigger.isOpen()) {
+                // prevent trigger focusing when opening
+                // this allows the content to be given focus without competition
+                $event.preventDefault();
+            }
+        }
+    }
+
+    private onMenuPositionEffect() {
+        effect(() => {
+            const positions = this.positions();
+
+            untracked(() => {
+                if (this.enablePositions) {
+                    this.setMenuPositions([positions]);
+                }
+            });
+        });
+    }
+
+    private setMenuPositions(positions: CdkMenuTrigger['menuPosition']) {
+        const prevMenuPosition = this.cdkTrigger.menuPosition;
+        this.cdkTrigger.menuPosition = positions;
+        this.fireNgOnChanges('menuPosition', this.cdkTrigger.menuPosition, prevMenuPosition);
+    }
+
+    private fireNgOnChanges<K extends keyof CdkMenuTrigger, V extends CdkMenuTrigger[K]>(
+        input: K,
+        currentValue: V,
+        previousValue: V,
+        firstChange = false
+    ) {
+        this.cdkTrigger.ngOnChanges({
+            [input]: new SimpleChange(previousValue, currentValue, firstChange)
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menu/src/utils.ts
+```typescript
+export type CheckedState = boolean | 'indeterminate';
+
+export function isIndeterminate(checked?: CheckedState): checked is 'indeterminate' {
+    return checked === 'indeterminate';
+}
+
+export function getCheckedState(checked: CheckedState) {
+    return isIndeterminate(checked) ? 'indeterminate' : checked ? 'checked' : 'unchecked';
+}
+
+```

@@ -1,0 +1,298 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { RdxTabsContentDirective } from './src/tabs-content.directive';
+import { RdxTabsListDirective } from './src/tabs-list.directive';
+import { RdxTabsRootDirective } from './src/tabs-root.directive';
+import { RdxTabsTriggerDirective } from './src/tabs-trigger.directive';
+
+export * from './src/tabs-content.directive';
+export * from './src/tabs-list.directive';
+export * from './src/tabs-root.directive';
+export * from './src/tabs-trigger.directive';
+
+const tabsImports = [
+    RdxTabsRootDirective,
+    RdxTabsContentDirective,
+    RdxTabsListDirective,
+    RdxTabsTriggerDirective
+];
+
+@NgModule({
+    imports: [...tabsImports],
+    exports: [...tabsImports]
+})
+export class RdxTabsModule {}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/ng-package.json</source>
+<document_content>
+{
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-content.directive.ts</source>
+<document_content>
+import { computed, Directive, inject, input } from '@angular/core';
+import { RDX_TABS_ROOT_TOKEN } from './tabs-root.directive';
+import { makeContentId, makeTriggerId } from './utils';
+
+@Directive({
+    selector: '[rdxTabsContent]',
+    standalone: true,
+    host: {
+        role: 'tabpanel',
+        tabindex: '0',
+        '[id]': 'contentId()',
+        '[attr.aria-labelledby]': 'triggerId()',
+        '[attr.data-state]': 'selected() ? "active" : "inactive"',
+        '[attr.data-orientation]': 'tabsContext.orientation()',
+        '[hidden]': '!selected()'
+    }
+})
+export class RdxTabsContentDirective {
+    protected readonly tabsContext = inject(RDX_TABS_ROOT_TOKEN);
+
+    /**
+     * A unique value that associates the content with a trigger.
+     */
+    readonly value = input.required<string>();
+
+    protected readonly contentId = computed(() => makeContentId(this.tabsContext.getBaseId(), this.value()));
+    protected readonly triggerId = computed(() => makeTriggerId(this.tabsContext.getBaseId(), this.value()));
+
+    protected readonly selected = computed(() => this.tabsContext.value() === this.value());
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-list.directive.ts</source>
+<document_content>
+import { Directive, inject } from '@angular/core';
+import { RdxRovingFocusGroupDirective } from '@radix-ng/primitives/roving-focus';
+import { RDX_TABS_ROOT_TOKEN } from './tabs-root.directive';
+
+export interface TabsListProps {
+    // When true, keyboard navigation will loop from last tab to first, and vice versa.
+    loop?: boolean;
+}
+
+@Directive({
+    selector: '[rdxTabsList]',
+    standalone: true,
+    hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
+    host: {
+        role: 'tablist',
+        '[attr.aria-orientation]': 'tabsContext.orientation()',
+        '[attr.data-orientation]': 'tabsContext.orientation()'
+    }
+})
+export class RdxTabsListDirective {
+    protected readonly tabsContext = inject(RDX_TABS_ROOT_TOKEN);
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-root.directive.ts</source>
+<document_content>
+import { Directive, InjectionToken, input, model, OnInit, output } from '@angular/core';
+
+export interface TabsProps {
+    /** The value for the selected tab, if controlled */
+    value?: string;
+    /** The value of the tab to select by default, if uncontrolled */
+    defaultValue?: string;
+    /** A function called when a new tab is selected */
+    onValueChange?: (value: string) => void;
+    /**
+     * The orientation the tabs are layed out.
+     * Mainly so arrow navigation is done accordingly (left & right vs. up & down)
+     * @defaultValue horizontal
+     */
+    orientation?: string;
+    /**
+     * The direction of navigation between toolbar items.
+     */
+    dir?: string;
+    /**
+     * Whether a tab is activated automatically or manually.
+     * @defaultValue automatic
+     * */
+    activationMode?: 'automatic' | 'manual';
+}
+
+export type DataOrientation = 'vertical' | 'horizontal';
+
+export const RDX_TABS_ROOT_TOKEN = new InjectionToken<RdxTabsRootDirective>('RdxTabsRootDirective');
+
+@Directive({
+    selector: '[rdxTabsRoot]',
+    standalone: true,
+    providers: [
+        { provide: RDX_TABS_ROOT_TOKEN, useExisting: RdxTabsRootDirective }],
+    host: {
+        '[attr.data-orientation]': 'orientation()',
+        '[attr.dir]': 'dir()'
+    }
+})
+export class RdxTabsRootDirective implements OnInit {
+    /**
+     * The controlled value of the tab to activate. Should be used in conjunction with `onValueChange`.
+     */
+    readonly value = model<string>();
+
+    readonly defaultValue = input<string>();
+
+    /**
+     * When automatic, tabs are activated when receiving focus. When manual, tabs are activated when clicked.
+     */
+    readonly activationMode = input<'automatic' | 'manual'>('automatic');
+
+    /**
+     * The orientation of the component.
+     */
+    readonly orientation = input<DataOrientation>('horizontal');
+
+    readonly dir = input<string>('ltr');
+
+    /**
+     * Event handler called when the value changes.
+     */
+    readonly onValueChange = output<string>();
+
+    ngOnInit() {
+        if (this.defaultValue()) {
+            this.value.set(this.defaultValue());
+        }
+    }
+
+    select(value: string) {
+        this.value.set(value);
+        this.onValueChange.emit(value);
+    }
+
+    /** @ignore */
+    getBaseId() {
+        return `tabs-${Math.random().toString(36).substr(2, 9)}`;
+    }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-trigger.directive.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import { booleanAttribute, computed, Directive, effect, inject, input, InputSignalWithTransform } from '@angular/core';
+import { RdxRovingFocusItemDirective } from '@radix-ng/primitives/roving-focus';
+import { RDX_TABS_ROOT_TOKEN } from './tabs-root.directive';
+import { makeContentId, makeTriggerId } from './utils';
+
+interface TabsTriggerProps {
+    // When true, prevents the user from interacting with the tab.
+    disabled: InputSignalWithTransform<boolean, BooleanInput>;
+}
+
+@Directive({
+    selector: '[rdxTabsTrigger]',
+    standalone: true,
+    hostDirectives: [
+        {
+            directive: RdxRovingFocusItemDirective,
+            inputs: ['focusable', 'active', 'allowShiftKey']
+        }
+    ],
+
+    host: {
+        type: 'button',
+        role: 'tab',
+        '[id]': 'triggerId()',
+        '[attr.aria-selected]': 'isSelected()',
+        '[attr.aria-controls]': 'contentId()',
+        '[attr.data-disabled]': "disabled() ? '' : undefined",
+        '[disabled]': 'disabled()',
+        '[attr.data-state]': "isSelected() ? 'active' : 'inactive'",
+        '[attr.data-orientation]': 'tabsContext.orientation()',
+        '(mousedown)': 'onMouseDown($event)',
+        '(keydown)': 'onKeyDown($event)',
+        '(focus)': 'onFocus()'
+    }
+})
+export class RdxTabsTriggerDirective implements TabsTriggerProps {
+    private readonly rdxRovingFocusItemDirective = inject(RdxRovingFocusItemDirective);
+
+    protected readonly tabsContext = inject(RDX_TABS_ROOT_TOKEN);
+
+    /**
+     * A unique value that associates the trigger with a content.
+     */
+    readonly value = input.required<string>();
+
+    /**
+     * When true, prevents the user from interacting with the tab.
+     */
+    readonly disabled = input<boolean, BooleanInput>(false, {
+        transform: booleanAttribute
+    });
+
+    protected readonly contentId = computed(() => makeContentId(this.tabsContext.getBaseId(), this.value()));
+    protected readonly triggerId = computed(() => makeTriggerId(this.tabsContext.getBaseId(), this.value()));
+
+    protected readonly isSelected = computed(() => this.tabsContext.value() === this.value());
+
+    constructor() {
+        effect(() => (this.rdxRovingFocusItemDirective.active = this.isSelected()));
+    }
+
+    protected onMouseDown(event: MouseEvent) {
+        // only call handler if it's the left button (mousedown gets triggered by all mouse buttons)
+        // but not when the control key is pressed (avoiding MacOS right click)
+        if (!this.disabled() && event.button === 0 && !event.ctrlKey) {
+            this.tabsContext?.select(this.value());
+        } else {
+            // prevent focus to avoid accidental activation
+            event.preventDefault();
+        }
+    }
+
+    protected onKeyDown(event: KeyboardEvent) {
+        if ([' ', 'Enter'].includes(event.key)) {
+            this.tabsContext?.select(this.value());
+        }
+    }
+
+    protected onFocus() {
+        const isAutomaticActivation = this.tabsContext.activationMode() !== 'manual';
+        if (!this.isSelected() && !this.disabled() && isAutomaticActivation) {
+            this.tabsContext?.select(this.value());
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/utils.ts</source>
+<document_content>
+export function makeTriggerId(baseId: string, value: string | number) {
+    return `${baseId}-trigger-${value}`;
+}
+
+export function makeContentId(baseId: string, value: string | number) {
+    return `${baseId}-content-${value}`;
+}
+
+</document_content>
+</document>
+</documents>

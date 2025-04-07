@@ -1,0 +1,429 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/benchmark.ts</source>
+<document_content>
+import { Suite } from 'benchmark'
+import { parse } from 'node-html-parser'
+
+import { render as renderHono } from './hono'
+import { render as renderNano } from './nano'
+import { render as renderPreact } from './preact'
+import { render as renderReact } from './react'
+
+const suite = new Suite()
+
+;[renderHono, renderReact, renderPreact, renderNano].forEach((render) => {
+  const html = render()
+  const doc = parse(html)
+  if (doc.querySelector('p#c').textContent !== '3\nc') {
+    throw new Error('Invalid output')
+  } 
+})
+
+suite
+  .add('Hono', () => {
+    renderHono()
+  })
+  .add('React', () => {
+    renderReact()
+  })
+  .add('Preact', () => {
+    renderPreact()
+  })
+  .add('Nano', () => {
+    renderNano()
+  })
+  .on('cycle', (ev) => {
+    console.log(String(ev.target))
+  })
+  .on('complete', (ev) => {
+    console.log(`Fastest is ${ev.currentTarget.filter('fastest').map('name')}`)
+  })
+  .run({ async: true })
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/hono.ts</source>
+<document_content>
+import { jsx, Fragment} from '../../../src/jsx'
+import { buildPage } from './page'
+
+export const render = () => buildPage({ jsx, Fragment })().toString()
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/nano.ts</source>
+<document_content>
+import { h, Fragment, renderSSR } from 'nano-jsx'
+import { buildPage } from './page'
+
+export const render = () => renderSSR(buildPage({ jsx: h, Fragment }))
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/page-react.tsx</source>
+<document_content>
+/** @jsx jsx */
+/** @jsxFrag Fragment */
+
+export const buildPage = ({ jsx, Fragment }: { jsx: any; Fragment: any }) => {
+  const Content = () => (
+    <>
+      <p id='a' className='class-name'>
+        1<br />a
+      </p>
+      <p id='b' className='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readOnly tabIndex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={true} tabIndex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={true} tabIndex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={false} tabIndex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={false} tabIndex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/page.tsx</source>
+<document_content>
+/** @jsx jsx */
+/** @jsxFrag Fragment */
+
+export const buildPage = ({ jsx, Fragment }: { jsx: any; Fragment: any }) => {
+  const Content = () => (
+    <>
+      <p id='a' class='class-name'>
+        1<br />a
+      </p>
+      <p id='b' class='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readonly tabindex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/preact.ts</source>
+<document_content>
+import { h, Fragment} from 'preact'
+import { renderToString } from 'preact-render-to-string'
+import { buildPage } from './page'
+
+export const render = () => renderToString(buildPage({ jsx: h, Fragment })() as any)
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react.ts</source>
+<document_content>
+import { createElement, Fragment } from 'react'
+import { renderToString } from 'react-dom/server'
+import { buildPage } from './page-react'
+
+export const render = () => renderToString(buildPage({ jsx: createElement, Fragment })() as any)
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/benchmark.ts</source>
+<document_content>
+import { Suite } from 'benchmark'
+import { parse } from 'node-html-parser'
+
+import { render as renderHono } from './hono'
+import { render as renderNano } from './nano'
+import { render as renderPreact } from './preact'
+import { render as renderReact } from './react'
+
+const suite = new Suite()
+
+;[renderHono, renderReact, renderPreact, renderNano].forEach((render) => {
+  const html = render()
+  const doc = parse(html)
+  if (doc.querySelector('p#c').textContent !== '3\nc') {
+    throw new Error('Invalid output')
+  } 
+})
+
+suite
+  .add('Hono', () => {
+    renderHono()
+  })
+  .add('React', () => {
+    renderReact()
+  })
+  .add('Preact', () => {
+    renderPreact()
+  })
+  .add('Nano', () => {
+    renderNano()
+  })
+  .on('cycle', (ev) => {
+    console.log(String(ev.target))
+  })
+  .on('complete', (ev) => {
+    console.log(`Fastest is ${ev.currentTarget.filter('fastest').map('name')}`)
+  })
+  .run({ async: true })
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/hono.ts</source>
+<document_content>
+import { buildPage } from './page-hono'
+
+export const render = () => buildPage()().toString()
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/nano.ts</source>
+<document_content>
+import { renderSSR } from 'nano-jsx'
+import { buildPage } from './page-nano.tsx'
+
+export const render = () => renderSSR(buildPage())
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/page-hono.tsx</source>
+<document_content>
+/** @jsxImportSource ../../../../src/jsx **/
+
+export const buildPage = () => {
+  const Content = () => (
+    <>
+      <p id='a' class='class-name'>
+        1<br />a
+      </p>
+      <p id='b' class='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readonly tabindex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/page-nano.tsx</source>
+<document_content>
+/** @jsxImportSource nano-jsx/lib **/
+
+export const buildPage = () => {
+  const Content = () => (
+    <>
+      <p id='a' class='class-name'>
+        1<br />a
+      </p>
+      <p id='b' class='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readonly tabindex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/page-preact.tsx</source>
+<document_content>
+/** @jsxImportSource preact **/
+
+export const buildPage = () => {
+  const Content = () => (
+    <>
+      <p id='a' class='class-name'>
+        1<br />a
+      </p>
+      <p id='b' class='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readonly tabindex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={true} tabindex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' checked={false} tabindex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/page-react.tsx</source>
+<document_content>
+/** @jsxImportSource react **/
+
+export const buildPage = () => {
+  const Content = () => (
+    <>
+      <p id='a' className='class-name'>
+        1<br />a
+      </p>
+      <p id='b' className='class-name'>
+        2<br />b
+      </p>
+      <div dangerouslySetInnerHTML={{ __html: '<p id="c" class="class-name">3<br/>c</p>' }} />
+      {null}
+      {undefined}
+    </>
+  )
+
+  const Form = () => (
+    <form>
+      <input type='text' value='1234567890 < 1234567891' readOnly tabIndex={1} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={true} tabIndex={2} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={true} tabIndex={3} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={false} tabIndex={4} />
+      <input type='checkbox' value='1234567890 < 1234567891' defaultChecked={false} tabIndex={5} />
+    </form>
+  )
+
+  return () => (
+    <html>
+      <body>
+        <Content />
+        <Form />
+      </body>
+    </html>
+  )
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/preact.ts</source>
+<document_content>
+import { renderToString } from 'preact-render-to-string'
+import { buildPage } from './page-preact'
+
+export const render = () => renderToString(buildPage()() as any)
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/react.ts</source>
+<document_content>
+import { renderToString } from 'react-dom/server'
+import { buildPage } from './page-react.tsx'
+
+export const render = () => renderToString(buildPage()() as any)
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/jsx/src/react-jsx/tsconfig.json</source>
+<document_content>
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+  }
+}
+</document_content>
+</document>
+</documents>

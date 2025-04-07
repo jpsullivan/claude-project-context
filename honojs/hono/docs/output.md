@@ -1,0 +1,501 @@
+/Users/josh/Documents/GitHub/honojs/hono/docs/CODE_OF_CONDUCT.md
+```
+# Contributor Covenant Code of Conduct
+
+## Our Pledge
+
+We as members, contributors, and leaders pledge to make participation in our
+community a harassment-free experience for everyone, regardless of age, body
+size, visible or invisible disability, ethnicity, sex characteristics, gender
+identity and expression, level of experience, education, socio-economic status,
+nationality, personal appearance, race, religion, or sexual identity
+and orientation.
+
+We pledge to act and interact in ways that contribute to an open, welcoming,
+diverse, inclusive, and healthy community.
+
+## Our Standards
+
+Examples of behavior that contributes to a positive environment for our
+community include:
+
+* Demonstrating empathy and kindness toward other people
+* Being respectful of differing opinions, viewpoints, and experiences
+* Giving and gracefully accepting constructive feedback
+* Accepting responsibility and apologizing to those affected by our mistakes,
+  and learning from the experience
+* Focusing on what is best not just for us as individuals, but for the
+  overall community
+
+Examples of unacceptable behavior include:
+
+* The use of sexualized language or imagery, and sexual attention or
+  advances of any kind
+* Trolling, insulting or derogatory comments, and personal or political attacks
+* Public or private harassment
+* Publishing others' private information, such as a physical or email
+  address, without their explicit permission
+* Other conduct which could reasonably be considered inappropriate in a
+  professional setting
+
+## Enforcement Responsibilities
+
+Community leaders are responsible for clarifying and enforcing our standards of
+acceptable behavior and will take appropriate and fair corrective action in
+response to any behavior that they deem inappropriate, threatening, offensive,
+or harmful.
+
+Community leaders have the right and responsibility to remove, edit, or reject
+comments, commits, code, wiki edits, issues, and other contributions that are
+not aligned to this Code of Conduct, and will communicate reasons for moderation
+decisions when appropriate.
+
+## Scope
+
+This Code of Conduct applies within all community spaces, and also applies when
+an individual is officially representing the community in public spaces.
+Examples of representing our community include using an official e-mail address,
+posting via an official social media account, or acting as an appointed
+representative at an online or offline event.
+
+## Enforcement
+
+Instances of abusive, harassing, or otherwise unacceptable behavior may be
+reported to the community leaders responsible for enforcement at
+yusuke@kamawada.com.
+All complaints will be reviewed and investigated promptly and fairly.
+
+All community leaders are obligated to respect the privacy and security of the
+reporter of any incident.
+
+## Enforcement Guidelines
+
+Community leaders will follow these Community Impact Guidelines in determining
+the consequences for any action they deem in violation of this Code of Conduct:
+
+### 1. Correction
+
+**Community Impact**: Use of inappropriate language or other behavior deemed
+unprofessional or unwelcome in the community.
+
+**Consequence**: A private, written warning from community leaders, providing
+clarity around the nature of the violation and an explanation of why the
+behavior was inappropriate. A public apology may be requested.
+
+### 2. Warning
+
+**Community Impact**: A violation through a single incident or series
+of actions.
+
+**Consequence**: A warning with consequences for continued behavior. No
+interaction with the people involved, including unsolicited interaction with
+those enforcing the Code of Conduct, for a specified period of time. This
+includes avoiding interactions in community spaces as well as external channels
+like social media. Violating these terms may lead to a temporary or
+permanent ban.
+
+### 3. Temporary Ban
+
+**Community Impact**: A serious violation of community standards, including
+sustained inappropriate behavior.
+
+**Consequence**: A temporary ban from any sort of interaction or public
+communication with the community for a specified period of time. No public or
+private interaction with the people involved, including unsolicited interaction
+with those enforcing the Code of Conduct, is allowed during this period.
+Violating these terms may lead to a permanent ban.
+
+### 4. Permanent Ban
+
+**Community Impact**: Demonstrating a pattern of violation of community
+standards, including sustained inappropriate behavior,  harassment of an
+individual, or aggression toward or disparagement of classes of individuals.
+
+**Consequence**: A permanent ban from any sort of public interaction within
+the community.
+
+## Attribution
+
+This Code of Conduct is adapted from the [Contributor Covenant][homepage],
+version 2.0, available at
+https://www.contributor-covenant.org/version/2/0/code_of_conduct.html.
+
+Community Impact Guidelines were inspired by [Mozilla's code of conduct
+enforcement ladder](https://github.com/mozilla/diversity).
+
+[homepage]: https://www.contributor-covenant.org
+
+For answers to common questions about this code of conduct, see the FAQ at
+https://www.contributor-covenant.org/faq. Translations are available at
+https://www.contributor-covenant.org/translations.
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/docs/CONTRIBUTING.md
+````
+# Contribution Guide
+
+Contributions Welcome! We will be glad for your help.
+You can contribute in the following ways.
+
+- Create an Issue - Propose a new feature. Report a bug.
+- Pull Request - Fix a bug and typo. Refactor the code.
+- Create third-party middleware - Instruct below.
+- Share - Share your thoughts on the Blog, X, and others.
+- Make your application - Please try to use Hono.
+
+Note:
+This project is started by Yusuke Wada ([@yusukebe](https://github.com/yusukebe)) for the hobby proposal.
+It was just for fun. For now, this stance has not been changed basically.
+I want to write the code as I like.
+So, if you propose great ideas, but I do not appropriate them, the idea may not be accepted.
+
+Although, don't worry!
+Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool and hot, beautiful, and ultrafast.
+
+## Installing dependencies
+
+The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.
+
+After that, please install the dependency environment.
+
+```bash
+bun install
+```
+
+## PRs
+
+Please ensure your PR passes tests with `bun run test`.
+
+## Third-party middleware
+
+Third-party middleware is not in the core.
+It is allowed to depend on other libraries or work only in specific environments, such as only Cloudflare Workers. For examples:
+
+- GraphQL Server middleware
+- Firebase Auth middleware
+- Sentry middleware
+
+You can make a third-party middleware by yourself.
+It may be under the "honojs organization" and distributed in the `@honojs` namespace.
+
+The monorepo "[honojs/middleware](https://github.com/honojs/middleware)" manages these middleware.
+If you want to do it, create the issue about your middleware.
+
+## Local Development
+
+```bash
+git clone git@github.com:honojs/hono.git && cd hono/.devcontainer && yarn install --frozen-lockfile
+docker compose up -d --build
+docker compose exec hono bash
+```
+
+````
+/Users/josh/Documents/GitHub/honojs/hono/docs/MIGRATION.md
+````
+# Migration Guide
+
+## v4.3.11 to v4.4.0
+
+### `deno.land/x` to JSR
+
+There is no breaking change, but we no longer publish the module from `deno.land/x`. If you want to use Hono on Deno, use JSR instead of it.
+
+If you migrate, replace the path `deno.land/x` with JSR's.
+
+```ts
+// From
+import { Hono } from 'https://deno.land/x/hono/mod.ts'
+
+// To
+import { Hono } from 'jsr:@hono/hono'
+```
+
+You can see more details on our website: https://hono.dev/getting-started/deno
+
+## v3.12.x to v4.0.0
+
+There are some breaking changes.
+
+### Removal of deprecated features
+
+- AWS Lambda Adapter - `LambdaFunctionUrlRequestContext` is obsolete. Use `ApiGatewayRequestContextV2` instead.
+- Next.js Adapter - `hono/nextjs` is obsolete. Use `hono/vercel` instead.
+- Context - `c.jsonT()` is obsolete. Use `c.json()` instead.
+- Context - `c.stream()` and `c.streamText()` are obsolete. Use `stream()` and `streamText()` in `hono/streaming` instead.
+- Context - `c.env()` is obsolete. Use `getRuntimeKey()` in `hono/adapter` instead.
+- Hono - `app.showRoutes()` is obsolete. Use `showRoutes()` in `hono/dev` instead.
+- Hono - `app.routerName` is obsolete. Use `getRouterName()` in `hono/dev` instead.
+- Hono - `app.head()` is no longer used. `app.get()` implicitly handles the HEAD method.
+- Hono - `app.handleEvent()` is obsolete. Use `app.fetch()` instead.
+- HonoRequest - `req.cookie()` is obsolete. Use `getCookie()` in `hono/cookie` instead.
+- HonoRequest - `headers()`, `body()`, `bodyUsed()`, `integrity()`, `keepalive()`, `referrer()`, and `signal()` are obsolete. Use the methods in `req.raw` such as `req.raw.headers()`.
+
+### `serveStatic` in Cloudflare Workers Adapter requires `manifest`
+
+If you use the Cloudflare Workers adapter's `serve-static`, you should specify the `manifest` option.
+
+```ts
+import manifest from '__STATIC_CONTENT_MANIFEST'
+
+// ...
+
+app.use('/static/*', serveStatic({ root: './assets', manifest }))
+```
+
+### Others
+
+- The default value of `docType` option in JSX Renderer Middleware is now `true`.
+- `FC` in `hono/jsx` does not pass `children`. Use `PropsWithChildren`.
+- Some Mime Types are removed https://github.com/honojs/hono/pull/2119.
+- Types for chaining routes with middleware matter: https://github.com/honojs/hono/pull/2046.
+- Types for the validator matter: https://github.com/honojs/hono/pull/2130.
+
+## v2.7.8 to v3.0.0
+
+There are some breaking changes.
+In addition to the following, type mismatches may occur.
+
+### `c.req` is now `HonoRequest`
+
+`c.req` becomes `HonoRequest`, not `Request`.
+Although APIs are almost same, but if you want to access `Request`, use `c.req.raw`.
+
+```ts
+app.post('/', async (c) => {
+  const metadata = c.req.raw.cf?.hostMetadata?
+  ...
+})
+```
+
+### StaticRouter is obsolete
+
+You can't use `StaticRouter`.
+
+### Validator is changed
+
+Previous Validator Middleware is obsolete.
+You can still use `hono/validator`, but the API has been changed.
+See [the document](https://hono.dev).
+
+### `serveStatic` is provided from Adapter
+
+Serve Static Middleware is obsolete. Use Adapters instead.
+
+```ts
+// For Cloudflare Workers
+import { serveStatic } from 'hono/cloudflare-workers'
+
+// For Bun
+// import { serveStatic } from 'hono/bun'
+
+// For Deno
+// import { serveStatic } from 'npm:hono/deno'
+
+// ...
+
+app.get('/static/*', serveStatic({ root: './' }))
+```
+
+### `serveStatic` for Cloudflare Workers "Service Worker mode" is obsolete
+
+For Cloudflare Workers, the `serveStatic` is obsolete in Service Worker mode.
+
+Note: Service Worker mode is that using `app.fire()`.
+We recommend use "Module Worker" mode with `export default app`.
+
+### Use `type` to define the Generics for `new Hono`
+
+You must use `type` to define the Generics for `new Hono`. Do not use `interface`.
+
+```ts
+// Should use `type`
+type Bindings = {
+  TOKEN: string
+}
+
+const app = new Hono<{ Bindings: Bindings }>()
+```
+
+## v2.7.1 - v2.x.x
+
+### Current Validator Middleware is deprecated
+
+At the next major version, Validator Middleware will be changed with "breaking changes". Therefore, the current Validator Middleware will be deprecated; please use 3rd-party Validator libraries such as [Zod](https://zod.dev) or [TypeBox](https://github.com/sinclairzx81/typebox).
+
+```ts
+import { z } from 'zod'
+
+//...
+
+const schema = z.object({
+  title: z.string().max(100),
+})
+
+app.post('/posts', async (c) => {
+  const body = await c.req.parseBody()
+  const res = schema.safeParse(body)
+  if (!res.success) {
+    return c.text('Invalid!', 400)
+  }
+  return c.text('Valid!')
+})
+```
+
+## v2.2.5 to v2.3.0
+
+There is a breaking change associated to the security update.
+
+### Basic Auth Middleware and Bearer Auth Middleware
+
+If you are using Basic Auth and Bearer Auth in your Handler (nested), change as follows:
+
+```ts
+app.use('/auth/*', async (c, next) => {
+  const auth = basicAuth({ username: c.env.USERNAME, password: c.env.PASSWORD })
+  return auth(c, next) // Older: `await auth(c, next)`
+})
+```
+
+## v2.0.9 to v2.1.0
+
+There are two BREAKING CHANGES.
+
+### `c.req.parseBody` does not parse JSON, text, and ArrayBuffer
+
+**DO NOT** use `c.req.parseBody` for parsing **JSON**, **text**, or **ArrayBuffer**.
+
+`c.req.parseBody` now only parses FormData with content type `multipart/form` or `application/x-www-form-urlencoded`. If you want to parse JSON, text, or ArrayBuffer, use `c.req.json()`, `c.req.text()`, or `c.req.arrayBuffer()`.
+
+```ts
+// `multipart/form` or `application/x-www-form-urlencoded`
+const data = await c.req.parseBody()
+
+const jsonData = await c.req.json() // for JSON body
+const text = await c.req.text() // for text body
+const arrayBuffer = await c.req.arrayBuffer() // for ArrayBuffer
+```
+
+### The arguments of Generics for `new Hono` have been changed
+
+Now, the constructor of "Hono" receives `Variables` and `Bindings`.
+"Bindings" is for types of environment variables for Cloudflare Workers. "Variables" is for types of `c.set`/`c.get`
+
+```ts
+type Bindings = {
+  KV: KVNamespace
+  Storage: R2Bucket
+}
+
+type WebClient = {
+  user: string
+  pass: string
+}
+
+type Variables = {
+  client: WebClient
+}
+
+const app = new Hono<{ Variables: Variables; Bindings: Bindings }>()
+
+app.get('/foo', (c) => {
+  const client = c.get('client') // client is WebClient
+  const kv = c.env.KV // kv is KVNamespace
+  //...
+})
+```
+
+## v1.6.4 to v2.0.0
+
+There are many BREAKING CHANGES. Please follow instructions below.
+
+### The way to import Middleware on Deno has been changed
+
+**DO NOT** import middleware from `hono/mod.ts`.
+
+```ts
+import { Hono, poweredBy } from 'https://deno.land/x/hono/mod.ts' // <--- NG
+```
+
+`hono/mod.ts` does not export middleware.
+To import middleware, use `hono/middleware.ts`:
+
+```ts
+import { Hono } from 'https://deno.land/x/hono/mod.ts'
+import { poweredBy, basicAuth } from 'https://deno.land/x/hono/middleware.ts'
+```
+
+### Cookie middleware is obsolete
+
+**DO NOT** use `cookie` middleware.
+
+```ts
+import { cookie } from 'hono/cookie' // <--- Obsolete!
+```
+
+You do not have to use Cookie middleware to parse or set cookies.
+They become default functions:
+
+```ts
+// Parse cookie
+app.get('/entry/:id', (c) => {
+  const value = c.req.cookie('name')
+  ...
+})
+```
+
+```ts
+app.get('/', (c) => {
+  c.cookie('delicious_cookie', 'choco')
+  return c.text('Do you like cookie?')
+})
+```
+
+### Body parse middleware is obsolete
+
+**DO NOT** use `body-parse` middleware.
+
+```ts
+import { bodyParse } from 'hono/body-parse' // <--- Obsolete!
+```
+
+You do not have to use Body parse middleware to parse request body. Use `c.req.parseBody()` method instead.
+
+```ts
+// Parse Request body
+ app.post('', (c) => {
+   const body = c.req.parseBody()
+   ...
+ })
+```
+
+### GraphQL Server middleware is obsolete
+
+**DO NOT** use `graphql-server` middleware.
+
+```ts
+import { graphqlServer } from 'hono/graphql-server' // <--- Obsolete!
+```
+
+It might be distributed as third-party middleware.
+
+### Mustache middleware is obsolete
+
+**DO NOT** use `mustache` middleware.
+
+```ts
+import { mustache } from 'hono/mustache' // <--- Obsolete!
+```
+
+It will no longer be implemented.
+
+````
+/Users/josh/Documents/GitHub/honojs/hono/docs/images/hono-logo.svg
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="500px" height="500px" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g><path style="opacity:0.993" fill="#ff5b11" d="M 257.5,0.5 C 258.822,0.330034 259.989,0.663368 261,1.5C 298.193,46.8936 333.193,93.8936 366,142.5C 390.289,179.069 410.955,217.735 428,258.5C 455.221,331.104 441.054,394.271 385.5,448C 336.892,489.082 280.892,505.082 217.5,496C 141.727,480.551 90.2265,436.718 63,364.5C 55.9081,340.989 53.5748,316.989 56,292.5C 60.0384,250.347 70.0384,209.68 86,170.5C 92.6509,154.514 101.318,139.848 112,126.5C 120.715,136.88 129.048,147.547 137,158.5C 140.682,162.349 144.515,166.016 148.5,169.5C 178.917,109.136 215.251,52.8028 257.5,0.5 Z"/></g>
+<g><path style="opacity:1" fill="#ff9758" d="M 250.5,81.5 C 287.193,124.06 320.36,169.393 350,217.5C 359.293,233.418 366.959,250.085 373,267.5C 385.584,317.008 372.084,357.842 332.5,390C 294.216,416.939 252.216,424.939 206.5,414C 157.201,398.702 128.701,365.535 121,314.5C 119.131,298.409 120.798,282.742 126,267.5C 133.418,248.663 142.418,230.663 153,213.5C 163,198.833 173,184.167 183,169.5C 205.716,140.29 228.216,110.957 250.5,81.5 Z"/></g>
+</svg>
+
+```

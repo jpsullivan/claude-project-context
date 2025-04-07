@@ -1,0 +1,271 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/jsx/dom/hooks/index.test.tsx
+```
+/** @jsxImportSource ../../ */
+import { JSDOM } from 'jsdom'
+import { render, useCallback, useState } from '..'
+import { useActionState, useFormStatus, useOptimistic } from '.'
+
+describe('Hooks', () => {
+  beforeAll(() => {
+    global.requestAnimationFrame = (cb) => setTimeout(cb)
+  })
+
+  let dom: JSDOM
+  let root: HTMLElement
+  beforeEach(() => {
+    dom = new JSDOM('<html><body><div id="root"></div></body></html>', {
+      runScripts: 'dangerously',
+    })
+    global.document = dom.window.document
+    global.HTMLElement = dom.window.HTMLElement
+    global.SVGElement = dom.window.SVGElement
+    global.Text = dom.window.Text
+    global.FormData = dom.window.FormData
+    root = document.getElementById('root') as HTMLElement
+  })
+
+  describe('useActionState', () => {
+    it('should return initial state', () => {
+      const [state] = useActionState(() => {}, 'initial')
+      expect(state).toBe('initial')
+    })
+
+    it('should return updated state', async () => {
+      const action = vi.fn().mockReturnValue('updated')
+
+      const App = () => {
+        const [state, formAction] = useActionState(action, 'initial')
+        return (
+          <>
+            <div>{state}</div>
+            <form action={formAction}>
+              <input type='text' name='name' value='updated' />
+              <button>Submit</button>
+            </form>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<div>initial</div><form><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<div>updated</div><form><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+
+      expect(action).toHaveBeenCalledOnce()
+      const [initialState, formData] = action.mock.calls[0]
+      expect(initialState).toBe('initial')
+      expect(formData).toBeInstanceOf(FormData)
+      expect(formData.get('name')).toBe('updated')
+    })
+  })
+
+  describe('useFormStatus', () => {
+    it('should return initial state', () => {
+      const status = useFormStatus()
+      expect(status).toEqual({
+        pending: false,
+        data: null,
+        method: null,
+        action: null,
+      })
+    })
+
+    it('should return updated state', async () => {
+      let formResolve: () => void = () => {}
+      const formPromise = new Promise<void>((r) => (formResolve = r))
+      let status: ReturnType<typeof useFormStatus> | undefined
+      const Status = () => {
+        status = useFormStatus()
+        return null
+      }
+      const App = () => {
+        const [, setCount] = useState(0)
+        const action = useCallback(() => {
+          setCount((count) => count + 1)
+          return formPromise
+        }, [])
+        return (
+          <>
+            <form action={action}>
+              <Status />
+              <input type='text' name='name' value='updated' />
+              <button>Submit</button>
+            </form>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<form><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(status).toEqual({
+        pending: true,
+        data: expect.any(FormData),
+        method: 'post',
+        action: expect.any(Function),
+      })
+      formResolve?.()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(status).toEqual({
+        pending: false,
+        data: null,
+        method: null,
+        action: null,
+      })
+    })
+  })
+
+  describe('useOptimistic', () => {
+    it('should return updated state', async () => {
+      let formResolve: () => void = () => {}
+      const formPromise = new Promise<void>((r) => (formResolve = r))
+      const App = () => {
+        const [count, setCount] = useState(0)
+        const [optimisticCount, setOptimisticCount] = useOptimistic(count, (c, n: number) => n)
+        const action = useCallback(async () => {
+          setOptimisticCount(count + 1)
+          await formPromise
+          setCount((count) => count + 2)
+        }, [])
+
+        return (
+          <>
+            <form action={action}>
+              <div>{optimisticCount}</div>
+              <input type='text' name='name' value='updated' />
+              <button>Submit</button>
+            </form>
+          </>
+        )
+      }
+
+      render(<App />, root)
+      expect(root.innerHTML).toBe(
+        '<form><div>0</div><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+      root.querySelector('button')?.click()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<form><div>1</div><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+      formResolve?.()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(root.innerHTML).toBe(
+        '<form><div>2</div><input type="text" name="name" value="updated"><button>Submit</button></form>'
+      )
+    })
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/jsx/dom/hooks/index.ts
+```typescript
+/**
+ * Provide hooks used only in jsx/dom
+ */
+
+import { PERMALINK } from '../../constants'
+import type { Context } from '../../context'
+import { useContext } from '../../context'
+import { useCallback, useState } from '../../hooks'
+import { createContext } from '../context'
+
+type FormStatus =
+  | {
+      pending: false
+      data: null
+      method: null
+      action: null
+    }
+  | {
+      pending: true
+      data: FormData
+      method: 'get' | 'post'
+      action: string | ((formData: FormData) => void | Promise<void>)
+    }
+export const FormContext: Context<FormStatus> = createContext<FormStatus>({
+  pending: false,
+  data: null,
+  method: null,
+  action: null,
+})
+
+const actions: Set<Promise<unknown>> = new Set()
+export const registerAction = (action: Promise<unknown>) => {
+  actions.add(action)
+  action.finally(() => actions.delete(action))
+}
+
+/**
+ * This hook returns the current form status
+ * @returns FormStatus
+ */
+export const useFormStatus = (): FormStatus => {
+  return useContext(FormContext)
+}
+
+/**
+ * This hook returns the current state and a function to update the state optimistically
+ * The current state is updated optimistically and then reverted to the original state when all actions are resolved
+ * @param state
+ * @param updateState
+ * @returns [T, (action: N) => void]
+ */
+export const useOptimistic = <T, N>(
+  state: T,
+  updateState: (currentState: T, action: N) => T
+): [T, (action: N) => void] => {
+  const [optimisticState, setOptimisticState] = useState(state)
+  if (actions.size > 0) {
+    Promise.all(actions).finally(() => {
+      setOptimisticState(state)
+    })
+  } else {
+    setOptimisticState(state)
+  }
+
+  const cb = useCallback((newData: N) => {
+    setOptimisticState((currentState) => updateState(currentState, newData))
+  }, [])
+
+  return [optimisticState, cb]
+}
+
+/**
+ * This hook returns the current state and a function to update the state by form action
+ * @param fn
+ * @param initialState
+ * @param permalink
+ * @returns [T, (data: FormData) => void]
+ */
+export const useActionState = <T>(
+  fn: Function,
+  initialState: T,
+  permalink?: string
+): [T, Function] => {
+  const [state, setState] = useState(initialState)
+  const actionState = async (data: FormData) => {
+    setState(await fn(state, data))
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(actionState as any)[PERMALINK] = permalink
+  return [state, actionState]
+}
+
+```

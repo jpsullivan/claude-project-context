@@ -1,0 +1,627 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Streaming Helper for Hono.
+ */
+
+export { stream } from './stream'
+export type { SSEMessage } from './sse'
+export { streamSSE, SSEStreamingApi } from './sse'
+export { streamText } from './text'
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/sse.test.tsx</source>
+<document_content>
+/** @jsxImportSource ../../jsx */
+import { Context } from '../../context'
+import { ErrorBoundary } from '../../jsx'
+import { streamSSE } from '.'
+
+describe('SSE Streaming helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check streamSSE Response', async () => {
+    let spy
+    const res = streamSSE(c, async (stream) => {
+      spy = vi.spyOn(stream, 'close').mockImplementation(async () => {})
+
+      let id = 0
+      const maxIterations = 5
+
+      while (id < maxIterations) {
+        const message = `Message\nIt is ${id}`
+        await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
+        await stream.sleep(10)
+      }
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')
+    expect(res.headers.get('Content-Type')).toEqual('text/event-stream')
+    expect(res.headers.get('Cache-Control')).toEqual('no-cache')
+    expect(res.headers.get('Connection')).toEqual('keep-alive')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (let i = 0; i < 5; i++) {
+      const { value } = await reader.read()
+      const decodedValue = decoder.decode(value)
+
+      // Check the structure and content of the SSE message
+      let expectedValue = 'event: time-update\n'
+      expectedValue += 'data: Message\n'
+      expectedValue += `data: It is ${i}\n`
+      expectedValue += `id: ${i}\n\n`
+      expect(decodedValue).toBe(expectedValue)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(spy).toHaveBeenCalled()
+  })
+
+  it('Check streamSSE Response if aborted by client', async () => {
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Check streamSSE Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    ac.abort()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Should include retry in the SSE message', async () => {
+    const retryTime = 3000 // 3 seconds
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'This is a test message',
+        retry: retryTime,
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    // Check if the retry parameter is included in the SSE message
+    const expectedRetryValue = `retry: ${retryTime}\n\n`
+    expect(decodedValue).toContain(expectedRetryValue)
+  })
+
+  it('Check stream Response if error occurred', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async () => {
+        throw new Error('Test error')
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('event: error\ndata: Test error\n\n')
+    expect(onError).toBeCalledTimes(1)
+    expect(onError).toBeCalledWith(new Error('Test error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
+
+  it('Check streamSSE Response via Promise<string>', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: Promise.resolve('Async Message') })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: Async Message\n\n')
+  })
+
+  it('Check streamSSE Response via JSX.Element', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: <div>Hello</div> })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in success case', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>Async Hello</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in error case', async () => {
+    const AsyncComponent = async () => Promise.reject()
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Error</div>\n\n')
+  })
+})
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/sse.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { StreamingApi } from '../../utils/stream'
+import { isOldBunVersion } from './utils'
+
+export interface SSEMessage {
+  data: string | Promise<string>
+  event?: string
+  id?: string
+  retry?: number
+}
+
+export class SSEStreamingApi extends StreamingApi {
+  constructor(writable: WritableStream, readable: ReadableStream) {
+    super(writable, readable)
+  }
+
+  async writeSSE(message: SSEMessage) {
+    const data = await resolveCallback(message.data, HtmlEscapedCallbackPhase.Stringify, false, {})
+    const dataLines = (data as string)
+      .split('\n')
+      .map((line) => {
+        return `data: ${line}`
+      })
+      .join('\n')
+
+    const sseData =
+      [
+        message.event && `event: ${message.event}`,
+        dataLines,
+        message.id && `id: ${message.id}`,
+        message.retry && `retry: ${message.retry}`,
+      ]
+        .filter(Boolean)
+        .join('\n') + '\n\n'
+
+    await this.write(sseData)
+  }
+}
+
+const run = async (
+  stream: SSEStreamingApi,
+  cb: (stream: SSEStreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+): Promise<void> => {
+  try {
+    await cb(stream)
+  } catch (e) {
+    if (e instanceof Error && onError) {
+      await onError(e, stream)
+
+      await stream.writeSSE({
+        event: 'error',
+        data: e.message,
+      })
+    } else {
+      console.error(e)
+    }
+  } finally {
+    stream.close()
+  }
+}
+
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
+
+export const streamSSE = (
+  c: Context,
+  cb: (stream: SSEStreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+): Response => {
+  const { readable, writable } = new TransformStream()
+  const stream = new SSEStreamingApi(writable, readable)
+
+  // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
+  if (isOldBunVersion()) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      if (!stream.closed) {
+        stream.abort()
+      }
+    })
+  }
+
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
+
+  c.header('Transfer-Encoding', 'chunked')
+  c.header('Content-Type', 'text/event-stream')
+  c.header('Cache-Control', 'no-cache')
+  c.header('Connection', 'keep-alive')
+
+  run(stream, cb, onError)
+
+  return c.newResponse(stream.responseReadable)
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/stream.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { stream } from '.'
+
+describe('Basic Streaming Helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check stream Response', async () => {
+    const res = stream(c, async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(value).toEqual(new Uint8Array([i]))
+    }
+  })
+
+  it('Check stream Response if aborted by client', async () => {
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new Uint8Array([0]))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Check stream Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new Uint8Array([0]))
+    ac.abort()
+    expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
+  })
+
+  it('Check stream Response if pipe is aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.pipe(new ReadableStream())
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const pReading = reader.read()
+    ac.abort()
+    await pReading
+    expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
+  })
+
+  it('Check stream Response if error occurred', async () => {
+    const onError = vi.fn()
+    const res = stream(
+      c,
+      async () => {
+        throw new Error('error')
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toBeUndefined()
+    expect(onError).toBeCalledTimes(1)
+    expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
+})
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/stream.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { StreamingApi } from '../../utils/stream'
+import { isOldBunVersion } from './utils'
+
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
+
+export const stream = (
+  c: Context,
+  cb: (stream: StreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+): Response => {
+  const { readable, writable } = new TransformStream()
+  const stream = new StreamingApi(writable, readable)
+
+  // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
+  if (isOldBunVersion()) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      if (!stream.closed) {
+        stream.abort()
+      }
+    })
+  }
+
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
+  ;(async () => {
+    try {
+      await cb(stream)
+    } catch (e) {
+      if (e === undefined) {
+        // If reading is canceled without a reason value (e.g. by StreamingApi)
+        // then the .pipeTo() promise will reject with undefined.
+        // In this case, do nothing because the stream is already closed.
+      } else if (e instanceof Error && onError) {
+        await onError(e, stream)
+      } else {
+        console.error(e)
+      }
+    } finally {
+      stream.close()
+    }
+  })()
+
+  return c.newResponse(stream.responseReadable)
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/text.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { streamText } from '.'
+
+describe('Text Streaming Helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check streamText Response', async () => {
+    const res = streamText(c, async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(`${i}`)
+        await stream.sleep(1)
+      }
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('transfer-encoding')).toBe('chunked')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(decoder.decode(value)).toEqual(`${i}`)
+    }
+  })
+})
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/text.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { TEXT_PLAIN } from '../../context'
+import type { StreamingApi } from '../../utils/stream'
+import { stream } from './'
+
+export const streamText = (
+  c: Context,
+  cb: (stream: StreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+): Response => {
+  c.header('Content-Type', TEXT_PLAIN)
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('Transfer-Encoding', 'chunked')
+  return stream(c, cb, onError)
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/utils.ts</source>
+<document_content>
+export let isOldBunVersion = (): boolean => {
+  // @ts-expect-error @types/bun is not installed
+  const version: string = typeof Bun !== 'undefined' ? Bun.version : undefined
+  if (version === undefined) {
+    return false
+  }
+  const result = version.startsWith('1.1') || version.startsWith('1.0') || version.startsWith('0.')
+  // Avoid running this check on every call
+  isOldBunVersion = () => result
+  return result
+}
+
+</document_content>
+</document>
+</documents>

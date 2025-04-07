@@ -1,0 +1,256 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/body-limit/index.test.ts
+```typescript
+import { Hono } from '../../hono'
+import { bodyLimit } from '.'
+
+const buildRequestInit = (init: RequestInit = {}): RequestInit & { duplex: 'half' } => {
+  const headers: Record<string, string> = {
+    'Content-Type': 'text/plain',
+  }
+  if (typeof init.body === 'string') {
+    headers['Content-Length'] = init.body.length.toString()
+  }
+  return {
+    method: 'POST',
+    headers,
+    body: null,
+    ...init,
+    duplex: 'half',
+  }
+}
+
+describe('Body Limit Middleware', () => {
+  let app: Hono
+
+  const exampleText = 'hono is so hot' // 14byte
+  const exampleText2 = 'hono is so hot and cute' // 23byte
+
+  beforeEach(() => {
+    app = new Hono()
+    app.use('*', bodyLimit({ maxSize: 14 }))
+    app.get('/', (c) => c.text('index'))
+    app.post('/body-limit-15byte', async (c) => {
+      return c.text(await c.req.raw.text())
+    })
+  })
+
+  describe('GET request', () => {
+    it('should return 200 response', async () => {
+      const res = await app.request('/')
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('index')
+    })
+  })
+
+  describe('POST request', () => {
+    describe('string body', () => {
+      it('should return 200 response', async () => {
+        const res = await app.request('/body-limit-15byte', buildRequestInit({ body: exampleText }))
+
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe(exampleText)
+      })
+
+      it('should return 413 response', async () => {
+        const res = await app.request(
+          '/body-limit-15byte',
+          buildRequestInit({ body: exampleText2 })
+        )
+
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(413)
+        expect(await res.text()).toBe('Payload Too Large')
+      })
+    })
+
+    describe('ReadableStream body', () => {
+      it('should return 200 response', async () => {
+        const contents = ['a', 'b', 'c']
+        const stream = new ReadableStream({
+          start(controller) {
+            while (contents.length) {
+              controller.enqueue(new TextEncoder().encode(contents.shift() as string))
+            }
+            controller.close()
+          },
+        })
+        const res = await app.request('/body-limit-15byte', buildRequestInit({ body: stream }))
+
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(200)
+        expect(await res.text()).toBe('abc')
+      })
+
+      it('should return 413 response', async () => {
+        const readSpy = vi.fn().mockImplementation(() => {
+          return {
+            done: false,
+            value: new TextEncoder().encode(exampleText),
+          }
+        })
+        const stream = new ReadableStream()
+        vi.spyOn(stream, 'getReader').mockReturnValue({
+          read: readSpy,
+        } as unknown as ReadableStreamDefaultReader)
+        const res = await app.request('/body-limit-15byte', buildRequestInit({ body: stream }))
+
+        expect(res).not.toBeNull()
+        expect(res.status).toBe(413)
+        expect(readSpy).toHaveBeenCalledTimes(2)
+        expect(await res.text()).toBe('Payload Too Large')
+      })
+    })
+  })
+
+  describe('custom error handler', () => {
+    beforeEach(() => {
+      app = new Hono()
+      app.post(
+        '/text-limit-15byte-custom',
+        bodyLimit({
+          maxSize: 15,
+          onError: (c) => {
+            return c.text('no', 413)
+          },
+        }),
+        (c) => {
+          return c.text('yes')
+        }
+      )
+    })
+
+    it('should return the custom error handler', async () => {
+      const res = await app.request(
+        '/text-limit-15byte-custom',
+        buildRequestInit({ body: exampleText2 })
+      )
+
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(413)
+      expect(await res.text()).toBe('no')
+    })
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/body-limit/index.ts
+````typescript
+/**
+ * @module
+ * Body Limit Middleware for Hono.
+ */
+
+import type { Context } from '../../context'
+import { HTTPException } from '../../http-exception'
+import type { MiddlewareHandler } from '../../types'
+
+const ERROR_MESSAGE = 'Payload Too Large'
+
+type OnError = (c: Context) => Response | Promise<Response>
+type BodyLimitOptions = {
+  maxSize: number
+  onError?: OnError
+}
+
+class BodyLimitError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BodyLimitError'
+  }
+}
+
+/**
+ * Body Limit Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/body-limit}
+ *
+ * @param {BodyLimitOptions} options - The options for the body limit middleware.
+ * @param {number} options.maxSize - The maximum body size allowed.
+ * @param {OnError} [options.onError] - The error handler to be invoked if the specified body size is exceeded.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.post(
+ *   '/upload',
+ *   bodyLimit({
+ *     maxSize: 50 * 1024, // 50kb
+ *     onError: (c) => {
+ *       return c.text('overflow :(', 413)
+ *     },
+ *   }),
+ *   async (c) => {
+ *     const body = await c.req.parseBody()
+ *     if (body['file'] instanceof File) {
+ *       console.log(`Got file sized: ${body['file'].size}`)
+ *     }
+ *     return c.text('pass :)')
+ *   }
+ * )
+ * ```
+ */
+export const bodyLimit = (options: BodyLimitOptions): MiddlewareHandler => {
+  const onError: OnError =
+    options.onError ||
+    (() => {
+      const res = new Response(ERROR_MESSAGE, {
+        status: 413,
+      })
+      throw new HTTPException(413, { res })
+    })
+  const maxSize = options.maxSize
+
+  return async function bodyLimit(c, next) {
+    if (!c.req.raw.body) {
+      // maybe GET or HEAD request
+      return next()
+    }
+
+    if (c.req.raw.headers.has('content-length')) {
+      // we can trust content-length header because it's already validated by server
+      const contentLength = parseInt(c.req.raw.headers.get('content-length') || '0', 10)
+      return contentLength > maxSize ? onError(c) : next()
+    }
+
+    // maybe chunked transfer encoding
+
+    let size = 0
+    const rawReader = c.req.raw.body.getReader()
+    const reader = new ReadableStream({
+      async start(controller) {
+        try {
+          for (;;) {
+            const { done, value } = await rawReader.read()
+            if (done) {
+              break
+            }
+            size += value.length
+            if (size > maxSize) {
+              controller.error(new BodyLimitError(ERROR_MESSAGE))
+              break
+            }
+
+            controller.enqueue(value)
+          }
+        } finally {
+          controller.close()
+        }
+      },
+    })
+
+    const requestInit: RequestInit & { duplex: 'half' } = { body: reader, duplex: 'half' }
+    c.req.raw = new Request(c.req.raw, requestInit as RequestInit)
+
+    await next()
+
+    if (c.error instanceof BodyLimitError) {
+      c.res = await onError(c)
+    }
+  }
+}
+
+````

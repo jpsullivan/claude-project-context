@@ -1,0 +1,371 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/build.ts</source>
+<document_content>
+/*
+  This script is heavily inspired by `built.ts` used in @kaze-style/react.
+  https://github.com/taishinaritomi/kaze-style/blob/main/scripts/build.ts
+  MIT License
+  Copyright (c) 2022 Taishi Naritomi
+*/
+
+/// <reference types="bun-types/bun" />
+
+import arg from 'arg'
+import { $, stdout } from 'bun'
+import { build } from 'esbuild'
+import type { Plugin, PluginBuild, BuildOptions } from 'esbuild'
+import * as glob from 'glob'
+import fs from 'fs'
+import path from 'path'
+import { cleanupWorkers, removePrivateFields } from './remove-private-fields'
+import { validateExports } from './validate-exports'
+
+const args = arg({
+  '--watch': Boolean,
+})
+
+const isWatch = args['--watch'] || false
+
+const readJsonExports = (path: string) => JSON.parse(fs.readFileSync(path, 'utf-8')).exports
+
+const [packageJsonExports, jsrJsonExports] = ['./package.json', './jsr.json'].map(readJsonExports)
+
+// Validate exports of package.json and jsr.json
+validateExports(packageJsonExports, jsrJsonExports, 'jsr.json')
+validateExports(jsrJsonExports, packageJsonExports, 'package.json')
+
+const entryPoints = glob.sync('./src/**/*.ts', {
+  ignore: ['./src/**/*.test.ts', './src/mod.ts', './src/middleware.ts', './src/deno/**/*.ts'],
+})
+
+/*
+  This plugin is inspired by the following.
+  https://github.com/evanw/esbuild/issues/622#issuecomment-769462611
+*/
+const addExtension = (extension: string = '.js', fileExtension: string = '.ts'): Plugin => ({
+  name: 'add-extension',
+  setup(build: PluginBuild) {
+    build.onResolve({ filter: /.*/ }, (args) => {
+      if (args.importer) {
+        const p = path.join(args.resolveDir, args.path)
+        let tsPath = `${p}${fileExtension}`
+
+        let importPath = ''
+        if (fs.existsSync(tsPath)) {
+          importPath = args.path + extension
+        } else {
+          tsPath = path.join(args.resolveDir, args.path, `index${fileExtension}`)
+          if (fs.existsSync(tsPath)) {
+            if (args.path.endsWith('/')) {
+              importPath = `${args.path}index${extension}`
+            } else {
+              importPath = `${args.path}/index${extension}`
+            }
+          }
+        }
+        return { path: importPath, external: true }
+      }
+    })
+  },
+})
+
+const commonOptions: BuildOptions = {
+  watch: isWatch,
+  entryPoints,
+  logLevel: 'info',
+  platform: 'node',
+}
+
+const cjsBuild = () =>
+  build({
+    ...commonOptions,
+    outbase: './src',
+    outdir: './dist/cjs',
+    format: 'cjs',
+  })
+
+const esmBuild = () =>
+  build({
+    ...commonOptions,
+    bundle: true,
+    outbase: './src',
+    outdir: './dist',
+    format: 'esm',
+    plugins: [addExtension('.js')],
+  })
+
+Promise.all([esmBuild(), cjsBuild()])
+
+await $`tsc ${
+  isWatch ? '-w' : ''
+} --emitDeclarationOnly --declaration --project tsconfig.build.json`.nothrow()
+
+// Remove #private fields
+const dtsEntries = glob.globSync('./dist/types/**/*.d.ts')
+const writer = stdout.writer()
+writer.write('\n')
+let lastOutputLength = 0
+let removedCount = 0
+
+await Promise.all(
+  dtsEntries.map(async (e) => {
+    await fs.promises.writeFile(e, await removePrivateFields(e))
+
+    const message = `Private fields removed(${++removedCount}/${dtsEntries.length}): ${e}`
+    writer.write(`\r${' '.repeat(lastOutputLength)}`)
+    lastOutputLength = message.length
+    writer.write(`\r${message}`)
+  })
+)
+
+writer.write('\n')
+cleanupWorkers()
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/remove-private-fields-worker.test.ts</source>
+<document_content>
+/// <reference types="vitest/globals" />
+
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { removePrivateFields } from './remove-private-fields-worker'
+
+describe('removePrivateFields', () => {
+  it('Works', async () => {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'removePrivateFields'))
+    const tsPath = path.join(tmpDir, 'class.ts')
+    await fs.writeFile(tsPath, 'class X { #private: number = 0; a: number = 0 }')
+    expect(removePrivateFields(tsPath)).toBe(`class X {
+    a: number = 0;
+}
+`)
+  })
+  it('Should throw error when path does not exist', () => {
+    expect(() => removePrivateFields('./unknown.ts')).toThrowError(Error)
+  })
+})
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/remove-private-fields-worker.ts</source>
+<document_content>
+import * as ts from 'typescript'
+
+export type WorkerInput = {
+  file: string
+  taskId: number
+}
+
+export type WorkerOutput =
+  | {
+      type: 'success'
+      value: string
+      taskId: number
+    }
+  | {
+      type: 'error'
+      value: unknown
+      taskId: number
+    }
+
+const removePrivateTransformer = <T extends ts.Node>(ctx: ts.TransformationContext) => {
+  const visit: ts.Visitor = (node) => {
+    if (ts.isClassDeclaration(node)) {
+      const newMembers = node.members.filter((elem) => {
+        if (ts.isPropertyDeclaration(elem) || ts.isMethodDeclaration(elem)) {
+          for (const modifier of elem.modifiers ?? []) {
+            if (modifier.kind === ts.SyntaxKind.PrivateKeyword) {
+              return false
+            }
+          }
+        }
+        if (elem.name && ts.isPrivateIdentifier(elem.name)) {
+          return false
+        }
+        return true
+      })
+      return ts.factory.createClassDeclaration(
+        node.modifiers,
+        node.name,
+        node.typeParameters,
+        node.heritageClauses,
+        newMembers
+      )
+    }
+    return ts.visitEachChild(node, visit, ctx)
+  }
+
+  return (node: T) => {
+    const visited = ts.visitNode(node, visit)
+    if (!visited) {
+      throw new Error('The result visited is undefined.')
+    }
+    return visited
+  }
+}
+
+export const removePrivateFields = (tsPath: string) => {
+  const program = ts.createProgram([tsPath], {
+    target: ts.ScriptTarget.ESNext,
+    module: ts.ModuleKind.ESNext,
+  })
+  const file = program.getSourceFile(tsPath)
+
+  const transformed = ts.transform(file!, [removePrivateTransformer])
+  const printer = ts.createPrinter()
+  const transformedSourceFile = transformed.transformed[0] as ts.SourceFile
+  const code = printer.printFile(transformedSourceFile)
+  transformed.dispose()
+  return code
+}
+
+declare const self: Worker
+
+if (globalThis.self) {
+  self.addEventListener('message', function (e) {
+    const { file, taskId } = e.data as WorkerInput
+
+    try {
+      const result = removePrivateFields(file)
+      self.postMessage({ type: 'success', value: result, taskId } satisfies WorkerOutput)
+    } catch (e) {
+      console.error(e)
+      self.postMessage({ type: 'error', value: e, taskId } satisfies WorkerOutput)
+    }
+  })
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/remove-private-fields.ts</source>
+<document_content>
+import { cpus } from 'node:os'
+import type { WorkerInput, WorkerOutput } from './remove-private-fields-worker'
+
+const workers = Array.from({ length: Math.ceil(cpus().length / 2) }).map(
+  () => new Worker(`${import.meta.dirname}/remove-private-fields-worker.ts`, { type: 'module' })
+)
+let workerIndex = 0
+let taskId = 0
+
+export async function removePrivateFields(file: string): Promise<string> {
+  const currentTaskId = taskId++
+  const worker = workers[workerIndex]
+  workerIndex = (workerIndex + 1) % workers.length
+
+  return new Promise<string>((resolve, reject) => {
+    const abortController = new AbortController()
+    worker.addEventListener(
+      'message',
+      ({ data: { type, value, taskId } }: { data: WorkerOutput }) => {
+        if (taskId === currentTaskId) {
+          if (type === 'success') {
+            resolve(value)
+          } else {
+            reject(value)
+          }
+
+          abortController.abort()
+        }
+      },
+      { signal: abortController.signal }
+    )
+    worker.postMessage({ file, taskId: currentTaskId } satisfies WorkerInput)
+  })
+}
+
+export function cleanupWorkers() {
+  for (const worker of workers) {
+    worker.terminate()
+  }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/validate-exports.test.ts</source>
+<document_content>
+/// <reference types="vitest/globals" />
+
+import { validateExports } from './validate-exports'
+
+const mockExports1 = {
+  './a': './a.ts',
+  './b': './b.ts',
+  './c/a': './c.ts',
+  './d/*': './d/*.ts',
+}
+
+const mockExports2 = {
+  './a': './a.ts',
+  './b': './b.ts',
+  './c/a': './c.ts',
+  './d/a': './d/a.ts',
+}
+
+const mockExports3 = {
+  './a': './a.ts',
+  './c/a': './c.ts',
+  './d/*': './d/*.ts',
+}
+
+describe('validateExports', () => {
+  it('Works', async () => {
+    expect(() => validateExports(mockExports1, mockExports1, 'package.json')).not.toThrowError()
+    expect(() => validateExports(mockExports1, mockExports2, 'jsr.json')).not.toThrowError()
+    expect(() => validateExports(mockExports1, mockExports3, 'package.json')).toThrowError()
+  })
+})
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/build/validate-exports.ts</source>
+<document_content>
+export const validateExports = (
+  source: Record<string, unknown>,
+  target: Record<string, unknown>,
+  fileName: string
+) => {
+  const isEntryInTarget = (entry: string): boolean => {
+    if (entry in target) {
+      return true
+    }
+
+    // e.g., "./utils/*" -> "./utils"
+    const wildcardPrefix = entry.replace(/\/\*$/, '')
+    if (entry.endsWith('/*')) {
+      return Object.keys(target).some(
+        (targetEntry) =>
+          targetEntry.startsWith(wildcardPrefix + '/') && targetEntry !== wildcardPrefix
+      )
+    }
+
+    const separatedEntry = entry.split('/')
+    while (separatedEntry.length > 0) {
+      const pattern = `${separatedEntry.join('/')}/*`
+      if (pattern in target) {
+        return true
+      }
+      separatedEntry.pop()
+    }
+
+    return false
+  }
+
+  Object.keys(source).forEach((sourceEntry) => {
+    if (!isEntryInTarget(sourceEntry)) {
+      throw new Error(`Missing "${sourceEntry}" in '${fileName}'`)
+    }
+  })
+}
+
+</document_content>
+</document>
+</documents>

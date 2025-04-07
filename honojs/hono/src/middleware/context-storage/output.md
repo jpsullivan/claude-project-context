@@ -1,0 +1,93 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/context-storage/index.test.ts
+```typescript
+import { Hono } from '../../hono'
+import { contextStorage, getContext } from '.'
+
+describe('Context Storage Middleware', () => {
+  type Env = {
+    Variables: {
+      message: string
+    }
+  }
+
+  const app = new Hono<Env>()
+
+  app.use(contextStorage())
+  app.use(async (c, next) => {
+    c.set('message', 'Hono is hot!!')
+    await next()
+  })
+  app.get('/', (c) => {
+    return c.text(getMessage())
+  })
+
+  const getMessage = () => {
+    return getContext<Env>().var.message
+  }
+
+  it('Should get context', async () => {
+    const res = await app.request('/')
+    expect(await res.text()).toBe('Hono is hot!!')
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/context-storage/index.ts
+````typescript
+/**
+ * @module
+ * Context Storage Middleware for Hono.
+ */
+
+import { AsyncLocalStorage } from 'node:async_hooks'
+import type { Context } from '../../context'
+import type { Env, MiddlewareHandler } from '../../types'
+
+const asyncLocalStorage = new AsyncLocalStorage<Context>()
+
+/**
+ * Context Storage Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/context-storage}
+ *
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * type Env = {
+ *   Variables: {
+ *     message: string
+ *   }
+ * }
+ *
+ * const app = new Hono<Env>()
+ *
+ * app.use(contextStorage())
+ *
+ * app.use(async (c, next) => {
+ *   c.set('message', 'Hono is hot!!)
+ *   await next()
+ * })
+ *
+ * app.get('/', async (c) => { c.text(getMessage()) })
+ *
+ * const getMessage = () => {
+ *   return getContext<Env>().var.message
+ * }
+ * ```
+ */
+export const contextStorage = (): MiddlewareHandler => {
+  return async function contextStorage(c, next) {
+    await asyncLocalStorage.run(c, next)
+  }
+}
+
+export const getContext = <E extends Env = Env>(): Context<E> => {
+  const context = asyncLocalStorage.getStore()
+  if (!context) {
+    throw new Error('Context is not available')
+  }
+  return context
+}
+
+````

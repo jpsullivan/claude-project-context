@@ -1,0 +1,6242 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/websocket/index.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import type { WSContextInit } from '.'
+import { WSContext, createWSMessageEvent, defineWebSocketHelper } from '.'
+
+describe('`createWSMessageEvent`', () => {
+  it('Should `createWSMessageEvent` is working for string', () => {
+    const randomString = Math.random().toString()
+    const event = createWSMessageEvent(randomString)
+
+    expect(event.data).toBe(randomString)
+  })
+  it('Should `createWSMessageEvent` type is `message`', () => {
+    const event = createWSMessageEvent('')
+    expect(event.type).toBe('message')
+  })
+})
+describe('defineWebSocketHelper', () => {
+  it('defineWebSocketHelper should work', async () => {
+    const upgradeWebSocket = defineWebSocketHelper(() => {
+      return new Response('Hello World', {
+        status: 200,
+      })
+    })
+    const response = await upgradeWebSocket(() => ({}))(
+      new Context(new Request('http://localhost')),
+      () => Promise.resolve()
+    )
+    expect(response).toBeTruthy()
+    expect((response as Response).status).toBe(200)
+  })
+  it('When response is undefined, should call next()', async () => {
+    const upgradeWebSocket = defineWebSocketHelper(() => {
+      return
+    })
+    const next = vi.fn()
+    await upgradeWebSocket(() => ({}))(new Context(new Request('http://localhost')), next)
+    expect(next).toBeCalled()
+  })
+})
+describe('WSContext', () => {
+  it('Should close() works', async () => {
+    type Result = [number | undefined, string | undefined]
+    let ws!: WSContext
+    const promise = new Promise<Result>((resolve) => {
+      ws = new WSContext({
+        close(code, reason) {
+          resolve([code, reason])
+        },
+      } as WSContextInit)
+    })
+    ws.close(0, 'reason')
+    const [code, reason] = await promise
+    expect(code).toBe(0)
+    expect(reason).toBe('reason')
+  })
+  it('Should send() works', async () => {
+    let ws!: WSContext
+    const promise = new Promise<string | ArrayBuffer>((resolve) => {
+      ws = new WSContext({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        send(data, _options) {
+          resolve(data)
+        },
+      } as WSContextInit)
+    })
+    ws.send('Hello')
+    expect(await promise).toBe('Hello')
+  })
+  it('Should readyState works', () => {
+    const ws = new WSContext({
+      readyState: 0,
+    } as WSContextInit)
+    expect(ws.readyState).toBe(0)
+  })
+  it('Should normalize URL', () => {
+    const stringURLWS = new WSContext({
+      url: 'http://localhost',
+    } as WSContextInit)
+    expect(stringURLWS.url).toBeInstanceOf(URL)
+
+    const urlURLWS = new WSContext({
+      url: new URL('http://localhost'),
+    } as WSContextInit)
+    expect(urlURLWS.url).toBeInstanceOf(URL)
+
+    const nullURLWS = new WSContext({
+      url: undefined,
+    } as WSContextInit)
+    expect(nullURLWS.url).toBeNull()
+  })
+  it('Should normalize message in send()', () => {
+    let data: string | ArrayBuffer | Uint8Array | null = null
+    const wsContext = new WSContext({
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      send(received, _options) {
+        data = received
+      },
+    } as WSContextInit)
+
+    wsContext.send('string')
+    expect(data).toBe('string')
+
+    wsContext.send(new ArrayBuffer(16))
+    expect(data).toBeInstanceOf(ArrayBuffer)
+
+    wsContext.send(new Uint8Array(16))
+    expect(data).toBeInstanceOf(Uint8Array)
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/websocket/index.ts</source>
+<document_content>
+/**
+ * @module
+ * WebSocket Helper for Hono.
+ */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { Context } from '../../context'
+import type { MiddlewareHandler } from '../../types'
+
+/**
+ * WebSocket Event Listeners type
+ */
+export interface WSEvents<T = unknown> {
+  onOpen?: (evt: Event, ws: WSContext<T>) => void
+  onMessage?: (evt: MessageEvent<WSMessageReceive>, ws: WSContext<T>) => void
+  onClose?: (evt: CloseEvent, ws: WSContext<T>) => void
+  onError?: (evt: Event, ws: WSContext<T>) => void
+}
+
+/**
+ * Upgrade WebSocket Type
+ */
+export type UpgradeWebSocket<T = unknown, U = any, _WSEvents = WSEvents<T>> = (
+  createEvents: (c: Context) => _WSEvents | Promise<_WSEvents>,
+  options?: U
+) => MiddlewareHandler<
+  any,
+  string,
+  {
+    outputFormat: 'ws'
+  }
+>
+
+/**
+ * ReadyState for WebSocket
+ */
+export type WSReadyState = 0 | 1 | 2 | 3
+
+/**
+ * An argument for WSContext class
+ */
+export interface WSContextInit<T = unknown> {
+  send(data: string | ArrayBuffer | Uint8Array, options: SendOptions): void
+  close(code?: number, reason?: string): void
+
+  raw?: T
+  readyState: WSReadyState
+  url?: string | URL | null
+  protocol?: string | null
+}
+
+/**
+ * Options for sending message
+ */
+export interface SendOptions {
+  compress?: boolean
+}
+
+/**
+ * A context for controlling WebSockets
+ */
+export class WSContext<T = unknown> {
+  #init: WSContextInit<T>
+  constructor(init: WSContextInit<T>) {
+    this.#init = init
+    this.raw = init.raw
+    this.url = init.url ? new URL(init.url) : null
+    this.protocol = init.protocol ?? null
+  }
+  send(source: string | ArrayBuffer | Uint8Array, options?: SendOptions): void {
+    this.#init.send(source, options ?? {})
+  }
+  raw?: T
+  binaryType: BinaryType = 'arraybuffer'
+  get readyState(): WSReadyState {
+    return this.#init.readyState
+  }
+  url: URL | null
+  protocol: string | null
+  close(code?: number, reason?: string) {
+    this.#init.close(code, reason)
+  }
+}
+
+export type WSMessageReceive = string | Blob | ArrayBufferLike
+
+export const createWSMessageEvent = (source: WSMessageReceive): MessageEvent<WSMessageReceive> => {
+  return new MessageEvent<WSMessageReceive>('message', {
+    data: source,
+  })
+}
+
+export interface WebSocketHelperDefineContext {}
+export type WebSocketHelperDefineHandler<T, U> = (
+  c: Context,
+  events: WSEvents<T>,
+  options?: U
+) => Promise<Response | void> | Response | void
+
+/**
+ * Create a WebSocket adapter/helper
+ */
+export const defineWebSocketHelper = <T = unknown, U = any>(
+  handler: WebSocketHelperDefineHandler<T, U>
+): UpgradeWebSocket<T, U> => {
+  return (createEvents, options) => {
+    return async function UpgradeWebSocket(c, next) {
+      const events = await createEvents(c)
+      const result = await handler(c, events, options)
+      if (result) {
+        return result
+      }
+      await next()
+    }
+  }
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/proxy/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { proxy } from '.'
+
+describe('Proxy Middleware', () => {
+  describe('proxy', () => {
+    beforeEach(() => {
+      global.fetch = vi.fn().mockImplementation(async (req) => {
+        if (req.url === 'https://example.com/ok') {
+          return Promise.resolve(new Response('ok'))
+        } else if (req.url === 'https://example.com/disconnect') {
+          const reader = req.body.getReader()
+          let response
+
+          req.signal.addEventListener('abort', () => {
+            response = req.signal.reason
+            reader.cancel()
+          })
+
+          await reader.read()
+
+          return Promise.resolve(new Response(response))
+        } else if (req.url === 'https://example.com/compressed') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Content-Encoding': 'gzip',
+                'Content-Length': '1',
+                'Content-Range': 'bytes 0-2/1024',
+                'X-Response-Id': '456',
+              },
+            })
+          )
+        } else if (req.url === 'https://example.com/uncompressed') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Content-Length': '2',
+                'Content-Range': 'bytes 0-2/1024',
+                'X-Response-Id': '456',
+              },
+            })
+          )
+        } else if (req.url === 'https://example.com/post' && req.method === 'POST') {
+          return Promise.resolve(new Response(`request body: ${await req.text()}`))
+        } else if (req.url === 'https://example.com/hop-by-hop') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Transfer-Encoding': 'chunked',
+              },
+            })
+          )
+        } else if (req.url === 'https://example.com/set-cookie') {
+          return Promise.resolve(
+            new Response('ok', {
+              headers: {
+                'Set-Cookie': 'test=123',
+              },
+            })
+          )
+        }
+        return Promise.resolve(new Response('not found', { status: 404 }))
+      })
+    })
+
+    it('compressed', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(
+          new Request(`https://example.com/${c.req.param('path')}`, {
+            headers: {
+              'X-Request-Id': '123',
+              'Accept-Encoding': 'gzip',
+            },
+          })
+        )
+      )
+      const res = await app.request('/proxy/compressed')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/compressed')
+      expect(req.headers.get('X-Request-Id')).toBe('123')
+      expect(req.headers.get('Accept-Encoding')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('X-Response-Id')).toBe('456')
+      expect(res.headers.get('Content-Encoding')).toBeNull()
+      expect(res.headers.get('Content-Length')).toBeNull()
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
+    })
+
+    it('uncompressed', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(
+          new Request(`https://example.com/${c.req.param('path')}`, {
+            headers: {
+              'X-Request-Id': '123',
+              'Accept-Encoding': 'gzip',
+            },
+          })
+        )
+      )
+      const res = await app.request('/proxy/uncompressed')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/uncompressed')
+      expect(req.headers.get('X-Request-Id')).toBe('123')
+      expect(req.headers.get('Accept-Encoding')).toBeNull()
+
+      expect(res.status).toBe(200)
+      expect(res.headers.get('X-Response-Id')).toBe('456')
+      expect(res.headers.get('Content-Length')).toBe('2')
+      expect(res.headers.get('Content-Range')).toBe('bytes 0-2/1024')
+    })
+
+    it('POST request', async () => {
+      const app = new Hono()
+      app.all('/proxy/:path', (c) => {
+        return proxy(`https://example.com/${c.req.param('path')}`, {
+          ...c.req,
+          headers: {
+            ...c.req.header(),
+            'X-Request-Id': '123',
+            'Accept-Encoding': 'gzip',
+          },
+        })
+      })
+      const res = await app.request('/proxy/post', {
+        method: 'POST',
+        body: 'test',
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.url).toBe('https://example.com/post')
+
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('request body: test')
+    })
+
+    it('remove hop-by-hop headers', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+
+      const res = await app.request('/proxy/hop-by-hop', {
+        headers: {
+          Connection: 'keep-alive',
+          'Keep-Alive': 'timeout=5, max=1000',
+          'Proxy-Authorization': 'Basic 123456',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Connection')).toBeNull()
+      expect(req.headers.get('Keep-Alive')).toBeNull()
+      expect(req.headers.get('Proxy-Authorization')).toBeNull()
+
+      expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('specify hop-by-hop header by options', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            'Proxy-Authorization': 'Basic 123456',
+          },
+        })
+      )
+
+      const res = await app.request('/proxy/hop-by-hop')
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+      expect(req.headers.get('Proxy-Authorization')).toBe('Basic 123456')
+
+      expect(res.headers.get('Transfer-Encoding')).toBeNull()
+    })
+
+    it('modify header', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            'Set-Cookie': 'test=123',
+          },
+        }).then((res) => {
+          res.headers.delete('Set-Cookie')
+          res.headers.set('X-Response-Id', '456')
+          return res
+        })
+      )
+      const res = await app.request('/proxy/set-cookie')
+      expect(res.headers.get('Set-Cookie')).toBeNull()
+      expect(res.headers.get('X-Response-Id')).toBe('456')
+    })
+
+    it('does not propagate undefined request headers', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) =>
+        proxy(`https://example.com/${c.req.param('path')}`, {
+          headers: {
+            ...c.req.header(),
+            Authorization: undefined,
+          },
+        })
+      )
+      await app.request('/proxy/ok', {
+        headers: {
+          Authorization: 'Bearer 123',
+        },
+      })
+      const req = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]
+      expect(req.headers.get('Authorization')).toBeNull()
+    })
+
+    it('client disconnect', async () => {
+      const app = new Hono()
+      const controller = new AbortController()
+      app.post('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`, c.req))
+      const resPromise = app.request('/proxy/disconnect', {
+        method: 'POST',
+        body: 'test',
+        signal: controller.signal,
+      })
+      controller.abort('client disconnect')
+      const res = await resPromise
+      expect(await res.text()).toBe('client disconnect')
+    })
+
+    it('not found', async () => {
+      const app = new Hono()
+      app.get('/proxy/:path', (c) => proxy(`https://example.com/${c.req.param('path')}`))
+      const res = await app.request('/proxy/404')
+      expect(res.status).toBe(404)
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/proxy/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Proxy Helper for Hono.
+ */
+
+import type { RequestHeader } from '../../utils/headers'
+
+// https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
+const hopByHopHeaders = [
+  'connection',
+  'keep-alive',
+  'proxy-authenticate',
+  'proxy-authorization',
+  'te',
+  'trailers',
+  'transfer-encoding',
+]
+
+interface ProxyRequestInit extends Omit<RequestInit, 'headers'> {
+  raw?: Request
+  headers?:
+    | HeadersInit
+    | [string, string][]
+    | Record<RequestHeader, string | undefined>
+    | Record<string, string | undefined>
+}
+
+interface ProxyFetch {
+  (input: string | URL | Request, init?: ProxyRequestInit): Promise<Response>
+}
+
+const buildRequestInitFromRequest = (
+  request: Request | undefined
+): RequestInit & { duplex?: 'half' } => {
+  if (!request) {
+    return {}
+  }
+
+  const headers = new Headers(request.headers)
+  hopByHopHeaders.forEach((header) => {
+    headers.delete(header)
+  })
+
+  return {
+    method: request.method,
+    body: request.body,
+    duplex: request.body ? 'half' : undefined,
+    headers,
+    signal: request.signal,
+  }
+}
+
+const preprocessRequestInit = (requestInit: RequestInit): RequestInit => {
+  if (
+    !requestInit.headers ||
+    Array.isArray(requestInit.headers) ||
+    requestInit.headers instanceof Headers
+  ) {
+    return requestInit
+  }
+
+  const headers = new Headers()
+  for (const [key, value] of Object.entries(requestInit.headers)) {
+    if (value == null) {
+      // delete header if value is null or undefined
+      headers.delete(key)
+    } else {
+      headers.set(key, value)
+    }
+  }
+  requestInit.headers = headers
+  return requestInit
+}
+
+/**
+ * Fetch API wrapper for proxy.
+ * The parameters and return value are the same as for `fetch` (except for the proxy-specific options).
+ *
+ * The “Accept-Encoding” header is replaced with an encoding that the current runtime can handle.
+ * Unnecessary response headers are deleted and a Response object is returned that can be returned
+ * as is as a response from the handler.
+ *
+ * @example
+ * ```ts
+ * app.get('/proxy/:path', (c) => {
+ *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
+ *     headers: {
+ *       ...c.req.header(), // optional, specify only when forwarding all the request data (including credentials) is necessary.
+ *       'X-Forwarded-For': '127.0.0.1',
+ *       'X-Forwarded-Host': c.req.header('host'),
+ *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
+ *     },
+ *   }).then((res) => {
+ *     res.headers.delete('Set-Cookie')
+ *     return res
+ *   })
+ * })
+ *
+ * app.all('/proxy/:path', (c) => {
+ *   return proxy(`http://${originServer}/${c.req.param('path')}`, {
+ *     ...c.req, // optional, specify only when forwarding all the request data (including credentials) is necessary.
+ *     headers: {
+ *       ...c.req.header(),
+ *       'X-Forwarded-For': '127.0.0.1',
+ *       'X-Forwarded-Host': c.req.header('host'),
+ *       Authorization: undefined, // do not propagate request headers contained in c.req.header('Authorization')
+ *     },
+ *   })
+ * })
+ * ```
+ */
+export const proxy: ProxyFetch = async (input, proxyInit) => {
+  const { raw, ...requestInit } = proxyInit ?? {}
+
+  const req = new Request(input, {
+    ...buildRequestInitFromRequest(raw),
+    ...preprocessRequestInit(requestInit as RequestInit),
+  })
+  req.headers.delete('accept-encoding')
+
+  const res = await fetch(req)
+  const resHeaders = new Headers(res.headers)
+  hopByHopHeaders.forEach((header) => {
+    resHeaders.delete(header)
+  })
+  if (resHeaders.has('content-encoding')) {
+    resHeaders.delete('content-encoding')
+    // Content-Length is the size of the compressed content, not the size of the original content
+    resHeaders.delete('content-length')
+  }
+
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: resHeaders,
+  })
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/common.case.test.tsx</source>
+<document_content>
+/** @jsxImportSource ../../jsx */
+import type {
+  Style as StyleComponent,
+  css as cssHelper,
+  keyframes as keyframesHelper,
+  rawCssString as rawCssStringHelper,
+  viewTransition as viewTransitionHelper,
+} from './index'
+
+interface Support {
+  nest: boolean
+}
+export const renderTest = (
+  getEnv: () => {
+    css: typeof cssHelper
+    keyframes: typeof keyframesHelper
+    viewTransition: typeof viewTransitionHelper
+    rawCssString: typeof rawCssStringHelper
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    toString: (template: any) => Promise<string>
+    Style: typeof StyleComponent
+    support: Support
+  }
+) => {
+  const { support } = getEnv()
+
+  let css: typeof cssHelper
+  let keyframes: typeof keyframesHelper
+  let viewTransition: typeof viewTransitionHelper
+  let rawCssString: typeof rawCssStringHelper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let toString: (template: any) => Promise<string>
+  let Style: typeof StyleComponent
+  beforeEach(() => {
+    ;({ css, keyframes, viewTransition, rawCssString, toString, Style } = getEnv())
+  })
+
+  describe('render css', () => {
+    it('Should render CSS styles with JSX', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with keyframes', async () => {
+      const animation = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+      const headerClass = css`
+        background-color: blue;
+        animation: ${animation} 1s ease-in-out;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1580801783{background-color:blue;animation:css-9294673 1s ease-in-out}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-1580801783">Hello!</h1>'
+      )
+    })
+
+    it('Should not output the same class name multiple times.', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const headerClass2 = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+          <h1 class={headerClass2}>Hello2!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1><h1 class="css-2458908649">Hello2!</h1>'
+      )
+    })
+
+    it('Should render CSS with variable', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${"I'm a variable!"}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-4027435072{background-color:blue;content:\'I\\\'m a variable!\'}</style><h1 class="css-4027435072">Hello!</h1>'
+      )
+    })
+
+    it('Should escape </style>', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${'</style>'}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
+    it('Should not escape URL', async () => {
+      const headerClass = css`
+        background-color: blue;
+        background: url('${'http://www.example.com/path/to/file.jpg'}');
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1321888780{background-color:blue;background:url(\'http://www.example.com/path/to/file.jpg\')}</style><h1 class="css-1321888780">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with escaped variable', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${rawCssString('say "Hello!"')}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2238574885{background-color:blue;content:\'say "Hello!"\'}</style><h1 class="css-2238574885">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with number', async () => {
+      const headerClass = css`
+        background-color: blue;
+        font-size: ${1}rem;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1847536026{background-color:blue;font-size:1rem}</style><h1 class="css-1847536026">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with array', async () => {
+      const animation = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+      const headerClass = css`
+        background-color: blue;
+        animation: ${animation} 1s ease-in-out;
+      `
+      const extendedHeaderClass = css`
+        ${headerClass}
+        color: red;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={extendedHeaderClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2558359670{background-color:blue;animation:css-9294673 1s ease-in-out;color:red}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-2558359670">Hello!</h1>'
+      )
+    })
+
+    it.runIf(support.nest)(
+      'Should be used as a class name for syntax `${className} {`',
+      async () => {
+        const headerClass = css`
+          font-weight: bold;
+        `
+        const containerClass = css`
+          ${headerClass} {
+            h1 {
+              color: red;
+            }
+          }
+        `
+        const template = (
+          <>
+            <Style />
+            <div class={containerClass}>
+              <h1 class={headerClass}>Hello!</h1>
+            </div>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-4220297002{.css-1032195302{h1{color:red}}}.css-1032195302{font-weight:bold}</style><div class="css-4220297002"><h1 class="css-1032195302">Hello!</h1></div>'
+        )
+      }
+    )
+
+    it('Should be inserted to global if style string starts with :-hono-root', async () => {
+      const globalClass = css`
+        :-hono-global {
+          html {
+            color: red;
+          }
+          body {
+            display: flex;
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={globalClass}>
+            <h1>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}</style><div class=""><h1>Hello!</h1></div>'
+      )
+    })
+
+    it.runIf(support.nest)(
+      'Should be inserted to global if style string starts with :-hono-root and extends class name',
+      async () => {
+        const headerClass = css`
+          display: flex;
+        `
+        const specialHeaderClass = css`
+          :-hono-global {
+            ${headerClass} {
+              h1 {
+                color: red;
+              }
+            }
+          }
+        `
+        const template = (
+          <>
+            <Style />
+            <div class={specialHeaderClass}>
+              <h1>Hello!</h1>
+            </div>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-3980466870{h1{color:red}}.css-3980466870{display:flex}</style><div class="css-3980466870"><h1>Hello!</h1></div>'
+        )
+      }
+    )
+
+    it('Should be inserted as global css if passed css`` to Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            html {
+              color: red;
+            }
+            body {
+              display: flex;
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be ignored :-hono-root inside Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            :-hono-global {
+              html {
+                color: red;
+              }
+              body {
+                display: flex;
+              }
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    describe('viewTransition', () => {
+      it('Should render CSS with unique view-transition-name', async () => {
+        const transition = viewTransition()
+        const template = (
+          <>
+            <Style />
+            <h1 class={transition}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1644952339{view-transition-name:css-1644952339}</style><h1 class="css-1644952339">Hello!</h1>'
+        )
+      })
+
+      it('Should render CSS with css and keyframes', async () => {
+        const kf = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+        const transition = viewTransition(css`
+          ::view-transition-old() {
+            animation-name: ${kf};
+          }
+          ::view-transition-new() {
+            animation-name: ${kf};
+          }
+        `)
+        const headerClass = css`
+          ${transition}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1245070278{view-transition-name:css-399742870;background-color:blue}@keyframes css-9294673{from{opacity:0}to{opacity:1}}::view-transition-old(css-399742870){animation-name:css-9294673}::view-transition-new(css-399742870){animation-name:css-9294673}</style><h1 class="css-1245070278">Hello!</h1>'
+        )
+      })
+
+      it('Should works as a template tag function', async () => {
+        const kf = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+        const transition = viewTransition`
+          ::view-transition-old() {
+            animation-name: ${kf};
+          }
+          ::view-transition-new() {
+            animation-name: ${kf};
+          }
+        `
+        const headerClass = css`
+          ${transition}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1245070278{view-transition-name:css-399742870;background-color:blue}@keyframes css-9294673{from{opacity:0}to{opacity:1}}::view-transition-old(css-399742870){animation-name:css-9294673}::view-transition-new(css-399742870){animation-name:css-9294673}</style><h1 class="css-1245070278">Hello!</h1>'
+        )
+      })
+    })
+
+    it.runIf(support.nest)('Should render sub CSS with keyframe', async () => {
+      const headerClass = css`
+        background-color: blue;
+        ${[1, 2].map(
+          (i) =>
+            css`
+              :nth-child(${i}) {
+                color: red;
+              }
+            `
+        )}
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1539881271{background-color:blue;:nth-child(1){color:red}:nth-child(2){color:red}}</style><h1 class="css-1539881271">Hello!</h1>'
+      )
+    })
+
+    it('Should be generated deferent class name for deferent first line comment even if the content is the same', async () => {
+      const headerClassA = css`
+        /* class A */
+        display: flex;
+      `
+      const headerClassB = css`
+        /* class B */
+        display: flex;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClassA}>Hello!</h1>
+          <h1 class={headerClassB}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3170754153{display:flex}.css-896513246{display:flex}</style><h1 class="css-3170754153">Hello!</h1><h1 class="css-896513246">Hello!</h1>'
+      )
+    })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', async (value) => {
+        const headerClass = css`
+          ${value}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+        )
+      })
+
+      it('falsy value', async () => {
+        const value = 0
+        const headerClass = css`
+          padding: ${value};
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-478287868{padding:0}</style><h1 class="css-478287868">Hello!</h1>'
+        )
+      })
+
+      it('Should render CSS styles with CSP nonce', async () => {
+        const headerClass = css`
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style nonce='1234' />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+        )
+      })
+    })
+  })
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/common.ts</source>
+<document_content>
+// provide utility functions for css helper both on server and client
+export const PSEUDO_GLOBAL_SELECTOR = ':-hono-global'
+export const isPseudoGlobalSelectorRe = new RegExp(`^${PSEUDO_GLOBAL_SELECTOR}{(.*)}$`)
+export const DEFAULT_STYLE_ID = 'hono-css'
+
+export const SELECTOR: unique symbol = Symbol()
+export const CLASS_NAME: unique symbol = Symbol()
+export const STYLE_STRING: unique symbol = Symbol()
+export const SELECTORS: unique symbol = Symbol()
+export const EXTERNAL_CLASS_NAMES: unique symbol = Symbol()
+const CSS_ESCAPED: unique symbol = Symbol()
+
+export interface CssClassName {
+  [SELECTOR]: string
+  [CLASS_NAME]: string
+  [STYLE_STRING]: string
+  [SELECTORS]: CssClassName[]
+  [EXTERNAL_CLASS_NAMES]: string[]
+}
+
+export const IS_CSS_ESCAPED = Symbol()
+
+interface CssEscapedString {
+  [CSS_ESCAPED]: string
+}
+
+/**
+ * @experimental
+ * `rawCssString` is an experimental feature.
+ * The API might be changed.
+ */
+export const rawCssString = (value: string): CssEscapedString => {
+  return {
+    [CSS_ESCAPED]: value,
+  }
+}
+
+/**
+ * Used the goober'code as a reference:
+ * https://github.com/cristianbote/goober/blob/master/src/core/to-hash.js
+ * MIT License, Copyright (c) 2019 Cristian Bote
+ */
+const toHash = (str: string): string => {
+  let i = 0,
+    out = 11
+  while (i < str.length) {
+    out = (101 * out + str.charCodeAt(i++)) >>> 0
+  }
+  return 'css-' + out
+}
+
+const cssStringReStr: string = [
+  '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
+
+  "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
+].join('|')
+const minifyCssRe: RegExp = new RegExp(
+  [
+    '(' + cssStringReStr + ')', // $1: quoted string
+
+    '(?:' +
+      [
+        '^\\s+', // head whitespace
+        '\\/\\*.*?\\*\\/\\s*', // multi-line comment
+        '\\/\\/.*\\n\\s*', // single-line comment
+        '\\s+$', // tail whitespace
+      ].join('|') +
+      ')',
+
+    '\\s*;\\s*(}|$)\\s*', // $2: trailing semicolon
+    '\\s*([{};:,])\\s*', // $3: whitespace around { } : , ;
+    '(\\s)\\s+', // $4: 2+ spaces
+  ].join('|'),
+  'g'
+)
+
+export const minify = (css: string): string => {
+  return css.replace(minifyCssRe, (_, $1, $2, $3, $4) => $1 || $2 || $3 || $4 || '')
+}
+
+type CssVariableBasicType =
+  | CssClassName
+  | CssEscapedString
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+type CssVariableAsyncType = Promise<CssVariableBasicType>
+type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
+export type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
+
+export const buildStyleString = (
+  strings: TemplateStringsArray,
+  values: CssVariableType[]
+): [string, string, CssClassName[], string[]] => {
+  const selectors: CssClassName[] = []
+  const externalClassNames: string[] = []
+
+  const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
+  let styleString = ''
+  for (let i = 0, len = strings.length; i < len; i++) {
+    styleString += strings[i]
+    let vArray = values[i]
+    if (typeof vArray === 'boolean' || vArray === null || vArray === undefined) {
+      continue
+    }
+
+    if (!Array.isArray(vArray)) {
+      vArray = [vArray]
+    }
+    for (let j = 0, len = vArray.length; j < len; j++) {
+      let value = vArray[j]
+      if (typeof value === 'boolean' || value === null || value === undefined) {
+        continue
+      }
+      if (typeof value === 'string') {
+        if (/([\\"'\/])/.test(value)) {
+          styleString += value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
+        } else {
+          styleString += value
+        }
+      } else if (typeof value === 'number') {
+        styleString += value
+      } else if ((value as CssEscapedString)[CSS_ESCAPED]) {
+        styleString += (value as CssEscapedString)[CSS_ESCAPED]
+      } else if ((value as CssClassName)[CLASS_NAME].startsWith('@keyframes ')) {
+        selectors.push(value as CssClassName)
+        styleString += ` ${(value as CssClassName)[CLASS_NAME].substring(11)} `
+      } else {
+        if (strings[i + 1]?.match(/^\s*{/)) {
+          // assume this value is a class name
+          selectors.push(value as CssClassName)
+          value = `.${(value as CssClassName)[CLASS_NAME]}`
+        } else {
+          selectors.push(...(value as CssClassName)[SELECTORS])
+          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
+          value = (value as CssClassName)[STYLE_STRING]
+          const valueLen = value.length
+          if (valueLen > 0) {
+            const lastChar = value[valueLen - 1]
+            if (lastChar !== ';' && lastChar !== '}') {
+              value += ';'
+            }
+          }
+        }
+        styleString += `${value || ''}`
+      }
+    }
+  }
+
+  return [label, minify(styleString), selectors, externalClassNames]
+}
+
+export const cssCommon = (
+  strings: TemplateStringsArray,
+  values: CssVariableType[]
+): CssClassName => {
+  let [label, thisStyleString, selectors, externalClassNames] = buildStyleString(strings, values)
+  const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
+  if (isPseudoGlobal) {
+    thisStyleString = isPseudoGlobal[1]
+  }
+  const selector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
+  const className = (
+    isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
+  ).join(' ')
+
+  return {
+    [SELECTOR]: selector,
+    [CLASS_NAME]: className,
+    [STYLE_STRING]: thisStyleString,
+    [SELECTORS]: selectors,
+    [EXTERNAL_CLASS_NAMES]: externalClassNames,
+  }
+}
+
+export const cxCommon = (
+  args: (string | boolean | null | undefined | CssClassName)[]
+): (string | boolean | null | undefined | CssClassName)[] => {
+  for (let i = 0, len = args.length; i < len; i++) {
+    const arg = args[i]
+    if (typeof arg === 'string') {
+      args[i] = {
+        [SELECTOR]: '',
+        [CLASS_NAME]: '',
+        [STYLE_STRING]: '',
+        [SELECTORS]: [],
+        [EXTERNAL_CLASS_NAMES]: [arg],
+      }
+    }
+  }
+
+  return args
+}
+
+export const keyframesCommon = (
+  strings: TemplateStringsArray,
+  ...values: CssVariableType[]
+): CssClassName => {
+  const [label, styleString] = buildStyleString(strings, values)
+  return {
+    [SELECTOR]: '',
+    [CLASS_NAME]: `@keyframes ${toHash(label + styleString)}`,
+    [STYLE_STRING]: styleString,
+    [SELECTORS]: [],
+    [EXTERNAL_CLASS_NAMES]: [],
+  }
+}
+
+type ViewTransitionType = {
+  (strings: TemplateStringsArray, values: CssVariableType[]): CssClassName
+  (content: CssClassName): CssClassName
+  (): CssClassName
+}
+
+let viewTransitionNameIndex = 0
+export const viewTransitionCommon: ViewTransitionType = ((
+  strings: TemplateStringsArray | CssClassName | undefined,
+  values: CssVariableType[]
+): CssClassName => {
+  if (!strings) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    strings = [`/* h-v-t ${viewTransitionNameIndex++} */`] as any
+  }
+  const content = Array.isArray(strings)
+    ? cssCommon(strings as TemplateStringsArray, values)
+    : (strings as CssClassName)
+
+  const transitionName = content[CLASS_NAME]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = cssCommon(['view-transition-name:', ''] as any, [transitionName])
+
+  content[CLASS_NAME] = PSEUDO_GLOBAL_SELECTOR + content[CLASS_NAME]
+  content[STYLE_STRING] = content[STYLE_STRING].replace(
+    /(?<=::view-transition(?:[a-z-]*)\()(?=\))/g,
+    transitionName
+  )
+  res[CLASS_NAME] = res[SELECTOR] = transitionName
+  res[SELECTORS] = [...content[SELECTORS], content]
+
+  return res
+}) as ViewTransitionType
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/index.test.tsx</source>
+<document_content>
+/** @jsxImportSource ../../jsx */
+import { Hono } from '../../'
+import { html } from '../../helper/html'
+import type { JSXNode } from '../../jsx'
+import { isValidElement } from '../../jsx'
+import { Suspense, renderToReadableStream } from '../../jsx/streaming'
+import type { HtmlEscapedString } from '../../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { renderTest } from './common.case.test'
+import { Style, createCssContext, css, cx, keyframes, rawCssString, viewTransition } from './index'
+
+async function toString(
+  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+) {
+  if (template instanceof Promise) {
+    template = (await template) as HtmlEscapedString
+  }
+  if (isValidElement(template)) {
+    template = template.toString() as Promise<HtmlEscapedString>
+  }
+  return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)
+}
+
+async function toCSS(
+  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+) {
+  return (await toString(template))
+    .replace(/.*?=(".*")<\/script.*/, '$1')
+    .replace(/\.css-\d+/g, '.css-123')
+}
+
+describe('CSS Helper', () => {
+  renderTest(() => {
+    return {
+      css,
+      Style,
+      keyframes,
+      viewTransition,
+      rawCssString,
+      createCssContext,
+      toString,
+      toCSS,
+      support: {
+        nest: true,
+      },
+    }
+  })
+
+  describe('with `html` tag function', () => {
+    it('Should render CSS styles with `html` tag function', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style()}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+
+    it('Should render CSS styles with `html` tag function and CSP nonce', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style({ nonce: '1234' })}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+  })
+
+  describe('cx()', () => {
+    it('Should render CSS with cx()', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btnPrimary = css`
+        background-color: blue;
+        color: white;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, btnPrimary)}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2395710522{border-radius:4px;background-color:blue;color:white}</style><h1 class="css-2395710522">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with cx() includes external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, 'external-class')}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3467431616{border-radius:4px}</style><h1 class="css-3467431616 external-class">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with cx() includes nested external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btn2 = cx(btn, 'external-class')
+      const btn3 = css`
+        ${btn2}
+        color: white;
+      `
+      const btn4 = cx(btn3, 'external-class2')
+      const template = (
+        <>
+          <Style />
+          <h1 class={btn4}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3358636561{border-radius:4px;color:white}</style><h1 class="css-3358636561 external-class external-class2">Hello!</h1>'
+      )
+    })
+  })
+
+  describe('minify', () => {
+    const data: [string, Promise<string>, string][] = [
+      [
+        'basic CSS styles',
+        css`
+          background-color: blue;
+          color: white;
+          padding: 1rem;
+        `,
+        '.css-123{background-color:blue;color:white;padding:1rem}',
+      ],
+      [
+        'remove comments',
+        css`
+          /* background-color: blue; */
+          color: white;
+          padding: 1rem;
+          // inline comment
+          margin: 1rem;
+        `,
+        '.css-123{color:white;padding:1rem;margin:1rem}',
+      ],
+      [
+        'preserve string',
+        css`
+          background-color: blue;
+          color: white;
+          padding: 1rem;
+          content: "Hel  \\\n  \\'  lo!";
+          content: 'Hel  \\\n  \\"  lo!';
+        `,
+        '.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:\'Hel  \\\n  \\"  lo!\'}',
+      ],
+      [
+        'preserve nested selectors',
+        css`
+          padding: 1rem;
+          &:hover {
+            padding: 2rem;
+          }
+        `,
+        '.css-123{padding:1rem;&:hover{padding:2rem}}',
+      ],
+    ]
+    data.forEach(([name, str, expected]) => {
+      it(`Should be minified while preserving content accurately: ${name}`, async () => {
+        expect(JSON.parse(await toCSS(str))).toBe(expected)
+      })
+    })
+  })
+
+  describe('createCssContext()', () => {
+    it('Should create a new CSS context', async () => {
+      const { css: css1, Style: Style1 } = createCssContext({ id: 'context1' })
+      const { css: css2, Style: Style2 } = createCssContext({ id: 'context2' })
+      const headerClass1 = css1`
+        background-color: blue;
+      `
+      const headerClass2 = css2`
+        background-color: red;
+      `
+      const template = (
+        <>
+          <Style1 />
+          <Style2 />
+          <h1 class={headerClass1}>Hello!</h1>
+          <h1 class={headerClass2}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="context1">.css-2458908649{background-color:blue}</style><style id="context2">.css-960045552{background-color:red}</style><h1 class="css-2458908649">Hello!</h1><h1 class="css-960045552">Hello!</h1>'
+      )
+    })
+  })
+
+  describe('with application', () => {
+    const app = new Hono()
+
+    const headerClass = css`
+      background-color: blue;
+    `
+
+    app.get('/sync', (c) =>
+      c.html(
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+    )
+
+    app.get('/stream', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
+    app.get('/stream-with-nonce', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style nonce='1234' />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
+    it('/sync', async () => {
+      const res = await app.request('http://localhost/sync')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+      )
+    })
+
+    it('/stream', async () => {
+      const res = await app.request('http://localhost/stream')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css"></style><template id="H:0"></template><p>Loading...</p><!--/$--><script>document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:0"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+
+    it('/stream-with-nonce', async () => {
+      const res = await app.request('http://localhost/stream-with-nonce')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css" nonce="1234"></style><template id="H:1"></template><p>Loading...</p><!--/$--><script nonce="1234">document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:1"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:1')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/index.ts</source>
+<document_content>
+/**
+ * @module
+ * css Helper for Hono.
+ */
+
+import { raw } from '../../helper/html'
+import { DOM_RENDERER } from '../../jsx/constants'
+import { createCssJsxDomObjects } from '../../jsx/dom/css'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
+import {
+  CLASS_NAME,
+  DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
+  cssCommon,
+  cxCommon,
+  keyframesCommon,
+  viewTransitionCommon,
+} from './common'
+export { rawCssString } from './common'
+
+type CssClassName = HtmlEscapedString & CssClassNameCommon
+
+type usedClassNameData = [
+  Record<string, string>, // class name to add
+  Record<string, true> // class name already added
+]
+
+interface CssType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+}
+
+interface CxType {
+  (
+    ...args: (CssClassName | Promise<string> | string | boolean | null | undefined)[]
+  ): Promise<string>
+}
+
+interface KeyframesType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): CssClassNameCommon
+}
+
+interface ViewTransitionType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+  (content: Promise<string>): Promise<string>
+  (): Promise<string>
+}
+
+interface StyleType {
+  (args?: { children?: Promise<string>; nonce?: string }): HtmlEscapedString
+}
+
+/**
+ * @experimental
+ * `createCssContext` is an experimental feature.
+ * The API might be changed.
+ */
+export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
+  const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
+
+  const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
+  const nonceMap: WeakMap<object, string | undefined> = new WeakMap()
+
+  const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`)
+
+  const newCssClassNameObject = (cssClassName: CssClassNameCommon): Promise<string> => {
+    const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
+      const names = Object.keys(toAdd)
+
+      if (!names.length) {
+        return
+      }
+
+      let stylesStr = ''
+      names.forEach((className) => {
+        added[className] = true
+        stylesStr += className.startsWith(PSEUDO_GLOBAL_SELECTOR)
+          ? toAdd[className]
+          : `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
+      })
+      contextMap.set(context, [{}, added])
+
+      if (buffer && replaceStyleRe.test(buffer[0])) {
+        buffer[0] = buffer[0].replace(replaceStyleRe, (_, pre, post) => `${pre}${stylesStr}${post}`)
+        return
+      }
+
+      const nonce = nonceMap.get(context)
+      const appendStyleScript = `<script${
+        nonce ? ` nonce="${nonce}"` : ''
+      }>document.querySelector('#${id}').textContent+=${JSON.stringify(stylesStr)}</script>`
+
+      if (buffer) {
+        buffer[0] = `${appendStyleScript}${buffer[0]}`
+        return
+      }
+
+      return Promise.resolve(appendStyleScript)
+    }
+
+    const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
+      if (!contextMap.has(context)) {
+        contextMap.set(context, [{}, {}])
+      }
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
+      let allAdded = true
+      if (!added[cssClassName[SELECTOR]]) {
+        allAdded = false
+        toAdd[cssClassName[SELECTOR]] = cssClassName[STYLE_STRING]
+      }
+      cssClassName[SELECTORS].forEach(
+        ({ [CLASS_NAME]: className, [STYLE_STRING]: styleString }) => {
+          if (!added[className]) {
+            allAdded = false
+            toAdd[className] = styleString
+          }
+        }
+      )
+      if (allAdded) {
+        return
+      }
+
+      return Promise.resolve(raw('', [appendStyle]))
+    }
+
+    const className = new String(cssClassName[CLASS_NAME]) as CssClassName
+    Object.assign(className, cssClassName)
+    ;(className as HtmlEscapedString).isEscaped = true
+    ;(className as HtmlEscapedString).callbacks = [addClassNameToContext]
+    const promise = Promise.resolve(className)
+    Object.assign(promise, cssClassName)
+
+    promise.toString = cssJsxDomObject.toString
+    return promise
+  }
+
+  const css: CssType = (strings, ...values) => {
+    return newCssClassNameObject(cssCommon(strings, values))
+  }
+
+  const cx: CxType = (...args) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args = cxCommon(args as any) as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return css(Array(args.length).fill('') as any, ...args)
+  }
+
+  const keyframes = keyframesCommon
+
+  const viewTransition: ViewTransitionType = ((
+    strings: TemplateStringsArray | Promise<string> | undefined,
+    ...values: CssVariableType[]
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return newCssClassNameObject(viewTransitionCommon(strings as any, values))
+  }) as ViewTransitionType
+
+  const Style: StyleType = ({ children, nonce } = {}) =>
+    raw(
+      `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
+        children ? (children as unknown as CssClassName)[STYLE_STRING] : ''
+      }</style>`,
+      [
+        ({ context }) => {
+          nonceMap.set(context, nonce)
+          return undefined
+        },
+      ]
+    )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
+
+  return {
+    css,
+    cx,
+    keyframes,
+    viewTransition: viewTransition as ViewTransitionType,
+    Style,
+  }
+}
+
+interface DefaultContextType {
+  css: CssType
+  cx: CxType
+  keyframes: KeyframesType
+  viewTransition: ViewTransitionType
+  Style: StyleType
+}
+
+const defaultContext: DefaultContextType = createCssContext({
+  id: DEFAULT_STYLE_ID,
+})
+
+/**
+ * @experimental
+ * `css` is an experimental feature.
+ * The API might be changed.
+ */
+export const css = defaultContext.css
+
+/**
+ * @experimental
+ * `cx` is an experimental feature.
+ * The API might be changed.
+ */
+export const cx = defaultContext.cx
+
+/**
+ * @experimental
+ * `keyframes` is an experimental feature.
+ * The API might be changed.
+ */
+export const keyframes = defaultContext.keyframes
+
+/**
+ * @experimental
+ * `viewTransition` is an experimental feature.
+ * The API might be changed.
+ */
+export const viewTransition = defaultContext.viewTransition
+
+/**
+ * @experimental
+ * `Style` is an experimental feature.
+ * The API might be changed.
+ */
+export const Style = defaultContext.Style
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/conninfo/index.ts</source>
+<document_content>
+/**
+ * @module
+ * ConnInfo Helper for Hono.
+ */
+
+export type { AddressType, NetAddrInfo, ConnInfo, GetConnInfo } from './types'
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/conninfo/types.ts</source>
+<document_content>
+import type { Context } from '../../context'
+
+export type AddressType = 'IPv6' | 'IPv4' | undefined
+
+export type NetAddrInfo = {
+  /**
+   * Transport protocol type
+   */
+  transport?: 'tcp' | 'udp'
+  /**
+   * Transport port number
+   */
+  port?: number
+
+  address?: string
+  addressType?: AddressType
+} & (
+  | {
+      /**
+       * Host name such as IP Addr
+       */
+      address: string
+
+      /**
+       * Host name type
+       */
+      addressType: AddressType
+    }
+  | {}
+)
+
+/**
+ * HTTP Connection information
+ */
+export interface ConnInfo {
+  /**
+   * Remote information
+   */
+  remote: NetAddrInfo
+}
+
+/**
+ * Helper type
+ */
+export type GetConnInfo = (c: Context) => ConnInfo
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/html/index.test.ts</source>
+<document_content>
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { html, raw } from '.'
+
+describe('Tagged Template Literals', () => {
+  it('Should escape special characters', () => {
+    const name = 'John "Johnny" Smith'
+
+    expect(html`<p>I'm ${name}.</p>`.toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+  })
+
+  describe('Booleans, Null, and Undefined Are Ignored', () => {
+    it.each([true, false, undefined, null])('%s', (item) => {
+      expect(html`${item}`.toString()).toBe('')
+    })
+
+    it('falsy value', () => {
+      expect(html`${0}`.toString()).toBe('0')
+    })
+  })
+
+  it('Should call $array.flat(Infinity)', () => {
+    const values = [
+      'Name:',
+      ['John "Johnny" Smith', undefined, null],
+      ' Contact:',
+      [html`<a href="http://example.com/">My Website</a>`],
+    ]
+    expect(html`<p>${values}</p>`.toString()).toBe(
+      '<p>Name:John &quot;Johnny&quot; Smith Contact:<a href="http://example.com/">My Website</a></p>'
+    )
+  })
+
+  describe('Promise', () => {
+    it('Should return Promise<string> when some variables contains Promise<string> in variables', async () => {
+      const name = Promise.resolve('John "Johnny" Smith')
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+
+      expect((await res).toString()).toBe("<p>I'm John &quot;Johnny&quot; Smith.</p>")
+    })
+
+    it('Should return raw value when some variables contains Promise<HtmlEscapedString> in variables', async () => {
+      const name = Promise.resolve(raw('John "Johnny" Smith'))
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+      expect((await res).toString()).toBe('<p>I\'m John "Johnny" Smith.</p>')
+    })
+  })
+
+  describe('HtmlEscapedString', () => {
+    it('Should preserve callbacks', async () => {
+      const name = raw('Hono', [
+        ({ buffer }) => {
+          if (buffer) {
+            buffer[0] = buffer[0].replace('Hono', 'Hono!')
+          }
+          return undefined
+        },
+      ])
+      const res = html`<p>I'm ${name}.</p>`
+      expect(res).toBeInstanceOf(Promise)
+
+      expect((await res).toString()).toBe("<p>I'm Hono.</p>")
+      expect(await resolveCallback(await res, HtmlEscapedCallbackPhase.Stringify, false, {})).toBe(
+        "<p>I'm Hono!.</p>"
+      )
+    })
+  })
+})
+
+describe('raw', () => {
+  it('Should be marked as escaped.', () => {
+    const name = 'John &quot;Johnny&quot; Smith'
+    expect(html`<p>I'm ${raw(name)}.</p>`.toString()).toBe(
+      "<p>I'm John &quot;Johnny&quot; Smith.</p>"
+    )
+  })
+})
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/html/index.ts</source>
+<document_content>
+/**
+ * @module
+ * html Helper for Hono.
+ */
+
+import { escapeToBuffer, raw, resolveCallbackSync, stringBufferToString } from '../../utils/html'
+import type { HtmlEscaped, HtmlEscapedString, StringBufferWithCallbacks } from '../../utils/html'
+
+export { raw }
+
+export const html = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): HtmlEscapedString | Promise<HtmlEscapedString> => {
+  const buffer: StringBufferWithCallbacks = [''] as StringBufferWithCallbacks
+
+  for (let i = 0, len = strings.length - 1; i < len; i++) {
+    buffer[0] += strings[i]
+
+    const children = Array.isArray(values[i])
+      ? (values[i] as Array<unknown>).flat(Infinity)
+      : [values[i]]
+    for (let i = 0, len = children.length; i < len; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const child = children[i] as any
+      if (typeof child === 'string') {
+        escapeToBuffer(child, buffer)
+      } else if (typeof child === 'number') {
+        ;(buffer[0] as string) += child
+      } else if (typeof child === 'boolean' || child === null || child === undefined) {
+        continue
+      } else if (typeof child === 'object' && (child as HtmlEscaped).isEscaped) {
+        if ((child as HtmlEscapedString).callbacks) {
+          buffer.unshift('', child)
+        } else {
+          const tmp = child.toString()
+          if (tmp instanceof Promise) {
+            buffer.unshift('', tmp)
+          } else {
+            buffer[0] += tmp
+          }
+        }
+      } else if (child instanceof Promise) {
+        buffer.unshift('', child)
+      } else {
+        escapeToBuffer(child.toString(), buffer)
+      }
+    }
+  }
+  buffer[0] += strings.at(-1) as string
+
+  return buffer.length === 1
+    ? 'callbacks' in buffer
+      ? raw(resolveCallbackSync(raw(buffer[0], buffer.callbacks)))
+      : raw(buffer[0])
+    : stringBufferToString(buffer, buffer.callbacks)
+}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/adapter/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { env, getRuntimeKey } from '.'
+
+describe('getRuntimeKey', () => {
+  it('Should return the current runtime key', () => {
+    // Now, using the `bun run test` command.
+    // But `vitest` depending Node.js will run this test so the RuntimeKey will be `node`.
+    expect(getRuntimeKey()).toBe('node')
+  })
+})
+
+describe('env', () => {
+  describe('Types', () => {
+    type Env = {
+      Bindings: {
+        MY_VAR: string
+      }
+    }
+
+    it('Should not throw type errors with env has generics', () => {
+      const app = new Hono()
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with Hono has generics', () => {
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+
+    it('Should not throw type errors with env and Hono have generics', () => {
+      const app = new Hono<Env>()
+
+      app.get('/var', (c) => {
+        const { MY_VAR } = env<{ MY_VAR: string }>(c)
+        expectTypeOf<string>(MY_VAR)
+        return c.json({
+          var: MY_VAR,
+        })
+      })
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/adapter/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Adapter Helper for Hono.
+ */
+
+import type { Context } from '../../context'
+
+export type Runtime = 'node' | 'deno' | 'bun' | 'workerd' | 'fastly' | 'edge-light' | 'other'
+
+export const env = <
+  T extends Record<string, unknown>,
+  C extends Context = Context<{
+    Bindings: T
+  }>
+>(
+  c: T extends Record<string, unknown> ? Context : C,
+  runtime?: Runtime
+): T & C['env'] => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const global = globalThis as any
+  const globalEnv = global?.process?.env as T
+
+  runtime ??= getRuntimeKey()
+
+  const runtimeEnvHandlers: Record<string, () => T> = {
+    bun: () => globalEnv,
+    node: () => globalEnv,
+    'edge-light': () => globalEnv,
+    deno: () => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return Deno.env.toObject() as T
+    },
+    workerd: () => c.env,
+    // On Fastly Compute, you can use the ConfigStore to manage user-defined data.
+    fastly: () => ({} as T),
+    other: () => ({} as T),
+  }
+
+  return runtimeEnvHandlers[runtime]()
+}
+
+export const knownUserAgents: Partial<Record<Runtime, string>> = {
+  deno: 'Deno',
+  bun: 'Bun',
+  workerd: 'Cloudflare-Workers',
+  node: 'Node.js',
+}
+
+export const getRuntimeKey = (): Runtime => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const global = globalThis as any
+
+  // check if the current runtime supports navigator.userAgent
+  const userAgentSupported =
+    typeof navigator !== 'undefined' && typeof navigator.userAgent === 'string'
+
+  // if supported, check the user agent
+  if (userAgentSupported) {
+    for (const [runtimeKey, userAgent] of Object.entries(knownUserAgents)) {
+      if (checkUserAgentEquals(userAgent)) {
+        return runtimeKey as Runtime
+      }
+    }
+  }
+
+  // check if running on Edge Runtime
+  if (typeof global?.EdgeRuntime === 'string') {
+    return 'edge-light'
+  }
+
+  // check if running on Fastly
+  if (global?.fastly !== undefined) {
+    return 'fastly'
+  }
+
+  // userAgent isn't supported before Node v21.1.0; so fallback to the old way
+  if (global?.process?.release?.name === 'node') {
+    return 'node'
+  }
+
+  // couldn't detect the runtime
+  return 'other'
+}
+
+export const checkUserAgentEquals = (platform: string): boolean => {
+  const userAgent = navigator.userAgent
+
+  return userAgent.startsWith(platform)
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Streaming Helper for Hono.
+ */
+
+export { stream } from './stream'
+export type { SSEMessage } from './sse'
+export { streamSSE, SSEStreamingApi } from './sse'
+export { streamText } from './text'
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/sse.test.tsx</source>
+<document_content>
+/** @jsxImportSource ../../jsx */
+import { Context } from '../../context'
+import { ErrorBoundary } from '../../jsx'
+import { streamSSE } from '.'
+
+describe('SSE Streaming helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check streamSSE Response', async () => {
+    let spy
+    const res = streamSSE(c, async (stream) => {
+      spy = vi.spyOn(stream, 'close').mockImplementation(async () => {})
+
+      let id = 0
+      const maxIterations = 5
+
+      while (id < maxIterations) {
+        const message = `Message\nIt is ${id}`
+        await stream.writeSSE({ data: message, event: 'time-update', id: String(id++) })
+        await stream.sleep(10)
+      }
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('Transfer-Encoding')).toEqual('chunked')
+    expect(res.headers.get('Content-Type')).toEqual('text/event-stream')
+    expect(res.headers.get('Cache-Control')).toEqual('no-cache')
+    expect(res.headers.get('Connection')).toEqual('keep-alive')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (let i = 0; i < 5; i++) {
+      const { value } = await reader.read()
+      const decodedValue = decoder.decode(value)
+
+      // Check the structure and content of the SSE message
+      let expectedValue = 'event: time-update\n'
+      expectedValue += 'data: Message\n'
+      expectedValue += `data: It is ${i}\n`
+      expectedValue += `id: ${i}\n\n`
+      expect(decodedValue).toBe(expectedValue)
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+    expect(spy).toHaveBeenCalled()
+  })
+
+  it('Check streamSSE Response if aborted by client', async () => {
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Check streamSSE Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = streamSSE(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.writeSSE({
+          data: `Message ${i}`,
+        })
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new TextEncoder().encode('data: Message 0\n\n'))
+    ac.abort()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Should include retry in the SSE message', async () => {
+    const retryTime = 3000 // 3 seconds
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: 'This is a test message',
+        retry: retryTime,
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+
+    // Check if the retry parameter is included in the SSE message
+    const expectedRetryValue = `retry: ${retryTime}\n\n`
+    expect(decodedValue).toContain(expectedRetryValue)
+  })
+
+  it('Check stream Response if error occurred', async () => {
+    const onError = vi.fn()
+    const res = streamSSE(
+      c,
+      async () => {
+        throw new Error('Test error')
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('event: error\ndata: Test error\n\n')
+    expect(onError).toBeCalledTimes(1)
+    expect(onError).toBeCalledWith(new Error('Test error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
+
+  it('Check streamSSE Response via Promise<string>', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: Promise.resolve('Async Message') })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: Async Message\n\n')
+  })
+
+  it('Check streamSSE Response via JSX.Element', async () => {
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({ data: <div>Hello</div> })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in success case', async () => {
+    const AsyncComponent = async () => Promise.resolve(<div>Async Hello</div>)
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Async Hello</div>\n\n')
+  })
+
+  it('Check streamSSE Response via ErrorBoundary in error case', async () => {
+    const AsyncComponent = async () => Promise.reject()
+    const res = streamSSE(c, async (stream) => {
+      await stream.writeSSE({
+        data: (
+          <ErrorBoundary fallback={<div>Error</div>}>
+            <AsyncComponent />
+          </ErrorBoundary>
+        ),
+      })
+    })
+
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    const { value } = await reader.read()
+    const decodedValue = decoder.decode(value)
+    expect(decodedValue).toBe('data: <div>Error</div>\n\n')
+  })
+})
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/sse.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { StreamingApi } from '../../utils/stream'
+import { isOldBunVersion } from './utils'
+
+export interface SSEMessage {
+  data: string | Promise<string>
+  event?: string
+  id?: string
+  retry?: number
+}
+
+export class SSEStreamingApi extends StreamingApi {
+  constructor(writable: WritableStream, readable: ReadableStream) {
+    super(writable, readable)
+  }
+
+  async writeSSE(message: SSEMessage) {
+    const data = await resolveCallback(message.data, HtmlEscapedCallbackPhase.Stringify, false, {})
+    const dataLines = (data as string)
+      .split('\n')
+      .map((line) => {
+        return `data: ${line}`
+      })
+      .join('\n')
+
+    const sseData =
+      [
+        message.event && `event: ${message.event}`,
+        dataLines,
+        message.id && `id: ${message.id}`,
+        message.retry && `retry: ${message.retry}`,
+      ]
+        .filter(Boolean)
+        .join('\n') + '\n\n'
+
+    await this.write(sseData)
+  }
+}
+
+const run = async (
+  stream: SSEStreamingApi,
+  cb: (stream: SSEStreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+): Promise<void> => {
+  try {
+    await cb(stream)
+  } catch (e) {
+    if (e instanceof Error && onError) {
+      await onError(e, stream)
+
+      await stream.writeSSE({
+        event: 'error',
+        data: e.message,
+      })
+    } else {
+      console.error(e)
+    }
+  } finally {
+    stream.close()
+  }
+}
+
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
+
+export const streamSSE = (
+  c: Context,
+  cb: (stream: SSEStreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: SSEStreamingApi) => Promise<void>
+): Response => {
+  const { readable, writable } = new TransformStream()
+  const stream = new SSEStreamingApi(writable, readable)
+
+  // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
+  if (isOldBunVersion()) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      if (!stream.closed) {
+        stream.abort()
+      }
+    })
+  }
+
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
+
+  c.header('Transfer-Encoding', 'chunked')
+  c.header('Content-Type', 'text/event-stream')
+  c.header('Cache-Control', 'no-cache')
+  c.header('Connection', 'keep-alive')
+
+  run(stream, cb, onError)
+
+  return c.newResponse(stream.responseReadable)
+}
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/stream.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { stream } from '.'
+
+describe('Basic Streaming Helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check stream Response', async () => {
+    const res = stream(c, async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(value).toEqual(new Uint8Array([i]))
+    }
+  })
+
+  it('Check stream Response if aborted by client', async () => {
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new Uint8Array([0]))
+    reader.cancel()
+    expect(aborted).toBeTruthy()
+  })
+
+  it('Check stream Response if aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      for (let i = 0; i < 3; i++) {
+        await stream.write(new Uint8Array([i]))
+        await stream.sleep(1)
+      }
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toEqual(new Uint8Array([0]))
+    ac.abort()
+    expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
+  })
+
+  it('Check stream Response if pipe is aborted by abort signal', async () => {
+    // Emulate an old version of Bun (version 1.1.0) for this specific test case
+    // @ts-expect-error Bun is not typed
+    global.Bun = {
+      version: '1.1.0',
+    }
+    const ac = new AbortController()
+    const req = new Request('http://localhost/', { signal: ac.signal })
+    const c = new Context(req)
+
+    let aborted = false
+    const res = stream(c, async (stream) => {
+      stream.onAbort(() => {
+        aborted = true
+      })
+      await stream.pipe(new ReadableStream())
+    })
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const pReading = reader.read()
+    ac.abort()
+    await pReading
+    expect(aborted).toBeTruthy()
+    // @ts-expect-error Bun is not typed
+    delete global.Bun
+  })
+
+  it('Check stream Response if error occurred', async () => {
+    const onError = vi.fn()
+    const res = stream(
+      c,
+      async () => {
+        throw new Error('error')
+      },
+      onError
+    )
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const { value } = await reader.read()
+    expect(value).toBeUndefined()
+    expect(onError).toBeCalledTimes(1)
+    expect(onError).toBeCalledWith(new Error('error'), expect.anything()) // 2nd argument is StreamingApi instance
+  })
+})
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/stream.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { StreamingApi } from '../../utils/stream'
+import { isOldBunVersion } from './utils'
+
+const contextStash: WeakMap<ReadableStream, Context> = new WeakMap<ReadableStream, Context>()
+
+export const stream = (
+  c: Context,
+  cb: (stream: StreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+): Response => {
+  const { readable, writable } = new TransformStream()
+  const stream = new StreamingApi(writable, readable)
+
+  // Until Bun v1.1.27, Bun didn't call cancel() on the ReadableStream for Response objects from Bun.serve()
+  if (isOldBunVersion()) {
+    c.req.raw.signal.addEventListener('abort', () => {
+      if (!stream.closed) {
+        stream.abort()
+      }
+    })
+  }
+
+  // in bun, `c` is destroyed when the request is returned, so hold it until the end of streaming
+  contextStash.set(stream.responseReadable, c)
+  ;(async () => {
+    try {
+      await cb(stream)
+    } catch (e) {
+      if (e === undefined) {
+        // If reading is canceled without a reason value (e.g. by StreamingApi)
+        // then the .pipeTo() promise will reject with undefined.
+        // In this case, do nothing because the stream is already closed.
+      } else if (e instanceof Error && onError) {
+        await onError(e, stream)
+      } else {
+        console.error(e)
+      }
+    } finally {
+      stream.close()
+    }
+  })()
+
+  return c.newResponse(stream.responseReadable)
+}
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/text.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { streamText } from '.'
+
+describe('Text Streaming Helper', () => {
+  const req = new Request('http://localhost/')
+  let c: Context
+  beforeEach(() => {
+    c = new Context(req)
+  })
+
+  it('Check streamText Response', async () => {
+    const res = streamText(c, async (stream) => {
+      for (let i = 0; i < 3; i++) {
+        await stream.write(`${i}`)
+        await stream.sleep(1)
+      }
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toMatch(/^text\/plain/)
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(res.headers.get('transfer-encoding')).toBe('chunked')
+
+    if (!res.body) {
+      throw new Error('Body is null')
+    }
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    for (let i = 0; i < 3; i++) {
+      const { value } = await reader.read()
+      expect(decoder.decode(value)).toEqual(`${i}`)
+    }
+  })
+})
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/text.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { TEXT_PLAIN } from '../../context'
+import type { StreamingApi } from '../../utils/stream'
+import { stream } from './'
+
+export const streamText = (
+  c: Context,
+  cb: (stream: StreamingApi) => Promise<void>,
+  onError?: (e: Error, stream: StreamingApi) => Promise<void>
+): Response => {
+  c.header('Content-Type', TEXT_PLAIN)
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('Transfer-Encoding', 'chunked')
+  return stream(c, cb, onError)
+}
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/streaming/utils.ts</source>
+<document_content>
+export let isOldBunVersion = (): boolean => {
+  // @ts-expect-error @types/bun is not installed
+  const version: string = typeof Bun !== 'undefined' ? Bun.version : undefined
+  if (version === undefined) {
+    return false
+  }
+  const result = version.startsWith('1.1') || version.startsWith('1.0') || version.startsWith('0.')
+  // Avoid running this check on every call
+  isOldBunVersion = () => result
+  return result
+}
+
+</document_content>
+</document>
+<document index="23">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/index.ts</source>
+<document_content>
+/**
+ * @module
+ * SSG Helper for Hono.
+ */
+
+export * from './ssg'
+export {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  ssgParams,
+  isSSGContext,
+  disableSSG,
+  onlySSG,
+} from './middleware'
+
+</document_content>
+</document>
+<document index="24">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/middleware.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import type { Env, MiddlewareHandler } from '../../types'
+
+export const SSG_CONTEXT = 'HONO_SSG_CONTEXT'
+export const X_HONO_DISABLE_SSG_HEADER_KEY = 'x-hono-disable-ssg'
+
+/**
+ * @deprecated
+ * Use `X_HONO_DISABLE_SSG_HEADER_KEY` instead.
+ * This constant will be removed in the next minor version.
+ */
+export const SSG_DISABLED_RESPONSE = (() => {
+  try {
+    return new Response('SSG is disabled', {
+      status: 404,
+      headers: { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' },
+    })
+  } catch {
+    return null
+  }
+})() as Response
+
+interface SSGParam {
+  [key: string]: string
+}
+export type SSGParams = SSGParam[]
+
+interface SSGParamsMiddleware {
+  <E extends Env = Env>(
+    generateParams: (c: Context<E>) => SSGParams | Promise<SSGParams>
+  ): MiddlewareHandler<E>
+  <E extends Env = Env>(params: SSGParams): MiddlewareHandler<E>
+}
+
+export type AddedSSGDataRequest = Request & {
+  ssgParams?: SSGParams
+}
+
+/**
+ * Define SSG Route
+ */
+export const ssgParams: SSGParamsMiddleware = (params) => async (c, next) => {
+  ;(c.req.raw as AddedSSGDataRequest).ssgParams = Array.isArray(params) ? params : await params(c)
+  await next()
+}
+
+/**
+ * @experimental
+ * `isSSGContext` is an experimental feature.
+ * The API might be changed.
+ */
+export const isSSGContext = (c: Context): boolean => !!c.env?.[SSG_CONTEXT]
+
+/**
+ * @experimental
+ * `disableSSG` is an experimental feature.
+ * The API might be changed.
+ */
+export const disableSSG = (): MiddlewareHandler =>
+  async function disableSSG(c, next) {
+    if (isSSGContext(c)) {
+      c.header(X_HONO_DISABLE_SSG_HEADER_KEY, 'true')
+      return c.notFound()
+    }
+    await next()
+  }
+
+/**
+ * @experimental
+ * `onlySSG` is an experimental feature.
+ * The API might be changed.
+ */
+export const onlySSG = (): MiddlewareHandler =>
+  async function onlySSG(c, next) {
+    if (!isSSGContext(c)) {
+      return c.notFound()
+    }
+    await next()
+  }
+
+</document_content>
+</document>
+<document index="25">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/ssg.test.tsx</source>
+<document_content>
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/** @jsxImportSource ../../jsx */
+import { Hono } from '../../hono'
+import { poweredBy } from '../../middleware/powered-by'
+import {
+  X_HONO_DISABLE_SSG_HEADER_KEY,
+  disableSSG,
+  isSSGContext,
+  onlySSG,
+  ssgParams,
+} from './middleware'
+import { defaultExtensionMap, fetchRoutesContent, saveContentToFile, toSSG } from './ssg'
+import type {
+  AfterGenerateHook,
+  AfterResponseHook,
+  BeforeRequestHook,
+  FileSystemModule,
+  ToSSGResult,
+} from './ssg'
+
+const resolveRoutesContent = async (res: ReturnType<typeof fetchRoutesContent>) => {
+  const htmlMap = new Map<string, { content: string | ArrayBuffer; mimeType: string }>()
+  for (const getInfoPromise of res) {
+    const getInfo = await getInfoPromise
+    if (!getInfo) {
+      continue
+    }
+    for (const dataPromise of getInfo) {
+      const data = await dataPromise
+      if (!data) {
+        continue
+      }
+      htmlMap.set(data.routePath, {
+        content: data.content,
+        mimeType: data.mimeType,
+      })
+    }
+  }
+  return htmlMap
+}
+
+describe('toSSG function', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const postParams = [{ post: '1' }, { post: '2' }]
+
+  beforeEach(() => {
+    app = new Hono()
+    app.all('/', (c) => c.html('Hello, World!'))
+    app.get('/about', (c) => c.html('About Page'))
+    app.get('/about/some', (c) => c.text('About Page 2tier'))
+    app.post('/about/some/thing', (c) => c.text('About Page 3tier'))
+    app.get('/bravo', (c) => c.html('Bravo Page'))
+    app.get('/Charlie', async (c, next) => {
+      c.setRenderer((content, head) => {
+        return c.html(
+          <html>
+            <head>
+              <title>{head.title || ''}</title>
+            </head>
+            <body>
+              <p>{content}</p>
+            </body>
+          </html>
+        )
+      })
+      await next()
+    })
+    app.get('/Charlie', (c) => {
+      return c.render('Hello!', { title: 'Charlies Page' })
+    })
+
+    // Included params
+    app.get(
+      '/post/:post',
+      ssgParams(() => postParams),
+      (c) => c.html(<h1>{c.req.param('post')}</h1>)
+    )
+
+    app.get(
+      '/user/:user_id',
+      ssgParams([{ user_id: '1' }, { user_id: '2' }, { user_id: '3' }]),
+      (c) => c.html(<h1>{c.req.param('user_id')}</h1>)
+    )
+
+    type Env = {
+      Bindings: {
+        FOO_DB: string
+      }
+      Variables: {
+        FOO_VAR: string
+      }
+    }
+
+    app.get(
+      '/env-type-check',
+      ssgParams<Env>((c) => {
+        expectTypeOf<typeof c.env.FOO_DB>().toBeString()
+        expectTypeOf<typeof c.var.FOO_VAR>().toBeString()
+        return []
+      })
+    )
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+  it('Should correctly generate static HTML files for Hono routes', async () => {
+    const writtenFiles: Record<string, string> = {}
+    const fsMock: FileSystemModule = {
+      writeFile: (path, data) => {
+        writtenFiles[path] = typeof data === 'string' ? data : data.toString()
+        return Promise.resolve()
+      },
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    for (const postParam of postParams) {
+      const html = writtenFiles[`static/post/${postParam.post}.html`]
+      expect(html).toBe(`<h1>${postParam.post}</h1>`)
+    }
+
+    for (let i = 1; i <= 3; i++) {
+      const html = writtenFiles[`static/user/${i}.html`]
+      expect(html).toBe(`<h1>${i}</h1>`)
+    }
+
+    expect(result.files.length).toBe(10)
+    expect(fsMock.mkdir).toHaveBeenCalledWith(expect.any(String), {
+      recursive: true,
+    })
+  })
+
+  it('Should handle file system errors correctly in saveContentToFiles', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.reject(new Error('Write error'))),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+    expect(result.success).toBe(false)
+    expect(result.files).toStrictEqual([])
+    expect(result.error?.message).toBe('Write error')
+  })
+
+  it('Should handle overall process errors correctly in toSSG', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.reject(new Error('Write error'))),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const result = await toSSG(app, fsMock, { dir: './static' })
+
+    expect(result.success).toBe(false)
+    expect(result.error).toBeDefined()
+    expect(result.files).toStrictEqual([])
+  })
+
+  it('Should correctly generate files with the expected paths', async () => {
+    await toSSG(app, fsMock, { dir: './static' })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/some.txt', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith(
+      'static/about/some/thing.txt',
+      expect.any(String)
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/Charlie.html', expect.any(String))
+  })
+
+  it('should modify the request if the hook is provided', async () => {
+    const beforeRequestHook: BeforeRequestHook = (req) => {
+      if (req.method === 'GET') {
+        return req
+      }
+      return false
+    }
+    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    expect(result.files).toHaveLength(10)
+  })
+
+  it('should skip the route if the request hook returns false', async () => {
+    const beforeRequest: BeforeRequestHook = () => false
+    const result = await toSSG(app, fsMock, { beforeRequestHook: beforeRequest })
+    expect(result.success).toBe(true)
+    expect(result.files).toStrictEqual([])
+  })
+
+  it('should modify the response if the hook is provided', async () => {
+    const afterResponseHook: AfterResponseHook = (res) => {
+      if (res.status === 200 || res.status === 500) {
+        return res
+      }
+      return false
+    }
+    const result = await toSSG(app, fsMock, { afterResponseHook })
+    expect(result.files).toHaveLength(10)
+  })
+
+  it('should skip the route if the response hook returns false', async () => {
+    const afterResponse: AfterResponseHook = () => false
+    const result = await toSSG(app, fsMock, { afterResponseHook: afterResponse })
+    expect(result.success).toBe(true)
+    expect(result.files).toStrictEqual([])
+  })
+
+  it('should execute additional processing using afterGenerateHook', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+    const afterGenerateHookMock: AfterGenerateHook = vi.fn<AfterGenerateHook>((result) => {
+      if (result.files) {
+        result.files.forEach((file) => console.log(file))
+      }
+    })
+
+    await toSSG(app, fsMock, { dir: './static', afterGenerateHook: afterGenerateHookMock })
+
+    expect(afterGenerateHookMock).toHaveBeenCalled()
+    expect(afterGenerateHookMock).toHaveBeenCalledWith(expect.anything())
+  })
+
+  it('should handle asynchronous beforeRequestHook correctly', async () => {
+    const beforeRequestHook: BeforeRequestHook = async (req) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      if (req.url.includes('/skip')) {
+        return false
+      }
+      return req
+    }
+
+    const result = await toSSG(app, fsMock, { beforeRequestHook })
+    expect(result.files).not.toContain(expect.stringContaining('/skip'))
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('should handle asynchronous afterResponseHook correctly', async () => {
+    const afterResponseHook: AfterResponseHook = async (res) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      if (res.headers.get('X-Skip') === 'true') {
+        return false
+      }
+      return res
+    }
+
+    const result = await toSSG(app, fsMock, { afterResponseHook })
+    expect(result.files).not.toContain(expect.stringContaining('/skip'))
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('should handle asynchronous afterGenerateHook correctly', async () => {
+    const afterGenerateHook: AfterGenerateHook = async (result) => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      console.log(`Generated ${result.files.length} files.`)
+    }
+
+    const result = await toSSG(app, fsMock, { afterGenerateHook })
+    expect(result.success).toBe(true)
+    expect(result.files.length).toBeGreaterThan(0)
+  })
+
+  it('should avoid memory leak from `req.signal.addEventListener()`', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const signalAddEventListener = vi.fn(() => {})
+    const app = new Hono()
+    app.get('/post/:post', ssgParams([{ post: '1' }, { post: '2' }]), (c) =>
+      c.html(<h1>{c.req.param('post')}</h1>)
+    )
+    await toSSG(app, fsMock, {
+      beforeRequestHook: (req) => {
+        req.signal.addEventListener = signalAddEventListener
+        return req
+      },
+    })
+
+    expect(signalAddEventListener).not.toHaveBeenCalled()
+  })
+})
+
+describe('fetchRoutesContent function', () => {
+  let app: Hono
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/text', (c) => c.text('Text Response'))
+    app.get('/text-utf8', (c) => {
+      return c.text('Text Response', 200, { 'Content-Type': 'text/plain;charset=UTF-8' })
+    })
+    app.get('/html', (c) => c.html('<p>HTML Response</p>'))
+    app.get('/json', (c) => c.json({ message: 'JSON Response' }))
+    app.use('*', poweredBy())
+  })
+
+  it('should fetch the correct content and MIME type for each route', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+
+    expect(htmlMap.get('/text')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/text-utf8')).toEqual({
+      content: 'Text Response',
+      mimeType: 'text/plain',
+    })
+    expect(htmlMap.get('/html')).toEqual({
+      content: '<p>HTML Response</p>',
+      mimeType: 'text/html',
+    })
+    expect(htmlMap.get('/json')).toEqual({
+      content: '{"message":"JSON Response"}',
+      mimeType: 'application/json',
+    })
+  })
+
+  it('should skip middleware routes', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+    expect(htmlMap.has('*')).toBeFalsy()
+  })
+
+  it('should handle errors correctly', async () => {
+    vi.spyOn(app, 'fetch').mockRejectedValue(new Error('Network error'))
+    await expect(resolveRoutesContent(fetchRoutesContent(app))).rejects.toThrow('Network error')
+    vi.restoreAllMocks()
+  })
+})
+
+describe('saveContentToFile function', () => {
+  // tar.gz, testdir/test.txt
+  const gzFileBuffer = Buffer.from(
+    'H4sIAAAAAAAAA+3SQQrCMBSE4aw9RU6gSc3LO0/FLgqukgj29qZgsQgqCEHE/9vMIoEMTMqQy3FMO9OQq1RkTq/i1rkwPkiMUXWvnXG+U/XGSstSi3MufbLWHIZ0mvLYP7v37vxHldv+c27LpbR4Yx44hvBi/3DfX3zdP0j9Eta1KPPoz/ef+mnz7Q4AAAAAAAAAAAAAAAAAPnMFqt1/BQAoAAA=',
+    'base64'
+  )
+  const gzFileArrayBuffer = gzFileBuffer.buffer.slice(
+    gzFileBuffer.byteOffset,
+    gzFileBuffer.byteLength + gzFileBuffer.byteOffset
+  )
+  // PNG, red dot (1x1)
+  const pngFileBuffer = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCCAAAALw',
+    'base64'
+  )
+  const pngFileArrayBuffer = pngFileBuffer.buffer.slice(
+    pngFileBuffer.byteOffset,
+    pngFileBuffer.byteLength + pngFileBuffer.byteOffset
+  )
+
+  const fileData = [
+    { routePath: '/', content: 'Home Page', mimeType: 'text/html' },
+    { routePath: '/index.html', content: 'Home Page2', mimeType: 'text/html' },
+    { routePath: '/about', content: 'About Page', mimeType: 'text/html' },
+    { routePath: '/about/', content: 'About Page', mimeType: 'text/html' },
+    { routePath: '/bravo/index.html', content: 'About Page', mimeType: 'text/html' },
+    { routePath: '/bravo/release-4.0.0', content: 'Release 4.0.0', mimeType: 'text/html' },
+    {
+      routePath: '/bravo/2024.02.18-sweet-memories',
+      content: 'Sweet Memories',
+      mimeType: 'text/html',
+    },
+    { routePath: '/bravo/deep.dive.to.html', content: 'Deep Dive To HTML', mimeType: 'text/html' },
+    { routePath: '/bravo/alert.js', content: 'alert("evil content")', mimeType: 'text/html' },
+    { routePath: '/bravo.text/index.html', content: 'About Page', mimeType: 'text/html' },
+    { routePath: '/bravo.text/', content: 'Bravo Page', mimeType: 'text/html' },
+    {
+      routePath: '/bravo/index.tar.gz',
+      content: gzFileArrayBuffer,
+      mimeType: 'application/gzip',
+    },
+    {
+      routePath: '/bravo/dot.png',
+      content: pngFileArrayBuffer,
+      mimeType: 'image/png',
+    },
+  ]
+
+  let fsMock: FileSystemModule
+
+  beforeEach(() => {
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should correctly create files with the right content and paths', async () => {
+    for (const data of fileData) {
+      await saveContentToFile(Promise.resolve(data), fsMock, './static')
+    }
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', 'Home Page2')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/about/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/release-4.0.0.html',
+      'Release 4.0.0'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/deep.dive.to.html',
+      'Deep Dive To HTML'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/2024.02.18-sweet-memories.html',
+      'Sweet Memories'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/alert.js.html',
+      'alert("evil content")'
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'About Page')
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/bravo.text/index.html', 'Bravo Page')
+    // binary files
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/index.tar.gz',
+      new Uint8Array(gzFileArrayBuffer)
+    )
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/bravo/dot.png',
+      new Uint8Array(pngFileArrayBuffer)
+    )
+  })
+
+  it('should correctly create directories if they do not exist', async () => {
+    await saveContentToFile(
+      Promise.resolve({
+        routePath: '/new-dir/index.html',
+        content: 'New Page',
+        mimeType: 'text/html',
+      }),
+      fsMock,
+      './static'
+    )
+    expect(fsMock.mkdir).toHaveBeenCalledWith('static/new-dir', { recursive: true })
+  })
+
+  it('should handle file writing or directory creation errors', async () => {
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.reject(new Error('File write error'))),
+    }
+
+    await expect(
+      saveContentToFile(
+        Promise.resolve({
+          routePath: '/error-dir/index.html',
+          content: 'New Page',
+          mimeType: 'text/html',
+        }),
+        fsMock,
+        './static'
+      )
+    ).rejects.toThrow('File write error')
+  })
+  it('check extensions', async () => {
+    for (const data of fileData) {
+      await saveContentToFile(Promise.resolve(data), fsMock, './static-check-extensions')
+    }
+    expect(fsMock.mkdir).toHaveBeenCalledWith('static-check-extensions', { recursive: true })
+  })
+
+  it('should correctly create .yaml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const mimeType = 'application/yaml'
+    const routePath = '/example'
+
+    const yamlData = {
+      routePath: routePath,
+      content: yamlContent,
+      mimeType: mimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static')
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/example.yaml', yamlContent)
+  })
+
+  it('should correctly create .yml files for YAML content', async () => {
+    const yamlContent = 'title: YAML Example\nvalue: This is a YAML file.'
+    const yamlMimeType = 'application/yaml'
+    const yamlRoutePath = '/yaml'
+
+    const yamlData = {
+      routePath: yamlRoutePath,
+      content: yamlContent,
+      mimeType: yamlMimeType,
+    }
+
+    const yamlMimeType2 = 'x-yaml'
+    const yamlRoutePath2 = '/yaml2'
+    const yamlData2 = {
+      routePath: yamlRoutePath2,
+      content: yamlContent,
+      mimeType: yamlMimeType2,
+    }
+
+    const htmlMimeType = 'text/html'
+    const htmlRoutePath = '/html'
+
+    const htmlData = {
+      routePath: htmlRoutePath,
+      content: yamlContent,
+      mimeType: htmlMimeType,
+    }
+
+    const fsMock: FileSystemModule = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+
+    const extensionMap = {
+      'application/yaml': 'yml',
+      'x-yaml': 'xyml',
+    }
+    await saveContentToFile(Promise.resolve(yamlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(yamlData2), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', extensionMap)
+    await saveContentToFile(Promise.resolve(htmlData), fsMock, './static', {
+      ...defaultExtensionMap,
+      ...extensionMap,
+    })
+
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml.yml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/yaml2.xyml', yamlContent)
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.htm', yamlContent) // extensionMap
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/html.html', yamlContent) // default + extensionMap
+  })
+})
+
+describe('Dynamic route handling', () => {
+  let app: Hono
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/shops/:id', (c) => c.html('Shop Page'))
+    app.get('/shops/:id/:comments([0-9]+)', (c) => c.html('Comments Page'))
+    app.get('/foo/*', (c) => c.html('Foo Page'))
+    app.get('/foo:bar', (c) => c.html('Foo Bar Page'))
+  })
+
+  it('should skip /shops/:id dynamic route', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+    expect(htmlMap.has('/shops/:id')).toBeFalsy()
+  })
+
+  it('should skip /shops/:id/:comments([0-9]+) dynamic route', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+    expect(htmlMap.has('/shops/:id/:comments([0-9]+)')).toBeFalsy()
+  })
+
+  it('should skip /foo/* dynamic route', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+    expect(htmlMap.has('/foo/*')).toBeFalsy()
+  })
+
+  it('should not skip /foo:bar dynamic route', async () => {
+    const htmlMap = await resolveRoutesContent(fetchRoutesContent(app))
+    expect(htmlMap.has('/foo:bar')).toBeTruthy()
+  })
+})
+
+describe('isSSGContext()', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.html(<h1>{isSSGContext(c) ? 'SSG' : 'noSSG'}</h1>))
+
+  const fsMock: FileSystemModule = {
+    writeFile: vi.fn(() => Promise.resolve()),
+    mkdir: vi.fn(() => Promise.resolve()),
+  }
+
+  it('Should not generate the page if disableSSG is set', async () => {
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', '<h1>SSG</h1>')
+  })
+
+  it('Should return 404 response if onlySSG() is set', async () => {
+    const res = await app.request('/')
+    expect(await res.text()).toBe('<h1>noSSG</h1>')
+  })
+})
+
+describe('disableSSG/onlySSG middlewares', () => {
+  const app = new Hono()
+  app.get('/', (c) => c.html(<h1>Hello</h1>))
+  app.get('/api', disableSSG(), (c) => c.text('an-api'))
+  app.get('/disable-by-response', (c) =>
+    c.text('', 404, { [X_HONO_DISABLE_SSG_HEADER_KEY]: 'true' })
+  )
+  app.get('/static-page', onlySSG(), (c) => c.html(<h1>Welcome to my site</h1>))
+
+  const fsMock: FileSystemModule = {
+    writeFile: vi.fn(() => Promise.resolve()),
+    mkdir: vi.fn(() => Promise.resolve()),
+  }
+
+  it('Should not generate the page if disableSSG is set', async () => {
+    await toSSG(app, fsMock, { dir: './static' })
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/index.html', expect.any(String))
+    expect(fsMock.writeFile).toHaveBeenCalledWith('static/static-page.html', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith('static/api.html', expect.any(String))
+    expect(fsMock.writeFile).not.toHaveBeenCalledWith(
+      'static/disable-by-response.html',
+      expect.any(String)
+    )
+  })
+
+  it('Should return 404 response if onlySSG() is set', async () => {
+    const res = await app.request('/static-page')
+    expect(res.status).toBe(404)
+  })
+})
+
+describe('Request hooks - filterPathsBeforeRequestHook and denyPathsBeforeRequestHook', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const filterPathsBeforeRequestHook = (allowedPaths: string | string[]): BeforeRequestHook => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(allowedPaths) ? allowedPaths : [allowedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+
+      if (paths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+
+      return false
+    }
+  }
+
+  const denyPathsBeforeRequestHook = (deniedPaths: string | string[]): BeforeRequestHook => {
+    const baseURL = 'http://localhost'
+    return async (req: Request): Promise<Request | false> => {
+      const paths = Array.isArray(deniedPaths) ? deniedPaths : [deniedPaths]
+      const pathname = new URL(req.url, baseURL).pathname
+
+      if (!paths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+        return req
+      }
+      return false
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/allowed-path', (c) => c.html('Allowed Path Page'))
+    app.get('/denied-path', (c) => c.html('Denied Path Page'))
+    app.get('/other-path', (c) => c.html('Other Path Page'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should only process requests for allowed paths with filterPathsBeforeRequestHook', async () => {
+    const allowedPathsHook = filterPathsBeforeRequestHook(['/allowed-path'])
+
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      beforeRequestHook: allowedPathsHook,
+    })
+
+    expect(result.files.some((file) => file.includes('allowed-path.html'))).toBe(true)
+    expect(result.files.some((file) => file.includes('other-path.html'))).toBe(false)
+  })
+
+  it('should deny requests for specified paths with denyPathsBeforeRequestHook', async () => {
+    const deniedPathsHook = denyPathsBeforeRequestHook(['/denied-path'])
+
+    const result = await toSSG(app, fsMock, { dir: './static', beforeRequestHook: deniedPathsHook })
+
+    expect(result.files.some((file) => file.includes('denied-path.html'))).toBe(false)
+
+    expect(result.files.some((file) => file.includes('allowed-path.html'))).toBe(true)
+    expect(result.files.some((file) => file.includes('other-path.html'))).toBe(true)
+  })
+})
+
+describe('Combined Response hooks - modify response content', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const prependContentAfterResponseHook = (prefix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text()
+      return new Response(`${prefix}${originalText}`, res)
+    }
+  }
+
+  const appendContentAfterResponseHook = (suffix: string): AfterResponseHook => {
+    return async (res: Response): Promise<Response> => {
+      const originalText = await res.text()
+      return new Response(`${originalText}${suffix}`, res)
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/content-path', (c) => c.text('Original Content'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should modify response content with combined AfterResponseHooks', async () => {
+    const prefixHook = prependContentAfterResponseHook('Prefix-')
+    const suffixHook = appendContentAfterResponseHook('-Suffix')
+
+    const combinedHook = [prefixHook, suffixHook]
+
+    await toSSG(app, fsMock, {
+      dir: './static',
+      afterResponseHook: combinedHook,
+    })
+
+    // Assert that the response content is modified by both hooks
+    // This assumes you have a way to inspect the content of saved files or you need to mock/stub the Response text method correctly.
+    expect(fsMock.writeFile).toHaveBeenCalledWith(
+      'static/content-path.txt',
+      'Prefix-Original Content-Suffix'
+    )
+  })
+})
+
+describe('Combined Generate hooks - AfterGenerateHook', () => {
+  let app: Hono
+  let fsMock: FileSystemModule
+
+  const logResultAfterGenerateHook = (): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      console.log('Generation completed with status:', result.success) // Log the generation success
+    }
+  }
+
+  const appendFilesAfterGenerateHook = (additionalFiles: string[]): AfterGenerateHook => {
+    return async (result: ToSSGResult): Promise<void> => {
+      result.files = result.files.concat(additionalFiles) // Append additional files to the result
+    }
+  }
+
+  beforeEach(() => {
+    app = new Hono()
+    app.get('/path', (c) => c.text('Page Content'))
+
+    fsMock = {
+      writeFile: vi.fn(() => Promise.resolve()),
+      mkdir: vi.fn(() => Promise.resolve()),
+    }
+  })
+
+  it('should execute combined AfterGenerateHooks affecting the result', async () => {
+    const logHook = logResultAfterGenerateHook()
+    const appendHook = appendFilesAfterGenerateHook(['/extra/file1.html', '/extra/file2.html'])
+
+    const combinedHook = [logHook, appendHook]
+
+    const consoleSpy = vi.spyOn(console, 'log')
+    const result = await toSSG(app, fsMock, {
+      dir: './static',
+      afterGenerateHook: combinedHook,
+    })
+
+    // Check that the log function was called correctly
+    expect(consoleSpy).toHaveBeenCalledWith('Generation completed with status:', true)
+
+    // Check that additional files were appended to the result
+    expect(result.files).toContain('/extra/file1.html')
+    expect(result.files).toContain('/extra/file2.html')
+  })
+})
+
+</document_content>
+</document>
+<document index="26">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/ssg.ts</source>
+<document_content>
+import { replaceUrlParam } from '../../client/utils'
+import type { Hono } from '../../hono'
+import type { Env, Schema } from '../../types'
+import { createPool } from '../../utils/concurrent'
+import { getExtension } from '../../utils/mime'
+import type { AddedSSGDataRequest, SSGParams } from './middleware'
+import { SSG_CONTEXT, X_HONO_DISABLE_SSG_HEADER_KEY } from './middleware'
+import { dirname, filterStaticGenerateRoutes, joinPaths } from './utils'
+
+const DEFAULT_CONCURRENCY = 2 // default concurrency for ssg
+
+// 'default_content_type' is designed according to Bun's performance optimization,
+//  which omits Content-Type by default for text responses.
+//  This is based on benchmarks showing performance gains without Content-Type.
+//  In Hono, using `c.text()` without a Content-Type implicitly assumes 'text/plain; charset=UTF-8'.
+//  This approach maintains performance consistency across different environments.
+//  For details, see GitHub issues: oven-sh/bun#8530 and https://github.com/honojs/hono/issues/2284.
+const DEFAULT_CONTENT_TYPE = 'text/plain'
+
+/**
+ * @experimental
+ * `FileSystemModule` is an experimental feature.
+ * The API might be changed.
+ */
+export interface FileSystemModule {
+  writeFile(path: string, data: string | Uint8Array): Promise<void>
+  mkdir(path: string, options: { recursive: boolean }): Promise<void | string>
+}
+
+/**
+ * @experimental
+ * `ToSSGResult` is an experimental feature.
+ * The API might be changed.
+ */
+export interface ToSSGResult {
+  success: boolean
+  files: string[]
+  error?: Error
+}
+
+const generateFilePath = (
+  routePath: string,
+  outDir: string,
+  mimeType: string,
+  extensionMap?: Record<string, string>
+): string => {
+  const extension = determineExtension(mimeType, extensionMap)
+
+  if (routePath.endsWith(`.${extension}`)) {
+    return joinPaths(outDir, routePath)
+  }
+
+  if (routePath === '/') {
+    return joinPaths(outDir, `index.${extension}`)
+  }
+  if (routePath.endsWith('/')) {
+    return joinPaths(outDir, routePath, `index.${extension}`)
+  }
+  return joinPaths(outDir, `${routePath}.${extension}`)
+}
+
+const parseResponseContent = async (response: Response): Promise<string | ArrayBuffer> => {
+  const contentType = response.headers.get('Content-Type')
+
+  try {
+    if (contentType?.includes('text') || contentType?.includes('json')) {
+      return await response.text()
+    } else {
+      return await response.arrayBuffer()
+    }
+  } catch (error) {
+    throw new Error(
+      `Error processing response: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+  }
+}
+
+export const defaultExtensionMap: Record<string, string> = {
+  'text/html': 'html',
+  'text/xml': 'xml',
+  'application/xml': 'xml',
+  'application/yaml': 'yaml',
+}
+
+const determineExtension = (
+  mimeType: string,
+  userExtensionMap?: Record<string, string>
+): string => {
+  const extensionMap = userExtensionMap || defaultExtensionMap
+  if (mimeType in extensionMap) {
+    return extensionMap[mimeType]
+  }
+  return getExtension(mimeType) || 'html'
+}
+
+export type BeforeRequestHook = (req: Request) => Request | false | Promise<Request | false>
+export type AfterResponseHook = (res: Response) => Response | false | Promise<Response | false>
+export type AfterGenerateHook = (result: ToSSGResult) => void | Promise<void>
+
+export const combineBeforeRequestHooks = (
+  hooks: BeforeRequestHook | BeforeRequestHook[]
+): BeforeRequestHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (req: Request): Promise<Request | false> => {
+    let currentReq = req
+    for (const hook of hooks) {
+      const result = await hook(currentReq)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Request) {
+        currentReq = result
+      }
+    }
+    return currentReq
+  }
+}
+
+export const combineAfterResponseHooks = (
+  hooks: AfterResponseHook | AfterResponseHook[]
+): AfterResponseHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (res: Response): Promise<Response | false> => {
+    let currentRes = res
+    for (const hook of hooks) {
+      const result = await hook(currentRes)
+      if (result === false) {
+        return false
+      }
+      if (result instanceof Response) {
+        currentRes = result
+      }
+    }
+    return currentRes
+  }
+}
+
+export const combineAfterGenerateHooks = (
+  hooks: AfterGenerateHook | AfterGenerateHook[]
+): AfterGenerateHook => {
+  if (!Array.isArray(hooks)) {
+    return hooks
+  }
+  return async (result: ToSSGResult): Promise<void> => {
+    for (const hook of hooks) {
+      await hook(result)
+    }
+  }
+}
+
+export interface ToSSGOptions {
+  dir?: string
+  beforeRequestHook?: BeforeRequestHook | BeforeRequestHook[]
+  afterResponseHook?: AfterResponseHook | AfterResponseHook[]
+  afterGenerateHook?: AfterGenerateHook | AfterGenerateHook[]
+  concurrency?: number
+  extensionMap?: Record<string, string>
+}
+
+/**
+ * @experimental
+ * `fetchRoutesContent` is an experimental feature.
+ * The API might be changed.
+ */
+export const fetchRoutesContent = function* <
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+>(
+  app: Hono<E, S, BasePath>,
+  beforeRequestHook?: BeforeRequestHook,
+  afterResponseHook?: AfterResponseHook,
+  concurrency?: number
+): Generator<
+  Promise<
+    | Generator<
+        Promise<{ routePath: string; mimeType: string; content: string | ArrayBuffer } | undefined>
+      >
+    | undefined
+  >
+> {
+  const baseURL = 'http://localhost'
+  const pool = createPool({ concurrency })
+
+  for (const route of filterStaticGenerateRoutes(app)) {
+    // GET Route Info
+    const thisRouteBaseURL = new URL(route.path, baseURL).toString()
+
+    let forGetInfoURLRequest = new Request(thisRouteBaseURL) as AddedSSGDataRequest
+
+    // eslint-disable-next-line no-async-promise-executor
+    yield new Promise(async (resolveGetInfo, rejectGetInfo) => {
+      try {
+        if (beforeRequestHook) {
+          const maybeRequest = await beforeRequestHook(forGetInfoURLRequest)
+          if (!maybeRequest) {
+            resolveGetInfo(undefined)
+            return
+          }
+          forGetInfoURLRequest = maybeRequest as unknown as AddedSSGDataRequest
+        }
+
+        await pool.run(() => app.fetch(forGetInfoURLRequest))
+
+        if (!forGetInfoURLRequest.ssgParams) {
+          if (isDynamicRoute(route.path)) {
+            resolveGetInfo(undefined)
+            return
+          }
+          forGetInfoURLRequest.ssgParams = [{}]
+        }
+
+        const requestInit = {
+          method: forGetInfoURLRequest.method,
+          headers: forGetInfoURLRequest.headers,
+        }
+
+        resolveGetInfo(
+          (function* () {
+            for (const param of forGetInfoURLRequest.ssgParams as SSGParams) {
+              // eslint-disable-next-line no-async-promise-executor
+              yield new Promise(async (resolveReq, rejectReq) => {
+                try {
+                  const replacedUrlParam = replaceUrlParam(route.path, param)
+                  let response = await pool.run(() =>
+                    app.request(replacedUrlParam, requestInit, {
+                      [SSG_CONTEXT]: true,
+                    })
+                  )
+                  if (response.headers.get(X_HONO_DISABLE_SSG_HEADER_KEY)) {
+                    resolveReq(undefined)
+                    return
+                  }
+                  if (afterResponseHook) {
+                    const maybeResponse = await afterResponseHook(response)
+                    if (!maybeResponse) {
+                      resolveReq(undefined)
+                      return
+                    }
+                    response = maybeResponse
+                  }
+                  const mimeType =
+                    response.headers.get('Content-Type')?.split(';')[0] || DEFAULT_CONTENT_TYPE
+                  const content = await parseResponseContent(response)
+                  resolveReq({
+                    routePath: replacedUrlParam,
+                    mimeType,
+                    content,
+                  })
+                } catch (error) {
+                  rejectReq(error)
+                }
+              })
+            }
+          })()
+        )
+      } catch (error) {
+        rejectGetInfo(error)
+      }
+    })
+  }
+}
+
+const isDynamicRoute = (path: string): boolean => {
+  return path.split('/').some((segment) => segment.startsWith(':') || segment.includes('*'))
+}
+
+/**
+ * @experimental
+ * `saveContentToFile` is an experimental feature.
+ * The API might be changed.
+ */
+const createdDirs: Set<string> = new Set()
+export const saveContentToFile = async (
+  data: Promise<{ routePath: string; content: string | ArrayBuffer; mimeType: string } | undefined>,
+  fsModule: FileSystemModule,
+  outDir: string,
+  extensionMap?: Record<string, string>
+): Promise<string | undefined> => {
+  const awaitedData = await data
+  if (!awaitedData) {
+    return
+  }
+  const { routePath, content, mimeType } = awaitedData
+  const filePath = generateFilePath(routePath, outDir, mimeType, extensionMap)
+  const dirPath = dirname(filePath)
+
+  if (!createdDirs.has(dirPath)) {
+    await fsModule.mkdir(dirPath, { recursive: true })
+    createdDirs.add(dirPath)
+  }
+  if (typeof content === 'string') {
+    await fsModule.writeFile(filePath, content)
+  } else if (content instanceof ArrayBuffer) {
+    await fsModule.writeFile(filePath, new Uint8Array(content))
+  }
+  return filePath
+}
+
+/**
+ * @experimental
+ * `ToSSGInterface` is an experimental feature.
+ * The API might be changed.
+ */
+export interface ToSSGInterface {
+  (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    app: Hono<any, any, any>,
+    fsModule: FileSystemModule,
+    options?: ToSSGOptions
+  ): Promise<ToSSGResult>
+}
+
+/**
+ * @experimental
+ * `ToSSGAdaptorInterface` is an experimental feature.
+ * The API might be changed.
+ */
+export interface ToSSGAdaptorInterface<
+  E extends Env = Env,
+  S extends Schema = {},
+  BasePath extends string = '/'
+> {
+  (app: Hono<E, S, BasePath>, options?: ToSSGOptions): Promise<ToSSGResult>
+}
+
+/**
+ * @experimental
+ * `toSSG` is an experimental feature.
+ * The API might be changed.
+ */
+export const toSSG: ToSSGInterface = async (app, fs, options) => {
+  let result: ToSSGResult | undefined
+  const getInfoPromises: Promise<unknown>[] = []
+  const savePromises: Promise<string | undefined>[] = []
+  try {
+    const outputDir = options?.dir ?? './static'
+    const concurrency = options?.concurrency ?? DEFAULT_CONCURRENCY
+
+    const combinedBeforeRequestHook = combineBeforeRequestHooks(
+      options?.beforeRequestHook || ((req) => req)
+    )
+    const combinedAfterResponseHook = combineAfterResponseHooks(
+      options?.afterResponseHook || ((req) => req)
+    )
+    const getInfoGen = fetchRoutesContent(
+      app,
+      combinedBeforeRequestHook,
+      combinedAfterResponseHook,
+      concurrency
+    )
+    for (const getInfo of getInfoGen) {
+      getInfoPromises.push(
+        getInfo.then((getContentGen) => {
+          if (!getContentGen) {
+            return
+          }
+          for (const content of getContentGen) {
+            savePromises.push(saveContentToFile(content, fs, outputDir).catch((e) => e))
+          }
+        })
+      )
+    }
+    await Promise.all(getInfoPromises)
+    const files: string[] = []
+    for (const savePromise of savePromises) {
+      const fileOrError = await savePromise
+      if (typeof fileOrError === 'string') {
+        files.push(fileOrError)
+      } else if (fileOrError) {
+        throw fileOrError
+      }
+    }
+    result = { success: true, files }
+  } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error))
+    result = { success: false, files: [], error: errorObj }
+  }
+  if (options?.afterGenerateHook) {
+    const combinedAfterGenerateHooks = combineAfterGenerateHooks(options?.afterGenerateHook)
+    await combinedAfterGenerateHooks(result)
+  }
+  return result
+}
+
+</document_content>
+</document>
+<document index="27">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/utils.test.ts</source>
+<document_content>
+import { describe, expect, it } from 'vitest'
+import { dirname, joinPaths } from './utils'
+
+describe('joinPath', () => {
+  it('Should joined path is valid.', () => {
+    expect(joinPaths('test')).toBe('test') //single
+    expect(joinPaths('.test')).toBe('.test') //single with dot
+    expect(joinPaths('/.test')).toBe('/.test') //single with dot with root
+    expect(joinPaths('test', 'test2')).toBe('test/test2') // single and single
+    expect(joinPaths('test', 'test2', '../test3')).toBe('test/test3') // single and single and single with parent
+    expect(joinPaths('.', '../')).toBe('..') // dot and parent
+    expect(joinPaths('test/', 'test2/')).toBe('test/test2') // trailing slashes
+    expect(joinPaths('./test', './test2')).toBe('test/test2') // dot and slash
+    expect(joinPaths('', 'test')).toBe('test') // empty path
+    expect(joinPaths('/test', '/test2')).toBe('/test/test2') // root path
+    expect(joinPaths('../', 'test')).toBe('../test') // parent and single
+    expect(joinPaths('test', '..', 'test2')).toBe('test2') // single triple dot and single
+    expect(joinPaths('test', '...', 'test2')).toBe('test/.../test2') // single triple dot and single
+    expect(joinPaths('test', './test2', '.test3.')).toBe('test/test2/.test3.') // single and single with slash and single with dot
+    expect(joinPaths('test', '../', '.test2')).toBe('.test2') // single and parent and single with dot
+    expect(joinPaths('..', '..', 'test')).toBe('../../test') // parent and parent and single
+    expect(joinPaths('..', '..')).toBe('../..') // parent and parent
+    expect(joinPaths('.test../test2/../')).toBe('.test..') //shuffle
+    expect(joinPaths('.test./.test2/../')).toBe('.test.') //shuffle2
+  })
+  it('Should windows path is valid.', () => {
+    expect(joinPaths('a\\b\\c', 'd\\e')).toBe('a/b/c/d/e')
+  })
+})
+describe('dirname', () => {
+  it('Should dirname is valid.', () => {
+    expect(dirname('parent/child')).toBe('parent')
+    expect(dirname('windows\\test.txt')).toBe('windows')
+  })
+})
+
+</document_content>
+</document>
+<document index="28">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/ssg/utils.ts</source>
+<document_content>
+import type { Hono } from '../../hono'
+import { METHOD_NAME_ALL } from '../../router'
+import type { Env, RouterRoute } from '../../types'
+import { findTargetHandler, isMiddleware } from '../../utils/handler'
+
+/**
+ * Get dirname
+ * @param path File Path
+ * @returns Parent dir path
+ */
+export const dirname = (path: string): string => {
+  const separatedPath = path.split(/[\/\\]/)
+  return separatedPath.slice(0, -1).join('/') // Windows supports slash path
+}
+
+const normalizePath = (path: string): string => {
+  return path.replace(/(\\)/g, '/').replace(/\/$/g, '')
+}
+
+const handleParent = (resultPaths: string[], beforeParentFlag: boolean): void => {
+  if (resultPaths.length === 0 || beforeParentFlag) {
+    resultPaths.push('..')
+  } else {
+    resultPaths.pop()
+  }
+}
+
+const handleNonDot = (path: string, resultPaths: string[]): void => {
+  path = path.replace(/^\.(?!.)/, '')
+  if (path !== '') {
+    resultPaths.push(path)
+  }
+}
+
+const handleSegments = (paths: string[], resultPaths: string[]): void => {
+  let beforeParentFlag = false
+  for (const path of paths) {
+    // Handle `..`
+    if (path === '..') {
+      handleParent(resultPaths, beforeParentFlag)
+      beforeParentFlag = true
+    } else {
+      // Handle `.` or `abc`
+      handleNonDot(path, resultPaths)
+      beforeParentFlag = false
+    }
+  }
+}
+
+export const joinPaths = (...paths: string[]): string => {
+  paths = paths.map(normalizePath)
+  const resultPaths: string[] = []
+  handleSegments(paths.join('/').split('/'), resultPaths)
+  return (paths[0][0] === '/' ? '/' : '') + resultPaths.join('/')
+}
+
+interface FilterStaticGenerateRouteData {
+  path: string
+}
+
+export const filterStaticGenerateRoutes = <E extends Env>(
+  hono: Hono<E>
+): FilterStaticGenerateRouteData[] => {
+  return hono.routes.reduce((acc, { method, handler, path }: RouterRoute) => {
+    const targetHandler = findTargetHandler(handler)
+    if (['GET', METHOD_NAME_ALL].includes(method) && !isMiddleware(targetHandler)) {
+      acc.push({ path })
+    }
+    return acc
+  }, [] as FilterStaticGenerateRouteData[])
+}
+
+</document_content>
+</document>
+<document index="29">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/testing/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { testClient } from '.'
+
+describe('hono testClient', () => {
+  it('Should return the correct search result', async () => {
+    const app = new Hono().get('/search', (c) => c.json({ hello: 'world' }))
+    const res = await testClient(app).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('Should return the correct environment variables value', async () => {
+    type Bindings = { hello: string }
+    const app = new Hono<{ Bindings: Bindings }>().get('/search', (c) => {
+      return c.json({ hello: c.env.hello })
+    })
+    const res = await testClient(app, { hello: 'world' }).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('Should return a correct URL with out throwing an error', async () => {
+    const app = new Hono().get('/abc', (c) => c.json(0))
+    const url = testClient(app).abc.$url()
+    expect(url.pathname).toBe('/abc')
+  })
+
+  it('Should not throw an error with $ws()', async () => {
+    vi.stubGlobal('WebSocket', class {})
+    const app = new Hono().get('/ws', (c) => c.text('Fake response of a WebSocket'))
+    // @ts-expect-error $ws is not typed correctly
+    expect(() => testClient(app).ws.$ws()).not.toThrowError()
+  })
+})
+
+</document_content>
+</document>
+<document index="30">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/testing/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Testing Helper for Hono.
+ */
+
+import { hc } from '../../client'
+import type { Client } from '../../client/types'
+import type { ExecutionContext } from '../../context'
+import type { Hono } from '../../hono'
+import type { Schema } from '../../types'
+import type { UnionToIntersection } from '../../utils/types'
+
+type ExtractEnv<T> = T extends Hono<infer E, Schema, string> ? E : never
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const testClient = <T extends Hono<any, Schema, string>>(
+  app: T,
+  Env?: ExtractEnv<T>['Bindings'] | {},
+  executionCtx?: ExecutionContext
+): UnionToIntersection<Client<T>> => {
+  const customFetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    return app.request(input, init, Env, executionCtx)
+  }
+
+  return hc<typeof app>('http://localhost', { fetch: customFetch })
+}
+
+</document_content>
+</document>
+<document index="31">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/accepts/accepts.test.ts</source>
+<document_content>
+import { Hono } from '../..'
+import { parseAccept } from '../../utils/accept'
+import type { Accept, acceptsConfig, acceptsOptions } from './accepts'
+import { accepts, defaultMatch } from './accepts'
+
+describe('parseAccept', () => {
+  test('should parse accept header', () => {
+    const acceptHeader =
+      'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8;level=1;foo=bar'
+    const accepts = parseAccept(acceptHeader)
+    expect(accepts).toEqual([
+      { type: 'text/html', params: {}, q: 1 },
+      { type: 'application/xhtml+xml', params: {}, q: 1 },
+      { type: 'image/webp', params: {}, q: 1 },
+      { type: 'application/xml', params: { q: '0.9' }, q: 0.9 },
+      { type: '*/*', params: { q: '0.8', level: '1', foo: 'bar' }, q: 0.8 },
+    ])
+  })
+})
+
+describe('defaultMatch', () => {
+  test('should return default support', () => {
+    const accepts: Accept[] = [
+      { type: 'text/html', params: {}, q: 1 },
+      { type: 'application/xhtml+xml', params: {}, q: 1 },
+      { type: 'application/xml', params: { q: '0.9' }, q: 0.9 },
+      { type: 'image/webp', params: {}, q: 1 },
+      { type: '*/*', params: { q: '0.8' }, q: 0.8 },
+    ]
+    const config: acceptsConfig = {
+      header: 'Accept',
+      supports: ['text/html'],
+      default: 'text/html',
+    }
+    const result = defaultMatch(accepts, config)
+    expect(result).toBe('text/html')
+  })
+})
+
+describe('accepts', () => {
+  test('should return matched support', () => {
+    const c = {
+      req: {
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/xml', 'text/html'],
+      default: 'application/json',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should return default support if no matched support', () => {
+    const c = {
+      req: {
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should return default support if no accept header', () => {
+    const c = {
+      req: {
+        header: () => undefined,
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    const options: acceptsConfig = {
+      header: 'Accept',
+      supports: ['application/json'],
+      default: 'text/html',
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('text/html')
+  })
+
+  test('should return matched support with custom match function', () => {
+    const c = {
+      req: {
+        header: () => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any
+    // this match function will return the least q value
+    const match = (accepts: Accept[], config: acceptsConfig) => {
+      const { supports, default: defaultSupport } = config
+      const accept = accepts
+        .sort((a, b) => a.q - b.q)
+        .find((accept) => supports.includes(accept.type))
+      return accept ? accept.type : defaultSupport
+    }
+    const options: acceptsOptions = {
+      header: 'Accept',
+      supports: ['application/xml', 'text/html'],
+      default: 'application/json',
+      match,
+    }
+    const result = accepts(c, options)
+    expect(result).toBe('application/xml')
+  })
+})
+
+describe('Usage', () => {
+  test('decide compression by Accept-Encoding header', async () => {
+    const app = new Hono()
+    app.get('/compressed', async (c) => {
+      const encoding = accepts(c, {
+        header: 'Accept-Encoding',
+        supports: ['gzip', 'deflate'],
+        default: 'identity',
+      })
+      const COMPRESS_DATA = 'COMPRESS_DATA'
+      const readable = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(COMPRESS_DATA))
+          controller.close()
+        },
+      })
+
+      if (encoding === 'gzip') {
+        c.header('Content-Encoding', 'gzip')
+        return c.body(readable.pipeThrough(new CompressionStream('gzip')))
+      }
+      if (encoding === 'deflate') {
+        c.header('Content-Encoding', 'deflate')
+        return c.body(readable.pipeThrough(new CompressionStream('deflate')))
+      }
+
+      c.body(COMPRESS_DATA)
+    })
+
+    const req1 = await app.request('/compressed', { headers: { 'Accept-Encoding': 'deflate' } })
+    const req2 = await app.request('/compressed', { headers: { 'Accept-Encoding': 'gzip' } })
+    const req3 = await app.request('/compressed', {
+      headers: { 'Accept-Encoding': 'gzip;q=0.5,deflate' },
+    })
+    const req4 = await app.request('/compressed', { headers: { 'Accept-Encoding': 'br' } })
+
+    expect(req1.headers.get('Content-Encoding')).toBe('deflate')
+    expect(req2.headers.get('Content-Encoding')).toBe('gzip')
+    expect(req3.headers.get('Content-Encoding')).toBe('deflate')
+    expect(req4.headers.get('Content-Encoding')).toBeNull()
+  })
+
+  test('decide language by Accept-Language header', async () => {
+    const app = new Hono()
+    const SUPPORTED_LANGS = ['en', 'ja', 'zh']
+    app.get('/*', async (c) => {
+      const lang = accepts(c, {
+        header: 'Accept-Language',
+        supports: SUPPORTED_LANGS,
+        default: 'en',
+      })
+      const isLangedPath = SUPPORTED_LANGS.some((l) => c.req.path.startsWith(`/${l}`))
+      if (isLangedPath) {
+        return c.body(`lang: ${lang}`)
+      }
+
+      return c.redirect(`/${lang}${c.req.path}`)
+    })
+
+    const req1 = await app.request('/foo', { headers: { 'Accept-Language': 'en=0.8,ja' } })
+    const req2 = await app.request('/en/foo', { headers: { 'Accept-Language': 'en' } })
+
+    expect(req1.status).toBe(302)
+    expect(req1.headers.get('Location')).toBe('/ja/foo')
+    expect(await req2.text()).toBe('lang: en')
+  })
+})
+
+</document_content>
+</document>
+<document index="32">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/accepts/accepts.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import { parseAccept } from '../../utils/accept'
+import type { AcceptHeader } from '../../utils/headers'
+
+export interface Accept {
+  type: string
+  params: Record<string, string>
+  q: number
+}
+
+export interface acceptsConfig {
+  header: AcceptHeader
+  supports: string[]
+  default: string
+}
+
+export interface acceptsOptions extends acceptsConfig {
+  match?: (accepts: Accept[], config: acceptsConfig) => string
+}
+
+export const defaultMatch = (accepts: Accept[], config: acceptsConfig): string => {
+  const { supports, default: defaultSupport } = config
+  const accept = accepts.sort((a, b) => b.q - a.q).find((accept) => supports.includes(accept.type))
+  return accept ? accept.type : defaultSupport
+}
+
+/**
+ * Match the accept header with the given options.
+ * @example
+ * ```ts
+ * app.get('/users', (c) => {
+ *   const lang = accepts(c, {
+ *     header: 'Accept-Language',
+ *     supports: ['en', 'zh'],
+ *     default: 'en',
+ *   })
+ * })
+ * ```
+ */
+export const accepts = (c: Context, options: acceptsOptions): string => {
+  const acceptHeader = c.req.header(options.header)
+  if (!acceptHeader) {
+    return options.default
+  }
+  const accepts = parseAccept(acceptHeader)
+  const match = options.match || defaultMatch
+
+  return match(accepts, options)
+}
+
+</document_content>
+</document>
+<document index="33">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/accepts/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Accepts Helper for Hono.
+ */
+
+export { accepts } from './accepts'
+
+</document_content>
+</document>
+<document index="34">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/dev/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { RegExpRouter } from '../../router/reg-exp-router'
+import type { Handler, MiddlewareHandler } from '../../types'
+import { getRouterName, inspectRoutes, showRoutes } from '.'
+
+const namedMiddleware: MiddlewareHandler = (_, next) => next()
+const namedHandler: Handler = (c) => c.text('hi')
+const app = new Hono()
+  .use('*', (c, next) => next())
+  .get(
+    '/',
+    (_, next) => next(),
+    (c) => c.text('hi')
+  )
+  .get('/named', namedMiddleware, namedHandler)
+  .post('/', (c) => c.text('hi'))
+  .put('/', (c) => c.text('hi'))
+  .patch('/', (c) => c.text('hi'))
+  .delete('/', (c) => c.text('hi'))
+  .options('/', (c) => c.text('hi'))
+  .get('/static', () => new Response('hi'))
+
+describe('inspectRoutes()', () => {
+  it('should return correct data', async () => {
+    expect(inspectRoutes(app)).toEqual([
+      { path: '/*', method: 'ALL', name: '[middleware]', isMiddleware: true },
+      { path: '/', method: 'GET', name: '[middleware]', isMiddleware: true },
+      { path: '/', method: 'GET', name: '[handler]', isMiddleware: false },
+      { path: '/named', method: 'GET', name: 'namedMiddleware', isMiddleware: true },
+      { path: '/named', method: 'GET', name: 'namedHandler', isMiddleware: false },
+      { path: '/', method: 'POST', name: '[handler]', isMiddleware: false },
+      { path: '/', method: 'PUT', name: '[handler]', isMiddleware: false },
+      { path: '/', method: 'PATCH', name: '[handler]', isMiddleware: false },
+      { path: '/', method: 'DELETE', name: '[handler]', isMiddleware: false },
+      { path: '/', method: 'OPTIONS', name: '[handler]', isMiddleware: false },
+      { path: '/static', method: 'GET', name: '[handler]', isMiddleware: false },
+    ])
+  })
+
+  it('should return [handler] also for sub app', async () => {
+    const subApp = new Hono()
+
+    subApp.get('/', (c) => c.json(0))
+    subApp.onError((_, c) => c.json(0))
+
+    const mainApp = new Hono()
+    mainApp.route('/', subApp)
+    expect(inspectRoutes(mainApp)).toEqual([
+      {
+        isMiddleware: false,
+        method: 'GET',
+        name: '[handler]',
+        path: '/',
+      },
+    ])
+  })
+})
+
+describe('showRoutes()', () => {
+  let logs: string[] = []
+
+  let originalLog: typeof console.log
+  beforeAll(() => {
+    originalLog = console.log
+    console.log = (...args) => logs.push(...args)
+  })
+  afterAll(() => {
+    console.log = originalLog
+  })
+
+  beforeEach(() => {
+    logs = []
+  })
+  it('should render simple output', async () => {
+    showRoutes(app)
+    expect(logs).toEqual([
+      '\x1b[32mGET\x1b[0m      /',
+      '\x1b[32mGET\x1b[0m      /named',
+      '\x1b[32mPOST\x1b[0m     /',
+      '\x1b[32mPUT\x1b[0m      /',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '\x1b[32mGET\x1b[0m      /static',
+    ])
+  })
+
+  it('should render output includes handlers and middlewares', async () => {
+    showRoutes(app, { verbose: true })
+    expect(logs).toEqual([
+      '\x1b[32mALL\x1b[0m      /*',
+      '           [middleware]',
+      '\x1b[32mGET\x1b[0m      /',
+      '           [middleware]',
+      '           [handler]',
+      '\x1b[32mGET\x1b[0m      /named',
+      '           namedMiddleware',
+      '           namedHandler',
+      '\x1b[32mPOST\x1b[0m     /',
+      '           [handler]',
+      '\x1b[32mPUT\x1b[0m      /',
+      '           [handler]',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '           [handler]',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '           [handler]',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '           [handler]',
+      '\x1b[32mGET\x1b[0m      /static',
+      '           [handler]',
+    ])
+  })
+
+  it('should render not colorized output', async () => {
+    showRoutes(app, { colorize: false })
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+})
+
+describe('showRoutes() in NO_COLOR', () => {
+  let logs: string[] = []
+
+  let originalLog: typeof console.log
+  beforeAll(() => {
+    vi.stubEnv('NO_COLOR', '1')
+    originalLog = console.log
+    console.log = (...args) => logs.push(...args)
+  })
+  afterAll(() => {
+    vi.unstubAllEnvs()
+    console.log = originalLog
+  })
+
+  beforeEach(() => {
+    logs = []
+  })
+  it('should render not colorized output', async () => {
+    showRoutes(app)
+    expect(logs).toEqual([
+      'GET      /',
+      'GET      /named',
+      'POST     /',
+      'PUT      /',
+      'PATCH    /',
+      'DELETE   /',
+      'OPTIONS  /',
+      'GET      /static',
+    ])
+  })
+  it('should render colorized output if colorize: true', async () => {
+    showRoutes(app, { colorize: true })
+    expect(logs).toEqual([
+      '\x1b[32mGET\x1b[0m      /',
+      '\x1b[32mGET\x1b[0m      /named',
+      '\x1b[32mPOST\x1b[0m     /',
+      '\x1b[32mPUT\x1b[0m      /',
+      '\x1b[32mPATCH\x1b[0m    /',
+      '\x1b[32mDELETE\x1b[0m   /',
+      '\x1b[32mOPTIONS\x1b[0m  /',
+      '\x1b[32mGET\x1b[0m      /static',
+    ])
+  })
+})
+
+describe('getRouterName()', () => {
+  it('Should return the correct router name', async () => {
+    const app = new Hono({
+      router: new RegExpRouter(),
+    })
+    expect(getRouterName(app)).toBe('RegExpRouter')
+  })
+})
+
+</document_content>
+</document>
+<document index="35">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/dev/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Dev Helper for Hono.
+ */
+
+import type { Hono } from '../../hono'
+import type { Env, RouterRoute } from '../../types'
+import { getColorEnabled } from '../../utils/color'
+import { findTargetHandler, isMiddleware } from '../../utils/handler'
+
+interface ShowRoutesOptions {
+  verbose?: boolean
+  colorize?: boolean
+}
+
+interface RouteData {
+  path: string
+  method: string
+  name: string
+  isMiddleware: boolean
+}
+
+const handlerName = (handler: Function): string => {
+  return handler.name || (isMiddleware(handler) ? '[middleware]' : '[handler]')
+}
+
+export const inspectRoutes = <E extends Env>(hono: Hono<E>): RouteData[] => {
+  return hono.routes.map(({ path, method, handler }: RouterRoute) => {
+    const targetHandler = findTargetHandler(handler)
+    return {
+      path,
+      method,
+      name: handlerName(targetHandler),
+      isMiddleware: isMiddleware(targetHandler),
+    }
+  })
+}
+
+export const showRoutes = <E extends Env>(hono: Hono<E>, opts?: ShowRoutesOptions): void => {
+  const colorEnabled = opts?.colorize ?? getColorEnabled()
+  const routeData: Record<string, RouteData[]> = {}
+  let maxMethodLength = 0
+  let maxPathLength = 0
+
+  inspectRoutes(hono)
+    .filter(({ isMiddleware }) => opts?.verbose || !isMiddleware)
+    .map((route) => {
+      const key = `${route.method}-${route.path}`
+      ;(routeData[key] ||= []).push(route)
+      if (routeData[key].length > 1) {
+        return
+      }
+      maxMethodLength = Math.max(maxMethodLength, route.method.length)
+      maxPathLength = Math.max(maxPathLength, route.path.length)
+      return { method: route.method, path: route.path, routes: routeData[key] }
+    })
+    .forEach((data) => {
+      if (!data) {
+        return
+      }
+      const { method, path, routes } = data
+
+      const methodStr = colorEnabled ? `\x1b[32m${method}\x1b[0m` : method
+      console.log(`${methodStr} ${' '.repeat(maxMethodLength - method.length)} ${path}`)
+
+      if (!opts?.verbose) {
+        return
+      }
+
+      routes.forEach(({ name }) => {
+        console.log(`${' '.repeat(maxMethodLength + 3)} ${name}`)
+      })
+    })
+}
+
+export const getRouterName = <E extends Env>(app: Hono<E>): string => {
+  app.router.match('GET', '/')
+  return app.router.name
+}
+
+</document_content>
+</document>
+<document index="36">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/cookie/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { deleteCookie, getCookie, getSignedCookie, setCookie, setSignedCookie } from '.'
+
+describe('Cookie Middleware', () => {
+  describe('Parse cookie', () => {
+    const apps: Record<string, Hono> = {}
+    apps['get by name'] = (() => {
+      const app = new Hono()
+
+      app.get('/cookie', (c) => {
+        const yummyCookie = getCookie(c, 'yummy_cookie')
+        const tastyCookie = getCookie(c, 'tasty_cookie')
+        const res = new Response('Good cookie')
+        if (yummyCookie && tastyCookie) {
+          res.headers.set('Yummy-Cookie', yummyCookie)
+          res.headers.set('Tasty-Cookie', tastyCookie)
+        }
+        return res
+      })
+
+      return app
+    })()
+
+    apps['get all as an object'] = (() => {
+      const app = new Hono()
+
+      app.get('/cookie', (c) => {
+        const { yummy_cookie: yummyCookie, tasty_cookie: tastyCookie } = getCookie(c)
+        const res = new Response('Good cookie')
+        res.headers.set('Yummy-Cookie', yummyCookie)
+        res.headers.set('Tasty-Cookie', tastyCookie)
+        return res
+      })
+
+      return app
+    })()
+
+    describe.each(Object.keys(apps))('%s', (name) => {
+      const app = apps[name]
+      it('Parse cookie with getCookie()', async () => {
+        const req = new Request('http://localhost/cookie')
+        const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry'
+        req.headers.set('Cookie', cookieString)
+        const res = await app.request(req)
+
+        expect(res.headers.get('Yummy-Cookie')).toBe('choco')
+        expect(res.headers.get('Tasty-Cookie')).toBe('strawberry')
+      })
+    })
+
+    const app = new Hono()
+
+    app.get('/cookie-signed-get-all', async (c) => {
+      const secret = 'secret lucky charm'
+      const { fortune_cookie: fortuneCookie, fruit_cookie: fruitCookie } = await getSignedCookie(
+        c,
+        secret
+      )
+      const res = new Response('Signed fortune cookie')
+      if (typeof fortuneCookie !== 'undefined' && typeof fruitCookie !== 'undefined') {
+        // just examples for tests sake
+        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
+        res.headers.set('Fruit-Cookie', fruitCookie || 'INVALID')
+      }
+      return res
+    })
+
+    app.get('/cookie-signed-get-one', async (c) => {
+      const secret = 'secret lucky charm'
+      const fortuneCookie = await getSignedCookie(c, secret, 'fortune_cookie')
+      const res = new Response('Signed fortune cookie')
+      if (typeof fortuneCookie !== 'undefined') {
+        // just an example for tests sake
+        res.headers.set('Fortune-Cookie', fortuneCookie || 'INVALID')
+      }
+      return res
+    })
+
+    it('Get signed cookies', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-all')
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+      expect(res.headers.get('Fruit-Cookie')).toBe('mango')
+    })
+
+    it('Get signed cookies invalid signature', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-all')
+      // fruit_cookie has invalid signature
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+      expect(res.headers.get('Fruit-Cookie')).toBe('INVALID')
+    })
+
+    it('Get signed cookie', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-one')
+      const cookieString =
+        'fortune_cookie=lots-of-money.UO6vMygDM6NCDU4LdvBnzdVb2Xcdj+h+ZTnmS8X7iH8%3D; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('lots-of-money')
+    })
+
+    it('Get signed cookie with invalid signature', async () => {
+      const req = new Request('http://localhost/cookie-signed-get-one')
+      // fortune_cookie has invalid signature
+      const cookieString =
+        'fortune_cookie=lots-of-money.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg=; fruit_cookie=mango.lRwgtW9ooM9%2Fd9ZZA%2FInNRG64CbQsfWGXQyFLPM9520%3D'
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.headers.get('Fortune-Cookie')).toBe('INVALID')
+    })
+
+    describe('get null if the value is undefined', () => {
+      const app = new Hono()
+
+      app.get('/cookie', (c) => {
+        const yummyCookie = getCookie(c, 'yummy_cookie')
+        const res = new Response('Good cookie')
+        if (yummyCookie) {
+          res.headers.set('Yummy-Cookie', yummyCookie)
+        }
+        return res
+      })
+
+      it('Should be null', async () => {
+        const req = new Request('http://localhost/cookie')
+        const cookieString = 'yummy_cookie='
+        req.headers.set('Cookie', cookieString)
+        const res = await app.request(req)
+        expect(res.headers.get('Yummy-Cookie')).toBe(null)
+      })
+    })
+  })
+
+  describe('Set cookie', () => {
+    const app = new Hono()
+
+    app.get('/set-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha')
+      return c.text('Give cookie')
+    })
+
+    it('Set cookie with setCookie()', async () => {
+      const res = await app.request('http://localhost/set-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha; Path=/')
+    })
+
+    app.get('/a/set-cookie-path', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', { path: '/a' })
+      return c.text('Give cookie')
+    })
+
+    it('Set cookie with setCookie() and path option', async () => {
+      const res = await app.request('http://localhost/a/set-cookie-path')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha; Path=/a')
+    })
+
+    app.get('/set-signed-cookie', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'delicious_cookie', 'macha', secret)
+      return c.text('Give signed cookie')
+    })
+
+    it('Set signed cookie with setSignedCookie()', async () => {
+      const res = await app.request('http://localhost/set-signed-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/'
+      )
+    })
+
+    app.get('/a/set-signed-cookie-path', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'delicious_cookie', 'macha', secret, { path: '/a' })
+      return c.text('Give signed cookie')
+    })
+
+    it('Set signed cookie with setSignedCookie() and path option', async () => {
+      const res = await app.request('http://localhost/a/set-signed-cookie-path')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D; Path=/a'
+      )
+    })
+
+    app.get('/get-secure-prefix-cookie', async (c) => {
+      const cookie = getCookie(c, 'delicious_cookie', 'secure')
+      if (cookie) {
+        return c.text(cookie)
+      } else {
+        return c.notFound()
+      }
+    })
+
+    app.get('/get-host-prefix-cookie', async (c) => {
+      const cookie = getCookie(c, 'delicious_cookie', 'host')
+      if (cookie) {
+        return c.text(cookie)
+      } else {
+        return c.notFound()
+      }
+    })
+
+    app.get('/set-secure-prefix-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', {
+        prefix: 'secure',
+        secure: false, // this will be ignore
+      })
+      return c.text('Set secure prefix cookie')
+    })
+
+    it('Set cookie with secure prefix', async () => {
+      const res = await app.request('http://localhost/set-secure-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('__Secure-delicious_cookie=macha; Path=/; Secure')
+    })
+
+    it('Get cookie with secure prefix', async () => {
+      const setCookie = await app.request('http://localhost/set-secure-prefix-cookie')
+      const header = setCookie.headers.get('Set-Cookie')
+      if (!header) {
+        assert.fail('invalid header')
+      }
+      const res = await app.request('http://localhost/get-secure-prefix-cookie', {
+        headers: {
+          Cookie: header,
+        },
+      })
+      const response = await res.text()
+      expect(res.status).toBe(200)
+      expect(response).toBe('macha')
+    })
+
+    app.get('/set-host-prefix-cookie', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha', {
+        prefix: 'host',
+        path: '/foo', // this will be ignored
+        domain: 'example.com', // this will be ignored
+        secure: false, // this will be ignored
+      })
+      return c.text('Set host prefix cookie')
+    })
+
+    it('Set cookie with host prefix', async () => {
+      const res = await app.request('http://localhost/set-host-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('__Host-delicious_cookie=macha; Path=/; Secure')
+    })
+
+    it('Get cookie with host prefix', async () => {
+      const setCookie = await app.request('http://localhost/set-host-prefix-cookie')
+      const header = setCookie.headers.get('Set-Cookie')
+      if (!header) {
+        assert.fail('invalid header')
+      }
+      const res = await app.request('http://localhost/get-host-prefix-cookie', {
+        headers: {
+          Cookie: header,
+        },
+      })
+      const response = await res.text()
+      expect(res.status).toBe(200)
+      expect(response).toBe('macha')
+    })
+
+    app.get('/set-signed-secure-prefix-cookie', async (c) => {
+      await setSignedCookie(c, 'delicious_cookie', 'macha', 'secret choco chips', {
+        prefix: 'secure',
+      })
+      return c.text('Set secure prefix cookie')
+    })
+
+    it('Set signed cookie with secure prefix', async () => {
+      const res = await app.request('http://localhost/set-signed-secure-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        '__Secure-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+      )
+    })
+
+    app.get('/set-signed-host-prefix-cookie', async (c) => {
+      await setSignedCookie(c, 'delicious_cookie', 'macha', 'secret choco chips', {
+        prefix: 'host',
+        domain: 'example.com', // this will be ignored
+        path: 'example.com', // thi will be ignored
+        secure: false, // this will be ignored
+      })
+      return c.text('Set host prefix cookie')
+    })
+
+    it('Set signed cookie with host prefix', async () => {
+      const res = await app.request('http://localhost/set-signed-host-prefix-cookie')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        '__Host-delicious_cookie=macha.i225faTyCrJUY8TvpTuJHI20HBWbQ89B4GV7lT4E%2FB0%3D; Path=/; Secure'
+      )
+    })
+
+    app.get('/set-cookie-complex', (c) => {
+      setCookie(c, 'great_cookie', 'banana', {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+        httpOnly: true,
+        maxAge: 1000,
+        expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+        sameSite: 'Strict',
+      })
+      return c.text('Give cookie')
+    })
+
+    it('Complex pattern', async () => {
+      const res = await app.request('http://localhost/set-cookie-complex')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
+      )
+    })
+
+    app.get('/set-signed-cookie-complex', async (c) => {
+      const secret = 'secret chocolate chips'
+      await setSignedCookie(c, 'great_cookie', 'banana', secret, {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+        httpOnly: true,
+        maxAge: 1000,
+        expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+        sameSite: 'Strict',
+      })
+      return c.text('Give signed cookie')
+    })
+
+    it('Complex pattern (signed)', async () => {
+      const res = await app.request('http://localhost/set-signed-cookie-complex')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe(
+        'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict'
+      )
+    })
+
+    app.get('/set-cookie-multiple', (c) => {
+      setCookie(c, 'delicious_cookie', 'macha')
+      setCookie(c, 'delicious_cookie', 'choco')
+      return c.text('Give cookie')
+    })
+
+    it('Multiple values', async () => {
+      const res = await app.request('http://localhost/set-cookie-multiple')
+      expect(res.status).toBe(200)
+      const header = res.headers.get('Set-Cookie')
+      expect(header).toBe('delicious_cookie=macha; Path=/, delicious_cookie=choco; Path=/')
+    })
+  })
+
+  describe('Delete cookie', () => {
+    const app = new Hono()
+
+    app.get('/delete-cookie', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Path=/')
+    })
+
+    app.get('/delete-cookie-multiple', (c) => {
+      deleteCookie(c, 'delicious_cookie')
+      deleteCookie(c, 'delicious_cookie2')
+      return c.text('Give cookie')
+    })
+
+    it('Delete multiple cookies', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie-multiple')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe(
+        'delicious_cookie=; Max-Age=0; Path=/, delicious_cookie2=; Max-Age=0; Path=/'
+      )
+    })
+
+    app.get('/delete-cookie-with-options', (c) => {
+      deleteCookie(c, 'delicious_cookie', {
+        path: '/',
+        secure: true,
+        domain: 'example.com',
+      })
+      return c.text('Give cookie')
+    })
+
+    it('Delete cookie with options', async () => {
+      const res2 = await app.request('http://localhost/delete-cookie-with-options')
+      expect(res2.status).toBe(200)
+      const header2 = res2.headers.get('Set-Cookie')
+      expect(header2).toBe('delicious_cookie=; Max-Age=0; Domain=example.com; Path=/; Secure')
+    })
+
+    app.get('/delete-cookie-with-deleted-value', (c) => {
+      const deleted = deleteCookie(c, 'delicious_cookie')
+      return c.text(deleted || '')
+    })
+
+    it('Get deleted value', async () => {
+      const cookieString = 'delicious_cookie=choco'
+      const req = new Request('http://localhost/delete-cookie-with-deleted-value')
+      req.headers.set('Cookie', cookieString)
+      const res = await app.request(req)
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('choco')
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="37">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/cookie/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Cookie Helper for Hono.
+ */
+
+import type { Context } from '../../context'
+import { parse, parseSigned, serialize, serializeSigned } from '../../utils/cookie'
+import type { Cookie, CookieOptions, CookiePrefixOptions, SignedCookie } from '../../utils/cookie'
+
+interface GetCookie {
+  (c: Context, key: string): string | undefined
+  (c: Context): Cookie
+  (c: Context, key: string, prefixOptions: CookiePrefixOptions): string | undefined
+}
+
+interface GetSignedCookie {
+  (c: Context, secret: string | BufferSource, key: string): Promise<string | undefined | false>
+  (c: Context, secret: string): Promise<SignedCookie>
+  (
+    c: Context,
+    secret: string | BufferSource,
+    key: string,
+    prefixOptions: CookiePrefixOptions
+  ): Promise<string | undefined | false>
+}
+
+export const getCookie: GetCookie = (c, key?, prefix?: CookiePrefixOptions) => {
+  const cookie = c.req.raw.headers.get('Cookie')
+  if (typeof key === 'string') {
+    if (!cookie) {
+      return undefined
+    }
+    let finalKey = key
+    if (prefix === 'secure') {
+      finalKey = '__Secure-' + key
+    } else if (prefix === 'host') {
+      finalKey = '__Host-' + key
+    }
+    const obj = parse(cookie, finalKey)
+    return obj[finalKey]
+  }
+  if (!cookie) {
+    return {}
+  }
+  const obj = parse(cookie)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return obj as any
+}
+
+export const getSignedCookie: GetSignedCookie = async (
+  c,
+  secret,
+  key?,
+  prefix?: CookiePrefixOptions
+) => {
+  const cookie = c.req.raw.headers.get('Cookie')
+  if (typeof key === 'string') {
+    if (!cookie) {
+      return undefined
+    }
+    let finalKey = key
+    if (prefix === 'secure') {
+      finalKey = '__Secure-' + key
+    } else if (prefix === 'host') {
+      finalKey = '__Host-' + key
+    }
+    const obj = await parseSigned(cookie, secret, finalKey)
+    return obj[finalKey]
+  }
+  if (!cookie) {
+    return {}
+  }
+  const obj = await parseSigned(cookie, secret)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return obj as any
+}
+
+export const setCookie = (c: Context, name: string, value: string, opt?: CookieOptions): void => {
+  // Cookie names prefixed with __Secure- can be used only if they are set with the secure attribute.
+  // Cookie names prefixed with __Host- can be used only if they are set with the secure attribute, must have a path of / (meaning any path at the host)
+  // and must not have a Domain attribute.
+  // Read more at https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#cookie_prefixes'
+  let cookie
+  if (opt?.prefix === 'secure') {
+    cookie = serialize('__Secure-' + name, value, { path: '/', ...opt, secure: true })
+  } else if (opt?.prefix === 'host') {
+    cookie = serialize('__Host-' + name, value, {
+      ...opt,
+      path: '/',
+      secure: true,
+      domain: undefined,
+    })
+  } else {
+    cookie = serialize(name, value, { path: '/', ...opt })
+  }
+  c.header('Set-Cookie', cookie, { append: true })
+}
+
+export const setSignedCookie = async (
+  c: Context,
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt?: CookieOptions
+): Promise<void> => {
+  let cookie
+  if (opt?.prefix === 'secure') {
+    cookie = await serializeSigned('__Secure-' + name, value, secret, {
+      path: '/',
+      ...opt,
+      secure: true,
+    })
+  } else if (opt?.prefix === 'host') {
+    cookie = await serializeSigned('__Host-' + name, value, secret, {
+      ...opt,
+      path: '/',
+      secure: true,
+      domain: undefined,
+    })
+  } else {
+    cookie = await serializeSigned(name, value, secret, { path: '/', ...opt })
+  }
+  c.header('set-cookie', cookie, { append: true })
+}
+
+export const deleteCookie = (c: Context, name: string, opt?: CookieOptions): string | undefined => {
+  const deletedCookie = getCookie(c, name)
+  setCookie(c, name, '', { ...opt, maxAge: 0 })
+  return deletedCookie
+}
+
+</document_content>
+</document>
+<document index="38">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/factory/index.test.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { expectTypeOf } from 'vitest'
+import { hc } from '../../client'
+import type { ClientRequest } from '../../client/types'
+import { Hono } from '../../index'
+import type { ExtractSchema, ToSchema, TypedResponse } from '../../types'
+import type { ContentfulStatusCode } from '../../utils/http-status'
+import type { Equal, Expect } from '../../utils/types'
+import { validator } from '../../validator'
+import { createFactory, createMiddleware } from './index'
+
+describe('createMiddleware', () => {
+  type Env = { Variables: { foo: string } }
+  const app = new Hono()
+
+  const mw = (message: string) =>
+    createMiddleware<Env>(async (c, next) => {
+      expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+      c.set('foo', 'bar')
+      await next()
+      c.header('X-Message', message)
+    })
+
+  const route = app.get('/message', mw('Hello Middleware'), (c) => {
+    return c.text(`Hey, ${c.var.foo}`)
+  })
+
+  it('Should return the correct header and the content', async () => {
+    const res = await app.request('/message')
+    expect(res.status).toBe(200)
+    expect(res.headers.get('x-message')).toBe('Hello Middleware')
+    expect(await res.text()).toBe('Hey, bar')
+  })
+
+  it('Should provide the correct types', async () => {
+    const client = hc<typeof route>('http://localhost')
+    const url = client.message.$url()
+    expect(url.pathname).toBe('/message')
+  })
+
+  it('Should pass generics types to chained handlers', () => {
+    type Bindings = {
+      MY_VAR_IN_BINDINGS: string
+    }
+
+    type Variables = {
+      MY_VAR: string
+    }
+
+    const app = new Hono<{ Bindings: Bindings }>()
+
+    app.get(
+      '/',
+      createMiddleware<{ Variables: Variables }>(async (c, next) => {
+        await next()
+      }),
+      createMiddleware(async (c, next) => {
+        await next()
+      }),
+      async (c) => {
+        const v = c.get('MY_VAR')
+        expectTypeOf(v).toEqualTypeOf<string>()
+      }
+    )
+  })
+})
+
+describe('createHandler', () => {
+  const mw = (message: string) =>
+    createMiddleware(async (c, next) => {
+      await next()
+      c.header('x-message', message)
+    })
+
+  describe('Basic', () => {
+    const factory = createFactory()
+    const app = new Hono()
+
+    const handlersA = factory.createHandlers((c) => {
+      return c.text('A')
+    })
+    const routesA = app.get('/a', ...handlersA)
+
+    const handlersB = factory.createHandlers(mw('B'), (c) => {
+      return c.text('B')
+    })
+    app.get('/b', ...handlersB)
+
+    it('Should return 200 response - GET /a', async () => {
+      const res = await app.request('/a')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('A')
+    })
+
+    it('Should return 200 response with a custom header - GET /b', async () => {
+      const res = await app.request('/b')
+      expect(res.status).toBe(200)
+      expect(res.headers.get('x-message')).toBe('B')
+      expect(await res.text()).toBe('B')
+    })
+
+    it('Should return correct path types - /a', () => {
+      const client = hc<typeof routesA>('/')
+      expectTypeOf(client).toEqualTypeOf<{
+        a: ClientRequest<{
+          $get: {
+            input: {}
+            output: 'A'
+            outputFormat: 'text'
+            status: ContentfulStatusCode
+          }
+        }>
+      }>()
+    })
+  })
+
+  describe('Types', () => {
+    type Env = { Variables: { foo: string } }
+
+    const factory = createFactory<Env>()
+    const app = new Hono<Env>()
+
+    const handlers = factory.createHandlers(
+      validator('query', () => {
+        return {
+          page: '1',
+        }
+      }),
+      (c) => {
+        const foo = c.var.foo
+        const { page } = c.req.valid('query')
+        return c.json({ page, foo })
+      }
+    )
+    const routes = app.get('/posts', ...handlers)
+
+    type Expected = Hono<
+      Env,
+      ToSchema<
+        'get',
+        '/posts',
+        {
+          in: {
+            query: {
+              page: string
+            }
+          }
+        },
+        TypedResponse<{
+          page: string
+          foo: string
+        }>
+      >,
+      '/'
+    >
+
+    it('Should return correct types', () => {
+      expectTypeOf(routes).toEqualTypeOf<Expected>()
+    })
+  })
+
+  // It's difficult to cover all possible patterns,
+  // so these tests will only cover the minimal cases.
+
+  describe('Types - Complex', () => {
+    type Env = { Variables: { foo: string } }
+
+    const factory = createFactory<Env>()
+    const app = new Hono<Env>()
+
+    const handlers = factory.createHandlers(
+      validator('header', () => {
+        return {
+          auth: 'token',
+        }
+      }),
+      validator('query', () => {
+        return {
+          page: '1',
+        }
+      }),
+      validator('json', () => {
+        return {
+          id: 123,
+        }
+      }),
+      (c) => {
+        const foo = c.var.foo
+        const { auth } = c.req.valid('header')
+        const { page } = c.req.valid('query')
+        const { id } = c.req.valid('json')
+        return c.json({ auth, page, foo, id })
+      }
+    )
+    const routes = app.get('/posts', ...handlers)
+
+    type Expected = Hono<
+      Env,
+      ToSchema<
+        'get',
+        '/posts',
+        {
+          in: {
+            header: {
+              auth: string
+            }
+          } & {
+            query: {
+              page: string
+            }
+          } & {
+            json: {
+              id: number
+            }
+          }
+        },
+        TypedResponse<{
+          auth: string
+          page: string
+          foo: string
+          id: number
+        }>
+      >,
+      '/'
+    >
+
+    it('Should return correct types', () => {
+      expectTypeOf(routes).toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('Types - Context Env with Multiple Middlewares', () => {
+    const factory = createFactory()
+
+    const mw1 = createMiddleware<
+      { Variables: { foo1: string } },
+      string,
+      { out: { query: { bar1: number } } }
+    >(async () => {})
+    const mw2 = createMiddleware<
+      { Variables: { foo2: string } },
+      string,
+      { out: { query: { bar2: number } } }
+    >(async () => {})
+    const mw3 = createMiddleware<
+      { Variables: { foo3: string } },
+      string,
+      { out: { query: { bar3: number } } }
+    >(async () => {})
+    const mw4 = createMiddleware<
+      { Variables: { foo4: string } },
+      string,
+      { out: { query: { bar4: number } } }
+    >(async () => {})
+    const mw5 = createMiddleware<
+      { Variables: { foo5: string } },
+      string,
+      { out: { query: { bar5: number } } }
+    >(async () => {})
+    const mw6 = createMiddleware<
+      { Variables: { foo6: string } },
+      string,
+      { out: { query: { bar6: number } } }
+    >(async () => {})
+    const mw7 = createMiddleware<
+      { Variables: { foo7: string } },
+      string,
+      { out: { query: { bar7: number } } }
+    >(async () => {})
+    const mw8 = createMiddleware<
+      { Variables: { foo8: string } },
+      string,
+      { out: { query: { bar8: number } } }
+    >(async () => {})
+    const mw9 = createMiddleware<
+      { Variables: { foo9: string } },
+      string,
+      { out: { query: { bar9: number } } }
+    >(async () => {})
+
+    it('Should not throw type error', () => {
+      factory.createHandlers(
+        mw1,
+        mw2,
+        mw3,
+        mw4,
+        mw5,
+        mw6,
+        mw7,
+        mw8,
+        async (c) => {
+          expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+          expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+        },
+        (c) => c.json(0)
+      )
+
+      factory.createHandlers(mw1, mw2, mw3, mw4, mw5, mw6, mw7, mw8, mw9, (c) => {
+        expectTypeOf(c.var.foo1).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo2).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo3).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo4).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo5).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo6).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo7).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo8).toEqualTypeOf<string>()
+        expectTypeOf(c.var.foo9).toEqualTypeOf<string>()
+
+        return c.json({
+          foo1: c.get('foo1'),
+          foo2: c.get('foo2'),
+          foo3: c.get('foo3'),
+          foo4: c.get('foo4'),
+          foo5: c.get('foo5'),
+          foo6: c.get('foo6'),
+          foo7: c.get('foo7'),
+          foo8: c.get('foo8'),
+          foo9: c.get('foo9'),
+        })
+      })
+    })
+  })
+})
+
+describe('createFactory', () => {
+  describe('createApp', () => {
+    type Env = { Variables: { foo: string } }
+    const factory = createFactory<Env>({
+      initApp: (app) => {
+        app.use((c, next) => {
+          c.set('foo', 'bar')
+          return next()
+        })
+      },
+    })
+    const app = factory.createApp()
+    it('Should set the correct type and initialize the app', async () => {
+      app.get('/', (c) => {
+        expectTypeOf(c.var.foo).toEqualTypeOf<string>()
+        return c.text(c.var.foo)
+      })
+      const res = await app.request('/')
+      expect(res.status).toBe(200)
+      expect(await res.text()).toBe('bar')
+    })
+  })
+
+  describe('createMiddleware', () => {
+    it('Should set the correct type', () => {
+      const factory = createFactory()
+
+      const middleware = factory.createMiddleware(async (_, next) => {
+        await next()
+      })
+
+      const routes = new Hono().use('*', middleware)
+      type Actual = ExtractSchema<typeof routes>
+      type Expected = {
+        '*': {}
+      }
+      type verify = Expect<Equal<Expected, Actual>>
+    })
+  })
+
+  it('Should use the default app options', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: false } }).createApp()
+    app.get('/hello', (c) => c.text('hello'))
+    const res = await app.request('/hello/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
+
+  it('Should override the default app options when creating', async () => {
+    const app = createFactory({ defaultAppOptions: { strict: true } }).createApp({ strict: false })
+    app.get('/hello', (c) => c.text('hello'))
+    const res = await app.request('/hello/')
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('hello')
+  })
+})
+
+describe('Lint rules', () => {
+  it('Should not throw a eslint `unbound-method` error if destructed', () => {
+    const { createApp, createHandlers, createMiddleware } = createFactory()
+    expect(createApp).toBeDefined()
+    expect(createHandlers).toBeDefined()
+    expect(createMiddleware).toBeDefined()
+  })
+})
+
+</document_content>
+</document>
+<document index="39">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/factory/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Factory Helper for Hono.
+ */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Hono } from '../../hono'
+import type { HonoOptions } from '../../hono-base'
+import type {
+  Env,
+  H,
+  HandlerResponse,
+  Input,
+  IntersectNonAnyTypes,
+  MiddlewareHandler,
+} from '../../types'
+
+type InitApp<E extends Env = Env> = (app: Hono<E>) => void
+
+export interface CreateHandlersInterface<E extends Env, P extends string> {
+  <I extends Input = {}, R extends HandlerResponse<any> = any, E2 extends Env = E>(
+    handler1: H<E2, P, I, R>
+  ): [H<E2, P, I, R>]
+
+  // handler x2
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>
+  ): [H<E2, P, I, R>, H<E3, P, I2, R>]
+
+  // handler x3
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>
+  ): [H<E2, P, I, R>, H<E3, P, I2, R>, H<E4, P, I3, R>]
+
+  // handler x4
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>
+  ): [H<E2, P, I, R>, H<E3, P, I2, R>, H<E4, P, I3, R>, H<E5, P, I4, R>]
+
+  // handler x5
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>
+  ): [H<E2, P, I, R>, H<E3, P, I2, R>, H<E4, P, I3, R>, H<E5, P, I4, R>, H<E6, P, I5, R>]
+
+  // handler x6
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    I6 extends Input = I & I2 & I3 & I4 & I5,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>,
+    handler6: H<E7, P, I6, R>
+  ): [
+    H<E2, P, I, R>,
+    H<E3, P, I2, R>,
+    H<E4, P, I3, R>,
+    H<E5, P, I4, R>,
+    H<E6, P, I5, R>,
+    H<E7, P, I6, R>
+  ]
+
+  // handler x7
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    I6 extends Input = I & I2 & I3 & I4 & I5,
+    I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>,
+    handler6: H<E7, P, I6, R>,
+    handler7: H<E8, P, I7, R>
+  ): [
+    H<E2, P, I, R>,
+    H<E3, P, I2, R>,
+    H<E4, P, I3, R>,
+    H<E5, P, I4, R>,
+    H<E6, P, I5, R>,
+    H<E7, P, I6, R>,
+    H<E8, P, I7, R>
+  ]
+
+  // handler x8
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    I6 extends Input = I & I2 & I3 & I4 & I5,
+    I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
+    I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>,
+    handler6: H<E7, P, I6, R>,
+    handler7: H<E8, P, I7, R>,
+    handler8: H<E9, P, I8, R>
+  ): [
+    H<E2, P, I, R>,
+    H<E3, P, I2, R>,
+    H<E4, P, I3, R>,
+    H<E5, P, I4, R>,
+    H<E6, P, I5, R>,
+    H<E7, P, I6, R>,
+    H<E8, P, I7, R>,
+    H<E9, P, I8, R>
+  ]
+
+  // handler x9
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    I6 extends Input = I & I2 & I3 & I4 & I5,
+    I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
+    I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
+    I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>,
+    handler6: H<E7, P, I6, R>,
+    handler7: H<E8, P, I7, R>,
+    handler8: H<E9, P, I8, R>,
+    handler9: H<E10, P, I9, R>
+  ): [
+    H<E2, P, I, R>,
+    H<E3, P, I2, R>,
+    H<E4, P, I3, R>,
+    H<E5, P, I4, R>,
+    H<E6, P, I5, R>,
+    H<E7, P, I6, R>,
+    H<E8, P, I7, R>,
+    H<E9, P, I8, R>,
+    H<E10, P, I9, R>
+  ]
+
+  // handler x10
+  <
+    I extends Input = {},
+    I2 extends Input = I,
+    I3 extends Input = I & I2,
+    I4 extends Input = I & I2 & I3,
+    I5 extends Input = I & I2 & I3 & I4,
+    I6 extends Input = I & I2 & I3 & I4 & I5,
+    I7 extends Input = I & I2 & I3 & I4 & I5 & I6,
+    I8 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7,
+    I9 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8,
+    I10 extends Input = I & I2 & I3 & I4 & I5 & I6 & I7 & I8 & I9,
+    R extends HandlerResponse<any> = any,
+    E2 extends Env = E,
+    E3 extends Env = IntersectNonAnyTypes<[E, E2]>,
+    E4 extends Env = IntersectNonAnyTypes<[E, E2, E3]>,
+    E5 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4]>,
+    E6 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5]>,
+    E7 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6]>,
+    E8 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7]>,
+    E9 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8]>,
+    E10 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9]>,
+    E11 extends Env = IntersectNonAnyTypes<[E, E2, E3, E4, E5, E6, E7, E8, E9, E10]>
+  >(
+    handler1: H<E2, P, I, R>,
+    handler2: H<E3, P, I2, R>,
+    handler3: H<E4, P, I3, R>,
+    handler4: H<E5, P, I4, R>,
+    handler5: H<E6, P, I5, R>,
+    handler6: H<E7, P, I6, R>,
+    handler7: H<E8, P, I7, R>,
+    handler8: H<E9, P, I8, R>,
+    handler9: H<E10, P, I9, R>,
+    handler10: H<E11, P, I10, R>
+  ): [
+    H<E2, P, I, R>,
+    H<E3, P, I2, R>,
+    H<E4, P, I3, R>,
+    H<E5, P, I4, R>,
+    H<E6, P, I5, R>,
+    H<E7, P, I6, R>,
+    H<E8, P, I7, R>,
+    H<E9, P, I8, R>,
+    H<E10, P, I9, R>,
+    H<E11, P, I10, R>
+  ]
+}
+
+export class Factory<E extends Env = Env, P extends string = string> {
+  private initApp?: InitApp<E>
+  #defaultAppOptions?: HonoOptions<E>
+
+  constructor(init?: { initApp?: InitApp<E>; defaultAppOptions?: HonoOptions<E> }) {
+    this.initApp = init?.initApp
+    this.#defaultAppOptions = init?.defaultAppOptions
+  }
+
+  createApp = (options?: HonoOptions<E>): Hono<E> => {
+    const app = new Hono<E>(
+      options && this.#defaultAppOptions
+        ? { ...this.#defaultAppOptions, ...options }
+        : options ?? this.#defaultAppOptions
+    )
+    if (this.initApp) {
+      this.initApp(app)
+    }
+    return app
+  }
+
+  createMiddleware = <I extends Input = {}>(
+    middleware: MiddlewareHandler<E, P, I>
+  ): MiddlewareHandler<E, P, I> => middleware
+
+  createHandlers: CreateHandlersInterface<E, P> = (...handlers: any) => {
+    // @ts-expect-error this should not be typed
+    return handlers.filter((handler) => handler !== undefined)
+  }
+}
+
+export const createFactory = <E extends Env = Env, P extends string = string>(init?: {
+  initApp?: InitApp<E>
+  defaultAppOptions?: HonoOptions<E>
+}): Factory<E, P> => new Factory<E, P>(init)
+
+export const createMiddleware = <
+  E extends Env = any,
+  P extends string = string,
+  I extends Input = {}
+>(
+  middleware: MiddlewareHandler<E, P, I>
+): MiddlewareHandler<E, P, I> => middleware
+
+</document_content>
+</document>
+</documents>

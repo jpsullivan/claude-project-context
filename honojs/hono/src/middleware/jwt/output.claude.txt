@@ -1,0 +1,635 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwt/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
+import { jwt } from '.'
+
+describe('JWT', () => {
+  describe('Credentials in header', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/auth/*', jwt({ secret: 'a-secret' }))
+    app.use('/auth-unicode/*', jwt({ secret: 'a-secret' }))
+    app.use('/nested/*', async (c, next) => {
+      const auth = jwt({ secret: 'a-secret' })
+      return auth(c, next)
+    })
+
+    app.get('/auth/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-unicode/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/nested/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const req = new Request('http://localhost/auth/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize Unicode', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const req = new Request('http://localhost/auth-unicode/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize Unicode', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize', async () => {
+      const invalid_token = 'invalid token'
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${invalid_token}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize - nested', async () => {
+      const req = new Request('http://localhost/nested/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize - nested', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const req = new Request('http://localhost/nested/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in cookie', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/auth/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
+    app.use('/auth-unicode/*', jwt({ secret: 'a-secret', cookie: 'access_token' }))
+
+    app.get('/auth/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-unicode/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const url = 'http://localhost/auth/a'
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize Unicode', async () => {
+      const credential =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const req = new Request('http://localhost/auth-unicode/a', {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize Unicode', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Cookie', `access_token=${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize', async () => {
+      const invalidToken = 'invalid token'
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url)
+      req.headers.set('Cookie', `access_token=${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Error handling with `cause`', () => {
+    const app = new Hono()
+
+    app.use('/auth/*', jwt({ secret: 'a-secret' }))
+    app.get('/auth/*', (c) => c.text('Authorized'))
+
+    app.onError((e, c) => {
+      if (e instanceof HTTPException && e.cause instanceof Error) {
+        return c.json({ name: e.cause.name, message: e.cause.message }, 401)
+      }
+      return c.text(e.message, 401)
+    })
+
+    it('Should not authorize', async () => {
+      const credential = 'abc.def.ghi'
+      const req = new Request('http://localhost/auth')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(await res.json()).toEqual({
+        name: 'JwtTokenInvalid',
+        message: `invalid JWT token: ${credential}`,
+      })
+    })
+  })
+
+  describe('Credentials in signed cookie with prefix Options', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth/*',
+      jwt({
+        secret: 'a-secret',
+        cookie: {
+          key: 'cookie_name',
+          secret: 'cookie_secret',
+          prefixOptions: 'host',
+        },
+      })
+    )
+
+    app.get('/auth/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie:
+            '__Host-cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE.i2NSvtJOXOPS9NDL1u8dqTYmMrzcD4mNSws6P6qmeV0%3D; Path=/',
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in signed cookie without prefix Options', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth/*',
+      jwt({
+        secret: 'a-secret',
+        cookie: {
+          key: 'cookie_name',
+          secret: 'cookie_secret',
+        },
+      })
+    )
+
+    app.get('/auth/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie:
+            'cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE.i2NSvtJOXOPS9NDL1u8dqTYmMrzcD4mNSws6P6qmeV0%3D; Path=/',
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in cookie object with prefix Options', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth/*',
+      jwt({
+        secret: 'a-secret',
+        cookie: {
+          key: 'cookie_name',
+          prefixOptions: 'host',
+        },
+      })
+    )
+
+    app.get('/auth/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie:
+            '__Host-cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE',
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in cookie object without prefix Options', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use(
+      '/auth/*',
+      jwt({
+        secret: 'a-secret',
+        cookie: {
+          key: 'cookie_name',
+        },
+      })
+    )
+
+    app.get('/auth/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize', async () => {
+      const req = new Request('http://localhost/auth/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize', async () => {
+      const url = 'http://localhost/auth/a'
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie:
+            'cookie_name=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE',
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwt/index.ts</source>
+<document_content>
+import type { JwtVariables } from './jwt'
+export type { JwtVariables }
+export { jwt, verify, decode, sign } from './jwt'
+import type {} from '../..'
+
+declare module '../..' {
+  interface ContextVariableMap extends JwtVariables {}
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwt/jwt.ts</source>
+<document_content>
+/**
+ * @module
+ * JWT Auth Middleware for Hono.
+ */
+
+import type { Context } from '../../context'
+import { getCookie, getSignedCookie } from '../../helper/cookie'
+import { HTTPException } from '../../http-exception'
+import type { MiddlewareHandler } from '../../types'
+import type { CookiePrefixOptions } from '../../utils/cookie'
+import { Jwt } from '../../utils/jwt'
+import '../../context'
+import type { SignatureAlgorithm } from '../../utils/jwt/jwa'
+import type { SignatureKey } from '../../utils/jwt/jws'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type JwtVariables<T = any> = {
+  jwtPayload: T
+}
+
+/**
+ * JWT Auth Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/jwt}
+ *
+ * @param {object} options - The options for the JWT middleware.
+ * @param {SignatureKey} [options.secret] - A value of your secret key.
+ * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
+ * @param {SignatureAlgorithm} [options.alg=HS256] - An algorithm type that is used for verifying. Available types are `HS256` | `HS384` | `HS512` | `RS256` | `RS384` | `RS512` | `PS256` | `PS384` | `PS512` | `ES256` | `ES384` | `ES512` | `EdDSA`.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use(
+ *   '/auth/*',
+ *   jwt({
+ *     secret: 'it-is-very-secret',
+ *   })
+ * )
+ *
+ * app.get('/auth/page', (c) => {
+ *   return c.text('You are authorized')
+ * })
+ * ```
+ */
+export const jwt = (options: {
+  secret: SignatureKey
+  cookie?:
+    | string
+    | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+  alg?: SignatureAlgorithm
+}): MiddlewareHandler => {
+  if (!options || !options.secret) {
+    throw new Error('JWT auth middleware requires options for "secret"')
+  }
+
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+
+  return async function jwt(ctx, next) {
+    const credentials = ctx.req.raw.headers.get('Authorization')
+    let token
+    if (credentials) {
+      const parts = credentials.split(/\s+/)
+      if (parts.length !== 2) {
+        const errDescription = 'invalid credentials structure'
+        throw new HTTPException(401, {
+          message: errDescription,
+          res: unauthorizedResponse({
+            ctx,
+            error: 'invalid_request',
+            errDescription,
+          }),
+        })
+      } else {
+        token = parts[1]
+      }
+    } else if (options.cookie) {
+      if (typeof options.cookie == 'string') {
+        token = getCookie(ctx, options.cookie)
+      } else if (options.cookie.secret) {
+        if (options.cookie.prefixOptions) {
+          token = await getSignedCookie(
+            ctx,
+            options.cookie.secret,
+            options.cookie.key,
+            options.cookie.prefixOptions
+          )
+        } else {
+          token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)
+        }
+      } else {
+        if (options.cookie.prefixOptions) {
+          token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
+        } else {
+          token = getCookie(ctx, options.cookie.key)
+        }
+      }
+    }
+
+    if (!token) {
+      const errDescription = 'no authorization included in request'
+      throw new HTTPException(401, {
+        message: errDescription,
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_request',
+          errDescription,
+        }),
+      })
+    }
+
+    let payload
+    let cause
+    try {
+      payload = await Jwt.verify(token, options.secret, options.alg)
+    } catch (e) {
+      cause = e
+    }
+    if (!payload) {
+      throw new HTTPException(401, {
+        message: 'Unauthorized',
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_token',
+          statusText: 'Unauthorized',
+          errDescription: 'token verification failure',
+        }),
+        cause,
+      })
+    }
+
+    ctx.set('jwtPayload', payload)
+
+    await next()
+  }
+}
+
+function unauthorizedResponse(opts: {
+  ctx: Context
+  error: string
+  errDescription: string
+  statusText?: string
+}) {
+  return new Response('Unauthorized', {
+    status: 401,
+    statusText: opts.statusText,
+    headers: {
+      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+    },
+  })
+}
+
+export const verify = Jwt.verify
+export const decode = Jwt.decode
+export const sign = Jwt.sign
+
+</document_content>
+</document>
+</documents>

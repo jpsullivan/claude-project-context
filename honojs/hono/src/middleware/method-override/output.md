@@ -1,0 +1,336 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/method-override/index.test.ts
+```typescript
+import { Hono } from '../../hono'
+import { methodOverride } from './index'
+
+describe('Method Override Middleware', () => {
+  describe('Form', () => {
+    const app = new Hono()
+    app.use('/posts/*', methodOverride({ app }))
+    app.use('/posts-custom/*', methodOverride({ app, form: 'custom-input-name' }))
+    app.on(['post', 'delete'], ['/posts', '/posts-custom'], async (c) => {
+      const form = await c.req.formData()
+      return c.json({
+        method: c.req.method,
+        message: form.get('message'),
+        contentType: c.req.header('content-type') ?? '',
+      })
+    })
+
+    describe('multipart/form-data', () => {
+      it('Should override POST to DELETE', async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        form.append('_method', 'DELETE')
+        const res = await app.request('/posts', {
+          body: form,
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.method).toBe('DELETE')
+        expect(data.message).toBe('Hello')
+        expect(data.contentType).toMatch(/^multipart\/form-data;/)
+      })
+
+      it('Should override POST to DELETE - with a custom form input name', async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        form.append('custom-input-name', 'DELETE')
+        const res = await app.request('/posts-custom', {
+          body: form,
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.method).toBe('DELETE')
+        expect(data.message).toBe('Hello')
+        expect(data.contentType).toMatch(/^multipart\/form-data;/)
+      })
+
+      it('Should override POST to PATCH - not found', async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        form.append('_method', 'PATCH')
+        const res = await app.request('/posts', {
+          body: form,
+          method: 'POST',
+        })
+        expect(res.status).toBe(404)
+      })
+    })
+
+    describe('application/x-www-form-urlencoded', () => {
+      it('Should override POST to DELETE', async () => {
+        const params = new URLSearchParams()
+        params.append('message', 'Hello')
+        params.append('_method', 'DELETE')
+        const res = await app.request('/posts', {
+          body: params,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.method).toBe('DELETE')
+        expect(data.message).toBe('Hello')
+        expect(data.contentType).toBe('application/x-www-form-urlencoded')
+      })
+
+      it('Should override POST to DELETE - with a custom form input name', async () => {
+        const params = new URLSearchParams()
+        params.append('message', 'Hello')
+        params.append('custom-input-name', 'DELETE')
+        const res = await app.request('/posts-custom', {
+          body: params,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          method: 'POST',
+        })
+        expect(res.status).toBe(200)
+        const data = await res.json()
+        expect(data.method).toBe('DELETE')
+        expect(data.message).toBe('Hello')
+        expect(data.contentType).toBe('application/x-www-form-urlencoded')
+      })
+
+      it('Should override POST to PATCH - not found', async () => {
+        const form = new FormData()
+        form.append('message', 'Hello')
+        form.append('_method', 'PATCH')
+        const res = await app.request('/posts', {
+          body: form,
+          method: 'POST',
+        })
+        expect(res.status).toBe(404)
+      })
+    })
+  })
+
+  describe('Header', () => {
+    const app = new Hono()
+    app.use('/posts/*', methodOverride({ app, header: 'X-METHOD-OVERRIDE' }))
+    app.on(['get', 'post', 'delete'], '/posts', async (c) => {
+      return c.json({
+        method: c.req.method,
+        headerValue: c.req.header('X-METHOD-OVERRIDE') ?? null,
+      })
+    })
+
+    it('Should override POST to DELETE', async () => {
+      const res = await app.request('/posts', {
+        method: 'POST',
+        headers: {
+          'X-METHOD-OVERRIDE': 'DELETE',
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        headerValue: null,
+      })
+    })
+
+    it('Should not override GET request', async () => {
+      const res = await app.request('/posts', {
+        method: 'GET',
+        headers: {
+          'X-METHOD-OVERRIDE': 'DELETE',
+        },
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'GET',
+        headerValue: 'DELETE', // It does not modify the headers.
+      })
+    })
+  })
+
+  describe('Query', () => {
+    const app = new Hono()
+    app.use('/posts/*', methodOverride({ app, query: '_method' }))
+    app.on(['get', 'post', 'delete'], '/posts', async (c) => {
+      return c.json({
+        method: c.req.method,
+        queryValue: c.req.query('_method') ?? null,
+      })
+    })
+
+    it('Should override POST to DELETE', async () => {
+      const res = await app.request('/posts?_method=delete', {
+        method: 'POST',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'DELETE',
+        queryValue: null,
+      })
+    })
+
+    it('Should not override GET request', async () => {
+      const res = await app.request('/posts?_method=delete', {
+        method: 'GET',
+      })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({
+        method: 'GET',
+        queryValue: 'delete', // It does not modify the queries.
+      })
+    })
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/method-override/index.ts
+````typescript
+/**
+ * @module
+ * Method Override Middleware for Hono.
+ */
+
+import type { Context, ExecutionContext } from '../../context'
+import type { Hono } from '../../hono'
+import type { MiddlewareHandler } from '../../types'
+import { parseBody } from '../../utils/body'
+
+type MethodOverrideOptions = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app: Hono<any, any, any>
+} & (
+  | {
+      // Default is 'form' and the value is `_method`
+      form?: string
+      header?: never
+      query?: never
+    }
+  | {
+      form?: never
+      header: string
+      query?: never
+    }
+  | {
+      form?: never
+      header?: never
+      query: string
+    }
+)
+
+const DEFAULT_METHOD_FORM_NAME = '_method'
+
+/**
+ * Method Override Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/method-override}
+ *
+ * @param {MethodOverrideOptions} options - The options for the method override middleware.
+ * @param {Hono} options.app - The instance of Hono is used in your application.
+ * @param {string} [options.form=_method] - Form key with a value containing the method name.
+ * @param {string} [options.header] - Header name with a value containing the method name.
+ * @param {string} [options.query] - Query parameter key with a value containing the method name.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * // If no options are specified, the value of `_method` in the form,
+ * // e.g. DELETE, is used as the method.
+ * app.use('/posts', methodOverride({ app }))
+ *
+ * app.delete('/posts', (c) => {
+ *   // ....
+ * })
+ * ```
+ */
+export const methodOverride = (options: MethodOverrideOptions): MiddlewareHandler =>
+  async function methodOverride(c, next) {
+    if (c.req.method === 'GET') {
+      return await next()
+    }
+
+    const app = options.app
+    // Method override by form
+    if (!(options.header || options.query)) {
+      const contentType = c.req.header('content-type')
+      const methodFormName = options.form || DEFAULT_METHOD_FORM_NAME
+      const clonedRequest = c.req.raw.clone()
+      const newRequest = clonedRequest.clone()
+      // Content-Type is `multipart/form-data`
+      if (contentType?.startsWith('multipart/form-data')) {
+        const form = await clonedRequest.formData()
+        const method = form.get(methodFormName)
+        if (method) {
+          const newForm = await newRequest.formData()
+          newForm.delete(methodFormName)
+          const newHeaders = new Headers(clonedRequest.headers)
+          newHeaders.delete('content-type')
+          newHeaders.delete('content-length')
+          const request = new Request(c.req.url, {
+            body: newForm,
+            headers: newHeaders,
+            method: method as string,
+          })
+          return app.fetch(request, c.env, getExecutionCtx(c))
+        }
+      }
+      // Content-Type is `application/x-www-form-urlencoded`
+      if (contentType === 'application/x-www-form-urlencoded') {
+        const params = await parseBody<Record<string, string>>(clonedRequest)
+        const method = params[methodFormName]
+        if (method) {
+          delete params[methodFormName]
+          const newParams = new URLSearchParams(params)
+          const request = new Request(newRequest, {
+            body: newParams,
+            method: method as string,
+          })
+          return app.fetch(request, c.env, getExecutionCtx(c))
+        }
+      }
+    }
+    // Method override by header
+    else if (options.header) {
+      const headerName = options.header
+      const method = c.req.header(headerName)
+      if (method) {
+        const newHeaders = new Headers(c.req.raw.headers)
+        newHeaders.delete(headerName)
+        const request = new Request(c.req.raw, {
+          headers: newHeaders,
+          method,
+        })
+        return app.fetch(request, c.env, getExecutionCtx(c))
+      }
+    }
+    // Method override by query
+    else if (options.query) {
+      const queryName = options.query
+      const method = c.req.query(queryName)
+      if (method) {
+        const url = new URL(c.req.url)
+        url.searchParams.delete(queryName)
+        const request = new Request(url.toString(), {
+          body: c.req.raw.body,
+          headers: c.req.raw.headers,
+          method,
+        })
+        return app.fetch(request, c.env, getExecutionCtx(c))
+      }
+    }
+    await next()
+  }
+
+const getExecutionCtx = (c: Context) => {
+  let executionCtx: ExecutionContext | undefined
+  try {
+    executionCtx = c.executionCtx
+  } catch {
+    // Do nothing
+  }
+  return executionCtx
+}
+
+````

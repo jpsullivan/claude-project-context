@@ -1,0 +1,859 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwk/index.test.ts
+```typescript
+import { HttpResponse, http } from 'msw'
+import { setupServer } from 'msw/node'
+import { setSignedCookie } from '../../helper/cookie'
+import { Hono } from '../../hono'
+import { HTTPException } from '../../http-exception'
+import { encodeBase64Url } from '../../utils/encode'
+import { Jwt } from '../../utils/jwt'
+import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+import { signing } from '../../utils/jwt/jws'
+import { verifyFromJwks } from '../../utils/jwt/jwt'
+import type { JWTPayload } from '../../utils/jwt/types'
+import { utf8Encoder } from '../../utils/jwt/utf8'
+import * as test_keys from './keys.test.json'
+import { jwk } from '.'
+
+const verify_keys = test_keys.public_keys
+
+describe('JWK', () => {
+  const server = setupServer(
+    http.get('http://localhost/.well-known/jwks.json', () => {
+      return HttpResponse.json({ keys: verify_keys })
+    }),
+    http.get('http://localhost/.well-known/missing-jwks.json', () => {
+      return HttpResponse.json({})
+    }),
+    http.get('http://localhost/.well-known/bad-jwks.json', () => {
+      return HttpResponse.json({ keys: 'bad-keys' })
+    }),
+    http.get('http://localhost/.well-known/404-jwks.json', () => {
+      return HttpResponse.text('Not Found', { status: 404 })
+    })
+  )
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  describe('verifyFromJwks', () => {
+    it('Should throw error on missing options', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      await expect(verifyFromJwks(credential, {})).rejects.toThrow(
+        'verifyFromJwks requires options for either "keys" or "jwks_uri" or both'
+      )
+    })
+  })
+
+  describe('Credentials in header', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys }))
+    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys }))
+    app.use('/auth-with-keys-nested/*', async (c, next) => {
+      const auth = jwk({ keys: verify_keys })
+      return auth(c, next)
+    })
+    app.use(
+      '/auth-with-keys-fn/*',
+      jwk({
+        keys: async () => {
+          const response = await fetch('http://localhost/.well-known/jwks.json')
+          const data = await response.json()
+          return data.keys
+        },
+      })
+    )
+    app.use(
+      '/auth-with-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-keys-and-jwks_uri/*',
+      jwk({
+        keys: verify_keys,
+        jwks_uri: 'http://localhost/.well-known/jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-missing-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/missing-jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-404-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/404-jwks.json',
+      })
+    )
+    app.use(
+      '/auth-with-bad-jwks_uri/*',
+      jwk({
+        jwks_uri: 'http://localhost/.well-known/bad-jwks.json',
+      })
+    )
+
+    app.get('/auth-with-keys/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-unicode/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-nested/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-fn/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-and-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-missing-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-404-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-bad-jwks_uri/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should throw an error if the middleware is missing both keys and jwks_uri (empty)', async () => {
+      expect(() => app.use('/auth-with-empty-middleware/*', jwk({}))).toThrow(
+        'JWK auth middleware requires options for either "keys" or "jwks_uri"'
+      )
+    })
+
+    it('Should throw an error when crypto.subtle is missing', async () => {
+      const subtleSpy = vi.spyOn(global.crypto, 'subtle', 'get').mockReturnValue({
+        importKey: undefined,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+      expect(() => app.use('/auth-with-bad-env/*', jwk({ keys: verify_keys }))).toThrow()
+      subtleSpy.mockRestore()
+    })
+
+    it('Should return a server error if options.jwks_uri returns a 404', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-404-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should return a server error if the remotely fetched keys from options.jwks_uri are missing', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-missing-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should return a server error if the remotely fetched keys from options.jwks_uri are malformed', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-bad-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(500)
+    })
+
+    it('Should not authorize requests with missing access token', async () => {
+      const req = new Request('http://localhost/auth-with-keys/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize from a static array passed to options.keys (key 1)', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize from a static array passed to options.keys (key 2)', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[1])
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+      expect(res.status).toBe(200)
+    })
+
+    it('Should not authorize a token without header', async () => {
+      const encodeJwtPart = (part: unknown): string =>
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+      const encodeSignaturePart = (buf: ArrayBufferLike): string =>
+        encodeBase64Url(buf).replace(/=/g, '')
+      const jwtSignWithoutHeader = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
+        const encodedPayload = encodeJwtPart(payload)
+        const signaturePart = await signing(
+          privateKey,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          privateKey.alg as any,
+          utf8Encoder.encode(encodedPayload)
+        )
+        const signature = encodeSignaturePart(signaturePart)
+        return `${encodedPayload}.${signature}`
+      }
+      const credential = await jwtSignWithoutHeader(
+        { message: 'hello world' },
+        test_keys.private_keys[1]
+      )
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+    })
+
+    it('Should not authorize a token with missing "kid" in header', async () => {
+      const encodeJwtPart = (part: unknown): string =>
+        encodeBase64Url(utf8Encoder.encode(JSON.stringify(part))).replace(/=/g, '')
+      const encodeSignaturePart = (buf: ArrayBufferLike): string =>
+        encodeBase64Url(buf).replace(/=/g, '')
+      const jwtSignWithoutKid = async (payload: JWTPayload, privateKey: HonoJsonWebKey) => {
+        const encodedPayload = encodeJwtPart(payload)
+        const encodedHeader = encodeJwtPart({ alg: privateKey.alg, typ: 'JWT' })
+        const partialToken = `${encodedHeader}.${encodedPayload}`
+        const signaturePart = await signing(
+          privateKey,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          privateKey.alg as any,
+          utf8Encoder.encode(partialToken)
+        )
+        const signature = encodeSignaturePart(signaturePart)
+        return `${partialToken}.${signature}`
+      }
+      const credential = await jwtSignWithoutKid(
+        { message: 'hello world' },
+        test_keys.private_keys[1]
+      )
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+    })
+
+    it('Should not authorize a token with invalid "kid" in header', async () => {
+      const copy = structuredClone(test_keys.private_keys[1])
+      copy.kid = 'invalid-kid'
+      const credential = await Jwt.sign({ message: 'hello world' }, copy)
+      const req = new Request('http://localhost/auth-with-keys/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+    })
+
+    it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-unicode/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize from a function passed to options.keys', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-fn/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize from keys remotely fetched from options.jwks_uri', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize from keys and hard-coded and remotely fetched from options.jwks_uri', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-and-jwks_uri/a')
+      req.headers.set('Authorization', `Basic ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize requests with invalid Unicode payload in header', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+      const url = 'http://localhost/auth-with-keys-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Basic ${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize requests with malformed token structure in header', async () => {
+      const invalid_token = 'invalid token'
+      const url = 'http://localhost/auth-with-keys/a'
+      const req = new Request(url)
+      req.headers.set('Authorization', `Bearer ${invalid_token}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_request",error_description="invalid credentials structure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize requests without authorization in nested JWK middleware', async () => {
+      const req = new Request('http://localhost/auth-with-keys-nested/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize requests with authorization in nested JWK middleware', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-nested/a')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+  })
+
+  describe('Credentials in cookie', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use('/auth-with-keys-unicode/*', jwk({ keys: verify_keys, cookie: 'access_token' }))
+    app.use(
+      '/auth-with-keys-prefixed/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token', prefixOptions: 'host' } })
+    )
+    app.use(
+      '/auth-with-keys-unprefixed/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token' } })
+    )
+
+    app.get('/auth-with-keys/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-prefixed/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-unprefixed/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-keys-unicode/*', (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should not authorize requests with missing access token', async () => {
+      const req = new Request('http://localhost/auth-with-keys/a')
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should authorize cookie from a static array passed to options.keys', async () => {
+      const url = 'http://localhost/auth-with-keys/a'
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize prefixed cookie from a static array passed to options.keys', async () => {
+      const url = 'http://localhost/auth-with-keys-prefixed/a'
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `__Host-access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize unprefixed cookie from a static array passed to options.keys', async () => {
+      const url = 'http://localhost/auth-with-keys-unprefixed/a'
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request(url, {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(res.status).toBe(200)
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize with Unicode payload from a static array passed to options.keys', async () => {
+      const credential = await Jwt.sign({ message: 'hello world' }, test_keys.private_keys[0])
+      const req = new Request('http://localhost/auth-with-keys-unicode/a', {
+        headers: new Headers({
+          Cookie: `access_token=${credential}`,
+        }),
+      })
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize requests with invalid Unicode payload in cookie', async () => {
+      const invalidToken =
+        'ssyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+
+      const url = 'http://localhost/auth-with-keys-unicode/a'
+      const req = new Request(url)
+      req.headers.set('Cookie', `access_token=${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+
+    it('Should not authorize requests with malformed token structure in cookie', async () => {
+      const invalidToken = 'invalid token'
+      const url = 'http://localhost/auth-with-keys/a'
+      const req = new Request(url)
+      req.headers.set('Cookie', `access_token=${invalidToken}`)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(401)
+      expect(res.headers.get('www-authenticate')).toEqual(
+        `Bearer realm="${url}",error="invalid_token",error_description="token verification failure"`
+      )
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Credentials in a signed cookie', () => {
+    let handlerExecuted: boolean
+
+    beforeEach(() => {
+      handlerExecuted = false
+    })
+
+    const app = new Hono()
+    const test_secret = 'Shhh'
+
+    app.use(
+      '/auth-with-signed-cookie/*',
+      jwk({ keys: verify_keys, cookie: { key: 'access_token', secret: test_secret } })
+    )
+    app.use(
+      '/auth-with-signed-with-prefix-options-cookie/*',
+      jwk({
+        keys: verify_keys,
+        cookie: { key: 'access_token', secret: test_secret, prefixOptions: 'host' },
+      })
+    )
+
+    app.get('/sign-cookie', async (c) => {
+      const credential = await Jwt.sign(
+        { message: 'signed hello world' },
+        test_keys.private_keys[0]
+      )
+      await setSignedCookie(c, 'access_token', credential, test_secret)
+      return c.text('OK')
+    })
+    app.get('/sign-cookie-with-prefix', async (c) => {
+      const credential = await Jwt.sign(
+        { message: 'signed hello world' },
+        test_keys.private_keys[0]
+      )
+      await setSignedCookie(c, 'access_token', credential, test_secret, { prefix: 'host' })
+      return c.text('OK')
+    })
+    app.get('/auth-with-signed-cookie/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+    app.get('/auth-with-signed-with-prefix-options-cookie/*', async (c) => {
+      handlerExecuted = true
+      const payload = c.get('jwtPayload')
+      return c.json(payload)
+    })
+
+    it('Should authorize signed cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-cookie/a'
+      const sign_res = await app.request('http://localhost/sign-cookie')
+      const cookieHeader = sign_res.headers.get('Set-Cookie') as string
+      expect(cookieHeader).not.toBeNull()
+      const req = new Request(url)
+      req.headers.set('Cookie', cookieHeader)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'signed hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should authorize prefixed signed cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-with-prefix-options-cookie/a'
+      const sign_res = await app.request('http://localhost/sign-cookie-with-prefix')
+      const cookieHeader = sign_res.headers.get('Set-Cookie') as string
+      expect(cookieHeader).not.toBeNull()
+      const req = new Request(url)
+      req.headers.set('Cookie', cookieHeader)
+      const res = await app.request(req)
+      expect(res).not.toBeNull()
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ message: 'signed hello world' })
+      expect(handlerExecuted).toBeTruthy()
+    })
+
+    it('Should not authorize an unsigned cookie', async () => {
+      const url = 'http://localhost/auth-with-signed-cookie/a'
+      const credential = await Jwt.sign(
+        { message: 'unsigned hello world' },
+        test_keys.private_keys[0]
+      )
+      const unsignedCookie = `access_token=${credential}`
+      const req = new Request(url)
+      req.headers.set('Cookie', unsignedCookie)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(await res.text()).toBe('Unauthorized')
+      expect(handlerExecuted).toBeFalsy()
+    })
+  })
+
+  describe('Error handling with `cause`', () => {
+    const app = new Hono()
+
+    app.use('/auth-with-keys/*', jwk({ keys: verify_keys }))
+    app.get('/auth-with-keys/*', (c) => c.text('Authorized'))
+
+    app.onError((e, c) => {
+      if (e instanceof HTTPException && e.cause instanceof Error) {
+        return c.json({ name: e.cause.name, message: e.cause.message }, 401)
+      }
+      return c.text(e.message, 401)
+    })
+
+    it('Should not authorize', async () => {
+      const credential = 'abc.def.ghi'
+      const req = new Request('http://localhost/auth-with-keys')
+      req.headers.set('Authorization', `Bearer ${credential}`)
+      const res = await app.request(req)
+      expect(res.status).toBe(401)
+      expect(await res.json()).toEqual({
+        name: 'JwtTokenInvalid',
+        message: `invalid JWT token: ${credential}`,
+      })
+    })
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwk/index.ts
+```typescript
+export { jwk } from './jwk'
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwk/jwk.ts
+````typescript
+/**
+ * @module
+ * JWK Auth Middleware for Hono.
+ */
+
+import type { Context } from '../../context'
+import { getCookie, getSignedCookie } from '../../helper/cookie'
+import { HTTPException } from '../../http-exception'
+import type { MiddlewareHandler } from '../../types'
+import type { CookiePrefixOptions } from '../../utils/cookie'
+import { Jwt } from '../../utils/jwt'
+import '../../context'
+import type { HonoJsonWebKey } from '../../utils/jwt/jws'
+
+/**
+ * JWK Auth Middleware for Hono.
+ *
+ * @see {@link https://hono.dev/docs/middleware/builtin/jwk}
+ *
+ * @param {object} options - The options for the JWK middleware.
+ * @param {HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)} [options.keys] - The values of your public keys, or a function that returns them.
+ * @param {string} [options.jwks_uri] - If this value is set, attempt to fetch JWKs from this URI, expecting a JSON response with `keys` which are added to the provided options.keys
+ * @param {string} [options.cookie] - If this value is set, then the value is retrieved from the cookie header using that value as a key, which is then validated as a token.
+ * @param {RequestInit} [init] - Optional initialization options for the `fetch` request when retrieving JWKS from a URI.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * const app = new Hono()
+ *
+ * app.use("/auth/*", jwk({ jwks_uri: "https://example-backend.hono.dev/.well-known/jwks.json" }))
+ *
+ * app.get('/auth/page', (c) => {
+ *   return c.text('You are authorized')
+ * })
+ * ```
+ */
+
+export const jwk = (
+  options: {
+    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
+    jwks_uri?: string
+    cookie?:
+      | string
+      | { key: string; secret?: string | BufferSource; prefixOptions?: CookiePrefixOptions }
+  },
+  init?: RequestInit
+): MiddlewareHandler => {
+  if (!options || !(options.keys || options.jwks_uri)) {
+    throw new Error('JWK auth middleware requires options for either "keys" or "jwks_uri" or both')
+  }
+
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWK auth middleware requires it.')
+  }
+
+  return async function jwk(ctx, next) {
+    const credentials = ctx.req.raw.headers.get('Authorization')
+    let token
+    if (credentials) {
+      const parts = credentials.split(/\s+/)
+      if (parts.length !== 2) {
+        const errDescription = 'invalid credentials structure'
+        throw new HTTPException(401, {
+          message: errDescription,
+          res: unauthorizedResponse({
+            ctx,
+            error: 'invalid_request',
+            errDescription,
+          }),
+        })
+      } else {
+        token = parts[1]
+      }
+    } else if (options.cookie) {
+      if (typeof options.cookie == 'string') {
+        token = getCookie(ctx, options.cookie)
+      } else if (options.cookie.secret) {
+        if (options.cookie.prefixOptions) {
+          token = await getSignedCookie(
+            ctx,
+            options.cookie.secret,
+            options.cookie.key,
+            options.cookie.prefixOptions
+          )
+        } else {
+          token = await getSignedCookie(ctx, options.cookie.secret, options.cookie.key)
+        }
+      } else {
+        if (options.cookie.prefixOptions) {
+          token = getCookie(ctx, options.cookie.key, options.cookie.prefixOptions)
+        } else {
+          token = getCookie(ctx, options.cookie.key)
+        }
+      }
+    }
+
+    if (!token) {
+      const errDescription = 'no authorization included in request'
+      throw new HTTPException(401, {
+        message: errDescription,
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_request',
+          errDescription,
+        }),
+      })
+    }
+
+    let payload
+    let cause
+    try {
+      payload = await Jwt.verifyFromJwks(token, options, init)
+    } catch (e) {
+      cause = e
+    }
+
+    if (!payload) {
+      if (cause instanceof Error && cause.constructor === Error) {
+        throw cause
+      }
+      throw new HTTPException(401, {
+        message: 'Unauthorized',
+        res: unauthorizedResponse({
+          ctx,
+          error: 'invalid_token',
+          statusText: 'Unauthorized',
+          errDescription: 'token verification failure',
+        }),
+        cause,
+      })
+    }
+
+    ctx.set('jwtPayload', payload)
+
+    await next()
+  }
+}
+
+function unauthorizedResponse(opts: {
+  ctx: Context
+  error: string
+  errDescription: string
+  statusText?: string
+}) {
+  return new Response('Unauthorized', {
+    status: 401,
+    statusText: opts.statusText,
+    headers: {
+      'WWW-Authenticate': `Bearer realm="${opts.ctx.req.url}",error="${opts.error}",error_description="${opts.errDescription}"`,
+    },
+  })
+}
+
+````
+/Users/josh/Documents/GitHub/honojs/hono/src/middleware/jwk/keys.test.json
+```json
+{
+  "public_keys": [
+    {
+      "kid": "hono-test-kid-1",
+      "kty": "RSA",
+      "use": "sig",
+      "alg": "RS256",
+      "e": "AQAB",
+      "n": "2XGQh8VC_p8gRqfBLY0E3RycnfBl5g1mKyeiyRSPjdaR7fmNPuC3mHjVWXtyXWSvAuRYPYfL_pSi6erpxVv7NuPJbKaZ-I1MwdRPdG2qHu9mNYxniws73gvF3tUN9eSsQUIBL0sYEOnVMjniDcOxIr3Rgz_RxdLB_FxTDXYhzzG49L79wGV1udILGHq0lqlMtmUX6LRtbaoRt1fJB4rTCkYeQp9r5HYP79PKTR43vLIq0aZryI4CyBkPG_0vGEvnzasGdp-qE9Ywt_J2anQKt3nvVVR4Yhs2EIoPQkYoDnVySjeuRsUA5JQYKThrM4sFZSQsO82dHTvwKo2z2x6ZMw"
+    },
+    {
+      "kid": "hono-test-kid-2",
+      "kty": "RSA",
+      "use": "sig",
+      "alg": "RS256",
+      "e": "AQAB",
+      "n": "uRVR5DkH22a_FM4RtqvnVxd6QAjdfj8oFYPaxIux7K8oTaBy5YagxTWN0qeKI5lI3nL20cx72XxD_UF4TETCFgfD-XB48cdjnSQlOXXbRPXUX0Rdte48naAt4przAb7ydUxrfvDlbSZe02Du-ZGRzEB6RW6KLFWUvTadI4w33qb2i8hauQuTcRmaIUESt8oytUGS44dXAw3Nqt_NL-e7TRgX5o1u_31Uvet1ofsv6Mx8vxJ6zMdM_AKvzLt2iuoK_8vL4R86CjD3dpal2BwO7RkRl2Wcuf5jxjM4pruJ2RBCpzBieEvSIH8kKHIm9SfTzTDJqRhoXd7KM5jL1GNzyw"
+    }
+  ],
+  "private_keys": [
+    {
+      "kid": "hono-test-kid-1",
+      "alg": "RS256",
+      "d": "A5CR2gGPegHwOYUbUzylZvdgUFNWMetOUK7M3TClGdVgSkWpELrTLhpTa3m50KYlG446x03baxUGU4D_MoKx7GukX0-fGCzY17FvWNOwOLACcPMYT3ZwfAQ2_jkBimJxU7CNUtH18KQ-U1B3nQ1apHZc-1Xa6CKIY5nv32yfj6uTrERRLOs7Fn9xpOE4uMHEf-l1ppIEIqK5QkEoPRMCUBABsGBSfiJP2hQVa-R-nezX3kVSxKTxAjDEOkquzb-CKlJW7xN2xQ7p40Wi7lDWZkOapBNGr59Z4gcFfo6f8XpQrqoFjDfsGsdH5q9MH_3lEEtD14wymXNnCoRHNr_mwQ",
+      "dp": "WMq_BNbd3At-J9VzXgE-aLvPhztS1W8K9xlghITpwAyzhEfCp9mO7IOEVtNWKoEtVFEaZrWKuNWKd-dnzjvydltCkpJ7QhTmiFNFsEzKNJdGQ1Tfsj9658csbVLUOhI4oVcN6kiCa6OdH41Z_JMyN75cTgd4z5h_FRYRRgjoUEU",
+      "dq": "Lz9vM7L-aEsPJOM5K2PqInLP9HNwDl943S79d_aw6w-JnHPFcu95no6-6nRcd87eSWoTvHZeFgsle4oiV0UpAocEO7xraCBa_Z9o-jGbBfynOLyXMH2l70yWBdCGCzgc_Wg2sKJwiYYXXfGJ3CzSeIRet82Rn54Q9mMlB6Ie8LE",
+      "e": "AQAB",
+      "kty": "RSA",
+      "n": "2XGQh8VC_p8gRqfBLY0E3RycnfBl5g1mKyeiyRSPjdaR7fmNPuC3mHjVWXtyXWSvAuRYPYfL_pSi6erpxVv7NuPJbKaZ-I1MwdRPdG2qHu9mNYxniws73gvF3tUN9eSsQUIBL0sYEOnVMjniDcOxIr3Rgz_RxdLB_FxTDXYhzzG49L79wGV1udILGHq0lqlMtmUX6LRtbaoRt1fJB4rTCkYeQp9r5HYP79PKTR43vLIq0aZryI4CyBkPG_0vGEvnzasGdp-qE9Ywt_J2anQKt3nvVVR4Yhs2EIoPQkYoDnVySjeuRsUA5JQYKThrM4sFZSQsO82dHTvwKo2z2x6ZMw",
+      "p": "7K-X3xMf3xxdlHTRs17x4WkbFUq4ZCU9L1al88UW2tpoF8ZDLUvaKXeF0vkosKvYUsiHsV1fbGVo6Oy75iII-op-t6-tP3R61nkjaytyJ8p32nbxBI1UWpFxZYNxG_Od07kau3LwkgDh8Ogr6zqmq8-lKoBPio-4K7PY5FiyWzs",
+      "q": "6y__IKt1n1pTc-S9l1WfSuC96jX8iQhEsGSxnshyNZi59mH1AigkrAw9T5b7OFX7ulHXwuithsVi8cxkq2inNmemxD3koiiU-sv6vg6lRCoZsXFHiUCP-2HoK17sR1zUb6HQpp5MEHY8qoC3Mi3IpkNC7gAbAukbMQo3WlIGqmk",
+      "qi": "flgM56Nw2hzHHy0Lz8ewBtOkkzfq1r_n6SmSZdU0zWlEp1lLovpHmuwyVeXpQlLJUHqcNVRw0NlwV7EN0rPd4rG3hcMdogj_Jl-r52TYzx4kVpbMEIh4xKs5rFzxbb96A3F9Ox-muRWvfOUCpXxGXCCGqHRmjRUolxDxsiPznuk"
+    },
+    {
+      "kid": "hono-test-kid-2",
+      "alg": "RS256",
+      "d": "JCIL50TVClnQQyUJ40JDO0b7mGXCrCNzVWP1ATsOhNkbQrBozfOPDoEqi24m81U5GyiRlBraMPboJRizfhxMUdW5RkjVa8pT4blNRR8DrD5b9C9aJir5DYLYgm1itLwNBKZjNBieicUcbSL29KUdNCWAWW6_rfEVRS1U1zxIKgDUPVd6d7jiIwAKuKvGlMc11RGRZj5eKSNMQyLU5u8Qs_VQuoBRNAyWLZZcHMlAWbh3er7m0jkmUDRdVU0y_n1UAGsr9cAxPwf2HtS5j5R2ahEodatsJynnafYtj6jbOR6jvO3N2Vf-NJ7jVY2-kfv1rJd86KAxD-tIAGx2w1VRTQ",
+      "dp": "wQhiWfdvVxk7ERmYj7Fn04wqjP7o7-72bn3SznGyBSkvpkg1WX4j467vpRtXVn4qxSSMXCj2UMKCrovba2RWHp1cnkvT-TFTbONkBuhOBpbx3TVwgGd-IfDJVa_i89XjiYgtEApHz173kRodEENXxcOj_mbOGyBb9Yl2M45A-tU",
+      "dq": "ERdP5mdziJ46OsDHTdZ4hOX2ti0EljtVqGo1B4WKXey6DMH0JGHGU_3fFiF4Gomhy3nyGUI7Qhk3kf7lixAtSsk1lWAAeQLPt1r8yZkD5odLKXLyua_yZJ041d3O3wxRYXl3OvzoVy6rPhzRPIaxevNp-Pp5ZNoKfonQPz3bDGc",
+      "e": "AQAB",
+      "kty": "RSA",
+      "n": "uRVR5DkH22a_FM4RtqvnVxd6QAjdfj8oFYPaxIux7K8oTaBy5YagxTWN0qeKI5lI3nL20cx72XxD_UF4TETCFgfD-XB48cdjnSQlOXXbRPXUX0Rdte48naAt4przAb7ydUxrfvDlbSZe02Du-ZGRzEB6RW6KLFWUvTadI4w33qb2i8hauQuTcRmaIUESt8oytUGS44dXAw3Nqt_NL-e7TRgX5o1u_31Uvet1ofsv6Mx8vxJ6zMdM_AKvzLt2iuoK_8vL4R86CjD3dpal2BwO7RkRl2Wcuf5jxjM4pruJ2RBCpzBieEvSIH8kKHIm9SfTzTDJqRhoXd7KM5jL1GNzyw",
+      "p": "7cY_nFnn4w5pVi7wq_S9FJHIGsxCwogXqSSC_d7yWopbI2rW3Ugx21IMcWT2pnpsF_VYQx5FnNFviFufNOloREOguqci4lBinAilYBf3VXaN_YrxSk4flJmykwm_HBbXpHt_L3t4HBf-uuY-klJxFkeTbBErjxMS0U0EheEpDYU",
+      "q": "x0UidqgkzWPqXa7vZ5noYTY5e3TDQZ_l8A26lFDKAbB62lXvnp_MhnQYDAx9VgUGYYrXv7UmaH-ZCSzuMM9Uhuw0lXRyojF-TLowNjASMlWbkJsJus3zi_AI4pAKyYnhNADxZrT1kxseI8zHiq0_bQa8qLaleXBTdkpc3Z6M1Q8",
+      "qi": "x5VJcfnlX9ZhH6eMKx27rOGQrPjQ4BjZgmND7rrX-CSrE0M0RG4KuC4ZOu5XpQ-YsOC_bIzolBN2cHGn4ttPXeUc3y5bnqJYo7FxMdGn4gPRbXlVjCrE54JH_cdkl8cDqcaybjme1-ilNu-vHJWgHPdpbOguhRpicARkptAkOe0"
+    }
+  ]
+}
+```

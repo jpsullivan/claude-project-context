@@ -1,0 +1,5589 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/accept.test.ts</source>
+<document_content>
+import { parseAccept } from './accept'
+
+describe('parseAccept Comprehensive Tests', () => {
+  describe('Basic Functionality', () => {
+    test('parses simple accept header', () => {
+      const header = 'text/html,application/json;q=0.9'
+      expect(parseAccept(header)).toEqual([
+        { type: 'text/html', params: {}, q: 1 },
+        { type: 'application/json', params: { q: '0.9' }, q: 0.9 },
+      ])
+    })
+
+    test('handles missing header', () => {
+      expect(parseAccept('')).toEqual([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(parseAccept(undefined as any)).toEqual([])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expect(parseAccept(null as any)).toEqual([])
+    })
+  })
+
+  describe('Quality Values', () => {
+    test('handles extreme q values', () => {
+      const header = 'a;q=999999,b;q=-99999,c;q=Infinity,d;q=-Infinity,e;q=NaN'
+      const result = parseAccept(header)
+      expect(result.map((x) => x.q)).toEqual([1, 1, 1, 0, 0])
+    })
+
+    test('handles malformed q values', () => {
+      const header = 'a;q=,b;q=invalid,c;q=1.2.3,d;q=true,e;q="0.5"'
+      const result = parseAccept(header)
+      expect(result.every((x) => x.q >= 0 && x.q <= 1)).toBe(true)
+    })
+
+    test('preserves original q string in params', () => {
+      const header = 'type;q=invalid'
+      const result = parseAccept(header)
+      expect(result[0].params.q).toBe('invalid')
+      expect(result[0].q).toBe(1) // Normalized q value
+    })
+  })
+
+  describe('Parameter Handling', () => {
+    test('handles complex parameters', () => {
+      const header = 'type;a=1;b="2";c=\'3\';d="semi;colon";e="nested"quoted""'
+      const result = parseAccept(header)
+      expect(result[0].params).toEqual({
+        a: '1',
+        b: '"2"',
+
+        c: "'3'",
+        d: '"semi;colon"',
+        e: '"nested"quoted""',
+      })
+    })
+
+    test('handles malformed parameters', () => {
+      const header = 'type;=value;;key=;=;====;key====value'
+      const result = parseAccept(header)
+      expect(result[0].type).toBe('type')
+      expect(Object.keys(result[0].params).length).toBe(0)
+    })
+
+    test('handles duplicate parameters', () => {
+      const header = 'type;key=1;key=2;KEY=3'
+      const result = parseAccept(header)
+      expect(result[0].params.key).toBe('2')
+      expect(result[0].params.KEY).toBe('3')
+    })
+  })
+
+  describe('Media Type Edge Cases', () => {
+    test('handles malformed media types', () => {
+      const headers = [
+        '*/html',
+        'text/*mal/formed',
+        '/partial',
+        'missing/',
+        'inv@lid/type',
+        'text/(html)',
+        'text/html?invalid',
+      ]
+      headers.forEach((header) => {
+        const result = parseAccept(header)
+        expect(result[0].type).toBe(header)
+      })
+    })
+
+    test('handles extremely long types', () => {
+      const longType = 'a'.repeat(10000) + '/' + 'b'.repeat(10000)
+      const result = parseAccept(longType)
+      expect(result[0].type).toBe(longType)
+    })
+  })
+
+  describe('Delimiter Edge Cases', () => {
+    test('handles multiple consecutive delimiters', () => {
+      const header = 'a,,,,b;q=0.9,,,,c;q=0.8,,,,'
+      const result = parseAccept(header)
+      expect(result.map((x) => x.type)).toEqual(['a', 'b', 'c'])
+    })
+
+    test('handles unusual whitespace', () => {
+      const header = '\n\t a \t\n ; \n\t q=0.9 \t\n , \n\t b \t\n'
+      const result = parseAccept(header)
+      expect(result.map((x) => x.type)).toEqual(['b', 'a'])
+    })
+  })
+
+  describe('Security Cases', () => {
+    test('handles potential injection patterns', () => {
+      const headers = [
+        'type;q=0.9--',
+        'type;q=0.9;drop table users',
+        'type;__|;q=0.9',
+        'text/html"><script>alert(1)</script>',
+        'application/json${process.env}',
+      ]
+      headers.forEach((header) => {
+        expect(() => parseAccept(header)).not.toThrow()
+      })
+    })
+
+    test('handles extremely large input', () => {
+      const header = 'a;q=0.9,'.repeat(100000)
+      expect(() => parseAccept(header)).not.toThrow()
+    })
+  })
+
+  describe('Unicode and Special Characters', () => {
+    test('handles unicode in types and parameters', () => {
+      const header = '🌐/😊;param=🔥;q=0.9'
+      const result = parseAccept(header)
+      expect(result[0].type).toBe('🌐/😊')
+      expect(result[0].params.param).toBe('🔥')
+    })
+
+    test('handles special characters', () => {
+      const header = 'type;param=\x00\x01\x02\x03'
+      const result = parseAccept(header)
+      expect(result[0].params.param).toBe('\x00\x01\x02\x03')
+    })
+  })
+
+  describe('Sort Stability', () => {
+    test('maintains stable sort for equal q values', () => {
+      const header = 'a;q=0.9,b;q=0.9,c;q=0.9,d;q=0.9'
+      const result = parseAccept(header)
+      expect(result.map((x) => x.type)).toEqual(['a', 'b', 'c', 'd'])
+    })
+
+    test('handles mixed priorities correctly', () => {
+      const header = 'd;q=0.8,b;q=0.9,c;q=0.8,a;q=0.9'
+      const result = parseAccept(header)
+      expect(result.map((x) => x.type)).toEqual(['b', 'a', 'd', 'c'])
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/accept.ts</source>
+<document_content>
+export interface Accept {
+  type: string
+  params: Record<string, string>
+  q: number
+}
+
+/**
+ * Parse an Accept header into an array of objects with type, parameters, and quality score.
+ * @param acceptHeader The Accept header string
+ * @returns An array of parsed Accept values
+ */
+export const parseAccept = (acceptHeader: string): Accept[] => {
+  if (!acceptHeader) {
+    return []
+  }
+
+  const acceptValues = acceptHeader.split(',').map((value, index) => ({ value, index }))
+
+  return acceptValues
+    .map(parseAcceptValue)
+    .filter((item): item is Accept & { index: number } => Boolean(item))
+    .sort(sortByQualityAndIndex)
+    .map(({ type, params, q }) => ({ type, params, q }))
+}
+const parseAcceptValueRegex = /;(?=(?:(?:[^"]*"){2})*[^"]*$)/
+const parseAcceptValue = ({ value, index }: { value: string; index: number }) => {
+  const parts = value
+    .trim()
+    .split(parseAcceptValueRegex)
+    .map((s) => s.trim())
+  const type = parts[0]
+  if (!type) {
+    return null
+  }
+
+  const params = parseParams(parts.slice(1))
+  const q = parseQuality(params.q)
+
+  return { type, params, q, index }
+}
+
+const parseParams = (paramParts: string[]): Record<string, string> => {
+  return paramParts.reduce<Record<string, string>>((acc, param) => {
+    const [key, val] = param.split('=').map((s) => s.trim())
+    if (key && val) {
+      acc[key] = val
+    }
+    return acc
+  }, {})
+}
+
+const parseQuality = (qVal?: string): number => {
+  if (qVal === undefined) {
+    return 1
+  }
+  if (qVal === '') {
+    return 1
+  }
+  if (qVal === 'NaN') {
+    return 0
+  }
+
+  const num = Number(qVal)
+  if (num === Infinity) {
+    return 1
+  }
+  if (num === -Infinity) {
+    return 0
+  }
+  if (Number.isNaN(num)) {
+    return 1
+  }
+  if (num < 0 || num > 1) {
+    return 1
+  }
+
+  return num
+}
+
+const sortByQualityAndIndex = (a: Accept & { index: number }, b: Accept & { index: number }) => {
+  const qDiff = b.q - a.q
+  if (qDiff !== 0) {
+    return qDiff
+  }
+  return a.index - b.index
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/basic-auth.test.ts</source>
+<document_content>
+import { auth } from './basic-auth'
+
+describe('auth', () => {
+  it('auth() - not include Authorization Header', () => {
+    const res = auth(new Request('http://localhost/auth'))
+    expect(res).toBeUndefined()
+  })
+
+  it('auth() - invalid Authorization Header format', () => {
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: 'InvalidAuthHeader' },
+      })
+    )
+    expect(res).toBeUndefined()
+  })
+
+  it('auth() - invalid Base64 string in Authorization Header', () => {
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: 'Basic InvalidBase64' },
+      })
+    )
+    expect(res).toBeUndefined()
+  })
+
+  it('auth() - valid Authorization Header', () => {
+    const validBase64 = btoa('username:password')
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: `Basic ${validBase64}` },
+      })
+    )
+    expect(res).toEqual({ username: 'username', password: 'password' })
+  })
+
+  it('auth() - empty username', () => {
+    const validBase64 = btoa(':password')
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: `Basic ${validBase64}` },
+      })
+    )
+    expect(res).toEqual({ username: '', password: 'password' })
+  })
+
+  it('auth() - empty password', () => {
+    const validBase64 = btoa('username:')
+    const res = auth(
+      new Request('http://localhost/auth', {
+        headers: { Authorization: `Basic ${validBase64}` },
+      })
+    )
+    expect(res).toEqual({ username: 'username', password: '' })
+  })
+})
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/basic-auth.ts</source>
+<document_content>
+import { decodeBase64 } from './encode'
+
+const CREDENTIALS_REGEXP = /^ *(?:[Bb][Aa][Ss][Ii][Cc]) +([A-Za-z0-9._~+/-]+=*) *$/
+const USER_PASS_REGEXP = /^([^:]*):(.*)$/
+const utf8Decoder = new TextDecoder()
+
+export type Auth = (req: Request) => { username: string; password: string } | undefined
+
+export const auth: Auth = (req: Request) => {
+  const match = CREDENTIALS_REGEXP.exec(req.headers.get('Authorization') || '')
+  if (!match) {
+    return undefined
+  }
+
+  let userPass = undefined
+  // If an invalid string is passed to atob(), it throws a `DOMException`.
+  try {
+    userPass = USER_PASS_REGEXP.exec(utf8Decoder.decode(decodeBase64(match[1])))
+  } catch {} // Do nothing
+
+  if (!userPass) {
+    return undefined
+  }
+
+  return { username: userPass[1], password: userPass[2] }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/body.test.ts</source>
+<document_content>
+import { parseBody } from './body'
+import type { BodyData } from './body'
+
+type RecursiveRecord<K extends string, T> = {
+  [key in K]: T | RecursiveRecord<K, T>
+}
+
+describe('Parse Body Util', () => {
+  const FORM_URL = 'https://localhost/form'
+  const SEARCH_URL = 'https://localhost/search'
+
+  const createRequest = (
+    url: string,
+    method: 'POST',
+    body: BodyInit,
+    headers?: { [key: string]: string }
+  ) => {
+    return new Request(url, {
+      method,
+      body,
+      headers,
+    })
+  }
+
+  it('should parse `multipart/form-data`', async () => {
+    const data = new FormData()
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
+  it('should parse `x-www-form-urlencoded`', async () => {
+    const searchParams = new URLSearchParams()
+    searchParams.append('message', 'hello')
+
+    const req = createRequest(SEARCH_URL, 'POST', searchParams, {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    })
+
+    expect(await parseBody(req)).toEqual({ message: 'hello' })
+  })
+
+  it('should not parse multiple values in default', async () => {
+    const data = new FormData()
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req)).toEqual({
+      file: 'bbb',
+      message: 'hello',
+    })
+  })
+
+  it('should not update file object properties', async () => {
+    const file = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+
+    const req = createRequest(FORM_URL, 'POST', data)
+    vi.spyOn(req, 'formData').mockImplementation(
+      async () =>
+        ({
+          forEach: (cb) => {
+            cb(file, 'file', data)
+            cb('hoo', 'file.hoo', data)
+          },
+        } as FormData)
+    )
+
+    const parsedData = await parseBody(req, { dot: true })
+    expect(parsedData.file).not.instanceOf(File)
+    expect(parsedData).toEqual({
+      file: {
+        hoo: 'hoo',
+      },
+    })
+  })
+
+  it('should override value if `all` option is false', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req)).toEqual({
+      file: 'bbb',
+      message: 'hello',
+    })
+  })
+
+  it('should parse multiple values if `all` option is true', async () => {
+    const data = new FormData()
+    data.append('file', 'aaa')
+    data.append('file', 'bbb')
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      file: ['aaa', 'bbb'],
+      message: 'hello',
+    })
+  })
+
+  it('should not parse nested values in default', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: false })).toEqual({
+      'obj.key1': 'value1',
+      'obj.key2': 'value2',
+    })
+  })
+
+  it('should not parse nested values in default for non-nested keys', async () => {
+    const data = new FormData()
+    data.append('key1', 'value1')
+    data.append('key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: false })).toEqual({
+      key1: 'value1',
+      key2: 'value2',
+    })
+  })
+
+  it('should handle nested values and non-nested values together with dot option true', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+    data.append('key3', 'value3')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      obj: { key1: 'value1', key2: 'value2' },
+      key3: 'value3',
+    })
+  })
+
+  it('should handle deeply nested objects with dot option true', async () => {
+    const data = new FormData()
+    data.append('a.b.c.d', 'value')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      a: { b: { c: { d: 'value' } } },
+    })
+  })
+
+  it('should parse nested values if `dot` option is true', async () => {
+    const data = new FormData()
+    data.append('obj.key1', 'value1')
+    data.append('obj.key2', 'value2')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true })).toEqual({
+      obj: { key1: 'value1', key2: 'value2' },
+    })
+  })
+
+  it('should parse data if both `all` and `dot` are set', async () => {
+    const data = new FormData()
+    data.append('obj.sub.foo', 'value1')
+    data.append('obj.sub.foo', 'value2')
+    data.append('key', 'value3')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { dot: true, all: true })).toEqual({
+      obj: { sub: { foo: ['value1', 'value2'] } },
+      key: 'value3',
+    })
+  })
+
+  it('should parse nested values if values are `File`', async () => {
+    const file1 = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const file2 = new File(['bar'], 'file2', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+    data.append('file.file1', file1)
+    data.append('file.file2', file2)
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true, dot: true })).toEqual({
+      file: { file1, file2 },
+    })
+  })
+
+  it('should parse multiple values if values are `File`', async () => {
+    const file1 = new File(['foo'], 'file1', {
+      type: 'application/octet-stream',
+    })
+    const file2 = new File(['bar'], 'file2', {
+      type: 'application/octet-stream',
+    })
+    const data = new FormData()
+    data.append('file', file1)
+    data.append('file', file2)
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      file: [file1, file2],
+    })
+  })
+
+  it('should parse multiple values if key ends with `[]`', async () => {
+    const data = new FormData()
+    data.append('file[]', 'aaa')
+    data.append('file[]', 'bbb')
+    data.append('message', 'hello')
+
+    const req = createRequest(FORM_URL, 'POST', data)
+
+    expect(await parseBody(req, { all: true })).toEqual({
+      'file[]': ['aaa', 'bbb'],
+      message: 'hello',
+    })
+  })
+
+  it('should return blank object if body is JSON', async () => {
+    const payload = { message: 'hello hono' }
+
+    const req = createRequest('http://localhost/json', 'POST', JSON.stringify(payload), {
+      'Content-Type': 'application/json',
+    })
+
+    expect(await parseBody(req)).toEqual({})
+  })
+
+  describe('Return type', () => {
+    let req: Request
+    beforeEach(() => {
+      req = createRequest(FORM_URL, 'POST', new FormData())
+    })
+
+    it('without options', async () => {
+      expectTypeOf((await parseBody(req))['key']).toEqualTypeOf<string | File>()
+    })
+
+    it('{all: true}', async () => {
+      expectTypeOf((await parseBody(req, { all: true }))['key']).toEqualTypeOf<
+        string | File | (string | File)[]
+      >()
+    })
+
+    it('{all: boolean}', async () => {
+      expectTypeOf((await parseBody(req, { all: !!Math.random() }))['key']).toEqualTypeOf<
+        string | File | (string | File)[]
+      >()
+    })
+
+    it('{dot: true}', async () => {
+      expectTypeOf((await parseBody(req, { dot: true }))['key']).toEqualTypeOf<
+        string | File | RecursiveRecord<string, string | File>
+      >()
+    })
+
+    it('{dot: boolean}', async () => {
+      expectTypeOf((await parseBody(req, { dot: !!Math.random() }))['key']).toEqualTypeOf<
+        string | File | RecursiveRecord<string, string | File>
+      >()
+    })
+
+    it('{all: true, dot: true}', async () => {
+      expectTypeOf((await parseBody(req, { all: true, dot: true }))['key']).toEqualTypeOf<
+        | string
+        | File
+        | (string | File)[]
+        | RecursiveRecord<string, string | File | (string | File)[]>
+      >()
+    })
+
+    it('{all: boolean, dot: boolean}', async () => {
+      expectTypeOf(
+        (await parseBody(req, { all: !!Math.random(), dot: !!Math.random() }))['key']
+      ).toEqualTypeOf<
+        | string
+        | File
+        | (string | File)[]
+        | RecursiveRecord<string, string | File | (string | File)[]>
+      >()
+    })
+
+    it('specify return type explicitly', async () => {
+      expectTypeOf(
+        await parseBody<{ key1: string; key2: string }>(req, {
+          all: !!Math.random(),
+          dot: !!Math.random(),
+        })
+      ).toEqualTypeOf<{ key1: string; key2: string }>()
+    })
+  })
+})
+
+describe('BodyData', () => {
+  it('without options', async () => {
+    expectTypeOf(({} as BodyData)['key']).toEqualTypeOf<string | File>()
+  })
+
+  it('{all: true}', async () => {
+    expectTypeOf(({} as BodyData<{ all: true }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[]
+    >()
+  })
+
+  it('{all: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ all: boolean }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[]
+    >()
+  })
+
+  it('{dot: true}', async () => {
+    expectTypeOf(({} as BodyData<{ dot: true }>)['key']).toEqualTypeOf<
+      string | File | RecursiveRecord<string, string | File>
+    >()
+  })
+
+  it('{dot: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ dot: boolean }>)['key']).toEqualTypeOf<
+      string | File | RecursiveRecord<string, string | File>
+    >()
+  })
+
+  it('{all: true, dot: true}', async () => {
+    expectTypeOf(({} as BodyData<{ all: true; dot: true }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[] | RecursiveRecord<string, string | File | (string | File)[]>
+    >()
+  })
+
+  it('{all: boolean, dot: boolean}', async () => {
+    expectTypeOf(({} as BodyData<{ all: boolean; dot: boolean }>)['key']).toEqualTypeOf<
+      string | File | (string | File)[] | RecursiveRecord<string, string | File | (string | File)[]>
+    >()
+  })
+})
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/body.ts</source>
+<document_content>
+/**
+ * @module
+ * Body utility.
+ */
+
+import { HonoRequest } from '../request'
+
+type BodyDataValueDot = { [x: string]: string | File | BodyDataValueDot }
+type BodyDataValueDotAll = {
+  [x: string]: string | File | (string | File)[] | BodyDataValueDotAll
+}
+type SimplifyBodyData<T> = {
+  [K in keyof T]: string | File | (string | File)[] | BodyDataValueDotAll extends T[K]
+    ? string | File | (string | File)[] | BodyDataValueDotAll
+    : string | File | BodyDataValueDot extends T[K]
+    ? string | File | BodyDataValueDot
+    : string | File | (string | File)[] extends T[K]
+    ? string | File | (string | File)[]
+    : string | File
+} & {}
+
+type BodyDataValueComponent<T> =
+  | string
+  | File
+  | (T extends { all: false }
+      ? never // explicitly set to false
+      : T extends { all: true } | { all: boolean }
+      ? (string | File)[] // use all option
+      : never) // without options
+type BodyDataValueObject<T> = { [key: string]: BodyDataValueComponent<T> | BodyDataValueObject<T> }
+type BodyDataValue<T> =
+  | BodyDataValueComponent<T>
+  | (T extends { dot: false }
+      ? never // explicitly set to false
+      : T extends { dot: true } | { dot: boolean }
+      ? BodyDataValueObject<T> // use dot option
+      : never) // without options
+export type BodyData<T extends Partial<ParseBodyOptions> = {}> = SimplifyBodyData<
+  Record<string, BodyDataValue<T>>
+>
+
+export type ParseBodyOptions = {
+  /**
+   * Determines whether all fields with multiple values should be parsed as arrays.
+   * @default false
+   * @example
+   * const data = new FormData()
+   * data.append('file', 'aaa')
+   * data.append('file', 'bbb')
+   * data.append('message', 'hello')
+   *
+   * If all is false:
+   * parseBody should return { file: 'bbb', message: 'hello' }
+   *
+   * If all is true:
+   * parseBody should return { file: ['aaa', 'bbb'], message: 'hello' }
+   */
+  all: boolean
+  /**
+   * Determines whether all fields with dot notation should be parsed as nested objects.
+   * @default false
+   * @example
+   * const data = new FormData()
+   * data.append('obj.key1', 'value1')
+   * data.append('obj.key2', 'value2')
+   *
+   * If dot is false:
+   * parseBody should return { 'obj.key1': 'value1', 'obj.key2': 'value2' }
+   *
+   * If dot is true:
+   * parseBody should return { obj: { key1: 'value1', key2: 'value2' } }
+   */
+  dot: boolean
+}
+
+/**
+ * Parses the body of a request based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object to parse.
+ * @param {Partial<ParseBodyOptions>} [options] - Options for parsing the body.
+ * @returns {Promise<T>} The parsed body data.
+ */
+interface ParseBody {
+  <Options extends Partial<ParseBodyOptions>, T extends BodyData<Options>>(
+    request: HonoRequest | Request,
+    options?: Options
+  ): Promise<T>
+  <T extends BodyData>(
+    request: HonoRequest | Request,
+    options?: Partial<ParseBodyOptions>
+  ): Promise<T>
+}
+export const parseBody: ParseBody = async (
+  request: HonoRequest | Request,
+  options = Object.create(null)
+) => {
+  const { all = false, dot = false } = options
+
+  const headers = request instanceof HonoRequest ? request.raw.headers : request.headers
+  const contentType = headers.get('Content-Type')
+
+  if (
+    contentType?.startsWith('multipart/form-data') ||
+    contentType?.startsWith('application/x-www-form-urlencoded')
+  ) {
+    return parseFormData(request, { all, dot })
+  }
+
+  return {}
+}
+
+/**
+ * Parses form data from a request.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {HonoRequest | Request} request - The request object containing form data.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {Promise<T>} The parsed body data.
+ */
+async function parseFormData<T extends BodyData>(
+  request: HonoRequest | Request,
+  options: ParseBodyOptions
+): Promise<T> {
+  const formData = await (request as Request).formData()
+
+  if (formData) {
+    return convertFormDataToBodyData<T>(formData, options)
+  }
+
+  return {} as T
+}
+
+/**
+ * Converts form data to body data based on the provided options.
+ *
+ * @template T - The type of the parsed body data.
+ * @param {FormData} formData - The form data to convert.
+ * @param {ParseBodyOptions} options - Options for parsing the form data.
+ * @returns {T} The converted body data.
+ */
+function convertFormDataToBodyData<T extends BodyData = BodyData>(
+  formData: FormData,
+  options: ParseBodyOptions
+): T {
+  const form: BodyData = Object.create(null)
+
+  formData.forEach((value, key) => {
+    const shouldParseAllValues = options.all || key.endsWith('[]')
+
+    if (!shouldParseAllValues) {
+      form[key] = value
+    } else {
+      handleParsingAllValues(form, key, value)
+    }
+  })
+
+  if (options.dot) {
+    Object.entries(form).forEach(([key, value]) => {
+      const shouldParseDotValues = key.includes('.')
+
+      if (shouldParseDotValues) {
+        handleParsingNestedValues(form, key, value)
+        delete form[key]
+      }
+    })
+  }
+
+  return form as T
+}
+
+/**
+ * Handles parsing all values for a given key, supporting multiple values as arrays.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The key to parse.
+ * @param {FormDataEntryValue} value - The value to assign.
+ */
+const handleParsingAllValues = (
+  form: BodyData<{ all: true }>,
+  key: string,
+  value: FormDataEntryValue
+): void => {
+  if (form[key] !== undefined) {
+    if (Array.isArray(form[key])) {
+      ;(form[key] as (string | File)[]).push(value)
+    } else {
+      form[key] = [form[key] as string | File, value]
+    }
+  } else {
+    form[key] = value
+  }
+}
+
+/**
+ * Handles parsing nested values using dot notation keys.
+ *
+ * @param {BodyData} form - The form data object.
+ * @param {string} key - The dot notation key.
+ * @param {BodyDataValue} value - The value to assign.
+ */
+const handleParsingNestedValues = (
+  form: BodyData,
+  key: string,
+  value: BodyDataValue<Partial<ParseBodyOptions>>
+): void => {
+  let nestedForm = form
+  const keys = key.split('.')
+
+  keys.forEach((key, index) => {
+    if (index === keys.length - 1) {
+      nestedForm[key] = value
+    } else {
+      if (
+        !nestedForm[key] ||
+        typeof nestedForm[key] !== 'object' ||
+        Array.isArray(nestedForm[key]) ||
+        nestedForm[key] instanceof File
+      ) {
+        nestedForm[key] = Object.create(null)
+      }
+      nestedForm = nestedForm[key] as unknown as BodyData
+    }
+  })
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/buffer.test.ts</source>
+<document_content>
+import { createHash } from 'crypto'
+import { bufferToFormData, bufferToString, equal, timingSafeEqual } from './buffer'
+
+describe('equal', () => {
+  it('should return true for identical ArrayBuffers', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = buffer1
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+
+  it('should return false for ArrayBuffers of different lengths', () => {
+    const buffer1 = new ArrayBuffer(1)
+    const buffer2 = new ArrayBuffer(2)
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return false for ArrayBuffers with different content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([2, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(false)
+  })
+
+  it('should return true for ArrayBuffers with identical content', () => {
+    const buffer1 = new Uint8Array([1, 2, 3, 4]).buffer
+    const buffer2 = new Uint8Array([1, 2, 3, 4]).buffer
+    expect(equal(buffer1, buffer2)).toBe(true)
+  })
+})
+
+describe('buffer', () => {
+  it('positive', async () => {
+    expect(
+      await timingSafeEqual(
+        '127e6fbfe24a750e72930c220a8e138275656b8e5d8f48a98c3c92df2caba935',
+        '127e6fbfe24a750e72930c220a8e138275656b8e5d8f48a98c3c92df2caba935'
+      )
+    ).toBe(true)
+    expect(await timingSafeEqual('a', 'a')).toBe(true)
+    expect(await timingSafeEqual('', '')).toBe(true)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    expect(await timingSafeEqual(undefined, undefined)).toBe(true)
+    expect(await timingSafeEqual(true, true)).toBe(true)
+    expect(await timingSafeEqual(false, false)).toBe(true)
+    expect(
+      await timingSafeEqual(true, true, (d: boolean) =>
+        createHash('sha256').update(d.toString()).digest('hex')
+      )
+    )
+  })
+
+  it('negative', async () => {
+    expect(await timingSafeEqual('a', 'b')).toBe(false)
+    expect(
+      await timingSafeEqual('a', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+    ).toBe(false)
+    expect(
+      await timingSafeEqual('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'a')
+    ).toBe(false)
+    expect(await timingSafeEqual('alpha', 'beta')).toBe(false)
+    expect(await timingSafeEqual(false, true)).toBe(false)
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    expect(await timingSafeEqual(false, undefined)).toBe(false)
+    expect(
+      await timingSafeEqual(
+        () => {},
+        () => {}
+      )
+    ).toBe(false)
+    expect(await timingSafeEqual({}, {})).toBe(false)
+    expect(await timingSafeEqual({ a: 1 }, { a: 1 })).toBe(false)
+    expect(await timingSafeEqual({ a: 1 }, { a: 2 })).toBe(false)
+    expect(await timingSafeEqual([1, 2], [1, 2])).toBe(false)
+    expect(await timingSafeEqual([1, 2], [1, 2, 3])).toBe(false)
+    expect(await timingSafeEqual('a', 'b', () => undefined)).toBe(false)
+  })
+})
+
+describe('bufferToString', () => {
+  it('Should return あいうえお', () => {
+    const bytes = [227, 129, 130, 227, 129, 132, 227, 129, 134, 227, 129, 136, 227, 129, 138]
+    const buffer = Uint8Array.from(bytes).buffer
+    expect(bufferToString(buffer)).toBe('あいうえお')
+  })
+  it('should return the passed arguments as is ', () => {
+    const notBuffer = 'あいうえお' as unknown as ArrayBuffer
+    expect(bufferToString(notBuffer)).toBe('あいうえお')
+  })
+})
+
+describe('bufferToFormData', () => {
+  it('Should parse multipart/form-data from ArrayBuffer', async () => {
+    const encoder = new TextEncoder()
+    const testData =
+      '--sampleboundary\r\nContent-Disposition: form-data; name="test"\r\n\r\nHello\r\n--sampleboundary--'
+    const arrayBuffer = encoder.encode(testData).buffer
+
+    const result = await bufferToFormData(
+      arrayBuffer,
+      'multipart/form-data; boundary=sampleboundary'
+    )
+
+    expect(result.get('test')).toBe('Hello')
+  })
+
+  it('Should parse application/x-www-form-urlencoded from ArrayBuffer', async () => {
+    const encoder = new TextEncoder()
+    const searchParams = new URLSearchParams()
+    searchParams.append('id', '123')
+    searchParams.append('title', 'Good title')
+    const testData = searchParams.toString()
+    const arrayBuffer = encoder.encode(testData).buffer
+
+    const result = await bufferToFormData(arrayBuffer, 'application/x-www-form-urlencoded')
+
+    expect(result.get('id')).toBe('123')
+    expect(result.get('title')).toBe('Good title')
+  })
+})
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/buffer.ts</source>
+<document_content>
+/**
+ * @module
+ * Buffer utility.
+ */
+
+import { sha256 } from './crypto'
+
+export const equal = (a: ArrayBuffer, b: ArrayBuffer): boolean => {
+  if (a === b) {
+    return true
+  }
+  if (a.byteLength !== b.byteLength) {
+    return false
+  }
+
+  const va = new DataView(a)
+  const vb = new DataView(b)
+
+  let i = va.byteLength
+  while (i--) {
+    if (va.getUint8(i) !== vb.getUint8(i)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+export const timingSafeEqual = async (
+  a: string | object | boolean,
+  b: string | object | boolean,
+  hashFunction?: Function
+): Promise<boolean> => {
+  if (!hashFunction) {
+    hashFunction = sha256
+  }
+
+  const [sa, sb] = await Promise.all([hashFunction(a), hashFunction(b)])
+
+  if (!sa || !sb) {
+    return false
+  }
+
+  return sa === sb && a === b
+}
+
+export const bufferToString = (buffer: ArrayBuffer): string => {
+  if (buffer instanceof ArrayBuffer) {
+    const enc = new TextDecoder('utf-8')
+    return enc.decode(buffer)
+  }
+  return buffer
+}
+
+export const bufferToFormData = (
+  arrayBuffer: ArrayBuffer,
+  contentType: string
+): Promise<FormData> => {
+  const response = new Response(arrayBuffer, {
+    headers: {
+      'Content-Type': contentType,
+    },
+  })
+  return response.formData()
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/color.test.ts</source>
+<document_content>
+import { getColorEnabled } from './color'
+
+describe('getColorEnabled() - With colors enabled', () => {
+  it('should return true', async () => {
+    expect(getColorEnabled()).toBe(true)
+  })
+})
+
+describe('getColorEnabled() - With NO_COLOR environment variable set', () => {
+  beforeAll(() => {
+    vi.stubEnv('NO_COLOR', '1')
+  })
+
+  afterAll(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('should return false', async () => {
+    expect(getColorEnabled()).toBe(false)
+  })
+})
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/color.ts</source>
+<document_content>
+/**
+ * @module
+ * Color utility.
+ */
+
+/**
+ * Get whether color change on terminal is enabled or disabled.
+ * If `NO_COLOR` environment variable is set, this function returns `false`.
+ * @see {@link https://no-color.org/}
+ *
+ * @returns {boolean}
+ */
+export function getColorEnabled(): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { process, Deno } = globalThis as any
+
+  const isNoColor =
+    typeof Deno?.noColor === 'boolean'
+      ? (Deno.noColor as boolean)
+      : process !== undefined
+      ? // eslint-disable-next-line no-unsafe-optional-chaining
+        'NO_COLOR' in process?.env
+      : false
+
+  return !isNoColor
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/compress.ts</source>
+<document_content>
+/**
+ * @module
+ * Constants for compression.
+ */
+
+/**
+ * Match for compressible content type.
+ */
+export const COMPRESSIBLE_CONTENT_TYPE_REGEX =
+  /^\s*(?:text\/(?!event-stream(?:[;\s]|$))[^;\s]+|application\/(?:javascript|json|xml|xml-dtd|ecmascript|dart|postscript|rtf|tar|toml|vnd\.dart|vnd\.ms-fontobject|vnd\.ms-opentype|wasm|x-httpd-php|x-javascript|x-ns-proxy-autoconfig|x-sh|x-tar|x-virtualbox-hdd|x-virtualbox-ova|x-virtualbox-ovf|x-virtualbox-vbox|x-virtualbox-vdi|x-virtualbox-vhd|x-virtualbox-vmdk|x-www-form-urlencoded)|font\/(?:otf|ttf)|image\/(?:bmp|vnd\.adobe\.photoshop|vnd\.microsoft\.icon|vnd\.ms-dds|x-icon|x-ms-bmp)|message\/rfc822|model\/gltf-binary|x-shader\/x-fragment|x-shader\/x-vertex|[^;\s]+?\+(?:json|text|xml|yaml))(?:[;\s]|$)/i
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/concurrent.test.ts</source>
+<document_content>
+import { createPool } from './concurrent'
+
+describe('concurrent execution', () => {
+  test.each`
+    concurrency | count
+    ${1}        | ${10}
+    ${10}       | ${10}
+    ${100}      | ${10}
+    ${Infinity} | ${2000}
+  `('concurrency $concurrency, count $count', async ({ concurrency, count }) => {
+    const running = new Set()
+
+    const pool = createPool({ concurrency })
+    let resolve: (() => void) | undefined
+    const promise = new Promise<void>((r) => {
+      resolve = r
+    })
+    const fn = async (i: number) => {
+      if (running.size > concurrency) {
+        throw new Error('concurrency exceeded')
+      }
+
+      running.add(i)
+      await promise
+      running.delete(i)
+      return i
+    }
+
+    const jobs = new Array(count).fill(0).map((_, i) => () => fn(i))
+    const expectedResults = new Array(count).fill(0).map((_, i) => i)
+    const resultPromises = jobs.map((job) => pool.run(job))
+
+    expect(running.size).toBe(Math.min(concurrency, count))
+    resolve?.()
+    const results = await Promise.all(resultPromises)
+    expect(running.size).toBe(0)
+    expect(results).toEqual(expectedResults)
+  })
+
+  describe('with interval', () => {
+    test.each`
+      concurrency | interval
+      ${1}        | ${10}
+      ${2}        | ${10}
+    `('concurrency $concurrency, interval $interval', async ({ concurrency, interval }) => {
+      const workingTimeQueue: number[] = []
+      const pool = createPool({ concurrency, interval })
+      const fn = async (i: number) => {
+        const now = Date.now()
+        if (workingTimeQueue.length >= concurrency) {
+          const last = workingTimeQueue.shift()
+          // Not so accurate, -1 ms is acceptable
+          if (last && now - last < interval - 1) {
+            throw new Error('interval violated')
+          }
+        }
+        workingTimeQueue.push(now)
+        return i
+      }
+
+      const jobs = new Array(10).fill(0).map((_, i) => () => fn(i))
+      const expectedResults = new Array(10).fill(0).map((_, i) => i)
+      const resultPromises = jobs.map((job) => pool.run(job))
+
+      const results = await Promise.all(resultPromises)
+      expect(results).toEqual(expectedResults)
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/concurrent.ts</source>
+<document_content>
+/**
+ * @module
+ * Concurrent utility.
+ */
+
+const DEFAULT_CONCURRENCY = 1024
+
+export interface Pool {
+  run<T>(fn: () => T): Promise<T>
+}
+
+export const createPool = ({
+  concurrency,
+  interval,
+}: {
+  concurrency?: number
+  interval?: number
+} = {}): Pool => {
+  concurrency ||= DEFAULT_CONCURRENCY
+
+  if (concurrency === Infinity) {
+    // unlimited
+    return {
+      run: async (fn) => fn(),
+    }
+  }
+
+  const pool: Set<{}> = new Set()
+  const run = async <T>(
+    fn: () => T,
+    promise?: Promise<T>,
+    resolve?: (result: T) => void
+  ): Promise<T> => {
+    if (pool.size >= (concurrency as number)) {
+      promise ||= new Promise<T>((r) => (resolve = r))
+      setTimeout(() => run(fn, promise, resolve))
+      return promise
+    }
+    const marker = {}
+    pool.add(marker)
+    const result = await fn()
+    if (interval) {
+      setTimeout(() => pool.delete(marker), interval)
+    } else {
+      pool.delete(marker)
+    }
+    if (resolve) {
+      resolve(result)
+      return promise as Promise<T>
+    } else {
+      return result
+    }
+  }
+  return { run }
+}
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/constants.ts</source>
+<document_content>
+/**
+ * Constant used to mark a composed handler.
+ */
+export const COMPOSED_HANDLER = '__COMPOSED_HANDLER'
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/cookie.test.ts</source>
+<document_content>
+import type { Cookie, SignedCookie } from './cookie'
+import { parse, parseSigned, serialize, serializeSigned } from './cookie'
+
+describe('Parse cookie', () => {
+  it('Should parse cookies', () => {
+    const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+  })
+
+  it('Should parse quoted cookie values', () => {
+    const cookieString =
+      'yummy_cookie="choco"; tasty_cookie = " strawberry " ; best_cookie="%20sugar%20";'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe(' strawberry ')
+    expect(cookie['best_cookie']).toBe(' sugar ')
+  })
+
+  it('Should parse empty cookies', () => {
+    const cookie: Cookie = parse('')
+    expect(Object.keys(cookie).length).toBe(0)
+  })
+
+  it('Should parse one cookie specified by name', () => {
+    const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
+    const cookie: Cookie = parse(cookieString, 'yummy_cookie')
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBeUndefined()
+  })
+
+  it('Should parse one cookie specified by name even if it is not found', () => {
+    const cookieString = 'yummy_cookie=choco; tasty_cookie = strawberry '
+    const cookie: Cookie = parse(cookieString, 'no_such_cookie')
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBeUndefined()
+    expect(cookie['no_such_cookie']).toBeUndefined()
+  })
+
+  it('Should parse cookies with no value', () => {
+    const cookieString = 'yummy_cookie=; tasty_cookie = ; best_cookie= ; last_cookie=""'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('')
+    expect(cookie['tasty_cookie']).toBe('')
+    expect(cookie['best_cookie']).toBe('')
+    expect(cookie['last_cookie']).toBe('')
+  })
+
+  it('Should parse cookies but not process signed cookies', () => {
+    // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
+    const cookieString =
+      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; great_cookie=rating3.5; best_cookie=sugar.valueShapedLikeASignatureButIsNotASignature%3D'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe('strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig=')
+    expect(cookie['great_cookie']).toBe('rating3.5')
+    expect(cookie['best_cookie']).toBe('sugar.valueShapedLikeASignatureButIsNotASignature=')
+  })
+
+  it('Should ignore invalid cookie names', () => {
+    const cookieString = 'yummy_cookie=choco; tasty cookie=strawberry; best_cookie\\=sugar; =ng'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty cookie']).toBeUndefined()
+    expect(cookie['best_cookie\\']).toBeUndefined()
+    expect(cookie['']).toBeUndefined()
+  })
+
+  it('Should ignore invalid cookie values', () => {
+    const cookieString = 'yummy_cookie=choco\\nchip; tasty_cookie=strawberry; best_cookie="sugar'
+    const cookie: Cookie = parse(cookieString)
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+    expect(cookie['best_cookie\\']).toBeUndefined()
+  })
+
+  it('Should parse signed cookies', async () => {
+    const secret = 'secret ingredient'
+    const cookieString =
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+  })
+
+  it('Should parse signed cookies with binary secret', async () => {
+    const secret = new Uint8Array([
+      172, 142, 204, 63, 210, 136, 58, 143, 25, 18, 159, 16, 161, 34, 94,
+    ])
+    const cookieString =
+      'yummy_cookie=choco.8Km4IwZETZdwiOfrT7KgYjKXwiO98XIkms0tOtRa2TA%3D; tasty_cookie = strawberry.TbV33P%2Bi1K0JTxMzNYq7FV9fB4s2VlQcBCBFDxTrUSg%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+  })
+
+  it('Should parse signed cookies containing the signature separator', async () => {
+    const secret = 'secret ingredient'
+    const cookieString = 'yummy_cookie=choco.chip.2%2FJA0c68Y3zm0DvSvHyR6IRysDWmHW0LfoaC0AkyOpw%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBe('choco.chip')
+  })
+
+  it('Should parse signed cookies and return "false" for wrong signature', async () => {
+    const secret = 'secret ingredient'
+    // tasty_cookie has invalid signature
+    const cookieString =
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBe('choco')
+    expect(cookie['tasty_cookie']).toBe(false)
+  })
+
+  it('Should parse signed cookies and return "false" for corrupt signature', async () => {
+    const secret = 'secret ingredient'
+    // yummy_cookie has corrupt signature (i.e. invalid base64 encoding)
+    // best_cookie has a shape that matches the signature format but isn't actually a signature
+    const cookieString =
+      'yummy_cookie=choco.?dFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; best_cookie=sugar.valueShapedLikeASignatureButIsNotASignature%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBe(false)
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+    expect(cookie['best_cookie']).toBe(false)
+  })
+
+  it('Should parse one signed cookie specified by name', async () => {
+    const secret = 'secret ingredient'
+    const cookieString =
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+  })
+
+  it('Should parse one signed cookie specified by name and return "false" for wrong signature', async () => {
+    const secret = 'secret ingredient'
+    // tasty_cookie has invalid signature
+    const cookieString =
+      'yummy_cookie=choco.UdFR2rBpS1GsHfGlUiYyMIdqxqwuEgplyQIgTJgpGWY%3D; tasty_cookie = strawberry.LAa7RX43t2vCrLNcKmNG65H41OkyV02sraRPuY5RuVg%3D'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret, 'tasty_cookie')
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBe(false)
+  })
+
+  it('Should parse signed cookies and ignore regular cookies', async () => {
+    const secret = 'secret ingredient'
+    // also contains another cookie with a '.' in its value to test it is not misinterpreted as signed cookie
+    const cookieString =
+      'yummy_cookie=choco; tasty_cookie = strawberry.I9qAeGQOvWjCEJgRPmrw90JjYpnnX2C9zoOiGSxh1Ig%3D; great_cookie=rating3.5'
+    const cookie: SignedCookie = await parseSigned(cookieString, secret)
+    expect(cookie['yummy_cookie']).toBeUndefined()
+    expect(cookie['tasty_cookie']).toBe('strawberry')
+    expect(cookie['great_cookie']).toBeUndefined()
+  })
+})
+
+describe('Set cookie', () => {
+  it('Should serialize cookie', () => {
+    const serialized = serialize('delicious_cookie', 'macha')
+    expect(serialized).toBe('delicious_cookie=macha')
+  })
+
+  it('Should serialize cookie with all options', () => {
+    const serialized = serialize('__Secure-great_cookie', 'banana', {
+      path: '/',
+      secure: true,
+      domain: 'example.com',
+      httpOnly: true,
+      maxAge: 1000,
+      expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+      sameSite: 'Strict',
+      priority: 'High',
+      partitioned: true,
+    })
+    expect(serialized).toBe(
+      '__Secure-great_cookie=banana; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
+    )
+  })
+
+  it('Should serialize __Host- cookie with all valid options', () => {
+    const serialized = serialize('__Host-great_cookie', 'banana', {
+      path: '/',
+      secure: true,
+      httpOnly: true,
+      maxAge: 1000,
+      expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+      sameSite: 'Strict',
+      priority: 'High',
+      partitioned: true,
+    })
+    expect(serialized).toBe(
+      '__Host-great_cookie=banana; Max-Age=1000; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
+    )
+  })
+
+  it('Should serialize a signed cookie', async () => {
+    const secret = 'secret chocolate chips'
+    const serialized = await serializeSigned('delicious_cookie', 'macha', secret)
+    expect(serialized).toBe(
+      'delicious_cookie=macha.diubJPY8O7hI1pLa42QSfkPiyDWQ0I4DnlACH%2FN2HaA%3D'
+    )
+  })
+
+  it('Should serialize signed cookie with all options', async () => {
+    const secret = 'secret chocolate chips'
+    const serialized = await serializeSigned('great_cookie', 'banana', secret, {
+      path: '/',
+      secure: true,
+      domain: 'example.com',
+      httpOnly: true,
+      maxAge: 1000,
+      expires: new Date(Date.UTC(2000, 11, 24, 10, 30, 59, 900)),
+      sameSite: 'Strict',
+      priority: 'High',
+      partitioned: true,
+    })
+    expect(serialized).toBe(
+      'great_cookie=banana.hSo6gB7YT2db0WBiEAakEmh7dtwEL0DSp76G23WvHuQ%3D; Max-Age=1000; Domain=example.com; Path=/; Expires=Sun, 24 Dec 2000 10:30:59 GMT; HttpOnly; Secure; SameSite=Strict; Priority=High; Partitioned'
+    )
+  })
+
+  it('Should serialize cookie with maxAge is 0', () => {
+    const serialized = serialize('great_cookie', 'banana', {
+      maxAge: 0,
+    })
+    expect(serialized).toBe('great_cookie=banana; Max-Age=0')
+  })
+
+  it('Should serialize cookie with maxAge is -1', () => {
+    const serialized = serialize('great_cookie', 'banana', {
+      maxAge: -1,
+    })
+    expect(serialized).toBe('great_cookie=banana')
+  })
+
+  it('Should throw Error cookie with maxAge grater than 400days', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        maxAge: 3600 * 24 * 401,
+      })
+    }).toThrowError(
+      'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+    )
+  })
+
+  it('Should throw Error cookie with expires grater than 400days', () => {
+    const now = Date.now()
+    const day401 = new Date(now + 1000 * 3600 * 24 * 401)
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        expires: day401,
+      })
+    }).toThrowError(
+      'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+    )
+  })
+
+  it('Should throw Error Partitioned cookie without Secure attributes', () => {
+    expect(() => {
+      serialize('great_cookie', 'banana', {
+        partitioned: true,
+      })
+    }).toThrowError('Partitioned Cookie must have Secure attributes')
+  })
+})
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/cookie.ts</source>
+<document_content>
+/**
+ * @module
+ * Cookie utility.
+ */
+
+import { decodeURIComponent_ } from './url'
+
+export type Cookie = Record<string, string>
+export type SignedCookie = Record<string, string | false>
+
+type PartitionedCookieConstraint =
+  | { partitioned: true; secure: true }
+  | { partitioned?: boolean; secure?: boolean } // reset to default
+type SecureCookieConstraint = { secure: true }
+type HostCookieConstraint = { secure: true; path: '/'; domain?: undefined }
+
+export type CookieOptions = {
+  domain?: string
+  expires?: Date
+  httpOnly?: boolean
+  maxAge?: number
+  path?: string
+  secure?: boolean
+  signingSecret?: string
+  sameSite?: 'Strict' | 'Lax' | 'None' | 'strict' | 'lax' | 'none'
+  partitioned?: boolean
+  priority?: 'Low' | 'Medium' | 'High'
+  prefix?: CookiePrefixOptions
+} & PartitionedCookieConstraint
+export type CookiePrefixOptions = 'host' | 'secure'
+
+export type CookieConstraint<Name> = Name extends `__Secure-${string}`
+  ? CookieOptions & SecureCookieConstraint
+  : Name extends `__Host-${string}`
+  ? CookieOptions & HostCookieConstraint
+  : CookieOptions
+
+const algorithm = { name: 'HMAC', hash: 'SHA-256' }
+
+const getCryptoKey = async (secret: string | BufferSource): Promise<CryptoKey> => {
+  const secretBuf = typeof secret === 'string' ? new TextEncoder().encode(secret) : secret
+  return await crypto.subtle.importKey('raw', secretBuf, algorithm, false, ['sign', 'verify'])
+}
+
+const makeSignature = async (value: string, secret: string | BufferSource): Promise<string> => {
+  const key = await getCryptoKey(secret)
+  const signature = await crypto.subtle.sign(algorithm.name, key, new TextEncoder().encode(value))
+  // the returned base64 encoded signature will always be 44 characters long and end with one or two equal signs
+  return btoa(String.fromCharCode(...new Uint8Array(signature)))
+}
+
+const verifySignature = async (
+  base64Signature: string,
+  value: string,
+  secret: CryptoKey
+): Promise<boolean> => {
+  try {
+    const signatureBinStr = atob(base64Signature)
+    const signature = new Uint8Array(signatureBinStr.length)
+    for (let i = 0, len = signatureBinStr.length; i < len; i++) {
+      signature[i] = signatureBinStr.charCodeAt(i)
+    }
+    return await crypto.subtle.verify(algorithm, secret, signature, new TextEncoder().encode(value))
+  } catch {
+    return false
+  }
+}
+
+// all alphanumeric chars and all of _!#$%&'*.^`|~+-
+// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+const validCookieNameRegEx = /^[\w!#$%&'*.^`|~+-]+$/
+
+// all ASCII chars 32-126 except 34, 59, and 92 (i.e. space to tilde but not double quote, semicolon, or backslash)
+// (see: https://datatracker.ietf.org/doc/html/rfc6265#section-4.1.1)
+//
+// note: the spec also prohibits comma and space, but we allow both since they are very common in the real world
+// (see: https://github.com/golang/go/issues/7243)
+const validCookieValueRegEx = /^[ !#-:<-[\]-~]*$/
+
+export const parse = (cookie: string, name?: string): Cookie => {
+  if (name && cookie.indexOf(name) === -1) {
+    // Fast-path: return immediately if the demanded-key is not in the cookie string
+    return {}
+  }
+  const pairs = cookie.trim().split(';')
+  const parsedCookie: Cookie = {}
+  for (let pairStr of pairs) {
+    pairStr = pairStr.trim()
+    const valueStartPos = pairStr.indexOf('=')
+    if (valueStartPos === -1) {
+      continue
+    }
+
+    const cookieName = pairStr.substring(0, valueStartPos).trim()
+    if ((name && name !== cookieName) || !validCookieNameRegEx.test(cookieName)) {
+      continue
+    }
+
+    let cookieValue = pairStr.substring(valueStartPos + 1).trim()
+    if (cookieValue.startsWith('"') && cookieValue.endsWith('"')) {
+      cookieValue = cookieValue.slice(1, -1)
+    }
+    if (validCookieValueRegEx.test(cookieValue)) {
+      parsedCookie[cookieName] = decodeURIComponent_(cookieValue)
+      if (name) {
+        // Fast-path: return only the demanded-key immediately. Other keys are not needed.
+        break
+      }
+    }
+  }
+  return parsedCookie
+}
+
+export const parseSigned = async (
+  cookie: string,
+  secret: string | BufferSource,
+  name?: string
+): Promise<SignedCookie> => {
+  const parsedCookie: SignedCookie = {}
+  const secretKey = await getCryptoKey(secret)
+
+  for (const [key, value] of Object.entries(parse(cookie, name))) {
+    const signatureStartPos = value.lastIndexOf('.')
+    if (signatureStartPos < 1) {
+      continue
+    }
+
+    const signedValue = value.substring(0, signatureStartPos)
+    const signature = value.substring(signatureStartPos + 1)
+    if (signature.length !== 44 || !signature.endsWith('=')) {
+      continue
+    }
+
+    const isVerified = await verifySignature(signature, signedValue, secretKey)
+    parsedCookie[key] = isVerified ? signedValue : false
+  }
+
+  return parsedCookie
+}
+
+const _serialize = (name: string, value: string, opt: CookieOptions = {}): string => {
+  let cookie = `${name}=${value}`
+
+  if (name.startsWith('__Secure-') && !opt.secure) {
+    // FIXME: replace link to RFC
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.1
+    throw new Error('__Secure- Cookie must have Secure attributes')
+  }
+
+  if (name.startsWith('__Host-')) {
+    // FIXME: replace link to RFC
+    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.3.2
+    if (!opt.secure) {
+      throw new Error('__Host- Cookie must have Secure attributes')
+    }
+
+    if (opt.path !== '/') {
+      throw new Error('__Host- Cookie must have Path attributes with "/"')
+    }
+
+    if (opt.domain) {
+      throw new Error('__Host- Cookie must not have Domain attributes')
+    }
+  }
+
+  if (opt && typeof opt.maxAge === 'number' && opt.maxAge >= 0) {
+    if (opt.maxAge > 34560000) {
+      // FIXME: replace link to RFC
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.2
+      throw new Error(
+        'Cookies Max-Age SHOULD NOT be greater than 400 days (34560000 seconds) in duration.'
+      )
+    }
+    cookie += `; Max-Age=${opt.maxAge | 0}`
+  }
+
+  if (opt.domain && opt.prefix !== 'host') {
+    cookie += `; Domain=${opt.domain}`
+  }
+
+  if (opt.path) {
+    cookie += `; Path=${opt.path}`
+  }
+
+  if (opt.expires) {
+    if (opt.expires.getTime() - Date.now() > 34560000_000) {
+      // FIXME: replace link to RFC
+      // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-rfc6265bis-13#section-4.1.2.1
+      throw new Error(
+        'Cookies Expires SHOULD NOT be greater than 400 days (34560000 seconds) in the future.'
+      )
+    }
+    cookie += `; Expires=${opt.expires.toUTCString()}`
+  }
+
+  if (opt.httpOnly) {
+    cookie += '; HttpOnly'
+  }
+
+  if (opt.secure) {
+    cookie += '; Secure'
+  }
+
+  if (opt.sameSite) {
+    cookie += `; SameSite=${opt.sameSite.charAt(0).toUpperCase() + opt.sameSite.slice(1)}`
+  }
+
+  if (opt.priority) {
+    cookie += `; Priority=${opt.priority}`
+  }
+
+  if (opt.partitioned) {
+    // FIXME: replace link to RFC
+    // https://www.ietf.org/archive/id/draft-cutler-httpbis-partitioned-cookies-01.html#section-2.3
+    if (!opt.secure) {
+      throw new Error('Partitioned Cookie must have Secure attributes')
+    }
+    cookie += '; Partitioned'
+  }
+
+  return cookie
+}
+
+export const serialize = <Name extends string>(
+  name: Name,
+  value: string,
+  opt?: CookieConstraint<Name>
+): string => {
+  value = encodeURIComponent(value)
+  return _serialize(name, value, opt)
+}
+
+export const serializeSigned = async (
+  name: string,
+  value: string,
+  secret: string | BufferSource,
+  opt: CookieOptions = {}
+): Promise<string> => {
+  const signature = await makeSignature(value, secret)
+  value = `${value}.${signature}`
+  value = encodeURIComponent(value)
+  return _serialize(name, value, opt)
+}
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/crypto.test.ts</source>
+<document_content>
+import { createHash } from 'crypto'
+import { md5, sha1, sha256 } from './crypto'
+
+describe('crypto', () => {
+  it('sha256', async () => {
+    expect(await sha256('hono')).toBe(
+      '8b3dc17add91b7e8f0b5109a389927d66001139cd9b03fa7b95f83126e1b2b23'
+    )
+    expect(await sha256('炎')).toBe(
+      '1fddc5a562ee1fbeb4fc6def7d4be4911fcdae4273b02ae3a507b170ba0ea169'
+    )
+    expect(await sha256('abcdedf')).not.toBe('abcdef')
+  })
+
+  it('sha1', async () => {
+    expect(await sha1('hono')).toBe('28c7e86f5732391917876b45c06c626c04d77f39')
+    expect(await sha1('炎')).toBe('d56e09ae2421b2b8a0b5ee5fdceaed663c8c9472')
+    expect(await sha1('abcdedf')).not.toBe('abcdef')
+  })
+
+  // MD5 is not part of the WebCrypto standard.
+  // Node.js' Web Crypto API does not support it (But Cloudflare Workers supports it).
+  // We should skip this test in a Node.js environment.
+  it.skip('md5', async () => {
+    expect(await md5('hono')).toBe('cf22a160789a91dd5f737cd3b2640cc2')
+    expect(await md5('炎')).toBe('f620d89a5a782c22b4420acb39121be3')
+    expect(await md5('abcdedf')).not.toBe('abcdef')
+  })
+
+  it('Should not be the same values - compare difference objects', async () => {
+    expect(await sha256({ foo: 'bar' })).not.toEqual(
+      await sha256({
+        bar: 'foo',
+      })
+    )
+  })
+
+  it('Should create hash for Buffer', async () => {
+    const hash = createHash('sha256').update(new Uint8Array(1)).digest('hex')
+    expect(await sha256(new Uint8Array(1))).toBe(hash)
+    expect(await sha256(new Uint8Array(1))).not.toEqual(await sha256(new Uint8Array(2)))
+  })
+})
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/crypto.ts</source>
+<document_content>
+/**
+ * @module
+ * Crypto utility.
+ */
+
+import type { JSONValue } from './types'
+
+type Algorithm = {
+  name: string
+  alias: string
+}
+
+type Data = string | boolean | number | JSONValue | ArrayBufferView | ArrayBuffer
+
+export const sha256 = async (data: Data): Promise<string | null> => {
+  const algorithm: Algorithm = { name: 'SHA-256', alias: 'sha256' }
+  const hash = await createHash(data, algorithm)
+  return hash
+}
+
+export const sha1 = async (data: Data): Promise<string | null> => {
+  const algorithm: Algorithm = { name: 'SHA-1', alias: 'sha1' }
+  const hash = await createHash(data, algorithm)
+  return hash
+}
+
+export const md5 = async (data: Data): Promise<string | null> => {
+  const algorithm: Algorithm = { name: 'MD5', alias: 'md5' }
+  const hash = await createHash(data, algorithm)
+  return hash
+}
+
+export const createHash = async (data: Data, algorithm: Algorithm): Promise<string | null> => {
+  let sourceBuffer: ArrayBufferView | ArrayBuffer
+
+  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
+    sourceBuffer = data
+  } else {
+    if (typeof data === 'object') {
+      data = JSON.stringify(data)
+    }
+    sourceBuffer = new TextEncoder().encode(String(data))
+  }
+
+  if (crypto && crypto.subtle) {
+    const buffer = await crypto.subtle.digest(
+      {
+        name: algorithm.name,
+      },
+      sourceBuffer as ArrayBuffer
+    )
+    const hash = Array.prototype.map
+      .call(new Uint8Array(buffer), (x) => ('00' + x.toString(16)).slice(-2))
+      .join('')
+    return hash
+  }
+  return null
+}
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/encode.test.ts</source>
+<document_content>
+import { decodeBase64Url, encodeBase64Url } from './encode'
+
+const toURLBase64 = (base64String: string): string =>
+  base64String.replace(/\+|\//g, (m) => ({ '+': '-', '/': '_' }[m] ?? m))
+
+const str2UInt8Array = (s: string): Uint8Array => {
+  const buffer = new Uint8Array(new ArrayBuffer(s.length))
+  for (let i = 0, len = buffer.byteLength; i < len; i++) {
+    buffer[i] = s.charCodeAt(i)
+  }
+  return buffer
+}
+
+describe('base64', () => {
+  const utf8Encoder = new TextEncoder()
+  describe.each([
+    // basic
+    [utf8Encoder.encode('Hello, 世界'), 'SGVsbG8sIOS4lueVjA=='],
+    [utf8Encoder.encode('炎'), '54KO'],
+    [utf8Encoder.encode('🔥'), '8J+UpQ=='],
+    [
+      utf8Encoder.encode('http://github.com/honojs/hono'),
+      'aHR0cDovL2dpdGh1Yi5jb20vaG9ub2pzL2hvbm8=',
+    ],
+
+    // RFC 3548 examples
+    [str2UInt8Array('\x14\xfb\x9c\x03\xd9\x7e'), 'FPucA9l+'],
+    [str2UInt8Array('\x14\xfb\x9c\x03\xd9'), 'FPucA9k='],
+    [str2UInt8Array('\x14\xfb\x9c\x03'), 'FPucAw=='],
+
+    // RFC 4648 examples
+    [str2UInt8Array(''), ''],
+    [str2UInt8Array('f'), 'Zg=='],
+    [str2UInt8Array('fo'), 'Zm8='],
+    [str2UInt8Array('foo'), 'Zm9v'],
+    [str2UInt8Array('foob'), 'Zm9vYg=='],
+    [str2UInt8Array('fooba'), 'Zm9vYmE='],
+    [str2UInt8Array('foobar'), 'Zm9vYmFy'],
+
+    // Wikipedia examples
+    [str2UInt8Array('sure.'), 'c3VyZS4='],
+    [str2UInt8Array('sure'), 'c3VyZQ=='],
+    [str2UInt8Array('sur'), 'c3Vy'],
+    [str2UInt8Array('su'), 'c3U='],
+    [str2UInt8Array('leasure.'), 'bGVhc3VyZS4='],
+    [str2UInt8Array('easure.'), 'ZWFzdXJlLg=='],
+    [str2UInt8Array('asure.'), 'YXN1cmUu'],
+    [str2UInt8Array('sure.'), 'c3VyZS4='],
+  ])('%s, %s', (stdDecoded, stdEncoded) => {
+    it('encode', () => {
+      const got = encodeBase64Url(stdDecoded)
+      const want = toURLBase64(stdEncoded)
+      expect(got).toStrictEqual(want)
+    })
+    it('decode', () => {
+      const got = decodeBase64Url(toURLBase64(stdEncoded))
+      const want = stdDecoded
+      expect(got).toStrictEqual(want)
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/encode.ts</source>
+<document_content>
+/**
+ * @module
+ * Encode utility.
+ */
+
+export const decodeBase64Url = (str: string): Uint8Array => {
+  return decodeBase64(str.replace(/_|-/g, (m) => ({ _: '/', '-': '+' }[m] ?? m)))
+}
+
+export const encodeBase64Url = (buf: ArrayBufferLike): string =>
+  encodeBase64(buf).replace(/\/|\+/g, (m) => ({ '/': '_', '+': '-' }[m] ?? m))
+
+// This approach is written in MDN.
+// btoa does not support utf-8 characters. So we need a little bit hack.
+export const encodeBase64 = (buf: ArrayBufferLike): string => {
+  let binary = ''
+  const bytes = new Uint8Array(buf)
+  for (let i = 0, len = bytes.length; i < len; i++) {
+    binary += String.fromCharCode(bytes[i])
+  }
+  return btoa(binary)
+}
+
+// atob does not support utf-8 characters. So we need a little bit hack.
+export const decodeBase64 = (str: string): Uint8Array => {
+  const binary = atob(str)
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length))
+  const half = binary.length / 2
+  for (let i = 0, j = binary.length - 1; i <= half; i++, j--) {
+    bytes[i] = binary.charCodeAt(i)
+    bytes[j] = binary.charCodeAt(j)
+  }
+  return bytes
+}
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/filepath.test.ts</source>
+<document_content>
+import { getFilePath, getFilePathWithoutDefaultDocument } from './filepath'
+
+describe('getFilePathWithoutDefaultDocument', () => {
+  it('Should return file path correctly', async () => {
+    expect(getFilePathWithoutDefaultDocument({ filename: 'foo.txt' })).toBe('foo.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: 'foo.txt', root: 'bar' })).toBe(
+      'bar/foo.txt'
+    )
+
+    expect(getFilePathWithoutDefaultDocument({ filename: '../foo' })).toBeUndefined()
+    expect(getFilePathWithoutDefaultDocument({ filename: '/../foo' })).toBeUndefined()
+    expect(getFilePathWithoutDefaultDocument({ filename: './../foo' })).toBeUndefined()
+    expect(getFilePathWithoutDefaultDocument({ filename: 'foo..bar.txt' })).toBe('foo..bar.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: '/foo..bar.txt' })).toBe('foo..bar.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: './foo..bar.txt' })).toBe('foo..bar.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: './..foo/bar.txt' })).toBe('..foo/bar.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: './foo../bar.txt' })).toBe('foo../bar.txt')
+    expect(getFilePathWithoutDefaultDocument({ filename: './..foo../bar.txt' })).toBe(
+      '..foo../bar.txt'
+    )
+
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('/../foo') })
+    ).toBeUndefined()
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./../foo') })
+    ).toBeUndefined()
+    expect(getFilePathWithoutDefaultDocument({ filename: slashToBackslash('foo..bar.txt') })).toBe(
+      'foo..bar.txt'
+    )
+    expect(getFilePathWithoutDefaultDocument({ filename: slashToBackslash('/foo..bar.txt') })).toBe(
+      'foo..bar.txt'
+    )
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./foo..bar.txt') })
+    ).toBe('foo..bar.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo/bar.txt') })
+    ).toBe('..foo/bar.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./foo../bar.txt') })
+    ).toBe('foo../bar.txt')
+    expect(
+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo../bar.txt') })
+    ).toBe('..foo../bar.txt')
+  })
+})
+
+describe('getFilePath', () => {
+  it('Should return file path correctly', async () => {
+    expect(getFilePath({ filename: 'foo' })).toBe('foo/index.html')
+
+    expect(getFilePath({ filename: 'foo', root: 'bar' })).toBe('bar/foo/index.html')
+
+    expect(getFilePath({ filename: 'foo', defaultDocument: 'index.txt' })).toBe('foo/index.txt')
+    expect(getFilePath({ filename: 'foo', root: 'bar', defaultDocument: 'index.txt' })).toBe(
+      'bar/foo/index.txt'
+    )
+
+    expect(getFilePath({ filename: 'filename.suffix_index' })).toBe('filename.suffix_index')
+    expect(getFilePath({ filename: 'filename.suffix-index' })).toBe('filename.suffix-index')
+  })
+})
+
+function slashToBackslash(filename: string) {
+  return filename.split('/').join('\\')
+}
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/filepath.ts</source>
+<document_content>
+/**
+ * @module
+ * FilePath utility.
+ */
+
+type FilePathOptions = {
+  filename: string
+  root?: string
+  defaultDocument?: string
+}
+
+export const getFilePath = (options: FilePathOptions): string | undefined => {
+  let filename = options.filename
+  const defaultDocument = options.defaultDocument || 'index.html'
+
+  if (filename.endsWith('/')) {
+    // /top/ => /top/index.html
+    filename = filename.concat(defaultDocument)
+  } else if (!filename.match(/\.[a-zA-Z0-9_-]+$/)) {
+    // /top => /top/index.html
+    filename = filename.concat('/' + defaultDocument)
+  }
+
+  const path = getFilePathWithoutDefaultDocument({
+    root: options.root,
+    filename,
+  })
+
+  return path
+}
+
+export const getFilePathWithoutDefaultDocument = (
+  options: Omit<FilePathOptions, 'defaultDocument'>
+): string | undefined => {
+  let root = options.root || ''
+  let filename = options.filename
+
+  if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
+    return
+  }
+
+  // /foo.html => foo.html
+  filename = filename.replace(/^\.?[\/\\]/, '')
+
+  // foo\bar.txt => foo/bar.txt
+  filename = filename.replace(/\\/, '/')
+
+  // assets/ => assets
+  root = root.replace(/\/$/, '')
+
+  // ./assets/foo.html => assets/foo.html
+  let path = root ? root + '/' + filename : filename
+  path = path.replace(/^\.?\//, '')
+
+  if (root[0] !== '/' && path[0] === '/') {
+    return
+  }
+
+  return path
+}
+
+</document_content>
+</document>
+<document index="23">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/handler.ts</source>
+<document_content>
+/**
+ * @module
+ * Handler utility.
+ */
+
+import { COMPOSED_HANDLER } from './constants'
+
+export const isMiddleware = (handler: Function) => handler.length > 1
+export const findTargetHandler = (handler: Function): Function => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (handler as any)[COMPOSED_HANDLER]
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      findTargetHandler((handler as any)[COMPOSED_HANDLER])
+    : handler
+}
+
+</document_content>
+</document>
+<document index="24">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/headers.ts</source>
+<document_content>
+/**
+ * @module
+ * HTTP Headers utility.
+ */
+
+// note: https://www.iana.org/assignments/http-fields/http-fields.xhtml
+
+export type RequestHeader =
+  | 'A-IM'
+  | 'Accept'
+  | 'Accept-Additions'
+  | 'Accept-CH'
+  | 'Accept-Charset'
+  | 'Accept-Datetime'
+  | 'Accept-Encoding'
+  | 'Accept-Features'
+  | 'Accept-Language'
+  | 'Accept-Patch'
+  | 'Accept-Post'
+  | 'Accept-Ranges'
+  | 'Accept-Signature'
+  | 'Access-Control'
+  | 'Access-Control-Allow-Credentials'
+  | 'Access-Control-Allow-Headers'
+  | 'Access-Control-Allow-Methods'
+  | 'Access-Control-Allow-Origin'
+  | 'Access-Control-Expose-Headers'
+  | 'Access-Control-Max-Age'
+  | 'Access-Control-Request-Headers'
+  | 'Access-Control-Request-Method'
+  | 'Age'
+  | 'Allow'
+  | 'ALPN'
+  | 'Alt-Svc'
+  | 'Alt-Used'
+  | 'Alternates'
+  | 'AMP-Cache-Transform'
+  | 'Apply-To-Redirect-Ref'
+  | 'Authentication-Control'
+  | 'Authentication-Info'
+  | 'Authorization'
+  | 'Available-Dictionary'
+  | 'C-Ext'
+  | 'C-Man'
+  | 'C-Opt'
+  | 'C-PEP'
+  | 'C-PEP-Info'
+  | 'Cache-Control'
+  | 'Cache-Status'
+  | 'Cal-Managed-ID'
+  | 'CalDAV-Timezones'
+  | 'Capsule-Protocol'
+  | 'CDN-Cache-Control'
+  | 'CDN-Loop'
+  | 'Cert-Not-After'
+  | 'Cert-Not-Before'
+  | 'Clear-Site-Data'
+  | 'Client-Cert'
+  | 'Client-Cert-Chain'
+  | 'Close'
+  | 'CMCD-Object'
+  | 'CMCD-Request'
+  | 'CMCD-Session'
+  | 'CMCD-Status'
+  | 'CMSD-Dynamic'
+  | 'CMSD-Static'
+  | 'Concealed-Auth-Export'
+  | 'Configuration-Context'
+  | 'Connection'
+  | 'Content-Base'
+  | 'Content-Digest'
+  | 'Content-Disposition'
+  | 'Content-Encoding'
+  | 'Content-ID'
+  | 'Content-Language'
+  | 'Content-Length'
+  | 'Content-Location'
+  | 'Content-MD5'
+  | 'Content-Range'
+  | 'Content-Script-Type'
+  | 'Content-Security-Policy'
+  | 'Content-Security-Policy-Report-Only'
+  | 'Content-Style-Type'
+  | 'Content-Type'
+  | 'Content-Version'
+  | 'Cookie'
+  | 'Cookie2'
+  | 'Cross-Origin-Embedder-Policy'
+  | 'Cross-Origin-Embedder-Policy-Report-Only'
+  | 'Cross-Origin-Opener-Policy'
+  | 'Cross-Origin-Opener-Policy-Report-Only'
+  | 'Cross-Origin-Resource-Policy'
+  | 'CTA-Common-Access-Token'
+  | 'DASL'
+  | 'Date'
+  | 'DAV'
+  | 'Default-Style'
+  | 'Delta-Base'
+  | 'Deprecation'
+  | 'Depth'
+  | 'Derived-From'
+  | 'Destination'
+  | 'Differential-ID'
+  | 'Dictionary-ID'
+  | 'Digest'
+  | 'DPoP'
+  | 'DPoP-Nonce'
+  | 'Early-Data'
+  | 'EDIINT-Features'
+  | 'ETag'
+  | 'Expect'
+  | 'Expect-CT'
+  | 'Expires'
+  | 'Ext'
+  | 'Forwarded'
+  | 'From'
+  | 'GetProfile'
+  | 'Hobareg'
+  | 'Host'
+  | 'HTTP2-Settings'
+  | 'If'
+  | 'If-Match'
+  | 'If-Modified-Since'
+  | 'If-None-Match'
+  | 'If-Range'
+  | 'If-Schedule-Tag-Match'
+  | 'If-Unmodified-Since'
+  | 'IM'
+  | 'Include-Referred-Token-Binding-ID'
+  | 'Isolation'
+  | 'Keep-Alive'
+  | 'Label'
+  | 'Last-Event-ID'
+  | 'Last-Modified'
+  | 'Link'
+  | 'Link-Template'
+  | 'Location'
+  | 'Lock-Token'
+  | 'Man'
+  | 'Max-Forwards'
+  | 'Memento-Datetime'
+  | 'Meter'
+  | 'Method-Check'
+  | 'Method-Check-Expires'
+  | 'MIME-Version'
+  | 'Negotiate'
+  | 'NEL'
+  | 'OData-EntityId'
+  | 'OData-Isolation'
+  | 'OData-MaxVersion'
+  | 'OData-Version'
+  | 'Opt'
+  | 'Optional-WWW-Authenticate'
+  | 'Ordering-Type'
+  | 'Origin'
+  | 'Origin-Agent-Cluster'
+  | 'OSCORE'
+  | 'OSLC-Core-Version'
+  | 'Overwrite'
+  | 'P3P'
+  | 'PEP'
+  | 'PEP-Info'
+  | 'Permissions-Policy'
+  | 'PICS-Label'
+  | 'Ping-From'
+  | 'Ping-To'
+  | 'Position'
+  | 'Pragma'
+  | 'Prefer'
+  | 'Preference-Applied'
+  | 'Priority'
+  | 'ProfileObject'
+  | 'Protocol'
+  | 'Protocol-Info'
+  | 'Protocol-Query'
+  | 'Protocol-Request'
+  | 'Proxy-Authenticate'
+  | 'Proxy-Authentication-Info'
+  | 'Proxy-Authorization'
+  | 'Proxy-Features'
+  | 'Proxy-Instruction'
+  | 'Proxy-Status'
+  | 'Public'
+  | 'Public-Key-Pins'
+  | 'Public-Key-Pins-Report-Only'
+  | 'Range'
+  | 'Redirect-Ref'
+  | 'Referer'
+  | 'Referer-Root'
+  | 'Referrer-Policy'
+  | 'Refresh'
+  | 'Repeatability-Client-ID'
+  | 'Repeatability-First-Sent'
+  | 'Repeatability-Request-ID'
+  | 'Repeatability-Result'
+  | 'Replay-Nonce'
+  | 'Reporting-Endpoints'
+  | 'Repr-Digest'
+  | 'Retry-After'
+  | 'Safe'
+  | 'Schedule-Reply'
+  | 'Schedule-Tag'
+  | 'Sec-GPC'
+  | 'Sec-Purpose'
+  | 'Sec-Token-Binding'
+  | 'Sec-WebSocket-Accept'
+  | 'Sec-WebSocket-Extensions'
+  | 'Sec-WebSocket-Key'
+  | 'Sec-WebSocket-Protocol'
+  | 'Sec-WebSocket-Version'
+  | 'Security-Scheme'
+  | 'Server'
+  | 'Server-Timing'
+  | 'Set-Cookie'
+  | 'Set-Cookie2'
+  | 'SetProfile'
+  | 'Signature'
+  | 'Signature-Input'
+  | 'SLUG'
+  | 'SoapAction'
+  | 'Status-URI'
+  | 'Strict-Transport-Security'
+  | 'Sunset'
+  | 'Surrogate-Capability'
+  | 'Surrogate-Control'
+  | 'TCN'
+  | 'TE'
+  | 'Timeout'
+  | 'Timing-Allow-Origin'
+  | 'Topic'
+  | 'Traceparent'
+  | 'Tracestate'
+  | 'Trailer'
+  | 'Transfer-Encoding'
+  | 'TTL'
+  | 'Upgrade'
+  | 'Urgency'
+  | 'URI'
+  | 'Use-As-Dictionary'
+  | 'User-Agent'
+  | 'Variant-Vary'
+  | 'Vary'
+  | 'Via'
+  | 'Want-Content-Digest'
+  | 'Want-Digest'
+  | 'Want-Repr-Digest'
+  | 'Warning'
+  | 'WWW-Authenticate'
+  | 'X-Content-Type-Options'
+  | 'X-Frame-Options'
+
+export type ResponseHeader =
+  | 'Access-Control-Allow-Credentials'
+  | 'Access-Control-Allow-Headers'
+  | 'Access-Control-Allow-Methods'
+  | 'Access-Control-Allow-Origin'
+  | 'Access-Control-Expose-Headers'
+  | 'Access-Control-Max-Age'
+  | 'Age'
+  | 'Allow'
+  | 'Cache-Control'
+  | 'Clear-Site-Data'
+  | 'Content-Disposition'
+  | 'Content-Encoding'
+  | 'Content-Language'
+  | 'Content-Length'
+  | 'Content-Location'
+  | 'Content-Range'
+  | 'Content-Security-Policy'
+  | 'Content-Security-Policy-Report-Only'
+  | 'Content-Type'
+  | 'Cookie'
+  | 'Cross-Origin-Embedder-Policy'
+  | 'Cross-Origin-Opener-Policy'
+  | 'Cross-Origin-Resource-Policy'
+  | 'Date'
+  | 'ETag'
+  | 'Expires'
+  | 'Last-Modified'
+  | 'Location'
+  | 'Permissions-Policy'
+  | 'Pragma'
+  | 'Retry-After'
+  | 'Save-Data'
+  | 'Sec-CH-Prefers-Color-Scheme'
+  | 'Sec-CH-Prefers-Reduced-Motion'
+  | 'Sec-CH-UA'
+  | 'Sec-CH-UA-Arch'
+  | 'Sec-CH-UA-Bitness'
+  | 'Sec-CH-UA-Form-Factor'
+  | 'Sec-CH-UA-Full-Version'
+  | 'Sec-CH-UA-Full-Version-List'
+  | 'Sec-CH-UA-Mobile'
+  | 'Sec-CH-UA-Model'
+  | 'Sec-CH-UA-Platform'
+  | 'Sec-CH-UA-Platform-Version'
+  | 'Sec-CH-UA-WoW64'
+  | 'Sec-Fetch-Dest'
+  | 'Sec-Fetch-Mode'
+  | 'Sec-Fetch-Site'
+  | 'Sec-Fetch-User'
+  | 'Sec-GPC'
+  | 'Server'
+  | 'Server-Timing'
+  | 'Service-Worker-Navigation-Preload'
+  | 'Set-Cookie'
+  | 'Strict-Transport-Security'
+  | 'Timing-Allow-Origin'
+  | 'Trailer'
+  | 'Transfer-Encoding'
+  | 'Upgrade'
+  | 'Vary'
+  | 'WWW-Authenticate'
+  | 'Warning'
+  | 'X-Content-Type-Options'
+  | 'X-DNS-Prefetch-Control'
+  | 'X-Frame-Options'
+  | 'X-Permitted-Cross-Domain-Policies'
+  | 'X-Powered-By'
+  | 'X-Robots-Tag'
+  | 'X-XSS-Protection'
+
+export type AcceptHeader =
+  | 'Accept'
+  | 'Accept-Charset'
+  | 'Accept-Encoding'
+  | 'Accept-Language'
+  | 'Accept-Patch'
+  | 'Accept-Post'
+  | 'Accept-Ranges'
+
+// note: `X-${string}` is deprecated
+export type CustomHeader = string & {}
+
+</document_content>
+</document>
+<document index="25">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/html.test.ts</source>
+<document_content>
+import { escapeToBuffer } from './html'
+import type { StringBuffer } from './html'
+
+describe('HTML utilities', () => {
+  describe('escapeToBuffer', () => {
+    it('Should escape special characters', () => {
+      let buffer: StringBuffer = ['']
+      escapeToBuffer('I <b>think</b> this is good.', buffer)
+      expect(buffer[0]).toBe('I &lt;b&gt;think&lt;/b&gt; this is good.')
+
+      buffer = ['']
+      escapeToBuffer('John "Johnny" Smith', buffer)
+      expect(buffer[0]).toBe('John &quot;Johnny&quot; Smith')
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="26">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/html.ts</source>
+<document_content>
+/**
+ * @module
+ * HTML utility.
+ */
+
+export const HtmlEscapedCallbackPhase = {
+  Stringify: 1,
+  BeforeStream: 2,
+  Stream: 3,
+} as const
+type HtmlEscapedCallbackOpts = {
+  buffer?: [string]
+  phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase]
+  context: Readonly<object> // An object unique to each JSX tree. This object is used as the WeakMap key.
+}
+export type HtmlEscapedCallback = (opts: HtmlEscapedCallbackOpts) => Promise<string> | undefined
+export type HtmlEscaped = {
+  isEscaped: true
+  callbacks?: HtmlEscapedCallback[]
+}
+export type HtmlEscapedString = string & HtmlEscaped
+
+/**
+ * StringBuffer contains string and Promise<string> alternately
+ * The length of the array will be odd, the odd numbered element will be a string,
+ * and the even numbered element will be a Promise<string>.
+ * When concatenating into a single string, it must be processed from the tail.
+ * @example
+ * [
+ *   'framework.',
+ *   Promise.resolve('ultra fast'),
+ *   'a ',
+ *   Promise.resolve('is '),
+ *   'Hono',
+ * ]
+ */
+export type StringBuffer = (string | Promise<string>)[]
+export type StringBufferWithCallbacks = StringBuffer & { callbacks: HtmlEscapedCallback[] }
+
+export const raw = (value: unknown, callbacks?: HtmlEscapedCallback[]): HtmlEscapedString => {
+  const escapedString = new String(value) as HtmlEscapedString
+  escapedString.isEscaped = true
+  escapedString.callbacks = callbacks
+
+  return escapedString
+}
+
+// The `escapeToBuffer` implementation is based on code from the MIT licensed `react-dom` package.
+// https://github.com/facebook/react/blob/main/packages/react-dom-bindings/src/server/escapeTextForBrowser.js
+
+const escapeRe = /[&<>'"]/
+
+export const stringBufferToString = async (
+  buffer: StringBuffer,
+  callbacks: HtmlEscapedCallback[] | undefined
+): Promise<HtmlEscapedString> => {
+  let str = ''
+  callbacks ||= []
+  const resolvedBuffer = await Promise.all(buffer)
+  for (let i = resolvedBuffer.length - 1; ; i--) {
+    str += resolvedBuffer[i]
+    i--
+    if (i < 0) {
+      break
+    }
+
+    let r = resolvedBuffer[i]
+    if (typeof r === 'object') {
+      callbacks.push(...((r as HtmlEscapedString).callbacks || []))
+    }
+
+    const isEscaped = (r as HtmlEscapedString).isEscaped
+    r = await (typeof r === 'object' ? (r as HtmlEscapedString).toString() : r)
+    if (typeof r === 'object') {
+      callbacks.push(...((r as HtmlEscapedString).callbacks || []))
+    }
+
+    if ((r as HtmlEscapedString).isEscaped ?? isEscaped) {
+      str += r
+    } else {
+      const buf = [str]
+      escapeToBuffer(r, buf)
+      str = buf[0]
+    }
+  }
+
+  return raw(str, callbacks)
+}
+
+export const escapeToBuffer = (str: string, buffer: StringBuffer): void => {
+  const match = str.search(escapeRe)
+  if (match === -1) {
+    buffer[0] += str
+    return
+  }
+
+  let escape
+  let index
+  let lastIndex = 0
+
+  for (index = match; index < str.length; index++) {
+    switch (str.charCodeAt(index)) {
+      case 34: // "
+        escape = '&quot;'
+        break
+      case 39: // '
+        escape = '&#39;'
+        break
+      case 38: // &
+        escape = '&amp;'
+        break
+      case 60: // <
+        escape = '&lt;'
+        break
+      case 62: // >
+        escape = '&gt;'
+        break
+      default:
+        continue
+    }
+
+    buffer[0] += str.substring(lastIndex, index) + escape
+    lastIndex = index + 1
+  }
+
+  buffer[0] += str.substring(lastIndex, index)
+}
+
+export const resolveCallbackSync = (str: string | HtmlEscapedString): string => {
+  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
+  if (!callbacks?.length) {
+    return str
+  }
+  const buffer: [string] = [str]
+  const context = {}
+
+  callbacks.forEach((c) => c({ phase: HtmlEscapedCallbackPhase.Stringify, buffer, context }))
+
+  return buffer[0]
+}
+
+export const resolveCallback = async (
+  str: string | HtmlEscapedString | Promise<string>,
+  phase: (typeof HtmlEscapedCallbackPhase)[keyof typeof HtmlEscapedCallbackPhase],
+  preserveCallbacks: boolean,
+  context: object,
+  buffer?: [string]
+): Promise<string> => {
+  if (typeof str === 'object' && !(str instanceof String)) {
+    if (!((str as unknown) instanceof Promise)) {
+      str = (str as unknown as string).toString() // HtmlEscapedString object to string
+    }
+    if ((str as string | Promise<string>) instanceof Promise) {
+      str = await (str as unknown as Promise<string>)
+    }
+  }
+
+  const callbacks = (str as HtmlEscapedString).callbacks as HtmlEscapedCallback[]
+  if (!callbacks?.length) {
+    return Promise.resolve(str)
+  }
+  if (buffer) {
+    buffer[0] += str
+  } else {
+    buffer = [str as string]
+  }
+
+  const resStr = Promise.all(callbacks.map((c) => c({ phase, buffer, context }))).then((res) =>
+    Promise.all(
+      res
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter<string>(Boolean as any)
+        .map((str) => resolveCallback(str, phase, false, context, buffer))
+    ).then(() => (buffer as [string])[0])
+  )
+
+  if (preserveCallbacks) {
+    return raw(await resStr, callbacks)
+  } else {
+    return resStr
+  }
+}
+
+</document_content>
+</document>
+<document index="27">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/http-status.ts</source>
+<document_content>
+/**
+ * @module
+ * HTTP Status utility.
+ */
+
+export type InfoStatusCode = 100 | 101 | 102 | 103
+export type SuccessStatusCode = 200 | 201 | 202 | 203 | 204 | 205 | 206 | 207 | 208 | 226
+export type DeprecatedStatusCode = 305 | 306
+export type RedirectStatusCode = 300 | 301 | 302 | 303 | 304 | DeprecatedStatusCode | 307 | 308
+export type ClientErrorStatusCode =
+  | 400
+  | 401
+  | 402
+  | 403
+  | 404
+  | 405
+  | 406
+  | 407
+  | 408
+  | 409
+  | 410
+  | 411
+  | 412
+  | 413
+  | 414
+  | 415
+  | 416
+  | 417
+  | 418
+  | 421
+  | 422
+  | 423
+  | 424
+  | 425
+  | 426
+  | 428
+  | 429
+  | 431
+  | 451
+export type ServerErrorStatusCode = 500 | 501 | 502 | 503 | 504 | 505 | 506 | 507 | 508 | 510 | 511
+
+/**
+ * `UnofficialStatusCode` can be used to specify an unofficial status code.
+ * @example
+ *
+ * ```ts
+ * app.get('/unknown', (c) => {
+ *   return c.text("Unknown Error", 520 as UnofficialStatusCode)
+ * })
+ * ```
+ */
+export type UnofficialStatusCode = -1
+
+/**
+ * @deprecated
+ * Use `UnofficialStatusCode` instead.
+ */
+export type UnOfficalStatusCode = UnofficialStatusCode
+
+/**
+ * If you want to use an unofficial status, use `UnofficialStatusCode`.
+ */
+export type StatusCode =
+  | InfoStatusCode
+  | SuccessStatusCode
+  | RedirectStatusCode
+  | ClientErrorStatusCode
+  | ServerErrorStatusCode
+  | UnofficialStatusCode
+
+export type ContentlessStatusCode = 101 | 204 | 205 | 304
+export type ContentfulStatusCode = Exclude<StatusCode, ContentlessStatusCode>
+
+</document_content>
+</document>
+<document index="28">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/ipaddr.test.ts</source>
+<document_content>
+import {
+  convertIPv4BinaryToString,
+  convertIPv4ToBinary,
+  convertIPv6BinaryToString,
+  convertIPv6ToBinary,
+  distinctRemoteAddr,
+  expandIPv6,
+} from './ipaddr'
+
+describe('expandIPv6', () => {
+  it('Should result be valid', () => {
+    expect(expandIPv6('1::1')).toBe('0001:0000:0000:0000:0000:0000:0000:0001')
+    expect(expandIPv6('::1')).toBe('0000:0000:0000:0000:0000:0000:0000:0001')
+    expect(expandIPv6('2001:2::')).toBe('2001:0002:0000:0000:0000:0000:0000:0000')
+    expect(expandIPv6('2001:2::')).toBe('2001:0002:0000:0000:0000:0000:0000:0000')
+    expect(expandIPv6('2001:0:0:db8::1')).toBe('2001:0000:0000:0db8:0000:0000:0000:0001')
+    expect(expandIPv6('::ffff:127.0.0.1')).toBe('0000:0000:0000:0000:0000:ffff:7f00:0001')
+  })
+})
+describe('distinctRemoteAddr', () => {
+  it('Should result be valid', () => {
+    expect(distinctRemoteAddr('1::1')).toBe('IPv6')
+    expect(distinctRemoteAddr('::1')).toBe('IPv6')
+    expect(distinctRemoteAddr('::ffff:127.0.0.1')).toBe('IPv6')
+
+    expect(distinctRemoteAddr('192.168.2.0')).toBe('IPv4')
+    expect(distinctRemoteAddr('192.168.2.0')).toBe('IPv4')
+
+    expect(distinctRemoteAddr('example.com')).toBeUndefined()
+  })
+})
+
+describe('convertIPv4ToBinary', () => {
+  it('Should result is valid', () => {
+    expect(convertIPv4ToBinary('0.0.0.0')).toBe(0n)
+    expect(convertIPv4ToBinary('0.0.0.1')).toBe(1n)
+
+    expect(convertIPv4ToBinary('0.0.1.0')).toBe(1n << 8n)
+  })
+})
+
+describe('convertIPv4ToString', () => {
+  // add tons of test cases here
+  test.each`
+    input        | expected
+    ${'0.0.0.0'} | ${'0.0.0.0'}
+    ${'0.0.0.1'} | ${'0.0.0.1'}
+    ${'0.0.1.0'} | ${'0.0.1.0'}
+  `('convertIPv4ToString($input) === $expected', ({ input, expected }) => {
+    expect(convertIPv4BinaryToString(convertIPv4ToBinary(input))).toBe(expected)
+  })
+})
+
+describe('convertIPv6ToBinary', () => {
+  it('Should result is valid', () => {
+    expect(convertIPv6ToBinary('::0')).toBe(0n)
+    expect(convertIPv6ToBinary('::1')).toBe(1n)
+
+    expect(convertIPv6ToBinary('::f')).toBe(15n)
+    expect(convertIPv6ToBinary('1234:::5678')).toBe(24196103360772296748952112894165669496n)
+    expect(convertIPv6ToBinary('::ffff:127.0.0.1')).toBe(281472812449793n)
+  })
+})
+
+describe('convertIPv6ToString', () => {
+  // add tons of test cases here
+  test.each`
+    input                                        | expected
+    ${'::1'}                                     | ${'::1'}
+    ${'1::'}                                     | ${'1::'}
+    ${'1234:::5678'}                             | ${'1234::5678'}
+    ${'2001:2::'}                                | ${'2001:2::'}
+    ${'2001::db8:0:0:0:0:1'}                     | ${'2001:0:db8::1'}
+    ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}
+    ${'::ffff:127.0.0.1'}                        | ${'::ffff:127.0.0.1'}
+  `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {
+    expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)
+  })
+})
+
+</document_content>
+</document>
+<document index="29">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/ipaddr.ts</source>
+<document_content>
+/**
+ * Utils for IP Addresses
+ * @module
+ */
+
+import type { AddressType } from '../helper/conninfo'
+
+/**
+ * Expand IPv6 Address
+ * @param ipV6 Shorten IPv6 Address
+ * @return expanded IPv6 Address
+ */
+export const expandIPv6 = (ipV6: string): string => {
+  const sections = ipV6.split(':')
+  if (IPV4_REGEX.test(sections.at(-1) as string)) {
+    sections.splice(
+      -1,
+      1,
+      ...convertIPv6BinaryToString(convertIPv4ToBinary(sections.at(-1) as string)) // => ::7f00:0001
+        .substring(2) // => 7f00:0001
+        .split(':') // => ['7f00', '0001']
+    )
+  }
+  for (let i = 0; i < sections.length; i++) {
+    const node = sections[i]
+    if (node !== '') {
+      sections[i] = node.padStart(4, '0')
+    } else {
+      sections[i + 1] === '' && sections.splice(i + 1, 1)
+      sections[i] = new Array(8 - sections.length + 1).fill('0000').join(':')
+    }
+  }
+  return sections.join(':')
+}
+
+const IPV4_REGEX = /^[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}\.[0-9]{0,3}$/
+
+/**
+ * Distinct Remote Addr
+ * @param remoteAddr Remote Addr
+ */
+export const distinctRemoteAddr = (remoteAddr: string): AddressType => {
+  if (IPV4_REGEX.test(remoteAddr)) {
+    return 'IPv4'
+  }
+  if (remoteAddr.includes(':')) {
+    // Domain can't include `:`
+    return 'IPv6'
+  }
+}
+
+/**
+ * Convert IPv4 to Uint8Array
+ * @param ipv4 IPv4 Address
+ * @returns BigInt
+ */
+export const convertIPv4ToBinary = (ipv4: string): bigint => {
+  const parts = ipv4.split('.')
+  let result = 0n
+  for (let i = 0; i < 4; i++) {
+    result <<= 8n
+    result += BigInt(parts[i])
+  }
+  return result
+}
+
+/**
+ * Convert IPv6 to Uint8Array
+ * @param ipv6 IPv6 Address
+ * @returns BigInt
+ */
+export const convertIPv6ToBinary = (ipv6: string): bigint => {
+  const sections = expandIPv6(ipv6).split(':')
+  let result = 0n
+  for (let i = 0; i < 8; i++) {
+    result <<= 16n
+    result += BigInt(parseInt(sections[i], 16))
+  }
+  return result
+}
+
+/**
+ * Convert a binary representation of an IPv4 address to a string.
+ * @param ipV4 binary IPv4 Address
+ * @return IPv4 Address in string
+ */
+export const convertIPv4BinaryToString = (ipV4: bigint): string => {
+  const sections = []
+  for (let i = 0; i < 4; i++) {
+    sections.push((ipV4 >> BigInt(8 * (3 - i))) & 0xffn)
+  }
+  return sections.join('.')
+}
+
+/**
+ * Convert a binary representation of an IPv6 address to a string.
+ * @param ipV6 binary IPv6 Address
+ * @return normalized IPv6 Address in string
+ */
+export const convertIPv6BinaryToString = (ipV6: bigint): string => {
+  // IPv6-mapped IPv4 address
+  if (ipV6 >> 32n === 0xffffn) {
+    return `::ffff:${convertIPv4BinaryToString(ipV6 & 0xffffffffn)}`
+  }
+
+  const sections = []
+  for (let i = 0; i < 8; i++) {
+    sections.push(((ipV6 >> BigInt(16 * (7 - i))) & 0xffffn).toString(16))
+  }
+
+  let currentZeroStart = -1
+  let maxZeroStart = -1
+  let maxZeroEnd = -1
+  for (let i = 0; i < 8; i++) {
+    if (sections[i] === '0') {
+      if (currentZeroStart === -1) {
+        currentZeroStart = i
+      }
+    } else {
+      if (currentZeroStart > -1) {
+        if (i - currentZeroStart > maxZeroEnd - maxZeroStart) {
+          maxZeroStart = currentZeroStart
+          maxZeroEnd = i
+        }
+        currentZeroStart = -1
+      }
+    }
+  }
+  if (currentZeroStart > -1) {
+    if (8 - currentZeroStart > maxZeroEnd - maxZeroStart) {
+      maxZeroStart = currentZeroStart
+      maxZeroEnd = 8
+    }
+  }
+  if (maxZeroStart !== -1) {
+    sections.splice(maxZeroStart, maxZeroEnd - maxZeroStart, ':')
+  }
+
+  return sections.join(':').replace(/:{2,}/g, '::')
+}
+
+</document_content>
+</document>
+<document index="30">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/mime.test.ts</source>
+<document_content>
+import { getExtension, getMimeType } from './mime'
+
+const mime = {
+  m3u8: 'application/vnd.apple.mpegurl',
+  ts: 'video/mp2t',
+}
+
+describe('mime', () => {
+  it('getMimeType', () => {
+    expect(getMimeType('hello.txt')).toBe('text/plain; charset=utf-8')
+    expect(getMimeType('hello.html')).toBe('text/html; charset=utf-8')
+    expect(getMimeType('hello.json')).toBe('application/json')
+    expect(getMimeType('favicon.ico')).toBe('image/x-icon')
+    expect(getMimeType('good.morning.hello.gif')).toBe('image/gif')
+    expect(getMimeType('goodmorninghellogif')).toBeUndefined()
+    expect(getMimeType('indexjs.abcd')).toBeUndefined()
+  })
+
+  it('getMimeType with custom mime', () => {
+    expect(getMimeType('morning-routine.m3u8', mime)).toBe('application/vnd.apple.mpegurl')
+    expect(getMimeType('morning-routine1.ts', mime)).toBe('video/mp2t')
+    expect(getMimeType('readme.txt', mime)).toBeUndefined()
+  })
+
+  it('getExtension', () => {
+    expect(getExtension('audio/aac')).toBe('aac')
+    expect(getExtension('video/x-msvideo')).toBe('avi')
+    expect(getExtension('image/avif')).toBe('avif')
+    expect(getExtension('text/css')).toBe('css')
+    expect(getExtension('text/html')).toBe('htm')
+    expect(getExtension('image/jpeg')).toBe('jpeg')
+    expect(getExtension('text/javascript')).toBe('js')
+    expect(getExtension('application/json')).toBe('json')
+    expect(getExtension('audio/mpeg')).toBe('mp3')
+    expect(getExtension('video/mp4')).toBe('mp4')
+    expect(getExtension('application/pdf')).toBe('pdf')
+    expect(getExtension('image/png')).toBe('png')
+    expect(getExtension('application/zip')).toBe('zip')
+    expect(getExtension('non/existent')).toBeUndefined()
+  })
+})
+
+</document_content>
+</document>
+<document index="31">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/mime.ts</source>
+<document_content>
+/**
+ * @module
+ * MIME utility.
+ */
+
+export const getMimeType = (
+  filename: string,
+  mimes: Record<string, string> = baseMimes
+): string | undefined => {
+  const regexp = /\.([a-zA-Z0-9]+?)$/
+  const match = filename.match(regexp)
+  if (!match) {
+    return
+  }
+  let mimeType = mimes[match[1]]
+  if (mimeType && mimeType.startsWith('text')) {
+    mimeType += '; charset=utf-8'
+  }
+  return mimeType
+}
+
+export const getExtension = (mimeType: string): string | undefined => {
+  for (const ext in baseMimes) {
+    if (baseMimes[ext] === mimeType) {
+      return ext
+    }
+  }
+}
+
+export { baseMimes as mimes }
+
+/**
+ * Union types for BaseMime
+ */
+export type BaseMime = (typeof _baseMimes)[keyof typeof _baseMimes]
+
+const _baseMimes = {
+  aac: 'audio/aac',
+  avi: 'video/x-msvideo',
+  avif: 'image/avif',
+  av1: 'video/av1',
+  bin: 'application/octet-stream',
+  bmp: 'image/bmp',
+  css: 'text/css',
+  csv: 'text/csv',
+  eot: 'application/vnd.ms-fontobject',
+  epub: 'application/epub+zip',
+  gif: 'image/gif',
+  gz: 'application/gzip',
+  htm: 'text/html',
+  html: 'text/html',
+  ico: 'image/x-icon',
+  ics: 'text/calendar',
+  jpeg: 'image/jpeg',
+  jpg: 'image/jpeg',
+  js: 'text/javascript',
+  json: 'application/json',
+  jsonld: 'application/ld+json',
+  map: 'application/json',
+  mid: 'audio/x-midi',
+  midi: 'audio/x-midi',
+  mjs: 'text/javascript',
+  mp3: 'audio/mpeg',
+  mp4: 'video/mp4',
+  mpeg: 'video/mpeg',
+  oga: 'audio/ogg',
+  ogv: 'video/ogg',
+  ogx: 'application/ogg',
+  opus: 'audio/opus',
+  otf: 'font/otf',
+  pdf: 'application/pdf',
+  png: 'image/png',
+  rtf: 'application/rtf',
+  svg: 'image/svg+xml',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+  ts: 'video/mp2t',
+  ttf: 'font/ttf',
+  txt: 'text/plain',
+  wasm: 'application/wasm',
+  webm: 'video/webm',
+  weba: 'audio/webm',
+  webp: 'image/webp',
+  woff: 'font/woff',
+  woff2: 'font/woff2',
+  xhtml: 'application/xhtml+xml',
+  xml: 'application/xml',
+  zip: 'application/zip',
+  '3gp': 'video/3gpp',
+  '3g2': 'video/3gpp2',
+  gltf: 'model/gltf+json',
+  glb: 'model/gltf-binary',
+} as const
+
+const baseMimes: Record<string, BaseMime> = _baseMimes
+
+</document_content>
+</document>
+<document index="32">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/stream.test.ts</source>
+<document_content>
+import { StreamingApi } from './stream'
+
+describe('StreamingApi', () => {
+  it('write(string)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
+    api.write('bar')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
+  })
+
+  it('write(Uint8Array)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.write(new Uint8Array([1, 2, 3]))
+    expect((await reader.read()).value).toEqual(new Uint8Array([1, 2, 3]))
+    api.write(new Uint8Array([4, 5, 6]))
+    expect((await reader.read()).value).toEqual(new Uint8Array([4, 5, 6]))
+  })
+
+  it('writeln(string)', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    api.writeln('foo')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo\n'))
+    api.writeln('bar')
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar\n'))
+  })
+
+  it('pipe()', async () => {
+    const { readable: senderReadable, writable: senderWritable } = new TransformStream()
+
+    // send data to readable in other scope
+    ;(async () => {
+      const writer = senderWritable.getWriter()
+      await writer.write(new TextEncoder().encode('foo'))
+      await writer.write(new TextEncoder().encode('bar'))
+      // await writer.close()
+    })()
+
+    const { readable: receiverReadable, writable: receiverWritable } = new TransformStream()
+
+    const api = new StreamingApi(receiverWritable, receiverReadable)
+
+    // pipe readable to api in other scope
+    ;(async () => {
+      await api.pipe(senderReadable)
+    })()
+
+    // read data from api
+    const reader = api.responseReadable.getReader()
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('foo'))
+    expect((await reader.read()).value).toEqual(new TextEncoder().encode('bar'))
+  })
+
+  it('close()', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const reader = api.responseReadable.getReader()
+    await api.close()
+    expect((await reader.read()).done).toBe(true)
+  })
+
+  it('should not throw an error in write()', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    await api.close()
+    const write = () => api.write('foo')
+    expect(write).not.toThrow()
+  })
+
+  it('should not throw an error in close()', async () => {
+    const { readable, writable } = new TransformStream()
+    const api = new StreamingApi(writable, readable)
+    const close = async () => {
+      await api.close()
+      await api.close()
+    }
+    expect(close).not.toThrow()
+  })
+
+  it('onAbort()', async () => {
+    const { readable, writable } = new TransformStream()
+    const handleAbort1 = vi.fn()
+    const handleAbort2 = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(handleAbort1)
+    api.onAbort(handleAbort2)
+    expect(handleAbort1).not.toBeCalled()
+    expect(handleAbort2).not.toBeCalled()
+    await api.responseReadable.cancel()
+    expect(handleAbort1).toBeCalled()
+    expect(handleAbort2).toBeCalled()
+  })
+
+  it('abort()', async () => {
+    const { readable, writable } = new TransformStream()
+    const handleAbort1 = vi.fn()
+    const handleAbort2 = vi.fn()
+    const api = new StreamingApi(writable, readable)
+    api.onAbort(handleAbort1)
+    api.onAbort(handleAbort2)
+    expect(handleAbort1).not.toBeCalled()
+    expect(handleAbort2).not.toBeCalled()
+    expect(api.aborted).toBe(false)
+
+    api.abort()
+    expect(handleAbort1).toHaveBeenCalledOnce()
+    expect(handleAbort2).toHaveBeenCalledOnce()
+    expect(api.aborted).toBe(true)
+
+    api.abort()
+    expect(handleAbort1).toHaveBeenCalledOnce()
+    expect(handleAbort2).toHaveBeenCalledOnce()
+    expect(api.aborted).toBe(true)
+  })
+})
+
+</document_content>
+</document>
+<document index="33">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/stream.ts</source>
+<document_content>
+/**
+ * @module
+ * Stream utility.
+ */
+
+export class StreamingApi {
+  private writer: WritableStreamDefaultWriter<Uint8Array>
+  private encoder: TextEncoder
+  private writable: WritableStream
+  private abortSubscribers: (() => void | Promise<void>)[] = []
+  responseReadable: ReadableStream
+  /**
+   * Whether the stream has been aborted.
+   */
+  aborted: boolean = false
+  /**
+   * Whether the stream has been closed normally.
+   */
+  closed: boolean = false
+
+  constructor(writable: WritableStream, _readable: ReadableStream) {
+    this.writable = writable
+    this.writer = writable.getWriter()
+    this.encoder = new TextEncoder()
+
+    const reader = _readable.getReader()
+
+    // in case the user disconnects, let the reader know to cancel
+    // this in-turn results in responseReadable being closed
+    // and writeSSE method no longer blocks indefinitely
+    this.abortSubscribers.push(async () => {
+      await reader.cancel()
+    })
+
+    this.responseReadable = new ReadableStream({
+      async pull(controller) {
+        const { done, value } = await reader.read()
+        done ? controller.close() : controller.enqueue(value)
+      },
+      cancel: () => {
+        this.abort()
+      },
+    })
+  }
+
+  async write(input: Uint8Array | string): Promise<StreamingApi> {
+    try {
+      if (typeof input === 'string') {
+        input = this.encoder.encode(input)
+      }
+      await this.writer.write(input)
+    } catch {
+      // Do nothing. If you want to handle errors, create a stream by yourself.
+    }
+    return this
+  }
+
+  async writeln(input: string): Promise<StreamingApi> {
+    await this.write(input + '\n')
+    return this
+  }
+
+  sleep(ms: number): Promise<unknown> {
+    return new Promise((res) => setTimeout(res, ms))
+  }
+
+  async close() {
+    try {
+      await this.writer.close()
+    } catch {
+      // Do nothing. If you want to handle errors, create a stream by yourself.
+    }
+    this.closed = true
+  }
+
+  async pipe(body: ReadableStream) {
+    this.writer.releaseLock()
+    await body.pipeTo(this.writable, { preventClose: true })
+    this.writer = this.writable.getWriter()
+  }
+
+  onAbort(listener: () => void | Promise<void>) {
+    this.abortSubscribers.push(listener)
+  }
+
+  /**
+   * Abort the stream.
+   * You can call this method when stream is aborted by external event.
+   */
+  abort() {
+    if (!this.aborted) {
+      this.aborted = true
+      this.abortSubscribers.forEach((subscriber) => subscriber())
+    }
+  }
+}
+
+</document_content>
+</document>
+<document index="34">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/types.test.ts</source>
+<document_content>
+import type { Equal, Expect, JSONParsed } from './types'
+
+describe('JSONParsed', () => {
+  enum SampleEnum {
+    Value1 = 'value1',
+    Value2 = 'value2',
+  }
+
+  interface Meta {
+    metadata: {
+      href: string
+      sampleEnum: SampleEnum
+    }
+  }
+
+  interface SampleInterface {
+    someMeta: Meta
+  }
+
+  type SampleType = {
+    someMeta: Meta
+  }
+
+  describe('primitives', () => {
+    it('should convert number type to number', () => {
+      type Actual = JSONParsed<number>
+      type Expected = number
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert string type to string', () => {
+      type Actual = JSONParsed<string>
+      type Expected = string
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert boolean type to boolean', () => {
+      type Actual = JSONParsed<boolean>
+      type Expected = boolean
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert null type to null', () => {
+      type Actual = JSONParsed<null>
+      type Expected = null
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('toJSON', () => {
+    it('should convert { toJSON() => T } to T', () => {
+      type Actual = JSONParsed<{ toJSON(): number }>
+      type Expected = number
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('toJSON is not called recursively', () => {
+      type Actual = JSONParsed<{ toJSON(): { toJSON(): number } }>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert { a: { toJSON() => T } } to { a: T }', () => {
+      type Actual = JSONParsed<{ a: { toJSON(): number } }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('invalid types', () => {
+    it('should convert undefined type to never', () => {
+      type Actual = JSONParsed<undefined>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert symbol type to never', () => {
+      type Actual = JSONParsed<symbol>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert function type to never', () => {
+      type Actual = JSONParsed<() => void>
+      type Expected = never
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('array', () => {
+    it('should convert undefined[] type to null[]', () => {
+      type Actual = JSONParsed<undefined[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert Function[] type to null[]', () => {
+      type Actual = JSONParsed<(() => void)[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert symbol[] type to null[]', () => {
+      type Actual = JSONParsed<symbol[]>
+      type Expected = null[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert (T | undefined)[] type to JSONParsedT | null>[]', () => {
+      type Actual = JSONParsed<(number | undefined)[]>
+      type Expected = (number | null)[]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert { key: readonly T[]} correctly', () => {
+      type Actual = JSONParsed<{ key: readonly number[] }>
+      type Expected = { key: readonly number[] }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('tuple', () => {
+    it('should convert [T, S] type to [T, S]', () => {
+      type Actual = JSONParsed<[number, string]>
+      type Expected = [number, string]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert [T, undefined] type to [T, null]', () => {
+      type Actual = JSONParsed<[number, undefined]>
+      type Expected = [number, null]
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('object', () => {
+    it('should omit keys with undefined value', () => {
+      type Actual = JSONParsed<{ a: number; b: undefined }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with symbol value', () => {
+      type Actual = JSONParsed<{ a: number; b: symbol }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with function value', () => {
+      type Actual = JSONParsed<{ a: number; b: () => void }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit symbol keys', () => {
+      type Actual = JSONParsed<{ a: number; [x: symbol]: number }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert T | undefined to T | undefined', () => {
+      type Actual = JSONParsed<{ a: number; b: number | undefined }>
+      type Expected = { a: number; b: number | undefined }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should omit keys with invalid union', () => {
+      type Actual = JSONParsed<{ a: number; b: undefined | symbol }>
+      type Expected = { a: number }
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  describe('Set/Map', () => {
+    it('should convert Set to empty object', () => {
+      type Actual = JSONParsed<Set<number>>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+    it('should convert Map to empty object', () => {
+      type Actual = JSONParsed<Map<number, number>>
+      type Expected = {}
+      expectTypeOf<Actual>().toEqualTypeOf<Expected>()
+    })
+  })
+
+  it('Should parse a complex type', () => {
+    const sample: JSONParsed<SampleType> = {
+      someMeta: {
+        metadata: {
+          href: '',
+          sampleEnum: SampleEnum.Value1,
+        },
+      },
+    }
+    expectTypeOf(sample).toEqualTypeOf<SampleType>()
+  })
+
+  it('Should parse a complex interface', () => {
+    const sample: JSONParsed<SampleInterface> = {
+      someMeta: {
+        metadata: {
+          href: '',
+          sampleEnum: SampleEnum.Value1,
+        },
+      },
+    }
+    expectTypeOf(sample).toEqualTypeOf<SampleInterface>()
+  })
+
+  it('Should convert Date to string', () => {
+    type Post = {
+      datetime: Date
+    }
+    type Expected = {
+      datetime: string
+    }
+    type Actual = JSONParsed<Post>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+
+  it('Should convert bigint to never', () => {
+    type Post = {
+      num: bigint
+    }
+    type Expected = {
+      num: never
+    }
+    type Actual = JSONParsed<Post>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    type verify = Expect<Equal<Expected, Actual>>
+  })
+})
+
+</document_content>
+</document>
+<document index="35">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/types.ts</source>
+<document_content>
+/**
+ * @module
+ * Types utility.
+ */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export type Expect<T extends true> = T
+export type Equal<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2
+  ? true
+  : false
+export type NotEqual<X, Y> = true extends Equal<X, Y> ? false : true
+
+export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
+  k: infer I
+) => void
+  ? I
+  : never
+
+export type RemoveBlankRecord<T> = T extends Record<infer K, unknown>
+  ? K extends string
+    ? T
+    : never
+  : never
+
+export type IfAnyThenEmptyObject<T> = 0 extends 1 & T ? {} : T
+
+export type JSONPrimitive = string | boolean | number | null
+export type JSONArray = (JSONPrimitive | JSONObject | JSONArray)[]
+export type JSONObject = {
+  [key: string]: JSONPrimitive | JSONArray | JSONObject | object | InvalidJSONValue
+}
+export type InvalidJSONValue = undefined | symbol | ((...args: unknown[]) => unknown)
+
+type InvalidToNull<T> = T extends InvalidJSONValue ? null : T
+
+type IsInvalid<T> = T extends InvalidJSONValue ? true : false
+
+/**
+ * symbol keys are omitted through `JSON.stringify`
+ */
+type OmitSymbolKeys<T> = { [K in keyof T as K extends symbol ? never : K]: T[K] }
+
+export type JSONValue = JSONObject | JSONArray | JSONPrimitive
+// Non-JSON values such as `Date` implement `.toJSON()`, so they can be transformed to a value assignable to `JSONObject`:
+export type JSONParsed<T> = T extends { toJSON(): infer J }
+  ? (() => J) extends () => JSONPrimitive
+    ? J
+    : (() => J) extends () => { toJSON(): unknown }
+    ? {}
+    : JSONParsed<J>
+  : T extends JSONPrimitive
+  ? T
+  : T extends InvalidJSONValue
+  ? never
+  : T extends ReadonlyArray<unknown>
+  ? { [K in keyof T]: JSONParsed<InvalidToNull<T[K]>> }
+  : T extends Set<unknown> | Map<unknown, unknown>
+  ? {}
+  : T extends object
+  ? {
+      [K in keyof OmitSymbolKeys<T> as IsInvalid<T[K]> extends true
+        ? never
+        : K]: boolean extends IsInvalid<T[K]> ? JSONParsed<T[K]> | undefined : JSONParsed<T[K]>
+    }
+  : never
+
+/**
+ * Useful to flatten the type output to improve type hints shown in editors. And also to transform an interface into a type to aide with assignability.
+ * @copyright from sindresorhus/type-fest
+ */
+export type Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {}
+
+/**
+ * A simple extension of Simplify that will deeply traverse array elements.
+ */
+export type SimplifyDeepArray<T> = T extends any[]
+  ? { [E in keyof T]: SimplifyDeepArray<T[E]> }
+  : Simplify<T>
+
+export type InterfaceToType<T> = T extends Function ? T : { [K in keyof T]: InterfaceToType<T[K]> }
+
+export type RequiredKeysOf<BaseType extends object> = Exclude<
+  {
+    [Key in keyof BaseType]: BaseType extends Record<Key, BaseType[Key]> ? Key : never
+  }[keyof BaseType],
+  undefined
+>
+
+export type HasRequiredKeys<BaseType extends object> = RequiredKeysOf<BaseType> extends never
+  ? false
+  : true
+
+export type IsAny<T> = boolean extends (T extends never ? true : false) ? true : false
+
+/**
+ * String literal types with auto-completion
+ * @see https://github.com/Microsoft/TypeScript/issues/29729
+ */
+export type StringLiteralUnion<T> = T | (string & Record<never, never>)
+
+</document_content>
+</document>
+<document index="36">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/url.test.ts</source>
+<document_content>
+import {
+  checkOptionalParameter,
+  getPath,
+  getPathNoStrict,
+  getPattern,
+  getQueryParam,
+  getQueryParams,
+  getQueryStrings,
+  mergePath,
+  splitPath,
+  splitRoutingPath,
+} from './url'
+
+describe('url', () => {
+  it('splitPath', () => {
+    let ps = splitPath('/')
+    expect(ps).toStrictEqual([''])
+
+    ps = splitPath('/hello')
+    expect(ps).toStrictEqual(['hello'])
+  })
+
+  it('splitRoutingPath', () => {
+    let ps = splitRoutingPath('/')
+    expect(ps).toStrictEqual([''])
+
+    ps = splitRoutingPath('/hello')
+    expect(ps).toStrictEqual(['hello'])
+
+    ps = splitRoutingPath('*')
+    expect(ps).toStrictEqual(['*'])
+
+    ps = splitRoutingPath('/wildcard-abc/*/wildcard-efg')
+    expect(ps).toStrictEqual(['wildcard-abc', '*', 'wildcard-efg'])
+
+    ps = splitRoutingPath('/map/:location/events')
+    expect(ps).toStrictEqual(['map', ':location', 'events'])
+
+    ps = splitRoutingPath('/js/:location{[a-z/]+.js}')
+    expect(ps).toStrictEqual(['js', ':location{[a-z/]+.js}'])
+
+    ps = splitRoutingPath('/users/:name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':@name{[0-9a-zA-Z_-]{3,10}}'])
+
+    ps = splitRoutingPath('/users/:dept{\\d+}/:@name{[0-9a-zA-Z_-]{3,10}}')
+    expect(ps).toStrictEqual(['users', ':dept{\\d+}', ':@name{[0-9a-zA-Z_-]{3,10}}'])
+  })
+
+  describe('getPattern', () => {
+    it('no pattern', () => {
+      const res = getPattern('id')
+      expect(res).toBeNull()
+    })
+
+    it('no pattern with next', () => {
+      const res = getPattern('id', 'next')
+      expect(res).toBeNull()
+    })
+
+    it('default pattern', () => {
+      const res = getPattern(':id')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('default pattern with next', () => {
+      const res = getPattern(':id', 'next')
+      expect(res).toEqual([':id', 'id', true])
+    })
+
+    it('regex pattern', () => {
+      const res = getPattern(':id{[0-9]+}')
+      expect(res).toEqual([':id{[0-9]+}', 'id', /^[0-9]+$/])
+    })
+
+    it('regex pattern with next', () => {
+      const res = getPattern(':id{[0-9]+}', 'next')
+      expect(res).toEqual([':id{[0-9]+}#next', 'id', /^[0-9]+(?=\/next)/])
+    })
+
+    it('wildcard', () => {
+      const res = getPattern('*')
+      expect(res).toBe('*')
+    })
+
+    it('wildcard with next', () => {
+      const res = getPattern('*', 'next')
+      expect(res).toBe('*')
+    })
+  })
+
+  describe('getPath', () => {
+    it('getPath - no trailing slash', () => {
+      let path = getPath(new Request('https://example.com/'))
+      expect(path).toBe('/')
+      path = getPath(new Request('https://example.com/hello'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/hello/hey'))
+      expect(path).toBe('/hello/hey')
+      path = getPath(new Request('https://example.com/hello?name=foo'))
+      expect(path).toBe('/hello')
+      path = getPath(new Request('https://example.com/hello/hey?name=foo&name=bar'))
+      expect(path).toBe('/hello/hey')
+    })
+
+    it('getPath - with trailing slash', () => {
+      let path = getPath(new Request('https://example.com/hello/'))
+      expect(path).toBe('/hello/')
+      path = getPath(new Request('https://example.com/hello/hey/'))
+      expect(path).toBe('/hello/hey/')
+    })
+  })
+
+  describe('getQueryStrings', () => {
+    it('getQueryStrings', () => {
+      let qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20')
+      expect(qs).toBe('?name=foo&name=bar&age=20')
+      qs = getQueryStrings('https://example.com/hello?')
+      expect(qs).toBe('?')
+      qs = getQueryStrings('https://example.com/hello')
+      expect(qs).toBe('')
+      // Allows to contain hash
+      qs = getQueryStrings('https://example.com/hello?name=foo&name=bar&age=20#hash')
+      expect(qs).toBe('?name=foo&name=bar&age=20#hash')
+    })
+  })
+
+  describe('getPathNoStrict', () => {
+    it('getPathNoStrict - no strict is false', () => {
+      let path = getPathNoStrict(new Request('https://example.com/hello/'))
+      expect(path).toBe('/hello')
+      path = getPathNoStrict(new Request('https://example.com/hello/hey/'))
+      expect(path).toBe('/hello/hey')
+    })
+
+    it('getPathNoStrict - return `/` even if strict is false', () => {
+      const path = getPathNoStrict(new Request('https://example.com/'))
+      expect(path).toBe('/')
+    })
+  })
+
+  describe('mergePath', () => {
+    it('mergePath', () => {
+      expect(mergePath('/book', '/')).toBe('/book')
+      expect(mergePath('/book/', '/')).toBe('/book/')
+      expect(mergePath('/book', '/hey')).toBe('/book/hey')
+      expect(mergePath('/book/', '/hey')).toBe('/book/hey')
+      expect(mergePath('/book', '/hey/')).toBe('/book/hey/')
+      expect(mergePath('/book/', '/hey/')).toBe('/book/hey/')
+      expect(mergePath('/book', 'hey', 'say')).toBe('/book/hey/say')
+      expect(mergePath('/book', '/hey/', '/say/')).toBe('/book/hey/say/')
+      expect(mergePath('/book', '/hey/', '/say/', '/')).toBe('/book/hey/say/')
+      expect(mergePath('/book', '/hey', '/say', '/')).toBe('/book/hey/say')
+      expect(mergePath('/', '/book', '/hey', '/say', '/')).toBe('/book/hey/say')
+
+      expect(mergePath('book', '/')).toBe('/book')
+      expect(mergePath('book/', '/')).toBe('/book/')
+      expect(mergePath('book', '/hey')).toBe('/book/hey')
+      expect(mergePath('book', 'hey')).toBe('/book/hey')
+      expect(mergePath('book', 'hey/')).toBe('/book/hey/')
+    })
+    it('Should be `/book`', () => {
+      expect(mergePath('/', 'book')).toBe('/book')
+    })
+    it('Should be `/book`', () => {
+      expect(mergePath('/', '/book')).toBe('/book')
+    })
+    it('Should be `/`', () => {
+      expect(mergePath('/', '/')).toBe('/')
+    })
+  })
+
+  describe('checkOptionalParameter', () => {
+    it('checkOptionalParameter', () => {
+      expect(checkOptionalParameter('/api/animals/:type?')).toEqual([
+        '/api/animals',
+        '/api/animals/:type',
+      ])
+      expect(checkOptionalParameter('/api/animals/type?')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals')).toBeNull()
+      expect(checkOptionalParameter('/api/:animals?/type')).toBeNull()
+      expect(checkOptionalParameter('/api/animals/:type?/')).toBeNull()
+      expect(checkOptionalParameter('/:optional?')).toEqual(['/', '/:optional'])
+      expect(checkOptionalParameter('/v1/leaderboard/:version?/:platform?')).toEqual([
+        '/v1/leaderboard',
+        '/v1/leaderboard/:version',
+        '/v1/leaderboard/:version/:platform',
+      ])
+      expect(checkOptionalParameter('/api/:version/animal/:type?')).toEqual([
+        '/api/:version/animal',
+        '/api/:version/animal/:type',
+      ])
+    })
+  })
+
+  describe('getQueryParam', () => {
+    it('Parse URL query strings', () => {
+      expect(getQueryParam('http://example.com/?name=hey', 'name')).toBe('hey')
+      expect(getQueryParam('http://example.com/?name=hey#fragment', 'name')).toBe('hey#fragment')
+      expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'age')).toBe('20')
+      expect(getQueryParam('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toBe(
+        'a web framework'
+      )
+
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name0')).toBe('sam')
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name1')).toBe('tom')
+      expect(getQueryParam('http://example.com/?name0=sam&name1=tom', 'name')).toBe(undefined)
+
+      let searchParams = new URLSearchParams({ name: '炎' })
+      expect(getQueryParam(`http://example.com/?${searchParams.toString()}`, 'name')).toBe('炎')
+      searchParams = new URLSearchParams({ '炎 is': 'a web framework' })
+      expect(
+        getQueryParam(
+          `http://example.com/?${searchParams.toString()}`,
+          searchParams.keys().next().value
+        )
+      ).toBe('a web framework')
+      expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170', 'weight')).toBe(
+        undefined
+      )
+      expect(getQueryParam('http://example.com/?name=hey&age=20&tall=170')).toEqual({
+        name: 'hey',
+        age: '20',
+        tall: '170',
+      })
+      expect(getQueryParam('http://example.com/?pretty&&&&q=1%2b1=2')).toEqual({
+        pretty: '',
+        q: '1+1=2',
+      })
+      expect(getQueryParam('http://example.com/?pretty', 'pretty')).toBe('')
+      expect(getQueryParam('http://example.com/?pretty', 'prtt')).toBe(undefined)
+      expect(getQueryParam('http://example.com/?name=sam&name=tom', 'name')).toBe('sam')
+      expect(getQueryParam('http://example.com/?name=sam&name=tom')).toEqual({
+        name: 'sam',
+      })
+      searchParams = new URLSearchParams('?name=sam=tom')
+      expect(getQueryParam('name', searchParams.get('name')?.toString()))
+    })
+  })
+
+  describe('getQueryParams', () => {
+    it('Parse URL query strings', () => {
+      expect(getQueryParams('http://example.com/?name=hey', 'name')).toEqual(['hey'])
+      expect(getQueryParams('http://example.com/?name=hey#fragment', 'name')).toEqual([
+        'hey#fragment',
+      ])
+      expect(getQueryParams('http://example.com/?name=hey&name=foo', 'name')).toEqual([
+        'hey',
+        'foo',
+      ])
+      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'age')).toEqual(['20'])
+      expect(
+        getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30', 'age')
+      ).toEqual(['20', '30'])
+      expect(getQueryParams('http://example.com/?Hono+is=a+web+framework', 'Hono is')).toEqual([
+        'a web framework',
+      ])
+      let searchParams = new URLSearchParams()
+      searchParams.append('tag', '炎')
+      searchParams.append('tag', 'ほのお')
+      expect(getQueryParams(`http://example.com/?${searchParams.toString()}`, 'tag')).toEqual([
+        '炎',
+        'ほのお',
+      ])
+      searchParams = new URLSearchParams()
+      searchParams.append('炎 works on', 'Cloudflare Workers')
+      searchParams.append('炎 works on', 'Fastly Compute')
+      expect(
+        getQueryParams(
+          `http://example.com/?${searchParams.toString()}`,
+          searchParams.keys().next().value
+        )
+      ).toEqual(['Cloudflare Workers', 'Fastly Compute'])
+      expect(getQueryParams('http://example.com/?name=hey&age=20&tall=170', 'weight')).toEqual(
+        undefined
+      )
+      expect(
+        getQueryParams('http://example.com/?name=hey&age=20&tall=170&name=foo&age=30&tall=180')
+      ).toEqual({
+        name: ['hey', 'foo'],
+        age: ['20', '30'],
+        tall: ['170', '180'],
+      })
+      expect(getQueryParams('http://example.com/?pretty&&&&q=1%2b1=2&q=2%2b2=4')).toEqual({
+        pretty: [''],
+        q: ['1+1=2', '2+2=4'],
+      })
+      expect(getQueryParams('http://example.com/?pretty', 'pretty')).toEqual([''])
+      expect(getQueryParams('http://example.com/?pretty', 'prtt')).toBe(undefined)
+      expect(getQueryParams('http://example.com/?toString')).toEqual({
+        toString: [''],
+      })
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="37">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/url.ts</source>
+<document_content>
+/**
+ * @module
+ * URL utility.
+ */
+
+export type Pattern = readonly [string, string, RegExp | true] | '*'
+
+export const splitPath = (path: string): string[] => {
+  const paths = path.split('/')
+  if (paths[0] === '') {
+    paths.shift()
+  }
+  return paths
+}
+
+export const splitRoutingPath = (routePath: string): string[] => {
+  const { groups, path } = extractGroupsFromPath(routePath)
+
+  const paths = splitPath(path)
+  return replaceGroupMarks(paths, groups)
+}
+
+const extractGroupsFromPath = (path: string): { groups: [string, string][]; path: string } => {
+  const groups: [string, string][] = []
+
+  path = path.replace(/\{[^}]+\}/g, (match, index) => {
+    const mark = `@${index}`
+    groups.push([mark, match])
+    return mark
+  })
+
+  return { groups, path }
+}
+
+const replaceGroupMarks = (paths: string[], groups: [string, string][]): string[] => {
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const [mark] = groups[i]
+
+    for (let j = paths.length - 1; j >= 0; j--) {
+      if (paths[j].includes(mark)) {
+        paths[j] = paths[j].replace(mark, groups[i][1])
+        break
+      }
+    }
+  }
+
+  return paths
+}
+
+const patternCache: { [key: string]: Pattern } = {}
+export const getPattern = (label: string, next?: string): Pattern | null => {
+  // *            => wildcard
+  // :id{[0-9]+}  => ([0-9]+)
+  // :id          => (.+)
+
+  if (label === '*') {
+    return '*'
+  }
+
+  const match = label.match(/^\:([^\{\}]+)(?:\{(.+)\})?$/)
+  if (match) {
+    const cacheKey = `${label}#${next}`
+    if (!patternCache[cacheKey]) {
+      if (match[2]) {
+        patternCache[cacheKey] =
+          next && next[0] !== ':' && next[0] !== '*'
+            ? [cacheKey, match[1], new RegExp(`^${match[2]}(?=/${next})`)]
+            : [label, match[1], new RegExp(`^${match[2]}$`)]
+      } else {
+        patternCache[cacheKey] = [label, match[1], true]
+      }
+    }
+
+    return patternCache[cacheKey]
+  }
+
+  return null
+}
+
+type Decoder = (str: string) => string
+export const tryDecode = (str: string, decoder: Decoder): string => {
+  try {
+    return decoder(str)
+  } catch {
+    return str.replace(/(?:%[0-9A-Fa-f]{2})+/g, (match) => {
+      try {
+        return decoder(match)
+      } catch {
+        return match
+      }
+    })
+  }
+}
+
+/**
+ * Try to apply decodeURI() to given string.
+ * If it fails, skip invalid percent encoding or invalid UTF-8 sequences, and apply decodeURI() to the rest as much as possible.
+ * @param str The string to decode.
+ * @returns The decoded string that sometimes contains undecodable percent encoding.
+ * @example
+ * tryDecodeURI('Hello%20World') // 'Hello World'
+ * tryDecodeURI('Hello%20World/%A4%A2') // 'Hello World/%A4%A2'
+ */
+const tryDecodeURI = (str: string) => tryDecode(str, decodeURI)
+
+export const getPath = (request: Request): string => {
+  const url = request.url
+  const start = url.indexOf('/', 8)
+  let i = start
+  for (; i < url.length; i++) {
+    const charCode = url.charCodeAt(i)
+    if (charCode === 37) {
+      // '%'
+      // If the path contains percent encoding, use `indexOf()` to find '?' and return the result immediately.
+      // Although this is a performance disadvantage, it is acceptable since we prefer cases that do not include percent encoding.
+      const queryIndex = url.indexOf('?', i)
+      const path = url.slice(start, queryIndex === -1 ? undefined : queryIndex)
+      return tryDecodeURI(path.includes('%25') ? path.replace(/%25/g, '%2525') : path)
+    } else if (charCode === 63) {
+      // '?'
+      break
+    }
+  }
+  return url.slice(start, i)
+}
+
+export const getQueryStrings = (url: string): string => {
+  const queryIndex = url.indexOf('?', 8)
+  return queryIndex === -1 ? '' : '?' + url.slice(queryIndex + 1)
+}
+
+export const getPathNoStrict = (request: Request): string => {
+  const result = getPath(request)
+
+  // if strict routing is false => `/hello/hey/` and `/hello/hey` are treated the same
+  return result.length > 1 && result.at(-1) === '/' ? result.slice(0, -1) : result
+}
+
+/**
+ * Merge paths.
+ * @param {string[]} ...paths - The paths to merge.
+ * @returns {string} The merged path.
+ * @example
+ * mergePath('/api', '/users') // '/api/users'
+ * mergePath('/api/', '/users') // '/api/users'
+ * mergePath('/api', '/') // '/api'
+ * mergePath('/api/', '/') // '/api/'
+ */
+export const mergePath: (...paths: string[]) => string = (
+  base: string | undefined,
+  sub: string | undefined,
+  ...rest: string[]
+): string => {
+  if (rest.length) {
+    sub = mergePath(sub as string, ...rest)
+  }
+  return `${base?.[0] === '/' ? '' : '/'}${base}${
+    sub === '/' ? '' : `${base?.at(-1) === '/' ? '' : '/'}${sub?.[0] === '/' ? sub.slice(1) : sub}`
+  }`
+}
+
+export const checkOptionalParameter = (path: string): string[] | null => {
+  /*
+   If path is `/api/animals/:type?` it will return:
+   [`/api/animals`, `/api/animals/:type`]
+   in other cases it will return null
+  */
+
+  if (path.charCodeAt(path.length - 1) !== 63 || !path.includes(':')) {
+    return null
+  }
+
+  const segments = path.split('/')
+  const results: string[] = []
+  let basePath = ''
+
+  segments.forEach((segment) => {
+    if (segment !== '' && !/\:/.test(segment)) {
+      basePath += '/' + segment
+    } else if (/\:/.test(segment)) {
+      if (/\?/.test(segment)) {
+        if (results.length === 0 && basePath === '') {
+          results.push('/')
+        } else {
+          results.push(basePath)
+        }
+        const optionalSegment = segment.replace('?', '')
+        basePath += '/' + optionalSegment
+        results.push(basePath)
+      } else {
+        basePath += '/' + segment
+      }
+    }
+  })
+
+  return results.filter((v, i, a) => a.indexOf(v) === i)
+}
+
+// Optimized
+const _decodeURI = (value: string) => {
+  if (!/[%+]/.test(value)) {
+    return value
+  }
+  if (value.indexOf('+') !== -1) {
+    value = value.replace(/\+/g, ' ')
+  }
+  return value.indexOf('%') !== -1 ? decodeURIComponent_(value) : value
+}
+
+const _getQueryParam = (
+  url: string,
+  key?: string,
+  multiple?: boolean
+): string | undefined | Record<string, string> | string[] | Record<string, string[]> => {
+  let encoded
+
+  if (!multiple && key && !/[%+]/.test(key)) {
+    // optimized for unencoded key
+
+    let keyIndex = url.indexOf(`?${key}`, 8)
+    if (keyIndex === -1) {
+      keyIndex = url.indexOf(`&${key}`, 8)
+    }
+    while (keyIndex !== -1) {
+      const trailingKeyCode = url.charCodeAt(keyIndex + key.length + 1)
+      if (trailingKeyCode === 61) {
+        const valueIndex = keyIndex + key.length + 2
+        const endIndex = url.indexOf('&', valueIndex)
+        return _decodeURI(url.slice(valueIndex, endIndex === -1 ? undefined : endIndex))
+      } else if (trailingKeyCode == 38 || isNaN(trailingKeyCode)) {
+        return ''
+      }
+      keyIndex = url.indexOf(`&${key}`, keyIndex + 1)
+    }
+
+    encoded = /[%+]/.test(url)
+    if (!encoded) {
+      return undefined
+    }
+    // fallback to default routine
+  }
+
+  const results: Record<string, string> | Record<string, string[]> = {}
+  encoded ??= /[%+]/.test(url)
+
+  let keyIndex = url.indexOf('?', 8)
+  while (keyIndex !== -1) {
+    const nextKeyIndex = url.indexOf('&', keyIndex + 1)
+    let valueIndex = url.indexOf('=', keyIndex)
+    if (valueIndex > nextKeyIndex && nextKeyIndex !== -1) {
+      valueIndex = -1
+    }
+    let name = url.slice(
+      keyIndex + 1,
+      valueIndex === -1 ? (nextKeyIndex === -1 ? undefined : nextKeyIndex) : valueIndex
+    )
+    if (encoded) {
+      name = _decodeURI(name)
+    }
+
+    keyIndex = nextKeyIndex
+
+    if (name === '') {
+      continue
+    }
+
+    let value
+    if (valueIndex === -1) {
+      value = ''
+    } else {
+      value = url.slice(valueIndex + 1, nextKeyIndex === -1 ? undefined : nextKeyIndex)
+      if (encoded) {
+        value = _decodeURI(value)
+      }
+    }
+
+    if (multiple) {
+      if (!(results[name] && Array.isArray(results[name]))) {
+        results[name] = []
+      }
+      ;(results[name] as string[]).push(value)
+    } else {
+      results[name] ??= value
+    }
+  }
+
+  return key ? results[key] : results
+}
+
+export const getQueryParam: (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string> = _getQueryParam as (
+  url: string,
+  key?: string
+) => string | undefined | Record<string, string>
+
+export const getQueryParams = (
+  url: string,
+  key?: string
+): string[] | undefined | Record<string, string[]> => {
+  return _getQueryParam(url, key, true) as string[] | undefined | Record<string, string[]>
+}
+
+// `decodeURIComponent` is a long name.
+// By making it a function, we can use it commonly when minified, reducing the amount of code.
+export const decodeURIComponent_ = decodeURIComponent
+
+</document_content>
+</document>
+<document index="38">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/index.ts</source>
+<document_content>
+/**
+ * @module
+ * JWT utility.
+ */
+
+import { decode, sign, verify, verifyFromJwks } from './jwt'
+export const Jwt = { sign, verify, decode, verifyFromJwks }
+
+</document_content>
+</document>
+<document index="39">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/jwa.test.ts</source>
+<document_content>
+import { AlgorithmTypes } from './jwa'
+
+describe('Types', () => {
+  it('AlgorithmTypes', () => {
+    expect('HS256' as AlgorithmTypes).toBe(AlgorithmTypes.HS256)
+    expect('HS384' as AlgorithmTypes).toBe(AlgorithmTypes.HS384)
+    expect('HS512' as AlgorithmTypes).toBe(AlgorithmTypes.HS512)
+    expect('RS256' as AlgorithmTypes).toBe(AlgorithmTypes.RS256)
+    expect('RS384' as AlgorithmTypes).toBe(AlgorithmTypes.RS384)
+    expect('RS512' as AlgorithmTypes).toBe(AlgorithmTypes.RS512)
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    expect(undefined as AlgorithmTypes).toBe(undefined)
+    expect('' as AlgorithmTypes).toBe('')
+  })
+})
+
+</document_content>
+</document>
+<document index="40">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/jwa.ts</source>
+<document_content>
+/**
+ * @module
+ * JSON Web Algorithms (JWA)
+ * https://datatracker.ietf.org/doc/html/rfc7518
+ */
+
+export enum AlgorithmTypes {
+  HS256 = 'HS256',
+  HS384 = 'HS384',
+  HS512 = 'HS512',
+  RS256 = 'RS256',
+  RS384 = 'RS384',
+  RS512 = 'RS512',
+  PS256 = 'PS256',
+  PS384 = 'PS384',
+  PS512 = 'PS512',
+  ES256 = 'ES256',
+  ES384 = 'ES384',
+  ES512 = 'ES512',
+  EdDSA = 'EdDSA',
+}
+
+export type SignatureAlgorithm = keyof typeof AlgorithmTypes
+
+</document_content>
+</document>
+<document index="41">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/jws.ts</source>
+<document_content>
+/**
+ * @module
+ * JSON Web Signature (JWS)
+ * https://datatracker.ietf.org/doc/html/rfc7515
+ */
+
+import { getRuntimeKey } from '../../helper/adapter'
+import { decodeBase64 } from '../encode'
+import type { SignatureAlgorithm } from './jwa'
+import { CryptoKeyUsage, JwtAlgorithmNotImplemented } from './types'
+import { utf8Encoder } from './utf8'
+
+type KeyImporterAlgorithm = Parameters<typeof crypto.subtle.importKey>[2]
+type KeyAlgorithm =
+  | AlgorithmIdentifier
+  | RsaHashedImportParams
+  | (RsaPssParams & RsaHashedImportParams)
+  | (EcdsaParams & EcKeyImportParams)
+  | HmacImportParams
+
+// Extending the JsonWebKey interface to include the "kid" property.
+// https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.4
+export interface HonoJsonWebKey extends JsonWebKey {
+  kid?: string
+}
+
+export type SignatureKey = string | HonoJsonWebKey | CryptoKey
+
+export async function signing(
+  privateKey: SignatureKey,
+  alg: SignatureAlgorithm,
+  data: BufferSource
+): Promise<ArrayBuffer> {
+  const algorithm = getKeyAlgorithm(alg)
+  const cryptoKey = await importPrivateKey(privateKey, algorithm)
+  return await crypto.subtle.sign(algorithm, cryptoKey, data)
+}
+
+export async function verifying(
+  publicKey: SignatureKey,
+  alg: SignatureAlgorithm,
+  signature: BufferSource,
+  data: BufferSource
+): Promise<boolean> {
+  const algorithm = getKeyAlgorithm(alg)
+  const cryptoKey = await importPublicKey(publicKey, algorithm)
+  return await crypto.subtle.verify(algorithm, cryptoKey, signature, data)
+}
+
+function pemToBinary(pem: string): Uint8Array {
+  return decodeBase64(pem.replace(/-+(BEGIN|END).*/g, '').replace(/\s/g, ''))
+}
+
+async function importPrivateKey(key: SignatureKey, alg: KeyImporterAlgorithm): Promise<CryptoKey> {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+  if (isCryptoKey(key)) {
+    if (key.type !== 'private' && key.type !== 'secret') {
+      throw new Error(
+        `unexpected key type: CryptoKey.type is ${key.type}, expected private or secret`
+      )
+    }
+    return key
+  }
+  const usages = [CryptoKeyUsage.Sign]
+  if (typeof key === 'object') {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#json_web_key_import
+    return await crypto.subtle.importKey('jwk', key, alg, false, usages)
+  }
+  if (key.includes('PRIVATE')) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#pkcs_8_import
+    return await crypto.subtle.importKey('pkcs8', pemToBinary(key), alg, false, usages)
+  }
+  return await crypto.subtle.importKey('raw', utf8Encoder.encode(key), alg, false, usages)
+}
+
+async function importPublicKey(key: SignatureKey, alg: KeyImporterAlgorithm): Promise<CryptoKey> {
+  if (!crypto.subtle || !crypto.subtle.importKey) {
+    throw new Error('`crypto.subtle.importKey` is undefined. JWT auth middleware requires it.')
+  }
+  if (isCryptoKey(key)) {
+    if (key.type === 'public' || key.type === 'secret') {
+      return key
+    }
+    key = await exportPublicJwkFrom(key)
+  }
+  if (typeof key === 'string' && key.includes('PRIVATE')) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#pkcs_8_import
+    const privateKey = await crypto.subtle.importKey('pkcs8', pemToBinary(key), alg, true, [
+      CryptoKeyUsage.Sign,
+    ])
+    key = await exportPublicJwkFrom(privateKey)
+  }
+  const usages = [CryptoKeyUsage.Verify]
+  if (typeof key === 'object') {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#json_web_key_import
+    return await crypto.subtle.importKey('jwk', key, alg, false, usages)
+  }
+  if (key.includes('PUBLIC')) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/importKey#subjectpublickeyinfo_import
+    return await crypto.subtle.importKey('spki', pemToBinary(key), alg, false, usages)
+  }
+  return await crypto.subtle.importKey('raw', utf8Encoder.encode(key), alg, false, usages)
+}
+
+// https://datatracker.ietf.org/doc/html/rfc7517
+async function exportPublicJwkFrom(privateKey: CryptoKey): Promise<JsonWebKey> {
+  if (privateKey.type !== 'private') {
+    throw new Error(`unexpected key type: ${privateKey.type}`)
+  }
+  if (!privateKey.extractable) {
+    throw new Error('unexpected private key is unextractable')
+  }
+  const jwk = await crypto.subtle.exportKey('jwk', privateKey)
+  const { kty } = jwk // common
+  const { alg, e, n } = jwk // rsa
+  const { crv, x, y } = jwk // elliptic-curve
+  return { kty, alg, e, n, crv, x, y, key_ops: [CryptoKeyUsage.Verify] }
+}
+
+function getKeyAlgorithm(name: SignatureAlgorithm): KeyAlgorithm {
+  switch (name) {
+    case 'HS256':
+      return {
+        name: 'HMAC',
+        hash: {
+          name: 'SHA-256',
+        },
+      } satisfies HmacImportParams
+    case 'HS384':
+      return {
+        name: 'HMAC',
+        hash: {
+          name: 'SHA-384',
+        },
+      } satisfies HmacImportParams
+    case 'HS512':
+      return {
+        name: 'HMAC',
+        hash: {
+          name: 'SHA-512',
+        },
+      } satisfies HmacImportParams
+    case 'RS256':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-256',
+        },
+      } satisfies RsaHashedImportParams
+    case 'RS384':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-384',
+        },
+      } satisfies RsaHashedImportParams
+    case 'RS512':
+      return {
+        name: 'RSASSA-PKCS1-v1_5',
+        hash: {
+          name: 'SHA-512',
+        },
+      } satisfies RsaHashedImportParams
+    case 'PS256':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-256',
+        },
+        saltLength: 32, // 256 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS384':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-384',
+        },
+        saltLength: 48, // 384 >> 3
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'PS512':
+      return {
+        name: 'RSA-PSS',
+        hash: {
+          name: 'SHA-512',
+        },
+        saltLength: 64, // 512 >> 3,
+      } satisfies RsaPssParams & RsaHashedImportParams
+    case 'ES256':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-256',
+        },
+        namedCurve: 'P-256',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES384':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-384',
+        },
+        namedCurve: 'P-384',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'ES512':
+      return {
+        name: 'ECDSA',
+        hash: {
+          name: 'SHA-512',
+        },
+        namedCurve: 'P-521',
+      } satisfies EcdsaParams & EcKeyImportParams
+    case 'EdDSA':
+      // Currently, supported only Safari and Deno, Node.js.
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/verify
+      return {
+        name: 'Ed25519',
+        namedCurve: 'Ed25519',
+      }
+    default:
+      throw new JwtAlgorithmNotImplemented(name)
+  }
+}
+
+function isCryptoKey(key: SignatureKey): key is CryptoKey {
+  const runtime = getRuntimeKey()
+  // @ts-expect-error CryptoKey hasn't exported to global in node v18
+  if (runtime === 'node' && !!crypto.webcrypto) {
+    // @ts-expect-error CryptoKey hasn't exported to global in node v18
+    return key instanceof crypto.webcrypto.CryptoKey
+  }
+  return key instanceof CryptoKey
+}
+
+</document_content>
+</document>
+<document index="42">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/jwt.test.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { vi } from 'vitest'
+import { encodeBase64 } from '../encode'
+import { AlgorithmTypes } from './jwa'
+import * as JWT from './jwt'
+import {
+  JwtAlgorithmNotImplemented,
+  JwtTokenExpired,
+  JwtTokenInvalid,
+  JwtTokenIssuedAt,
+  JwtTokenNotBefore,
+  JwtTokenSignatureMismatched,
+} from './types'
+
+describe('isTokenHeader', () => {
+  it('should return true for valid TokenHeader', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
+
+  it('should return false for invalid TokenHeader', () => {
+    const invalidTokenHeader = {
+      alg: 'invalid',
+      typ: 'JWT',
+    }
+
+    expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
+  })
+
+  it('returns true even if the typ field is absent in a TokenHeader', () => {
+    const validTokenHeader: JWT.TokenHeader = {
+      alg: AlgorithmTypes.HS256,
+    }
+
+    expect(JWT.isTokenHeader(validTokenHeader)).toBe(true)
+  })
+
+  it('returns false when the typ field is present but empty', () => {
+    const invalidTokenHeader = {
+      alg: AlgorithmTypes.HS256,
+      typ: '',
+    }
+
+    expect(JWT.isTokenHeader(invalidTokenHeader)).toBe(false)
+  })
+})
+
+describe('JWT', () => {
+  it('JwtAlgorithmNotImplemented', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const alg = ''
+    let tok = ''
+    let err: JwtAlgorithmNotImplemented
+    try {
+      tok = await JWT.sign(payload, secret, alg as AlgorithmTypes)
+    } catch (e) {
+      err = e as JwtAlgorithmNotImplemented
+    }
+    expect(tok).toBe('')
+    // @ts-ignore
+    expect(err).toEqual(new JwtAlgorithmNotImplemented(alg))
+  })
+
+  it('JwtTokenInvalid', async () => {
+    const tok = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ'
+    const secret = 'a-secret'
+    let err: JwtTokenInvalid
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as JwtTokenInvalid
+    }
+    // @ts-ignore
+    expect(err).toEqual(new JwtTokenInvalid(tok))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenNotBefore', async () => {
+    const tok =
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2NjQ2MDYzMzQsImV4cCI6MTY2NDYwOTkzNCwibmJmIjoiMzEwNDYwNjI2NCJ9.hpSDT_cfkxeiLWEpWVT8TDxFP3dFi27q1K7CcMcLXHc'
+    const secret = 'a-secret'
+    let err: JwtTokenNotBefore
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e as JwtTokenNotBefore
+    }
+    // @ts-ignore
+    expect(err).toEqual(new JwtTokenNotBefore(tok))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenExpired', async () => {
+    const tok =
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MzMwNDYxMDAsImV4cCI6MTYzMzA0NjQwMH0.H-OI1TWAbmK8RonvcpPaQcNvOKS9sxinEOsgKwjoiVo'
+    const secret = 'a-secret'
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenExpired(tok))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('JwtTokenIssuedAt', async () => {
+    const now = 1633046400
+    vi.useFakeTimers().setSystemTime(new Date().setTime(now * 1000))
+
+    const iat = now + 1000 // after 1s
+    const payload = { role: 'api_role', iat }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+
+    let err
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(err).toEqual(new JwtTokenIssuedAt(now, iat))
+    expect(authorized).toBeUndefined()
+  })
+
+  it('HS256 sign & verify & decode', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    const expected =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+    expect(tok).toEqual(expected)
+
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS256)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
+
+    expect(JWT.decode(tok)).toEqual({
+      header: {
+        alg: 'HS256',
+        typ: 'JWT',
+      },
+      payload: {
+        message: 'hello world',
+      },
+    })
+  })
+
+  it('HS256 sign & verify', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS256)
+    const expected =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.B54pAqIiLbu170tGQ1rY06Twv__0qSHTA0ioQPIOvFE'
+    expect(tok).toEqual(expected)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  it('HS512 sign & verify & decode', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS512)
+    const expected =
+      'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.RqVLgExB_GXF1-9T-k4V4HjFmiuQKTEjVSiZd-YL0WERIlywZ7PfzAuTZSJU4gg8cscGamQa030cieEWrYcywg'
+    expect(tok).toEqual(expected)
+
+    const verifiedPayload = await JWT.verify(tok, secret, AlgorithmTypes.HS512)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
+
+    expect(JWT.decode(tok)).toEqual({
+      header: {
+        alg: 'HS512',
+        typ: 'JWT',
+      },
+      payload: {
+        message: 'hello world',
+      },
+    })
+  })
+
+  it('HS512 sign & verify', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS512)
+    const expected =
+      'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.RqVLgExB_GXF1-9T-k4V4HjFmiuQKTEjVSiZd-YL0WERIlywZ7PfzAuTZSJU4gg8cscGamQa030cieEWrYcywg'
+    expect(tok).toEqual(expected)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  it('HS384 sign & verify', async () => {
+    const payload = { message: 'hello world' }
+    const secret = 'a-secret%你好'
+    const tok = await JWT.sign(payload, secret, AlgorithmTypes.HS384)
+    const expected =
+      'eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.C1Br1183Oy6O7th4NDCOaI9WB75i3FMCuYlv1tCL9HggsU89T-SNutghwhJykD3r'
+    expect(tok).toEqual(expected)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, secret + 'invalid', AlgorithmTypes.HS256)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  it('sign & verify & decode with a custom secret', async () => {
+    const payload = { message: 'hello world' }
+    const algorithm = {
+      name: 'HMAC',
+      hash: {
+        name: 'SHA-256',
+      },
+    }
+    const secret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de4599c21d', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    const tok = await JWT.sign(payload, secret)
+    const expected =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXNzYWdlIjoiaGVsbG8gd29ybGQifQ.qunGhchNXH_unqWXN6hB0Elhzr5SykSXVhklLti1aFI'
+    expect(tok).toEqual(expected)
+
+    const verifiedPayload = await JWT.verify(tok, secret)
+    expect(verifiedPayload).not.toBeUndefined()
+    expect(verifiedPayload).toEqual(payload)
+
+    const invalidSecret = await crypto.subtle.importKey(
+      'raw',
+      Buffer.from('cefb73234d5fae4bf27662900732b52943e8d53e871fe0f353da95de41111111', 'hex'),
+      algorithm,
+      false,
+      ['sign', 'verify']
+    )
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, invalidSecret)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  const rsTestCases = [
+    {
+      alg: AlgorithmTypes.RS256,
+      hash: 'SHA-256',
+    },
+    {
+      alg: AlgorithmTypes.RS384,
+      hash: 'SHA-384',
+    },
+    {
+      alg: AlgorithmTypes.RS512,
+      hash: 'SHA-512',
+    },
+  ]
+  for (const tc of rsTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAKey(tc.hash)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateRSAKey(tc.hash)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAKey(tc.hash)
+
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+    })
+  }
+
+  const psTestCases = [
+    {
+      alg: AlgorithmTypes.PS256,
+      hash: 'SHA-256',
+    },
+    {
+      alg: AlgorithmTypes.PS384,
+      hash: 'SHA-384',
+    },
+    {
+      alg: AlgorithmTypes.PS512,
+      hash: 'SHA-512',
+    },
+  ]
+  for (const tc of psTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAPSSKey(tc.hash)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateRSAPSSKey(tc.hash)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateRSAPSSKey(tc.hash)
+
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+    })
+  }
+
+  const esTestCases = [
+    {
+      alg: AlgorithmTypes.ES256,
+      namedCurve: 'P-256',
+    },
+    {
+      alg: AlgorithmTypes.ES384,
+      namedCurve: 'P-384',
+    },
+    {
+      alg: AlgorithmTypes.ES512,
+      namedCurve: 'P-521',
+    },
+  ]
+  for (const tc of esTestCases) {
+    it(`${tc.alg} sign & verify`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateECDSAKey(tc.namedCurve)
+      const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+      const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+      const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+      const tok = await JWT.sign(payload, pemPrivateKey, alg)
+      expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+      const keyPair2 = await generateECDSAKey(tc.namedCurve)
+      const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+      let err = null
+      let authorized
+      try {
+        authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+      } catch (e) {
+        err = e
+      }
+      expect(authorized).toBeUndefined()
+      expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+    })
+
+    it(`${tc.alg} sign & verify w/ CryptoKey`, async () => {
+      const alg = tc.alg
+      const payload = { message: 'hello world' }
+      const keyPair = await generateECDSAKey(tc.namedCurve)
+
+      const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+      expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+      expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+    })
+  }
+
+  it('EdDSA sign & verify', async () => {
+    const alg = 'EdDSA'
+    const payload = { message: 'hello world' }
+    const keyPair = await generateEd25519Key()
+    const pemPrivateKey = await exportPEMPrivateKey(keyPair.privateKey)
+    const pemPublicKey = await exportPEMPublicKey(keyPair.publicKey)
+    const jwkPublicKey = await exportJWK(keyPair.publicKey)
+
+    const tok = await JWT.sign(payload, pemPrivateKey, alg)
+    expect(await JWT.verify(tok, pemPublicKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, pemPrivateKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, jwkPublicKey, alg)).toEqual(payload)
+
+    const keyPair2 = await generateEd25519Key()
+    const unexpectedPemPublicKey = await exportPEMPublicKey(keyPair2.publicKey)
+
+    let err = null
+    let authorized
+    try {
+      authorized = await JWT.verify(tok, unexpectedPemPublicKey, alg)
+    } catch (e) {
+      err = e
+    }
+    expect(authorized).toBeUndefined()
+    expect(err instanceof JwtTokenSignatureMismatched).toBe(true)
+  })
+
+  it('EdDSA sign & verify w/ CryptoKey', async () => {
+    const alg = 'EdDSA'
+    const payload = { message: 'hello world' }
+    const keyPair = await generateEd25519Key()
+
+    const tok = await JWT.sign(payload, keyPair.privateKey, alg)
+    expect(await JWT.verify(tok, keyPair.privateKey, alg)).toEqual(payload)
+    expect(await JWT.verify(tok, keyPair.publicKey, alg)).toEqual(payload)
+  })
+})
+
+async function exportPEMPrivateKey(key: CryptoKey): Promise<string> {
+  const exported = await crypto.subtle.exportKey('pkcs8', key)
+  const pem = `-----BEGIN PRIVATE KEY-----\n${encodeBase64(exported)}\n-----END PRIVATE KEY-----`
+  return pem
+}
+
+async function exportPEMPublicKey(key: CryptoKey): Promise<string> {
+  const exported = await crypto.subtle.exportKey('spki', key)
+  const pem = `-----BEGIN PUBLIC KEY-----\n${encodeBase64(exported)}\n-----END PUBLIC KEY-----`
+  return pem
+}
+
+async function exportJWK(key: CryptoKey): Promise<JsonWebKey> {
+  return await crypto.subtle.exportKey('jwk', key)
+}
+
+async function generateRSAKey(hash: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      hash,
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      name: 'RSASSA-PKCS1-v1_5',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateRSAPSSKey(hash: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      hash,
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      name: 'RSA-PSS',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateECDSAKey(namedCurve: string): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'ECDSA',
+      namedCurve,
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+async function generateEd25519Key(): Promise<CryptoKeyPair> {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'Ed25519',
+      namedCurve: 'Ed25519',
+    },
+    true,
+    ['sign', 'verify']
+  )
+}
+
+</document_content>
+</document>
+<document index="43">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/jwt.ts</source>
+<document_content>
+/**
+ * @module
+ * JSON Web Token (JWT)
+ * https://datatracker.ietf.org/doc/html/rfc7519
+ */
+
+import { decodeBase64Url, encodeBase64Url } from '../../utils/encode'
+import { AlgorithmTypes } from './jwa'
+import type { SignatureAlgorithm } from './jwa'
+import { signing, verifying } from './jws'
+import type { HonoJsonWebKey, SignatureKey } from './jws'
+import {
+  JwtHeaderInvalid,
+  JwtHeaderRequiresKid,
+  JwtTokenExpired,
+  JwtTokenInvalid,
+  JwtTokenIssuedAt,
+  JwtTokenNotBefore,
+  JwtTokenSignatureMismatched,
+} from './types'
+import type { JWTPayload } from './types'
+import { utf8Decoder, utf8Encoder } from './utf8'
+
+const encodeJwtPart = (part: unknown): string =>
+  encodeBase64Url(utf8Encoder.encode(JSON.stringify(part)).buffer).replace(/=/g, '')
+
+const encodeSignaturePart = (buf: ArrayBufferLike): string => encodeBase64Url(buf).replace(/=/g, '')
+
+const decodeJwtPart = (part: string): TokenHeader | JWTPayload | undefined =>
+  JSON.parse(utf8Decoder.decode(decodeBase64Url(part)))
+
+export interface TokenHeader {
+  alg: SignatureAlgorithm
+  typ?: 'JWT'
+  kid?: string
+}
+
+export function isTokenHeader(obj: unknown): obj is TokenHeader {
+  if (typeof obj === 'object' && obj !== null) {
+    const objWithAlg = obj as { [key: string]: unknown }
+    return (
+      'alg' in objWithAlg &&
+      Object.values(AlgorithmTypes).includes(objWithAlg.alg as AlgorithmTypes) &&
+      (!('typ' in objWithAlg) || objWithAlg.typ === 'JWT')
+    )
+  }
+  return false
+}
+
+export const sign = async (
+  payload: JWTPayload,
+  privateKey: SignatureKey,
+  alg: SignatureAlgorithm = 'HS256'
+): Promise<string> => {
+  const encodedPayload = encodeJwtPart(payload)
+  let encodedHeader
+  if (typeof privateKey === 'object' && 'alg' in privateKey) {
+    alg = privateKey.alg as SignatureAlgorithm
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT', kid: privateKey.kid })
+  } else {
+    encodedHeader = encodeJwtPart({ alg, typ: 'JWT' })
+  }
+
+  const partialToken = `${encodedHeader}.${encodedPayload}`
+
+  const signaturePart = await signing(privateKey, alg, utf8Encoder.encode(partialToken))
+  const signature = encodeSignaturePart(signaturePart)
+
+  return `${partialToken}.${signature}`
+}
+
+export const verify = async (
+  token: string,
+  publicKey: SignatureKey,
+  alg: SignatureAlgorithm = 'HS256'
+): Promise<JWTPayload> => {
+  const tokenParts = token.split('.')
+  if (tokenParts.length !== 3) {
+    throw new JwtTokenInvalid(token)
+  }
+
+  const { header, payload } = decode(token)
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  const now = (Date.now() / 1000) | 0
+  if (payload.nbf && payload.nbf > now) {
+    throw new JwtTokenNotBefore(token)
+  }
+  if (payload.exp && payload.exp <= now) {
+    throw new JwtTokenExpired(token)
+  }
+  if (payload.iat && now < payload.iat) {
+    throw new JwtTokenIssuedAt(now, payload.iat)
+  }
+
+  const headerPayload = token.substring(0, token.lastIndexOf('.'))
+  const verified = await verifying(
+    publicKey,
+    alg,
+    decodeBase64Url(tokenParts[2]),
+    utf8Encoder.encode(headerPayload)
+  )
+  if (!verified) {
+    throw new JwtTokenSignatureMismatched(token)
+  }
+
+  return payload
+}
+
+export const verifyFromJwks = async (
+  token: string,
+  options: {
+    keys?: HonoJsonWebKey[] | (() => Promise<HonoJsonWebKey[]>)
+    jwks_uri?: string
+  },
+  init?: RequestInit
+): Promise<JWTPayload> => {
+  const header = decodeHeader(token)
+
+  if (!isTokenHeader(header)) {
+    throw new JwtHeaderInvalid(header)
+  }
+  if (!header.kid) {
+    throw new JwtHeaderRequiresKid(header)
+  }
+
+  let keys = typeof options.keys === 'function' ? await options.keys() : options.keys
+
+  if (options.jwks_uri) {
+    const response = await fetch(options.jwks_uri, init)
+    if (!response.ok) {
+      throw new Error(`failed to fetch JWKS from ${options.jwks_uri}`)
+    }
+    const data = (await response.json()) as { keys?: JsonWebKey[] }
+    if (!data.keys) {
+      throw new Error('invalid JWKS response. "keys" field is missing')
+    }
+    if (!Array.isArray(data.keys)) {
+      throw new Error('invalid JWKS response. "keys" field is not an array')
+    }
+    if (keys) {
+      keys.push(...data.keys)
+    } else {
+      keys = data.keys
+    }
+  } else if (!keys) {
+    throw new Error('verifyFromJwks requires options for either "keys" or "jwks_uri" or both')
+  }
+
+  const matchingKey = keys.find((key) => key.kid === header.kid)
+  if (!matchingKey) {
+    throw new JwtTokenInvalid(token)
+  }
+
+  return await verify(token, matchingKey, matchingKey.alg as SignatureAlgorithm)
+}
+
+export const decode = (token: string): { header: TokenHeader; payload: JWTPayload } => {
+  try {
+    const [h, p] = token.split('.')
+    const header = decodeJwtPart(h) as TokenHeader
+    const payload = decodeJwtPart(p) as JWTPayload
+    return {
+      header,
+      payload,
+    }
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+}
+
+export const decodeHeader = (token: string): TokenHeader => {
+  try {
+    const [h] = token.split('.')
+    return decodeJwtPart(h) as TokenHeader
+  } catch {
+    throw new JwtTokenInvalid(token)
+  }
+}
+
+</document_content>
+</document>
+<document index="44">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/types.ts</source>
+<document_content>
+/**
+ * @module
+ * Type definitions for JWT utilities.
+ */
+
+export class JwtAlgorithmNotImplemented extends Error {
+  constructor(alg: string) {
+    super(`${alg} is not an implemented algorithm`)
+    this.name = 'JwtAlgorithmNotImplemented'
+  }
+}
+
+export class JwtTokenInvalid extends Error {
+  constructor(token: string) {
+    super(`invalid JWT token: ${token}`)
+    this.name = 'JwtTokenInvalid'
+  }
+}
+
+export class JwtTokenNotBefore extends Error {
+  constructor(token: string) {
+    super(`token (${token}) is being used before it's valid`)
+    this.name = 'JwtTokenNotBefore'
+  }
+}
+
+export class JwtTokenExpired extends Error {
+  constructor(token: string) {
+    super(`token (${token}) expired`)
+    this.name = 'JwtTokenExpired'
+  }
+}
+
+export class JwtTokenIssuedAt extends Error {
+  constructor(currentTimestamp: number, iat: number) {
+    super(`Incorrect "iat" claim must be a older than "${currentTimestamp}" (iat: "${iat}")`)
+    this.name = 'JwtTokenIssuedAt'
+  }
+}
+
+export class JwtHeaderInvalid extends Error {
+  constructor(header: object) {
+    super(`jwt header is invalid: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderInvalid'
+  }
+}
+
+export class JwtHeaderRequiresKid extends Error {
+  constructor(header: object) {
+    super(`required "kid" in jwt header: ${JSON.stringify(header)}`)
+    this.name = 'JwtHeaderRequiresKid'
+  }
+}
+
+export class JwtTokenSignatureMismatched extends Error {
+  constructor(token: string) {
+    super(`token(${token}) signature mismatched`)
+    this.name = 'JwtTokenSignatureMismatched'
+  }
+}
+
+export enum CryptoKeyUsage {
+  Encrypt = 'encrypt',
+  Decrypt = 'decrypt',
+  Sign = 'sign',
+  Verify = 'verify',
+  DeriveKey = 'deriveKey',
+  DeriveBits = 'deriveBits',
+  WrapKey = 'wrapKey',
+  UnwrapKey = 'unwrapKey',
+}
+
+/**
+ * JWT Payload
+ */
+export type JWTPayload = {
+  [key: string]: unknown
+  /**
+   * The token is checked to ensure it has not expired.
+   */
+  exp?: number
+  /**
+   * The token is checked to ensure it is not being used before a specified time.
+   */
+  nbf?: number
+  /**
+   * The token is checked to ensure it is not issued in the future.
+   */
+  iat?: number
+}
+
+export type { HonoJsonWebKey } from './jws'
+
+</document_content>
+</document>
+<document index="45">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/utils/jwt/utf8.ts</source>
+<document_content>
+/**
+ * @module
+ * Functions for encoding/decoding UTF8.
+ */
+
+export const utf8Encoder: TextEncoder = new TextEncoder()
+export const utf8Decoder: TextDecoder = new TextDecoder()
+
+</document_content>
+</document>
+</documents>

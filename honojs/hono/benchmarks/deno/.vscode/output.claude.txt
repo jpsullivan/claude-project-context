@@ -1,0 +1,19 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/deno/.vscode/settings.json</source>
+<document_content>
+{
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "deno.enable": true
+}
+</document_content>
+</document>
+</documents>

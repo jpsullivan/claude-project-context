@@ -1,0 +1,163 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/adapter/service-worker/handler.test.ts
+```typescript
+import { Hono } from '../../hono'
+import { handle } from './handler'
+import type { FetchEvent } from './types'
+
+beforeAll(() => {
+  // fetch errors when it's not bound to globalThis in service worker
+  // set a fetch stub to emulate that behavior
+  vi.stubGlobal(
+    'fetch',
+    function fetch(this: undefined | typeof globalThis, arg0: string | Request) {
+      if (this !== globalThis) {
+        const error = new Error(
+          "Failed to execute 'fetch' on 'WorkerGlobalScope': Illegal invocation"
+        )
+        error.name = 'TypeError'
+        throw error
+      }
+      if (arg0 instanceof Request && arg0.url === 'http://localhost/fallback') {
+        return new Response('hello world')
+      }
+      return Response.error()
+    }
+  )
+})
+afterAll(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('handle', () => {
+  it('Success to fetch', async () => {
+    const app = new Hono()
+    app.get('/', (c) => {
+      return c.json({ hello: 'world' })
+    })
+    const handler = handle(app)
+    const json = await new Promise<Response>((resolve) => {
+      handler({
+        request: new Request('http://localhost/'),
+        respondWith(res) {
+          resolve(res)
+        },
+      } as FetchEvent)
+    }).then((res) => res.json())
+    expect(json).toStrictEqual({ hello: 'world' })
+  })
+  it('Fallback 404', async () => {
+    const app = new Hono()
+    const handler = handle(app)
+    const text = await new Promise<Response>((resolve) => {
+      handler({
+        request: new Request('http://localhost/fallback'),
+        respondWith(res) {
+          resolve(res)
+        },
+      } as FetchEvent)
+    }).then((res) => res.text())
+    expect(text).toBe('hello world')
+  })
+  it('Fallback 404 with explicit fetch', async () => {
+    const app = new Hono()
+    const handler = handle(app, {
+      async fetch() {
+        return new Response('hello world')
+      },
+    })
+    const text = await new Promise<Response>((resolve) => {
+      handler({
+        request: new Request('http://localhost/'),
+        respondWith(res) {
+          resolve(res)
+        },
+      } as FetchEvent)
+    }).then((res) => res.text())
+    expect(text).toBe('hello world')
+  })
+  it('Do not fallback 404 when fetch is undefined', async () => {
+    const app = new Hono()
+    app.get('/', (c) => c.text('Not found', 404))
+    const handler = handle(app, {
+      fetch: undefined,
+    })
+    const result = await new Promise<Response>((resolve) =>
+      handler({
+        request: new Request('https://localhost/'),
+        respondWith(r) {
+          resolve(r)
+        },
+      } as FetchEvent)
+    )
+
+    expect(result.status).toBe(404)
+    expect(await result.text()).toBe('Not found')
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/adapter/service-worker/handler.ts
+```typescript
+/**
+ * Handler for Service Worker
+ * @module
+ */
+
+import type { Hono } from '../../hono'
+import type { FetchEvent } from './types'
+
+type Handler = (evt: FetchEvent) => void
+
+/**
+ * Adapter for Service Worker
+ */
+export const handle = (
+  app: Hono,
+  opts: {
+    fetch?: typeof fetch
+  } = {
+    // To use `fetch` on a Service Worker correctly, bind it to `globalThis`.
+    fetch: globalThis.fetch.bind(globalThis),
+  }
+): Handler => {
+  return (evt) => {
+    evt.respondWith(
+      (async () => {
+        const res = await app.fetch(evt.request)
+        if (opts.fetch && res.status === 404) {
+          return await opts.fetch(evt.request)
+        }
+        return res
+      })()
+    )
+  }
+}
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/adapter/service-worker/index.ts
+```typescript
+/**
+ * Service Worker Adapter for Hono.
+ * @module
+ */
+export { handle } from './handler'
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/adapter/service-worker/types.ts
+```typescript
+interface ExtendableEvent extends Event {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  waitUntil(f: Promise<any>): void
+}
+
+export interface FetchEvent extends ExtendableEvent {
+  readonly clientId: string
+  readonly handled: Promise<undefined>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly preloadResponse: Promise<any>
+  readonly request: Request
+  readonly resultingClientId: string
+  respondWith(r: Response | PromiseLike<Response>): void
+}
+
+```

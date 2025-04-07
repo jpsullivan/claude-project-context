@@ -1,0 +1,16 @@
+/Users/josh/Documents/GitHub/honojs/hono/.vscode/settings.json
+```json
+{
+  "deno.enable": false,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}
+```

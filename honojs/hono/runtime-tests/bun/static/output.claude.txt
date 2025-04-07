@@ -1,0 +1,28 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/runtime-tests/bun/static/download</source>
+<document_content>
+download
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/runtime-tests/bun/static/plain.txt</source>
+<document_content>
+Bun!
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/runtime-tests/bun/static/helloworld/index.html</source>
+<document_content>
+Hi
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/runtime-tests/bun/static/hello.world/index.html</source>
+<document_content>
+Hi
+
+</document_content>
+</document>
+</documents>

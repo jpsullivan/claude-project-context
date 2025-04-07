@@ -1,0 +1,618 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/jsx/intrinsic-element/common.ts
+```typescript
+export const deDupeKeyMap: Record<string, string[]> = {
+  title: [],
+  script: ['src'],
+  style: ['data-href'],
+  link: ['href'],
+  meta: ['name', 'httpEquiv', 'charset', 'itemProp'],
+}
+
+export const domRenderers: Record<string, Function> = {}
+
+export const dataPrecedenceAttr = 'data-precedence'
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/jsx/intrinsic-element/components.test.tsx
+```
+/** @jsxImportSource ../ */
+import { useActionState } from '../'
+
+describe('intrinsic element', () => {
+  describe('document metadata', () => {
+    describe('title element', () => {
+      it('should be hoisted title tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <title>Hello</title>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><title>Hello</title></head><body><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('link element', () => {
+      it('should be hoisted link tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style.css' precedence='default' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style.css" data-precedence="default"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be ordered by precedence attribute', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <link rel='stylesheet' href='style3.css' precedence='default' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style3.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by href', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be inserted as is if <head> is not present', () => {
+        const template = (
+          <html>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='high' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><body><link rel="stylesheet" href="style1.css" data-precedence="default"/><link rel="stylesheet" href="style2.css" data-precedence="high"/><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not do special behavior if disabled is present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' precedence='default' />
+              <link rel='stylesheet' href='style2.css' precedence='default' disabled />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><link rel="stylesheet" href="style1.css" data-precedence="default"/></head><body><link rel="stylesheet" href="style2.css" precedence="default" disabled=""/><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not be hoisted if has no precedence attribute', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <link rel='stylesheet' href='style1.css' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><link rel="stylesheet" href="style1.css"/><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('meta element', () => {
+      it('should be hoisted meta tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><meta name="description" content="Hello"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by name', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' />
+              <meta name='description' content='World' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><meta name="description" content="Hello"/></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not do special behavior if itemProp is present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <meta name='description' content='Hello' itemProp='test' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><meta name="description" content="Hello" itemprop="test"/><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('script element', () => {
+      it('should be hoisted script tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' async={true} />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be de-duped by href with async={true}', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' async />
+              <script src='script.js' async />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be omitted "blocking", "onLoad" and "onError" props', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script
+                src='script.js'
+                async={true}
+                onLoad={() => {}}
+                onError={() => {}}
+                blocking='render'
+              />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><script src="script.js" async=""></script></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not do special behavior if async is not present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <script src='script.js' />
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><script src="script.js"></script><h1>World</h1></body></html>'
+        )
+      })
+    })
+
+    describe('style element', () => {
+      it('should be hoisted style tag', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><style data-href="red" data-precedence="default">body { color: red; }</style></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should be sorted by precedence attribute', async () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style href='red' precedence='default'>
+                {'body { color: red; }'}
+              </style>
+              <style href='green' precedence='high'>
+                {'body { color: green; }'}
+              </style>
+              <style href='blue' precedence='default'>
+                {'body { color: blue; }'}
+              </style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head><style data-href="red" data-precedence="default">body { color: red; }</style><style data-href="blue" data-precedence="default">body { color: blue; }</style><style data-href="green" data-precedence="high">body { color: green; }</style></head><body><h1>World</h1></body></html>'
+        )
+      })
+
+      it('should not be hoisted if href is not present', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <style>{'body { color: red; }'}</style>
+              <h1>World</h1>
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><style>body { color: red; }</style><h1>World</h1></body></html>'
+        )
+      })
+    })
+  })
+
+  describe('form element', () => {
+    it('should be omitted "action" prop if it is a function', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action={() => {}} method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
+    it('should be rendered permalink', () => {
+      const [, action] = useActionState(() => {}, {}, 'permalink')
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action={action} method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form action="permalink" method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
+    it('should not do special behavior if action is a string', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form action='/entries' method='get'>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form action="/entries" method="get"><input type="text"/></form></body></html>'
+      )
+    })
+
+    it('should not do special behavior if no action prop', () => {
+      const template = (
+        <html>
+          <head></head>
+          <body>
+            <form>
+              <input type='text' />
+            </form>
+          </body>
+        </html>
+      )
+      expect(template.toString()).toBe(
+        '<html><head></head><body><form><input type="text"/></form></body></html>'
+      )
+    })
+
+    describe('input element', () => {
+      it('should be rendered as is', () => {
+        const template = <input type='text' />
+        expect(template.toString()).toBe('<input type="text"/>')
+      })
+
+      it('should be omitted "formAction" prop if it is a function', () => {
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <input type='text' formAction={() => {}} />
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><input type="text"/></body></html>'
+        )
+      })
+
+      it('should be rendered permalink', () => {
+        const [, formAction] = useActionState(() => {}, {}, 'permalink')
+        const template = (
+          <html>
+            <head></head>
+            <body>
+              <input type='text' formAction={formAction} />
+            </body>
+          </html>
+        )
+        expect(template.toString()).toBe(
+          '<html><head></head><body><input type="text" formaction="permalink"/></body></html>'
+        )
+      })
+    })
+  })
+})
+
+export {}
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/jsx/intrinsic-element/components.ts
+```typescript
+import { raw } from '../../helper/html'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import { JSXNode, getNameSpaceContext } from '../base'
+import type { Child, Props } from '../base'
+import { toArray } from '../children'
+import { PERMALINK } from '../constants'
+import { useContext } from '../context'
+import type { IntrinsicElements } from '../intrinsic-elements'
+import type { FC, PropsWithChildren } from '../types'
+import { dataPrecedenceAttr, deDupeKeyMap } from './common'
+
+const metaTagMap: WeakMap<
+  object,
+  Record<string, [string, Props, string | undefined][]>
+> = new WeakMap()
+const insertIntoHead: (
+  tagName: string,
+  tag: string,
+  props: Props,
+  precedence: string | undefined
+) => HtmlEscapedCallback =
+  (tagName, tag, props, precedence) =>
+  ({ buffer, context }): undefined => {
+    if (!buffer) {
+      return
+    }
+    const map = metaTagMap.get(context) || {}
+    metaTagMap.set(context, map)
+    const tags = (map[tagName] ||= [])
+
+    let duped = false
+    const deDupeKeys = deDupeKeyMap[tagName]
+    if (deDupeKeys.length > 0) {
+      LOOP: for (const [, tagProps] of tags) {
+        for (const key of deDupeKeys) {
+          if ((tagProps?.[key] ?? null) === props?.[key]) {
+            duped = true
+            break LOOP
+          }
+        }
+      }
+    }
+
+    if (duped) {
+      buffer[0] = buffer[0].replaceAll(tag, '')
+    } else if (deDupeKeys.length > 0) {
+      tags.push([tag, props, precedence])
+    } else {
+      tags.unshift([tag, props, precedence])
+    }
+
+    if (buffer[0].indexOf('</head>') !== -1) {
+      let insertTags
+      if (precedence === undefined) {
+        insertTags = tags.map(([tag]) => tag)
+      } else {
+        const precedences: string[] = []
+        insertTags = tags
+          .map(([tag, , precedence]) => {
+            let order = precedences.indexOf(precedence as string)
+            if (order === -1) {
+              precedences.push(precedence as string)
+              order = precedences.length - 1
+            }
+            return [tag, order] as [string, number]
+          })
+          .sort((a, b) => a[1] - b[1])
+          .map(([tag]) => tag)
+      }
+
+      insertTags.forEach((tag) => {
+        buffer[0] = buffer[0].replaceAll(tag, '')
+      })
+      buffer[0] = buffer[0].replace(/(?=<\/head>)/, insertTags.join(''))
+    }
+  }
+
+const returnWithoutSpecialBehavior = (tag: string, children: Child, props: Props) =>
+  raw(new JSXNode(tag, props, toArray(children ?? [])).toString())
+
+const documentMetadataTag = (tag: string, children: Child, props: Props, sort: boolean) => {
+  if ('itemProp' in props) {
+    return returnWithoutSpecialBehavior(tag, children, props)
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  let { precedence, blocking, ...restProps } = props
+  precedence = sort ? precedence ?? '' : undefined
+  if (sort) {
+    restProps[dataPrecedenceAttr] = precedence
+  }
+
+  const string = new JSXNode(tag, restProps, toArray(children || [])).toString()
+
+  if (string instanceof Promise) {
+    return string.then((resString) =>
+      raw(string, [
+        ...((resString as HtmlEscapedString).callbacks || []),
+        insertIntoHead(tag, resString, restProps, precedence),
+      ])
+    )
+  } else {
+    return raw(string, [insertIntoHead(tag, string, restProps, precedence)])
+  }
+}
+
+export const title: FC<PropsWithChildren> = ({ children, ...props }) => {
+  const nameSpaceContext = getNameSpaceContext()
+  if (nameSpaceContext) {
+    const context = useContext(nameSpaceContext)
+    if (context === 'svg' || context === 'head') {
+      return new JSXNode(
+        'title',
+        props,
+        toArray(children ?? []) as Child[]
+      ) as unknown as HtmlEscapedString
+    }
+  }
+
+  return documentMetadataTag('title', children, props, false)
+}
+export const script: FC<PropsWithChildren<IntrinsicElements['script']>> = ({
+  children,
+  ...props
+}) => {
+  const nameSpaceContext = getNameSpaceContext()
+  if (
+    ['src', 'async'].some((k) => !props[k]) ||
+    (nameSpaceContext && useContext(nameSpaceContext) === 'head')
+  ) {
+    return returnWithoutSpecialBehavior('script', children, props)
+  }
+
+  return documentMetadataTag('script', children, props, false)
+}
+
+export const style: FC<PropsWithChildren<IntrinsicElements['style']>> = ({
+  children,
+  ...props
+}) => {
+  if (!['href', 'precedence'].every((k) => k in props)) {
+    return returnWithoutSpecialBehavior('style', children, props)
+  }
+  props['data-href'] = props.href
+  delete props.href
+  return documentMetadataTag('style', children, props, true)
+}
+export const link: FC<PropsWithChildren<IntrinsicElements['link']>> = ({ children, ...props }) => {
+  if (
+    ['onLoad', 'onError'].some((k) => k in props) ||
+    (props.rel === 'stylesheet' && (!('precedence' in props) || 'disabled' in props))
+  ) {
+    return returnWithoutSpecialBehavior('link', children, props)
+  }
+  return documentMetadataTag('link', children, props, 'precedence' in props)
+}
+export const meta: FC<PropsWithChildren> = ({ children, ...props }) => {
+  const nameSpaceContext = getNameSpaceContext()
+  if (nameSpaceContext && useContext(nameSpaceContext) === 'head') {
+    return returnWithoutSpecialBehavior('meta', children, props)
+  }
+  return documentMetadataTag('meta', children, props, false)
+}
+
+const newJSXNode = (tag: string, { children, ...props }: PropsWithChildren<unknown>) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new JSXNode(tag, props, toArray(children ?? []) as Child[]) as any
+export const form: FC<
+  PropsWithChildren<{
+    action?: Function | string
+    method?: 'get' | 'post'
+  }>
+> = (props) => {
+  if (typeof props.action === 'function') {
+    props.action = PERMALINK in props.action ? (props.action[PERMALINK] as string) : undefined
+  }
+  return newJSXNode('form', props)
+}
+
+const formActionableElement = (
+  tag: string,
+  props: PropsWithChildren<{
+    formAction?: Function | string
+  }>
+) => {
+  if (typeof props.formAction === 'function') {
+    props.formAction =
+      PERMALINK in props.formAction ? (props.formAction[PERMALINK] as string) : undefined
+  }
+  return newJSXNode(tag, props)
+}
+
+export const input: (props: PropsWithChildren) => unknown = (props) =>
+  formActionableElement('input', props)
+export const button: (props: PropsWithChildren) => unknown = (props) =>
+  formActionableElement('button', props)
+
+```

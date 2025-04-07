@@ -1,0 +1,503 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/conninfo.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import type { AddressType } from '../../helper/conninfo'
+import { getConnInfo } from './conninfo'
+
+const createRandomBunServer = ({
+  address = Math.random().toString(),
+  port = Math.floor(Math.random() * (65535 + 1)),
+  family = 'IPv6',
+}: {
+  address?: string
+  port?: number
+  family?: AddressType | string
+} = {}) => {
+  return {
+    address,
+    port,
+    server: {
+      requestIP() {
+        return {
+          address,
+          family,
+          port,
+        }
+      },
+    },
+  }
+}
+describe('getConnInfo', () => {
+  it('Should info is valid', () => {
+    const { port, server, address } = createRandomBunServer()
+    const c = new Context(new Request('http://localhost/'), { env: server })
+    const info = getConnInfo(c)
+
+    expect(info.remote.port).toBe(port)
+    expect(info.remote.address).toBe(address)
+    expect(info.remote.addressType).toBe('IPv6')
+    expect(info.remote.transport).toBeUndefined()
+  })
+  it('Should getConnInfo works when env is { server: server }', () => {
+    const { port, server, address } = createRandomBunServer()
+    const c = new Context(new Request('http://localhost/'), { env: { server } })
+
+    const info = getConnInfo(c)
+
+    expect(info.remote.port).toBe(port)
+    expect(info.remote.address).toBe(address)
+    expect(info.remote.addressType).toBe('IPv6')
+    expect(info.remote.transport).toBeUndefined()
+  })
+  it('should return undefined when addressType is invalid string', () => {
+    const { server } = createRandomBunServer({ family: 'invalid' })
+    const c = new Context(new Request('http://localhost/'), { env: { server } })
+
+    const info = getConnInfo(c)
+
+    expect(info.remote.addressType).toBeUndefined()
+  })
+  it('Should throw error when user did not give server', () => {
+    const c = new Context(new Request('http://localhost/'), { env: {} })
+
+    expect(() => getConnInfo(c)).toThrowError(TypeError)
+  })
+  it('Should throw error when requestIP is not function', () => {
+    const c = new Context(new Request('http://localhost/'), {
+      env: {
+        requestIP: 0,
+      },
+    })
+    expect(() => getConnInfo(c)).toThrowError(TypeError)
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/conninfo.ts</source>
+<document_content>
+import type { Context } from '../..'
+import type { GetConnInfo } from '../../helper/conninfo'
+import { getBunServer } from './server'
+
+/**
+ * Get ConnInfo with Bun
+ * @param c Context
+ * @returns ConnInfo
+ */
+export const getConnInfo: GetConnInfo = (c: Context) => {
+  const server = getBunServer(c)
+
+  if (!server) {
+    throw new TypeError('env has to include the 2nd argument of fetch.')
+  }
+  if (typeof server.requestIP !== 'function') {
+    throw new TypeError('server.requestIP is not a function.')
+  }
+  const info = server.requestIP(c.req.raw)
+
+  return {
+    remote: {
+      address: info.address,
+      addressType: info.family === 'IPv6' || info.family === 'IPv4' ? info.family : undefined,
+      port: info.port,
+    },
+  }
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Bun Adapter for Hono.
+ */
+
+export { serveStatic } from './serve-static'
+export { bunFileSystemModule, toSSG } from './ssg'
+export { createBunWebSocket } from './websocket'
+export type { BunWebSocketData, BunWebSocketHandler } from './websocket'
+export { getConnInfo } from './conninfo'
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/serve-static.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { stat } from 'node:fs/promises'
+import { serveStatic as baseServeStatic } from '../../middleware/serve-static'
+import type { ServeStaticOptions } from '../../middleware/serve-static'
+import type { Env, MiddlewareHandler } from '../../types'
+
+export const serveStatic = <E extends Env = Env>(
+  options: ServeStaticOptions<E>
+): MiddlewareHandler => {
+  return async function serveStatic(c, next) {
+    const getContent = async (path: string) => {
+      path = path.startsWith('/') ? path : `./${path}`
+      // @ts-ignore
+      const file = Bun.file(path)
+      return (await file.exists()) ? file : null
+    }
+    const pathResolve = (path: string) => {
+      return path.startsWith('/') ? path : `./${path}`
+    }
+    const isDir = async (path: string) => {
+      let isDir
+      try {
+        const stats = await stat(path)
+        isDir = stats.isDirectory()
+      } catch {}
+      return isDir
+    }
+    return baseServeStatic({
+      ...options,
+      getContent,
+      pathResolve,
+      isDir,
+    })(c, next)
+  }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/server.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { getBunServer } from './server'
+import type { BunServer } from './server'
+
+describe('getBunServer', () => {
+  it('Should success to pick Server', () => {
+    const server = {} as BunServer
+
+    expect(getBunServer(new Context(new Request('http://localhost/'), { env: server }))).toBe(
+      server
+    )
+    expect(getBunServer(new Context(new Request('http://localhost/'), { env: { server } }))).toBe(
+      server
+    )
+  })
+})
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/server.ts</source>
+<document_content>
+/**
+ * Getting Bun Server Object for Bun adapters
+ * @module
+ */
+import type { Context } from '../../context'
+
+/**
+ * Bun Server Object
+ */
+export interface BunServer {
+  requestIP?: (req: Request) => {
+    address: string
+    family: string
+    port: number
+  }
+  upgrade<T>(
+    req: Request,
+    options?: {
+      data: T
+    }
+  ): boolean
+}
+
+/**
+ * Get Bun Server Object from Context
+ * @param c Context
+ * @returns Bun Server
+ */
+export const getBunServer = (c: Context): BunServer | undefined =>
+  ('server' in c.env ? c.env.server : c.env) as BunServer | undefined
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/ssg.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { toSSG as baseToSSG } from '../../helper/ssg'
+import type { FileSystemModule, ToSSGAdaptorInterface } from '../../helper/ssg'
+
+// @ts-ignore
+const { write } = Bun
+
+/**
+ * @experimental
+ * `bunFileSystemModule` is an experimental feature.
+ * The API might be changed.
+ */
+export const bunFileSystemModule: FileSystemModule = {
+  writeFile: async (path, data) => {
+    await write(path, data)
+  },
+  mkdir: async () => {},
+}
+
+/**
+ * @experimental
+ * `toSSG` is an experimental feature.
+ * The API might be changed.
+ */
+export const toSSG: ToSSGAdaptorInterface = async (app, options) => {
+  return baseToSSG(app, bunFileSystemModule, options)
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/websocket.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import type { BunWebSocketData, BunServerWebSocket } from './websocket'
+import { createWSContext, createBunWebSocket } from './websocket'
+
+describe('createWSContext()', () => {
+  it('Should send() and close() works', () => {
+    const send = vi.fn()
+    const close = vi.fn()
+    const ws = createWSContext({
+      send(data) {
+        send(data)
+      },
+      close(code, reason) {
+        close(code, reason)
+      },
+      data: {},
+    } as BunServerWebSocket<BunWebSocketData>)
+    ws.send('message')
+    expect(send).toBeCalled()
+    ws.close()
+    expect(close).toBeCalled()
+  })
+})
+describe('upgradeWebSocket()', () => {
+  it('Should throw error when server is null', async () => {
+    const { upgradeWebSocket } = createBunWebSocket()
+    const run = async () =>
+      await upgradeWebSocket(() => ({}))(
+        new Context(new Request('http://localhost'), {
+          env: {
+            server: null,
+          },
+        }),
+        () => Promise.resolve()
+      )
+
+    await expect(run).rejects.toThrowError(/env has/)
+  })
+  it('Should response null when upgraded', async () => {
+    const { upgradeWebSocket } = createBunWebSocket()
+    const upgraded = await upgradeWebSocket(() => ({}))(
+      new Context(new Request('http://localhost'), {
+        env: {
+          upgrade: () => true,
+        },
+      }),
+      () => Promise.resolve()
+    )
+    expect(upgraded).toBeTruthy()
+  })
+  it('Should response undefined when upgrade failed', async () => {
+    const { upgradeWebSocket } = createBunWebSocket()
+    const upgraded = await upgradeWebSocket(() => ({}))(
+      new Context(new Request('http://localhost'), {
+        env: {
+          upgrade: () => undefined,
+        },
+      }),
+      () => Promise.resolve()
+    )
+    expect(upgraded).toBeFalsy()
+  })
+})
+describe('createBunWebSocket()', () => {
+  beforeAll(() => {
+    // @ts-expect-error patch global
+    globalThis.CloseEvent = Event
+  })
+  afterAll(() => {
+    // @ts-expect-error patch global
+    delete globalThis.CloseEvent
+  })
+  it('Should events are called', async () => {
+    const { websocket, upgradeWebSocket } = createBunWebSocket()
+
+    const open = vi.fn()
+    const message = vi.fn()
+    const close = vi.fn()
+
+    const ws = {
+      data: {
+        events: {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onOpen(evt, ws) {
+            open()
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onMessage(evt, ws) {
+            message()
+            if (evt.data instanceof ArrayBuffer) {
+              receivedArrayBuffer = evt.data
+            }
+          },
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onClose(evt, ws) {
+            close()
+          },
+        },
+      },
+    } as BunServerWebSocket<BunWebSocketData>
+
+    let receivedArrayBuffer: ArrayBuffer | undefined = undefined
+    await upgradeWebSocket(() => ({}))(
+      new Context(new Request('http://localhost'), {
+        env: {
+          upgrade() {
+            return true
+          },
+        },
+      }),
+      () => Promise.resolve()
+    )
+
+    websocket.open(ws)
+    expect(open).toBeCalled()
+
+    websocket.message(ws, 'message')
+    expect(message).toBeCalled()
+
+    websocket.message(ws, new Uint8Array(16))
+    expect(receivedArrayBuffer).toBeInstanceOf(ArrayBuffer)
+    expect(receivedArrayBuffer!.byteLength).toBe(16)
+
+    websocket.close(ws)
+    expect(close).toBeCalled()
+  })
+})
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/bun/websocket.ts</source>
+<document_content>
+import type { UpgradeWebSocket, WSEvents, WSMessageReceive } from '../../helper/websocket'
+import { createWSMessageEvent, defineWebSocketHelper, WSContext } from '../../helper/websocket'
+import { getBunServer } from './server'
+
+/**
+ * @internal
+ */
+export interface BunServerWebSocket<T> {
+  send(data: string | ArrayBuffer | Uint8Array, compress?: boolean): void
+  close(code?: number, reason?: string): void
+  data: T
+  readyState: 0 | 1 | 2 | 3
+}
+
+export interface BunWebSocketHandler<T> {
+  open(ws: BunServerWebSocket<T>): void
+  close(ws: BunServerWebSocket<T>, code?: number, reason?: string): void
+  message(ws: BunServerWebSocket<T>, message: string | { buffer: ArrayBufferLike }): void
+}
+interface CreateWebSocket<T> {
+  upgradeWebSocket: UpgradeWebSocket<T>
+  websocket: BunWebSocketHandler<BunWebSocketData>
+}
+export interface BunWebSocketData {
+  events: WSEvents
+  url: URL
+  protocol: string
+}
+
+/**
+ * @internal
+ */
+export const createWSContext = (ws: BunServerWebSocket<BunWebSocketData>): WSContext => {
+  return new WSContext({
+    send: (source, options) => {
+      ws.send(source, options?.compress)
+    },
+    raw: ws,
+    readyState: ws.readyState,
+    url: ws.data.url,
+    protocol: ws.data.protocol,
+    close(code, reason) {
+      ws.close(code, reason)
+    },
+  })
+}
+
+export const createBunWebSocket = <T>(): CreateWebSocket<T> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upgradeWebSocket: UpgradeWebSocket<any> = defineWebSocketHelper((c, events) => {
+    const server = getBunServer(c)
+    if (!server) {
+      throw new TypeError('env has to include the 2nd argument of fetch.')
+    }
+    const upgradeResult = server.upgrade<BunWebSocketData>(c.req.raw, {
+      data: {
+        events,
+        url: new URL(c.req.url),
+        protocol: c.req.url,
+      },
+    })
+    if (upgradeResult) {
+      return new Response(null)
+    }
+    return // failed
+  })
+  const websocket: BunWebSocketHandler<BunWebSocketData> = {
+    open(ws) {
+      const websocketListeners = ws.data.events
+      if (websocketListeners.onOpen) {
+        websocketListeners.onOpen(new Event('open'), createWSContext(ws))
+      }
+    },
+    close(ws, code, reason) {
+      const websocketListeners = ws.data.events
+      if (websocketListeners.onClose) {
+        websocketListeners.onClose(
+          new CloseEvent('close', {
+            code,
+            reason,
+          }),
+          createWSContext(ws)
+        )
+      }
+    },
+    message(ws, message) {
+      const websocketListeners = ws.data.events
+      if (websocketListeners.onMessage) {
+        const normalizedReceiveData =
+          typeof message === 'string' ? message : (message.buffer satisfies WSMessageReceive)
+
+        websocketListeners.onMessage(
+          createWSMessageEvent(normalizedReceiveData),
+          createWSContext(ws)
+        )
+      }
+    },
+  }
+  return {
+    upgradeWebSocket,
+    websocket,
+  }
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,86 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/middleware/powered-by/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { poweredBy } from '.'
+
+describe('Powered by Middleware', () => {
+  const app = new Hono()
+
+  app.use('/poweredBy/*', poweredBy())
+  app.get('/poweredBy', (c) => c.text('root'))
+
+  app.use('/poweredBy2/*', poweredBy())
+  app.use('/poweredBy2/*', poweredBy())
+  app.get('/poweredBy2', (c) => c.text('root'))
+
+  app.use('/poweredBy3/*', poweredBy({ serverName: 'Foo' }))
+  app.get('/poweredBy3', (c) => c.text('root'))
+
+  it('Should return with X-Powered-By header', async () => {
+    const res = await app.request('http://localhost/poweredBy')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Powered-By')).toBe('Hono')
+  })
+
+  it('Should not return duplicate values', async () => {
+    const res = await app.request('http://localhost/poweredBy2')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Powered-By')).toBe('Hono')
+  })
+
+  it('Should return custom serverName', async () => {
+    const res = await app.request('http://localhost/poweredBy3')
+    expect(res).not.toBeNull()
+    expect(res.status).toBe(200)
+    expect(res.headers.get('X-Powered-By')).toBe('Foo')
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/middleware/powered-by/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Powered By Middleware for Hono.
+ */
+import type { MiddlewareHandler } from '../../types'
+
+type PoweredByOptions = {
+  /**
+   * The value for X-Powered-By header.
+   * @default Hono
+   */
+  serverName?: string
+}
+
+/**
+ * Powered By Middleware for Hono.
+ *
+ * @param options - The options for the Powered By Middleware.
+ * @returns {MiddlewareHandler} The middleware handler function.
+ *
+ * @example
+ * ```ts
+ * import { poweredBy } from 'hono/powered-by'
+ *
+ * const app = new Hono()
+ *
+ * app.use(poweredBy()) // With options: poweredBy({ serverName: "My Server" })
+ * ```
+ */
+export const poweredBy = (options?: PoweredByOptions): MiddlewareHandler => {
+  return async function poweredBy(c, next) {
+    await next()
+    c.res.headers.set('X-Powered-By', options?.serverName ?? 'Hono')
+  }
+}
+
+</document_content>
+</document>
+</documents>

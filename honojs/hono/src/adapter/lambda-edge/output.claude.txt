@@ -1,0 +1,405 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/lambda-edge/conninfo.test.ts</source>
+<document_content>
+import { Context } from '../../context'
+import { getConnInfo } from './conninfo'
+import type { CloudFrontEdgeEvent } from './handler'
+
+describe('getConnInfo', () => {
+  it('Should info is valid', () => {
+    const clientIp = Math.random().toString()
+    const env = {
+      event: {
+        Records: [
+          {
+            cf: {
+              request: {
+                clientIp,
+              },
+            },
+          },
+        ],
+      } as CloudFrontEdgeEvent,
+    }
+
+    const c = new Context(new Request('http://localhost/'), { env })
+    const info = getConnInfo(c)
+
+    expect(info.remote.address).toBe(clientIp)
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/lambda-edge/conninfo.ts</source>
+<document_content>
+import type { Context } from '../../context'
+import type { GetConnInfo } from '../../helper/conninfo'
+import type { CloudFrontEdgeEvent } from './handler'
+
+type Env = {
+  Bindings: {
+    event: CloudFrontEdgeEvent
+  }
+}
+
+export const getConnInfo: GetConnInfo = (c: Context<Env>) => ({
+  remote: {
+    address: c.env.event.Records[0].cf.request.clientIp,
+  },
+})
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/lambda-edge/handler.test.ts</source>
+<document_content>
+import { describe } from 'vitest'
+import { setCookie } from '../../helper/cookie'
+import { Hono } from '../../hono'
+import { encodeBase64 } from '../../utils/encode'
+import type { CloudFrontEdgeEvent } from './handler'
+import { createBody, handle, isContentTypeBinary } from './handler'
+
+describe('isContentTypeBinary', () => {
+  it('Should determine whether it is binary', () => {
+    expect(isContentTypeBinary('image/png')).toBe(true)
+    expect(isContentTypeBinary('font/woff2')).toBe(true)
+    expect(isContentTypeBinary('image/svg+xml')).toBe(false)
+    expect(isContentTypeBinary('image/svg+xml; charset=UTF-8')).toBe(false)
+    expect(isContentTypeBinary('text/plain')).toBe(false)
+    expect(isContentTypeBinary('text/plain; charset=UTF-8')).toBe(false)
+    expect(isContentTypeBinary('text/css')).toBe(false)
+    expect(isContentTypeBinary('text/javascript')).toBe(false)
+    expect(isContentTypeBinary('application/json')).toBe(false)
+    expect(isContentTypeBinary('application/ld+json')).toBe(false)
+    expect(isContentTypeBinary('application/json')).toBe(false)
+  })
+})
+
+describe('createBody', () => {
+  it('Should the request be a GET or HEAD, the Request must not include a Body', () => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode('test')
+    const body = {
+      action: 'read-only',
+      data: encodeBase64(data),
+      encoding: 'base64',
+      inputTruncated: false,
+    }
+
+    expect(createBody('GET', body)).toEqual(undefined)
+    expect(createBody('GET', body)).not.toEqual(data)
+    expect(createBody('HEAD', body)).toEqual(undefined)
+    expect(createBody('HEAD', body)).not.toEqual(data)
+    expect(createBody('POST', body)).toEqual(data)
+    expect(createBody('POST', body)).not.toEqual(undefined)
+  })
+})
+
+describe('handle', () => {
+  const cloudFrontEdgeEvent: CloudFrontEdgeEvent = {
+    Records: [
+      {
+        cf: {
+          config: {
+            distributionDomainName: 'd111111abcdef8.cloudfront.net',
+            distributionId: 'EDFDVBD6EXAMPLE',
+            eventType: 'viewer-request',
+            requestId: '4TyzHTaYWb1GX1qTfsHhEqV6HUDd_BzoBZnwfnvQc_1oF26ClkoUSEQ==',
+          },
+          request: {
+            clientIp: '1.2.3.4',
+            headers: {
+              host: [
+                {
+                  key: 'Host',
+                  value: 'hono.dev',
+                },
+              ],
+              accept: [
+                {
+                  key: 'accept',
+                  value: '*/*',
+                },
+              ],
+            },
+            method: 'GET',
+            querystring: '',
+            uri: '/test-path',
+          },
+        },
+      },
+    ],
+  }
+
+  it('Should support alternate domain names', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      return c.text(c.req.url)
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.body).toBe('https://hono.dev/test-path')
+  })
+
+  it('Should support multiple cookies', async () => {
+    const app = new Hono()
+    app.get('/test-path', (c) => {
+      setCookie(c, 'cookie1', 'value1')
+      setCookie(c, 'cookie2', 'value2')
+      return c.text('')
+    })
+    const handler = handle(app)
+
+    const res = await handler(cloudFrontEdgeEvent)
+
+    expect(res.headers).toEqual({
+      'content-type': [
+        {
+          key: 'content-type',
+          value: 'text/plain; charset=UTF-8',
+        },
+      ],
+      'set-cookie': [
+        {
+          key: 'set-cookie',
+          value: 'cookie1=value1; Path=/',
+        },
+        {
+          key: 'set-cookie',
+          value: 'cookie2=value2; Path=/',
+        },
+      ],
+    })
+  })
+})
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/lambda-edge/handler.ts</source>
+<document_content>
+import crypto from 'node:crypto'
+import type { Hono } from '../../hono'
+
+import { decodeBase64, encodeBase64 } from '../../utils/encode'
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+globalThis.crypto ??= crypto
+
+interface CloudFrontHeader {
+  key: string
+  value: string
+}
+
+interface CloudFrontHeaders {
+  [name: string]: CloudFrontHeader[]
+}
+
+interface CloudFrontCustomOrigin {
+  customHeaders: CloudFrontHeaders
+  domainName: string
+  keepaliveTimeout: number
+  path: string
+  port: number
+  protocol: string
+  readTimeout: number
+  sslProtocols: string[]
+}
+// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
+interface CloudFrontS3Origin {
+  authMethod: 'origin-access-identity' | 'none'
+  customHeaders: CloudFrontHeaders
+  domainName: string
+  path: string
+  region: string
+}
+type CloudFrontOrigin =
+  | { s3: CloudFrontS3Origin; custom?: never }
+  | { custom: CloudFrontCustomOrigin; s3?: never }
+
+export interface CloudFrontRequest {
+  clientIp: string
+  headers: CloudFrontHeaders
+  method: string
+  querystring: string
+  uri: string
+  body?: {
+    inputTruncated: boolean
+    action: string
+    encoding: string
+    data: string
+  }
+  origin?: CloudFrontOrigin
+}
+
+export interface CloudFrontResponse {
+  headers: CloudFrontHeaders
+  status: string
+  statusDescription?: string
+}
+
+export interface CloudFrontConfig {
+  distributionDomainName: string
+  distributionId: string
+  eventType: string
+  requestId: string
+}
+
+interface CloudFrontEvent {
+  cf: {
+    config: CloudFrontConfig
+    request: CloudFrontRequest
+    response?: CloudFrontResponse
+  }
+}
+
+export interface CloudFrontEdgeEvent {
+  Records: CloudFrontEvent[]
+}
+
+type CloudFrontContext = {}
+
+export interface Callback {
+  (err: Error | null, result?: CloudFrontRequest | CloudFrontResult): void
+}
+
+// https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-generating-http-responses-in-requests.html#lambda-generating-http-responses-programming-model
+interface CloudFrontResult {
+  status: string
+  statusDescription?: string
+  headers?: {
+    [header: string]: {
+      key: string
+      value: string
+    }[]
+  }
+  body?: string
+  bodyEncoding?: 'text' | 'base64'
+}
+
+/**
+ * Accepts events from 'Lambda@Edge' event
+ * https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/lambda-event-structure.html
+ */
+const convertHeaders = (headers: Headers): CloudFrontHeaders => {
+  const cfHeaders: CloudFrontHeaders = {}
+  headers.forEach((value, key) => {
+    cfHeaders[key.toLowerCase()] = [
+      ...(cfHeaders[key.toLowerCase()] || []),
+      { key: key.toLowerCase(), value },
+    ]
+  })
+  return cfHeaders
+}
+
+export const handle = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  app: Hono<any>
+): ((
+  event: CloudFrontEdgeEvent,
+  context?: CloudFrontContext,
+  callback?: Callback
+) => Promise<CloudFrontResult>) => {
+  return async (event, context?, callback?) => {
+    const res = await app.fetch(createRequest(event), {
+      event,
+      context,
+      callback: (err: Error | null, result?: CloudFrontResult | CloudFrontRequest) => {
+        callback?.(err, result)
+      },
+      config: event.Records[0].cf.config,
+      request: event.Records[0].cf.request,
+      response: event.Records[0].cf.response,
+    })
+    return createResult(res)
+  }
+}
+
+const createResult = async (res: Response): Promise<CloudFrontResult> => {
+  const isBase64Encoded = isContentTypeBinary(res.headers.get('content-type') || '')
+  const body = isBase64Encoded ? encodeBase64(await res.arrayBuffer()) : await res.text()
+
+  return {
+    status: res.status.toString(),
+    headers: convertHeaders(res.headers),
+    body,
+    ...(isBase64Encoded && { bodyEncoding: 'base64' }),
+  }
+}
+
+const createRequest = (event: CloudFrontEdgeEvent): Request => {
+  const queryString = event.Records[0].cf.request.querystring
+  const host =
+    event.Records[0].cf.request.headers?.host?.[0]?.value ||
+    event.Records[0].cf.config.distributionDomainName
+  const urlPath = `https://${host}${event.Records[0].cf.request.uri}`
+  const url = queryString ? `${urlPath}?${queryString}` : urlPath
+
+  const headers = new Headers()
+  Object.entries(event.Records[0].cf.request.headers).forEach(([k, v]) => {
+    v.forEach((header) => headers.set(k, header.value))
+  })
+
+  const requestBody = event.Records[0].cf.request.body
+  const method = event.Records[0].cf.request.method
+  const body = createBody(method, requestBody)
+
+  return new Request(url, {
+    headers,
+    method,
+    body,
+  })
+}
+
+export const createBody = (
+  method: string,
+  requestBody: CloudFrontRequest['body']
+): string | Uint8Array | undefined => {
+  if (!requestBody || !requestBody.data) {
+    return undefined
+  }
+  if (method === 'GET' || method === 'HEAD') {
+    return undefined
+  }
+  if (requestBody.encoding === 'base64') {
+    return decodeBase64(requestBody.data)
+  }
+  return requestBody.data
+}
+
+export const isContentTypeBinary = (contentType: string): boolean => {
+  return !/^(text\/(plain|html|css|javascript|csv).*|application\/(.*json|.*xml).*|image\/svg\+xml.*)$/.test(
+    contentType
+  )
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/adapter/lambda-edge/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Lambda@Edge Adapter for Hono.
+ */
+
+export { handle } from './handler'
+export { getConnInfo } from './conninfo'
+export type {
+  Callback,
+  CloudFrontConfig,
+  CloudFrontRequest,
+  CloudFrontResponse,
+  CloudFrontEdgeEvent,
+} from './handler'
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,1297 @@
+/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/common.case.test.tsx
+```
+/** @jsxImportSource ../../jsx */
+import type {
+  Style as StyleComponent,
+  css as cssHelper,
+  keyframes as keyframesHelper,
+  rawCssString as rawCssStringHelper,
+  viewTransition as viewTransitionHelper,
+} from './index'
+
+interface Support {
+  nest: boolean
+}
+export const renderTest = (
+  getEnv: () => {
+    css: typeof cssHelper
+    keyframes: typeof keyframesHelper
+    viewTransition: typeof viewTransitionHelper
+    rawCssString: typeof rawCssStringHelper
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    toString: (template: any) => Promise<string>
+    Style: typeof StyleComponent
+    support: Support
+  }
+) => {
+  const { support } = getEnv()
+
+  let css: typeof cssHelper
+  let keyframes: typeof keyframesHelper
+  let viewTransition: typeof viewTransitionHelper
+  let rawCssString: typeof rawCssStringHelper
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let toString: (template: any) => Promise<string>
+  let Style: typeof StyleComponent
+  beforeEach(() => {
+    ;({ css, keyframes, viewTransition, rawCssString, toString, Style } = getEnv())
+  })
+
+  describe('render css', () => {
+    it('Should render CSS styles with JSX', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with keyframes', async () => {
+      const animation = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+      const headerClass = css`
+        background-color: blue;
+        animation: ${animation} 1s ease-in-out;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1580801783{background-color:blue;animation:css-9294673 1s ease-in-out}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-1580801783">Hello!</h1>'
+      )
+    })
+
+    it('Should not output the same class name multiple times.', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const headerClass2 = css`
+        background-color: blue;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+          <h1 class={headerClass2}>Hello2!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1><h1 class="css-2458908649">Hello2!</h1>'
+      )
+    })
+
+    it('Should render CSS with variable', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${"I'm a variable!"}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-4027435072{background-color:blue;content:\'I\\\'m a variable!\'}</style><h1 class="css-4027435072">Hello!</h1>'
+      )
+    })
+
+    it('Should escape </style>', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${'</style>'}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-372954897{background-color:blue;content:\'<\\/style>\'}</style><h1 class="css-372954897">Hello!</h1>'
+      )
+    })
+
+    it('Should not escape URL', async () => {
+      const headerClass = css`
+        background-color: blue;
+        background: url('${'http://www.example.com/path/to/file.jpg'}');
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1321888780{background-color:blue;background:url(\'http://www.example.com/path/to/file.jpg\')}</style><h1 class="css-1321888780">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with escaped variable', async () => {
+      const headerClass = css`
+        background-color: blue;
+        content: '${rawCssString('say "Hello!"')}';
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2238574885{background-color:blue;content:\'say "Hello!"\'}</style><h1 class="css-2238574885">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with number', async () => {
+      const headerClass = css`
+        background-color: blue;
+        font-size: ${1}rem;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1847536026{background-color:blue;font-size:1rem}</style><h1 class="css-1847536026">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with array', async () => {
+      const animation = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+      const headerClass = css`
+        background-color: blue;
+        animation: ${animation} 1s ease-in-out;
+      `
+      const extendedHeaderClass = css`
+        ${headerClass}
+        color: red;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={extendedHeaderClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2558359670{background-color:blue;animation:css-9294673 1s ease-in-out;color:red}@keyframes css-9294673{from{opacity:0}to{opacity:1}}</style><h1 class="css-2558359670">Hello!</h1>'
+      )
+    })
+
+    it.runIf(support.nest)(
+      'Should be used as a class name for syntax `${className} {`',
+      async () => {
+        const headerClass = css`
+          font-weight: bold;
+        `
+        const containerClass = css`
+          ${headerClass} {
+            h1 {
+              color: red;
+            }
+          }
+        `
+        const template = (
+          <>
+            <Style />
+            <div class={containerClass}>
+              <h1 class={headerClass}>Hello!</h1>
+            </div>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-4220297002{.css-1032195302{h1{color:red}}}.css-1032195302{font-weight:bold}</style><div class="css-4220297002"><h1 class="css-1032195302">Hello!</h1></div>'
+        )
+      }
+    )
+
+    it('Should be inserted to global if style string starts with :-hono-root', async () => {
+      const globalClass = css`
+        :-hono-global {
+          html {
+            color: red;
+          }
+          body {
+            display: flex;
+          }
+        }
+      `
+      const template = (
+        <>
+          <Style />
+          <div class={globalClass}>
+            <h1>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}</style><div class=""><h1>Hello!</h1></div>'
+      )
+    })
+
+    it.runIf(support.nest)(
+      'Should be inserted to global if style string starts with :-hono-root and extends class name',
+      async () => {
+        const headerClass = css`
+          display: flex;
+        `
+        const specialHeaderClass = css`
+          :-hono-global {
+            ${headerClass} {
+              h1 {
+                color: red;
+              }
+            }
+          }
+        `
+        const template = (
+          <>
+            <Style />
+            <div class={specialHeaderClass}>
+              <h1>Hello!</h1>
+            </div>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-3980466870{h1{color:red}}.css-3980466870{display:flex}</style><div class="css-3980466870"><h1>Hello!</h1></div>'
+        )
+      }
+    )
+
+    it('Should be inserted as global css if passed css`` to Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            html {
+              color: red;
+            }
+            body {
+              display: flex;
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    it('Should be ignored :-hono-root inside Style component', async () => {
+      const headerClass = css`
+        font-size: 1rem;
+      `
+      const template = (
+        <>
+          <Style>{css`
+            :-hono-global {
+              html {
+                color: red;
+              }
+              body {
+                display: flex;
+              }
+            }
+          `}</Style>
+          <div>
+            <h1 class={headerClass}>Hello!</h1>
+          </div>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">html{color:red}body{display:flex}.css-1740067317{font-size:1rem}</style><div><h1 class="css-1740067317">Hello!</h1></div>'
+      )
+    })
+
+    describe('viewTransition', () => {
+      it('Should render CSS with unique view-transition-name', async () => {
+        const transition = viewTransition()
+        const template = (
+          <>
+            <Style />
+            <h1 class={transition}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1644952339{view-transition-name:css-1644952339}</style><h1 class="css-1644952339">Hello!</h1>'
+        )
+      })
+
+      it('Should render CSS with css and keyframes', async () => {
+        const kf = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+        const transition = viewTransition(css`
+          ::view-transition-old() {
+            animation-name: ${kf};
+          }
+          ::view-transition-new() {
+            animation-name: ${kf};
+          }
+        `)
+        const headerClass = css`
+          ${transition}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1245070278{view-transition-name:css-399742870;background-color:blue}@keyframes css-9294673{from{opacity:0}to{opacity:1}}::view-transition-old(css-399742870){animation-name:css-9294673}::view-transition-new(css-399742870){animation-name:css-9294673}</style><h1 class="css-1245070278">Hello!</h1>'
+        )
+      })
+
+      it('Should works as a template tag function', async () => {
+        const kf = keyframes`
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      `
+        const transition = viewTransition`
+          ::view-transition-old() {
+            animation-name: ${kf};
+          }
+          ::view-transition-new() {
+            animation-name: ${kf};
+          }
+        `
+        const headerClass = css`
+          ${transition}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-1245070278{view-transition-name:css-399742870;background-color:blue}@keyframes css-9294673{from{opacity:0}to{opacity:1}}::view-transition-old(css-399742870){animation-name:css-9294673}::view-transition-new(css-399742870){animation-name:css-9294673}</style><h1 class="css-1245070278">Hello!</h1>'
+        )
+      })
+    })
+
+    it.runIf(support.nest)('Should render sub CSS with keyframe', async () => {
+      const headerClass = css`
+        background-color: blue;
+        ${[1, 2].map(
+          (i) =>
+            css`
+              :nth-child(${i}) {
+                color: red;
+              }
+            `
+        )}
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-1539881271{background-color:blue;:nth-child(1){color:red}:nth-child(2){color:red}}</style><h1 class="css-1539881271">Hello!</h1>'
+      )
+    })
+
+    it('Should be generated deferent class name for deferent first line comment even if the content is the same', async () => {
+      const headerClassA = css`
+        /* class A */
+        display: flex;
+      `
+      const headerClassB = css`
+        /* class B */
+        display: flex;
+      `
+      const template = (
+        <>
+          <Style />
+          <h1 class={headerClassA}>Hello!</h1>
+          <h1 class={headerClassB}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3170754153{display:flex}.css-896513246{display:flex}</style><h1 class="css-3170754153">Hello!</h1><h1 class="css-896513246">Hello!</h1>'
+      )
+    })
+
+    describe('Booleans, Null, and Undefined Are Ignored', () => {
+      it.each([true, false, undefined, null])('%s', async (value) => {
+        const headerClass = css`
+          ${value}
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+        )
+      })
+
+      it('falsy value', async () => {
+        const value = 0
+        const headerClass = css`
+          padding: ${value};
+        `
+        const template = (
+          <>
+            <Style />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css">.css-478287868{padding:0}</style><h1 class="css-478287868">Hello!</h1>'
+        )
+      })
+
+      it('Should render CSS styles with CSP nonce', async () => {
+        const headerClass = css`
+          background-color: blue;
+        `
+        const template = (
+          <>
+            <Style nonce='1234' />
+            <h1 class={headerClass}>Hello!</h1>
+          </>
+        )
+        expect(await toString(template)).toBe(
+          '<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+        )
+      })
+    })
+  })
+}
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/common.ts
+```typescript
+// provide utility functions for css helper both on server and client
+export const PSEUDO_GLOBAL_SELECTOR = ':-hono-global'
+export const isPseudoGlobalSelectorRe = new RegExp(`^${PSEUDO_GLOBAL_SELECTOR}{(.*)}$`)
+export const DEFAULT_STYLE_ID = 'hono-css'
+
+export const SELECTOR: unique symbol = Symbol()
+export const CLASS_NAME: unique symbol = Symbol()
+export const STYLE_STRING: unique symbol = Symbol()
+export const SELECTORS: unique symbol = Symbol()
+export const EXTERNAL_CLASS_NAMES: unique symbol = Symbol()
+const CSS_ESCAPED: unique symbol = Symbol()
+
+export interface CssClassName {
+  [SELECTOR]: string
+  [CLASS_NAME]: string
+  [STYLE_STRING]: string
+  [SELECTORS]: CssClassName[]
+  [EXTERNAL_CLASS_NAMES]: string[]
+}
+
+export const IS_CSS_ESCAPED = Symbol()
+
+interface CssEscapedString {
+  [CSS_ESCAPED]: string
+}
+
+/**
+ * @experimental
+ * `rawCssString` is an experimental feature.
+ * The API might be changed.
+ */
+export const rawCssString = (value: string): CssEscapedString => {
+  return {
+    [CSS_ESCAPED]: value,
+  }
+}
+
+/**
+ * Used the goober'code as a reference:
+ * https://github.com/cristianbote/goober/blob/master/src/core/to-hash.js
+ * MIT License, Copyright (c) 2019 Cristian Bote
+ */
+const toHash = (str: string): string => {
+  let i = 0,
+    out = 11
+  while (i < str.length) {
+    out = (101 * out + str.charCodeAt(i++)) >>> 0
+  }
+  return 'css-' + out
+}
+
+const cssStringReStr: string = [
+  '"(?:(?:\\\\[\\s\\S]|[^"\\\\])*)"', // double quoted string
+
+  "'(?:(?:\\\\[\\s\\S]|[^'\\\\])*)'", // single quoted string
+].join('|')
+const minifyCssRe: RegExp = new RegExp(
+  [
+    '(' + cssStringReStr + ')', // $1: quoted string
+
+    '(?:' +
+      [
+        '^\\s+', // head whitespace
+        '\\/\\*.*?\\*\\/\\s*', // multi-line comment
+        '\\/\\/.*\\n\\s*', // single-line comment
+        '\\s+$', // tail whitespace
+      ].join('|') +
+      ')',
+
+    '\\s*;\\s*(}|$)\\s*', // $2: trailing semicolon
+    '\\s*([{};:,])\\s*', // $3: whitespace around { } : , ;
+    '(\\s)\\s+', // $4: 2+ spaces
+  ].join('|'),
+  'g'
+)
+
+export const minify = (css: string): string => {
+  return css.replace(minifyCssRe, (_, $1, $2, $3, $4) => $1 || $2 || $3 || $4 || '')
+}
+
+type CssVariableBasicType =
+  | CssClassName
+  | CssEscapedString
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+type CssVariableAsyncType = Promise<CssVariableBasicType>
+type CssVariableArrayType = (CssVariableBasicType | CssVariableAsyncType)[]
+export type CssVariableType = CssVariableBasicType | CssVariableAsyncType | CssVariableArrayType
+
+export const buildStyleString = (
+  strings: TemplateStringsArray,
+  values: CssVariableType[]
+): [string, string, CssClassName[], string[]] => {
+  const selectors: CssClassName[] = []
+  const externalClassNames: string[] = []
+
+  const label = strings[0].match(/^\s*\/\*(.*?)\*\//)?.[1] || ''
+  let styleString = ''
+  for (let i = 0, len = strings.length; i < len; i++) {
+    styleString += strings[i]
+    let vArray = values[i]
+    if (typeof vArray === 'boolean' || vArray === null || vArray === undefined) {
+      continue
+    }
+
+    if (!Array.isArray(vArray)) {
+      vArray = [vArray]
+    }
+    for (let j = 0, len = vArray.length; j < len; j++) {
+      let value = vArray[j]
+      if (typeof value === 'boolean' || value === null || value === undefined) {
+        continue
+      }
+      if (typeof value === 'string') {
+        if (/([\\"'\/])/.test(value)) {
+          styleString += value.replace(/([\\"']|(?<=<)\/)/g, '\\$1')
+        } else {
+          styleString += value
+        }
+      } else if (typeof value === 'number') {
+        styleString += value
+      } else if ((value as CssEscapedString)[CSS_ESCAPED]) {
+        styleString += (value as CssEscapedString)[CSS_ESCAPED]
+      } else if ((value as CssClassName)[CLASS_NAME].startsWith('@keyframes ')) {
+        selectors.push(value as CssClassName)
+        styleString += ` ${(value as CssClassName)[CLASS_NAME].substring(11)} `
+      } else {
+        if (strings[i + 1]?.match(/^\s*{/)) {
+          // assume this value is a class name
+          selectors.push(value as CssClassName)
+          value = `.${(value as CssClassName)[CLASS_NAME]}`
+        } else {
+          selectors.push(...(value as CssClassName)[SELECTORS])
+          externalClassNames.push(...(value as CssClassName)[EXTERNAL_CLASS_NAMES])
+          value = (value as CssClassName)[STYLE_STRING]
+          const valueLen = value.length
+          if (valueLen > 0) {
+            const lastChar = value[valueLen - 1]
+            if (lastChar !== ';' && lastChar !== '}') {
+              value += ';'
+            }
+          }
+        }
+        styleString += `${value || ''}`
+      }
+    }
+  }
+
+  return [label, minify(styleString), selectors, externalClassNames]
+}
+
+export const cssCommon = (
+  strings: TemplateStringsArray,
+  values: CssVariableType[]
+): CssClassName => {
+  let [label, thisStyleString, selectors, externalClassNames] = buildStyleString(strings, values)
+  const isPseudoGlobal = isPseudoGlobalSelectorRe.exec(thisStyleString)
+  if (isPseudoGlobal) {
+    thisStyleString = isPseudoGlobal[1]
+  }
+  const selector = (isPseudoGlobal ? PSEUDO_GLOBAL_SELECTOR : '') + toHash(label + thisStyleString)
+  const className = (
+    isPseudoGlobal ? selectors.map((s) => s[CLASS_NAME]) : [selector, ...externalClassNames]
+  ).join(' ')
+
+  return {
+    [SELECTOR]: selector,
+    [CLASS_NAME]: className,
+    [STYLE_STRING]: thisStyleString,
+    [SELECTORS]: selectors,
+    [EXTERNAL_CLASS_NAMES]: externalClassNames,
+  }
+}
+
+export const cxCommon = (
+  args: (string | boolean | null | undefined | CssClassName)[]
+): (string | boolean | null | undefined | CssClassName)[] => {
+  for (let i = 0, len = args.length; i < len; i++) {
+    const arg = args[i]
+    if (typeof arg === 'string') {
+      args[i] = {
+        [SELECTOR]: '',
+        [CLASS_NAME]: '',
+        [STYLE_STRING]: '',
+        [SELECTORS]: [],
+        [EXTERNAL_CLASS_NAMES]: [arg],
+      }
+    }
+  }
+
+  return args
+}
+
+export const keyframesCommon = (
+  strings: TemplateStringsArray,
+  ...values: CssVariableType[]
+): CssClassName => {
+  const [label, styleString] = buildStyleString(strings, values)
+  return {
+    [SELECTOR]: '',
+    [CLASS_NAME]: `@keyframes ${toHash(label + styleString)}`,
+    [STYLE_STRING]: styleString,
+    [SELECTORS]: [],
+    [EXTERNAL_CLASS_NAMES]: [],
+  }
+}
+
+type ViewTransitionType = {
+  (strings: TemplateStringsArray, values: CssVariableType[]): CssClassName
+  (content: CssClassName): CssClassName
+  (): CssClassName
+}
+
+let viewTransitionNameIndex = 0
+export const viewTransitionCommon: ViewTransitionType = ((
+  strings: TemplateStringsArray | CssClassName | undefined,
+  values: CssVariableType[]
+): CssClassName => {
+  if (!strings) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    strings = [`/* h-v-t ${viewTransitionNameIndex++} */`] as any
+  }
+  const content = Array.isArray(strings)
+    ? cssCommon(strings as TemplateStringsArray, values)
+    : (strings as CssClassName)
+
+  const transitionName = content[CLASS_NAME]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const res = cssCommon(['view-transition-name:', ''] as any, [transitionName])
+
+  content[CLASS_NAME] = PSEUDO_GLOBAL_SELECTOR + content[CLASS_NAME]
+  content[STYLE_STRING] = content[STYLE_STRING].replace(
+    /(?<=::view-transition(?:[a-z-]*)\()(?=\))/g,
+    transitionName
+  )
+  res[CLASS_NAME] = res[SELECTOR] = transitionName
+  res[SELECTORS] = [...content[SELECTORS], content]
+
+  return res
+}) as ViewTransitionType
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/index.test.tsx
+```
+/** @jsxImportSource ../../jsx */
+import { Hono } from '../../'
+import { html } from '../../helper/html'
+import type { JSXNode } from '../../jsx'
+import { isValidElement } from '../../jsx'
+import { Suspense, renderToReadableStream } from '../../jsx/streaming'
+import type { HtmlEscapedString } from '../../utils/html'
+import { HtmlEscapedCallbackPhase, resolveCallback } from '../../utils/html'
+import { renderTest } from './common.case.test'
+import { Style, createCssContext, css, cx, keyframes, rawCssString, viewTransition } from './index'
+
+async function toString(
+  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+) {
+  if (template instanceof Promise) {
+    template = (await template) as HtmlEscapedString
+  }
+  if (isValidElement(template)) {
+    template = template.toString() as Promise<HtmlEscapedString>
+  }
+  return resolveCallback(await template, HtmlEscapedCallbackPhase.Stringify, false, template)
+}
+
+async function toCSS(
+  template: JSXNode | Promise<HtmlEscapedString> | Promise<string> | HtmlEscapedString
+) {
+  return (await toString(template))
+    .replace(/.*?=(".*")<\/script.*/, '$1')
+    .replace(/\.css-\d+/g, '.css-123')
+}
+
+describe('CSS Helper', () => {
+  renderTest(() => {
+    return {
+      css,
+      Style,
+      keyframes,
+      viewTransition,
+      rawCssString,
+      createCssContext,
+      toString,
+      toCSS,
+      support: {
+        nest: true,
+      },
+    }
+  })
+
+  describe('with `html` tag function', () => {
+    it('Should render CSS styles with `html` tag function', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style()}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+
+    it('Should render CSS styles with `html` tag function and CSP nonce', async () => {
+      const headerClass = css`
+        background-color: blue;
+      `
+      const template = html`${Style({ nonce: '1234' })}
+        <h1 class="${headerClass}">Hello!</h1>`
+      expect(await toString(template)).toBe(
+        `<style id="hono-css" nonce="1234">.css-2458908649{background-color:blue}</style>
+        <h1 class="css-2458908649">Hello!</h1>`
+      )
+    })
+  })
+
+  describe('cx()', () => {
+    it('Should render CSS with cx()', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btnPrimary = css`
+        background-color: blue;
+        color: white;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, btnPrimary)}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-2395710522{border-radius:4px;background-color:blue;color:white}</style><h1 class="css-2395710522">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with cx() includes external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+
+      const template = (
+        <>
+          <Style />
+          <h1 class={cx(btn, 'external-class')}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3467431616{border-radius:4px}</style><h1 class="css-3467431616 external-class">Hello!</h1>'
+      )
+    })
+
+    it('Should render CSS with cx() includes nested external class name', async () => {
+      const btn = css`
+        border-radius: 4px;
+      `
+      const btn2 = cx(btn, 'external-class')
+      const btn3 = css`
+        ${btn2}
+        color: white;
+      `
+      const btn4 = cx(btn3, 'external-class2')
+      const template = (
+        <>
+          <Style />
+          <h1 class={btn4}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="hono-css">.css-3358636561{border-radius:4px;color:white}</style><h1 class="css-3358636561 external-class external-class2">Hello!</h1>'
+      )
+    })
+  })
+
+  describe('minify', () => {
+    const data: [string, Promise<string>, string][] = [
+      [
+        'basic CSS styles',
+        css`
+          background-color: blue;
+          color: white;
+          padding: 1rem;
+        `,
+        '.css-123{background-color:blue;color:white;padding:1rem}',
+      ],
+      [
+        'remove comments',
+        css`
+          /* background-color: blue; */
+          color: white;
+          padding: 1rem;
+          // inline comment
+          margin: 1rem;
+        `,
+        '.css-123{color:white;padding:1rem;margin:1rem}',
+      ],
+      [
+        'preserve string',
+        css`
+          background-color: blue;
+          color: white;
+          padding: 1rem;
+          content: "Hel  \\\n  \\'  lo!";
+          content: 'Hel  \\\n  \\"  lo!';
+        `,
+        '.css-123{background-color:blue;color:white;padding:1rem;content:"Hel  \\\n  \\\'  lo!";content:\'Hel  \\\n  \\"  lo!\'}',
+      ],
+      [
+        'preserve nested selectors',
+        css`
+          padding: 1rem;
+          &:hover {
+            padding: 2rem;
+          }
+        `,
+        '.css-123{padding:1rem;&:hover{padding:2rem}}',
+      ],
+    ]
+    data.forEach(([name, str, expected]) => {
+      it(`Should be minified while preserving content accurately: ${name}`, async () => {
+        expect(JSON.parse(await toCSS(str))).toBe(expected)
+      })
+    })
+  })
+
+  describe('createCssContext()', () => {
+    it('Should create a new CSS context', async () => {
+      const { css: css1, Style: Style1 } = createCssContext({ id: 'context1' })
+      const { css: css2, Style: Style2 } = createCssContext({ id: 'context2' })
+      const headerClass1 = css1`
+        background-color: blue;
+      `
+      const headerClass2 = css2`
+        background-color: red;
+      `
+      const template = (
+        <>
+          <Style1 />
+          <Style2 />
+          <h1 class={headerClass1}>Hello!</h1>
+          <h1 class={headerClass2}>Hello!</h1>
+        </>
+      )
+      expect(await toString(template)).toBe(
+        '<style id="context1">.css-2458908649{background-color:blue}</style><style id="context2">.css-960045552{background-color:red}</style><h1 class="css-2458908649">Hello!</h1><h1 class="css-960045552">Hello!</h1>'
+      )
+    })
+  })
+
+  describe('with application', () => {
+    const app = new Hono()
+
+    const headerClass = css`
+      background-color: blue;
+    `
+
+    app.get('/sync', (c) =>
+      c.html(
+        <>
+          <Style />
+          <h1 class={headerClass}>Hello!</h1>
+        </>
+      )
+    )
+
+    app.get('/stream', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
+    app.get('/stream-with-nonce', (c) => {
+      const stream = renderToReadableStream(
+        <>
+          <Style nonce='1234' />
+          <Suspense fallback={<p>Loading...</p>}>
+            <h1 class={headerClass}>Hello!</h1>
+          </Suspense>
+        </>
+      )
+      return c.body(stream, {
+        headers: {
+          'Content-Type': 'text/html; charset=UTF-8',
+          'Transfer-Encoding': 'chunked',
+        },
+      })
+    })
+
+    it('/sync', async () => {
+      const res = await app.request('http://localhost/sync')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        '<style id="hono-css">.css-2458908649{background-color:blue}</style><h1 class="css-2458908649">Hello!</h1>'
+      )
+    })
+
+    it('/stream', async () => {
+      const res = await app.request('http://localhost/stream')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css"></style><template id="H:0"></template><p>Loading...</p><!--/$--><script>document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:0"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:0')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+
+    it('/stream-with-nonce', async () => {
+      const res = await app.request('http://localhost/stream-with-nonce')
+      expect(res).not.toBeNull()
+      expect(await res.text()).toBe(
+        `<style id="hono-css" nonce="1234"></style><template id="H:1"></template><p>Loading...</p><!--/$--><script nonce="1234">document.querySelector('#hono-css').textContent+=".css-2458908649{background-color:blue}"</script><template data-hono-target="H:1"><h1 class="css-2458908649">Hello!</h1></template><script>
+((d,c,n) => {
+c=d.currentScript.previousSibling
+d=d.getElementById('H:1')
+if(!d)return
+do{n=d.nextSibling;n.remove()}while(n.nodeType!=8||n.nodeValue!='/$')
+d.replaceWith(c.content)
+})(document)
+</script>`
+      )
+    })
+  })
+})
+
+```
+/Users/josh/Documents/GitHub/honojs/hono/src/helper/css/index.ts
+```typescript
+/**
+ * @module
+ * css Helper for Hono.
+ */
+
+import { raw } from '../../helper/html'
+import { DOM_RENDERER } from '../../jsx/constants'
+import { createCssJsxDomObjects } from '../../jsx/dom/css'
+import type { HtmlEscapedCallback, HtmlEscapedString } from '../../utils/html'
+import type { CssClassName as CssClassNameCommon, CssVariableType } from './common'
+import {
+  CLASS_NAME,
+  DEFAULT_STYLE_ID,
+  PSEUDO_GLOBAL_SELECTOR,
+  SELECTOR,
+  SELECTORS,
+  STYLE_STRING,
+  cssCommon,
+  cxCommon,
+  keyframesCommon,
+  viewTransitionCommon,
+} from './common'
+export { rawCssString } from './common'
+
+type CssClassName = HtmlEscapedString & CssClassNameCommon
+
+type usedClassNameData = [
+  Record<string, string>, // class name to add
+  Record<string, true> // class name already added
+]
+
+interface CssType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+}
+
+interface CxType {
+  (
+    ...args: (CssClassName | Promise<string> | string | boolean | null | undefined)[]
+  ): Promise<string>
+}
+
+interface KeyframesType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): CssClassNameCommon
+}
+
+interface ViewTransitionType {
+  (strings: TemplateStringsArray, ...values: CssVariableType[]): Promise<string>
+  (content: Promise<string>): Promise<string>
+  (): Promise<string>
+}
+
+interface StyleType {
+  (args?: { children?: Promise<string>; nonce?: string }): HtmlEscapedString
+}
+
+/**
+ * @experimental
+ * `createCssContext` is an experimental feature.
+ * The API might be changed.
+ */
+export const createCssContext = ({ id }: { id: Readonly<string> }): DefaultContextType => {
+  const [cssJsxDomObject, StyleRenderToDom] = createCssJsxDomObjects({ id })
+
+  const contextMap: WeakMap<object, usedClassNameData> = new WeakMap()
+  const nonceMap: WeakMap<object, string | undefined> = new WeakMap()
+
+  const replaceStyleRe = new RegExp(`(<style id="${id}"(?: nonce="[^"]*")?>.*?)(</style>)`)
+
+  const newCssClassNameObject = (cssClassName: CssClassNameCommon): Promise<string> => {
+    const appendStyle: HtmlEscapedCallback = ({ buffer, context }): Promise<string> | undefined => {
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
+      const names = Object.keys(toAdd)
+
+      if (!names.length) {
+        return
+      }
+
+      let stylesStr = ''
+      names.forEach((className) => {
+        added[className] = true
+        stylesStr += className.startsWith(PSEUDO_GLOBAL_SELECTOR)
+          ? toAdd[className]
+          : `${className[0] === '@' ? '' : '.'}${className}{${toAdd[className]}}`
+      })
+      contextMap.set(context, [{}, added])
+
+      if (buffer && replaceStyleRe.test(buffer[0])) {
+        buffer[0] = buffer[0].replace(replaceStyleRe, (_, pre, post) => `${pre}${stylesStr}${post}`)
+        return
+      }
+
+      const nonce = nonceMap.get(context)
+      const appendStyleScript = `<script${
+        nonce ? ` nonce="${nonce}"` : ''
+      }>document.querySelector('#${id}').textContent+=${JSON.stringify(stylesStr)}</script>`
+
+      if (buffer) {
+        buffer[0] = `${appendStyleScript}${buffer[0]}`
+        return
+      }
+
+      return Promise.resolve(appendStyleScript)
+    }
+
+    const addClassNameToContext: HtmlEscapedCallback = ({ context }) => {
+      if (!contextMap.has(context)) {
+        contextMap.set(context, [{}, {}])
+      }
+      const [toAdd, added] = contextMap.get(context) as usedClassNameData
+      let allAdded = true
+      if (!added[cssClassName[SELECTOR]]) {
+        allAdded = false
+        toAdd[cssClassName[SELECTOR]] = cssClassName[STYLE_STRING]
+      }
+      cssClassName[SELECTORS].forEach(
+        ({ [CLASS_NAME]: className, [STYLE_STRING]: styleString }) => {
+          if (!added[className]) {
+            allAdded = false
+            toAdd[className] = styleString
+          }
+        }
+      )
+      if (allAdded) {
+        return
+      }
+
+      return Promise.resolve(raw('', [appendStyle]))
+    }
+
+    const className = new String(cssClassName[CLASS_NAME]) as CssClassName
+    Object.assign(className, cssClassName)
+    ;(className as HtmlEscapedString).isEscaped = true
+    ;(className as HtmlEscapedString).callbacks = [addClassNameToContext]
+    const promise = Promise.resolve(className)
+    Object.assign(promise, cssClassName)
+
+    promise.toString = cssJsxDomObject.toString
+    return promise
+  }
+
+  const css: CssType = (strings, ...values) => {
+    return newCssClassNameObject(cssCommon(strings, values))
+  }
+
+  const cx: CxType = (...args) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args = cxCommon(args as any) as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return css(Array(args.length).fill('') as any, ...args)
+  }
+
+  const keyframes = keyframesCommon
+
+  const viewTransition: ViewTransitionType = ((
+    strings: TemplateStringsArray | Promise<string> | undefined,
+    ...values: CssVariableType[]
+  ) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return newCssClassNameObject(viewTransitionCommon(strings as any, values))
+  }) as ViewTransitionType
+
+  const Style: StyleType = ({ children, nonce } = {}) =>
+    raw(
+      `<style id="${id}"${nonce ? ` nonce="${nonce}"` : ''}>${
+        children ? (children as unknown as CssClassName)[STYLE_STRING] : ''
+      }</style>`,
+      [
+        ({ context }) => {
+          nonceMap.set(context, nonce)
+          return undefined
+        },
+      ]
+    )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(Style as any)[DOM_RENDERER] = StyleRenderToDom
+
+  return {
+    css,
+    cx,
+    keyframes,
+    viewTransition: viewTransition as ViewTransitionType,
+    Style,
+  }
+}
+
+interface DefaultContextType {
+  css: CssType
+  cx: CxType
+  keyframes: KeyframesType
+  viewTransition: ViewTransitionType
+  Style: StyleType
+}
+
+const defaultContext: DefaultContextType = createCssContext({
+  id: DEFAULT_STYLE_ID,
+})
+
+/**
+ * @experimental
+ * `css` is an experimental feature.
+ * The API might be changed.
+ */
+export const css = defaultContext.css
+
+/**
+ * @experimental
+ * `cx` is an experimental feature.
+ * The API might be changed.
+ */
+export const cx = defaultContext.cx
+
+/**
+ * @experimental
+ * `keyframes` is an experimental feature.
+ * The API might be changed.
+ */
+export const keyframes = defaultContext.keyframes
+
+/**
+ * @experimental
+ * `viewTransition` is an experimental feature.
+ * The API might be changed.
+ */
+export const viewTransition = defaultContext.viewTransition
+
+/**
+ * @experimental
+ * `Style` is an experimental feature.
+ * The API might be changed.
+ */
+export const Style = defaultContext.Style
+
+```

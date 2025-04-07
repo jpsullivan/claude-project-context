@@ -1,0 +1,77 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/.devcontainer/Dockerfile</source>
+<document_content>
+FROM mcr.microsoft.com/devcontainers/typescript-node:20
+
+# Install Deno
+ENV DENO_INSTALL=/usr/local
+RUN curl -fsSL https://deno.land/install.sh | sh
+
+# Install Bun
+ENV BUN_INSTALL=/usr/local
+RUN curl -fsSL https://bun.sh/install | bash
+
+WORKDIR /hono
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/.devcontainer/devcontainer.json</source>
+<document_content>
+{
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "containerEnv": {
+        "HOME": "/home/node"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "deno.enable": false,
+                "eslint.validate": [
+                    "javascript",
+                    "javascriptreact",
+                    "typescript",
+                    "typescriptreact"
+                ],
+                "editor.codeActionsOnSave": {
+                    "source.fixAll.eslint": "explicit"
+                }
+            },
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode"
+            ]
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/.devcontainer/docker-compose.yml</source>
+<document_content>
+version: '3'
+
+services:
+  hono:
+    build: .
+    container_name: hono
+    volumes:
+      - ../:/hono
+    networks:
+      - hono
+    command: bash
+    stdin_open: true
+    tty: true
+    restart: 'no'
+
+networks:
+  hono:
+    driver: bridge
+
+</document_content>
+</document>
+</documents>

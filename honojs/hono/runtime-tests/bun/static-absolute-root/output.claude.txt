@@ -1,0 +1,8 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/runtime-tests/bun/static-absolute-root/plain.txt</source>
+<document_content>
+Bun!
+</document_content>
+</document>
+</documents>

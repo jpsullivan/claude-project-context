@@ -1,0 +1,99 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/query-param/src/bench.mts</source>
+<document_content>
+import { run, group, bench } from 'mitata'
+import fastQuerystring from './fast-querystring.mts'
+import hono from './hono.mts'
+import qs from './qs.mts'
+;[
+  {
+    url: 'http://example.com/?page=1',
+    key: 'page',
+  },
+  {
+    url: 'http://example.com/?url=http://example.com&page=1',
+    key: 'page',
+  },
+  {
+    url: 'http://example.com/?page=1',
+    key: undefined,
+  },
+  {
+    url: 'http://example.com/?url=http://example.com&page=1',
+    key: undefined,
+  },
+  {
+    url: 'http://example.com/?url=http://example.com/very/very/deep/path/to/something&search=very-long-search-string',
+    key: undefined,
+  },
+  {
+    url: 'http://example.com/?search=Hono+is+a+small,+simple,+and+ultrafast+web+framework+for+the+Edge.&page=1',
+    key: undefined,
+  },
+  {
+    url: 'http://example.com/?a=1&b=2&c=3&d=4&e=5&f=6&g=7&h=8&i=9&j=10',
+    key: undefined,
+  },
+].forEach((data) => {
+  const { url, key } = data
+
+  group(JSON.stringify(data), () => {
+    bench('hono', () => hono(url, key))
+    bench('fastQuerystring', () => fastQuerystring(url, key))
+    bench('qs', () => qs(url, key))
+  })
+})
+
+run()
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/query-param/src/fast-querystring.mts</source>
+<document_content>
+import { parse } from 'fast-querystring'
+
+const getQueryStringFromURL = (url: string): string => {
+  const queryIndex = url.indexOf('?', 8)
+  const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
+  return result
+}
+
+export default (url, key?) => {
+  const data = parse(getQueryStringFromURL(url))
+  return key !== undefined ? data[key] : data 
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/query-param/src/hono.mts</source>
+<document_content>
+import { getQueryParam } from '../../../src/utils/url'
+
+export default (url, key?) => {
+  return getQueryParam(url, key)
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/honojs/hono/benchmarks/query-param/src/qs.mts</source>
+<document_content>
+import qs from 'qs'
+
+const getQueryStringFromURL = (url: string): string => {
+  const queryIndex = url.indexOf('?', 8)
+  const result = queryIndex !== -1 ? url.slice(queryIndex + 1) : ''
+  return result
+}
+
+export default (url, key?) => {
+  const data = qs.parse(getQueryStringFromURL(url))
+  return key !== undefined ? data[key] : data
+}
+
+</document_content>
+</document>
+</documents>

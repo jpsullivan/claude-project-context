@@ -1,0 +1,72 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/testing/index.test.ts</source>
+<document_content>
+import { Hono } from '../../hono'
+import { testClient } from '.'
+
+describe('hono testClient', () => {
+  it('Should return the correct search result', async () => {
+    const app = new Hono().get('/search', (c) => c.json({ hello: 'world' }))
+    const res = await testClient(app).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('Should return the correct environment variables value', async () => {
+    type Bindings = { hello: string }
+    const app = new Hono<{ Bindings: Bindings }>().get('/search', (c) => {
+      return c.json({ hello: c.env.hello })
+    })
+    const res = await testClient(app, { hello: 'world' }).search.$get()
+    expect(await res.json()).toEqual({ hello: 'world' })
+  })
+
+  it('Should return a correct URL with out throwing an error', async () => {
+    const app = new Hono().get('/abc', (c) => c.json(0))
+    const url = testClient(app).abc.$url()
+    expect(url.pathname).toBe('/abc')
+  })
+
+  it('Should not throw an error with $ws()', async () => {
+    vi.stubGlobal('WebSocket', class {})
+    const app = new Hono().get('/ws', (c) => c.text('Fake response of a WebSocket'))
+    // @ts-expect-error $ws is not typed correctly
+    expect(() => testClient(app).ws.$ws()).not.toThrowError()
+  })
+})
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/honojs/hono/src/helper/testing/index.ts</source>
+<document_content>
+/**
+ * @module
+ * Testing Helper for Hono.
+ */
+
+import { hc } from '../../client'
+import type { Client } from '../../client/types'
+import type { ExecutionContext } from '../../context'
+import type { Hono } from '../../hono'
+import type { Schema } from '../../types'
+import type { UnionToIntersection } from '../../utils/types'
+
+type ExtractEnv<T> = T extends Hono<infer E, Schema, string> ? E : never
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const testClient = <T extends Hono<any, Schema, string>>(
+  app: T,
+  Env?: ExtractEnv<T>['Bindings'] | {},
+  executionCtx?: ExecutionContext
+): UnionToIntersection<Client<T>> => {
+  const customFetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    return app.request(input, init, Env, executionCtx)
+  }
+
+  return hc<typeof app>('http://localhost', { fetch: customFetch })
+}
+
+</document_content>
+</document>
+</documents>

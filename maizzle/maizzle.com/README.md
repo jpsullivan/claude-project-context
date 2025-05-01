@@ -1,0 +1,1 @@
+./files-to-claude.rb /Users/josh/Documents/GitHub/maizzle/maizzle.com/content -o ./maizzle/maizzle.com/content

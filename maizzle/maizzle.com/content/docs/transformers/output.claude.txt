@@ -1,0 +1,2269 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/add-attributes.md</source>
+<document_content>
+---
+title: "Add attributes"
+description: "Automatically add attributes to your HTML emails. Write less code and easily improve accessibility."
+---
+
+# Add attributes
+
+Maizzle can automatically add attributes to HTML elements in your email templates.
+
+This can be useful for:
+
+- adding default attributes based on build Environment or Template
+- not having to write required attributes all the time
+- automating email accessibility
+
+The `attributes.add` key in your config defines which elements in your emails should receive which attributes with what values.
+
+## Usage
+
+Here is how you would add a `role="article"` attribute to a `<div>`:
+
+```js [config.js]
+export default {
+  attributes: {
+    add: {
+      div: {
+        role: 'article',
+      },
+    },
+  }
+}
+```
+
+## Default attributes
+
+By default, Maizzle makes any `<table>` accessible, resets its spacing, and ensures that an empty `alt=""` attribute is added to images that don't have it.
+
+This is the default configuration:
+
+```js
+let attributes = {
+  table: {
+    cellpadding: 0,
+    cellspacing: 0,
+    role: 'none',
+  },
+  img: {
+    alt: '',
+  }
+}
+```
+
+<Alert>Attributes will be added only if they're not already present on the element.</Alert>
+
+### Disabling
+
+You may turn this off by setting `extraAttributes` to `false` in your config:
+
+```js [config.js]
+export default {
+  attributes: {
+    add: false,
+  }
+}
+```
+
+## Selectors
+
+Tag, class, id, and attribute selectors are supported:
+
+```js [config.js]
+export default {
+  extraAttributes: {
+    div: {
+      id: 'new',
+    },
+    '.test': {
+      editable: true,
+    },
+    '#test': {
+      'data-foo': 'bar',
+    },
+    '[role]': {
+      'aria-roledescription': 'slide',
+    },
+  }
+}
+```
+
+## Multiple selectors
+
+Add multiple attributes to multiple elements in one go:
+
+```js [config.js]
+export default {
+  attributes: {
+    add: {
+      'div, p': {
+        class: 'test',
+      },
+      'div[role=alert], section.alert': {
+        class: 'alert',
+      },
+    },
+  }
+}
+```
+
+## Tailwind CSS
+
+Any Tailwind CSS classes that you add with this Transformer need to be added to your `content` key, otherwise they will not be generated.
+
+To do this, simply add the path to your `config.js` file to the `content` array:
+
+```js [tailwind.config.js]
+export default {
+  content: ['./config.js'],
+}
+```
+
+## API
+
+```js [app.js]
+import { addAttributes } from '@maizzle/framework'
+
+const options = {
+  div: {
+    role: 'article'
+  }
+}
+
+const html = await addAttributes('<div></div>', options)
+```
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/attribute-to-style.md</source>
+<document_content>
+---
+title: "Attribute to style"
+description: "Convert HTML attributes to inline CSS in your HTML emails."
+---
+
+# Attribute to style
+
+Duplicate HTML attributes to inline CSS.
+
+## Usage
+
+This Transformer is part of the CSS inlining process, you may enable it in your `config.js` under the `css.inline` key:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      attributeToStyle: true,
+    }
+  }
+}
+```
+
+Given this HTML:
+
+```html
+<table width="100%">
+  <tr>
+    <td>
+      <p>The quick brown fox jumped over the lazy dog.</p>
+    </td>
+  </tr>
+</table>
+```
+
+It will transform it to:
+
+```html
+<table width="100%" style="width: 100%">
+  <tr>
+    <td>
+      <p>The quick brown fox jumped over the lazy dog.</p>
+    </td>
+  </tr>
+</table>
+```
+
+## Customization
+
+You may enable it only for some attributes:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      attributeToStyle: ['width', 'bgcolor', 'background'],
+    }
+  }
+}
+```
+
+... or for all supported attributes:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      attributeToStyle: ['width', 'height', 'bgcolor', 'background', 'align', 'valign'],
+    }
+  }
+}
+```
+
+## Supported attributes
+
+The following attributes can be duplicated as inline CSS.
+
+### width
+
+Inlined as: `width: ${value}${unit}`
+
+Notes: supports only `px` and `%` values (defaults to `px`)
+
+### height
+
+Inlined as: height: ${value}${unit}
+
+Notes: supports only `px` and `%` values (defaults to `px`)
+
+### bgcolor
+
+Inlined as: `background-color: ${value}`
+
+### background
+
+Inlined as: `background-image: url('${value}')`
+
+### align
+
+1. On `<table>` elements
+
+    - `left` or `right` values inlined as `float: ${value}`
+    - `center` value inlined as `margin-left: auto; margin-right: auto`
+
+1. On any other elements, it is inlined as `text-align: ${value}`
+
+### valign
+
+Inlined as `vertical-align: ${value}`
+
+## Overriding
+
+This Transformer runs right before CSS inlining, so you can still override it through Tailwind CSS utility classes.
+
+## API
+
+The second argument must be an array of attribute names to handle:
+
+```js [app.js]
+import { attributeToStyle } from '@maizzle/framework'
+
+const html = await attributeToStyle('html string', ['width'])
+```
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/base-url.md</source>
+<document_content>
+---
+title: "Base URL"
+description: "Set a base URL and easily prepend absolute URLs to any source in your HTML emails."
+---
+
+# Base URL
+
+Define a string that will be prepended to all sources and hrefs in your HTML and CSS.
+
+Useful if you already host your images somewhere like a CDN, so you don't have to write the full URL every time when developing.
+
+Works with the following HTML attributes:
+
+- src
+- href
+- srcset
+- poster
+- background
+
+... and with the following CSS properties:
+
+- <span class="text-sm font-mono">background: url()</span>
+- <span class="text-sm font-mono">background-image: url()</span>
+- <span class="text-sm font-mono">@font-face { src: url() }</span>
+
+Both `<style>` tags and `style=""` attributes are supported. CSS property values with multiple `url()` sources (like @font-face declarations) are supported as well.
+
+## Usage
+
+Make it globally available by setting it in your environment config:
+
+```js [config.js]
+export default {
+  baseURL: 'https://cdn.example.com/'
+}
+```
+
+<Alert type="danger">Note that this will apply to _all_ sources and hrefs, including `<a>` tags, as long as the source's initial value is not an URL.</Alert>
+
+## Customization
+
+You'll most likely want to customize the transformer so that it applies only to certain elements, or even only to certain attributes of certain elements.
+
+### tags
+
+Type: `String[]|<Record<string, boolean|string>>`\
+Default: [see default tags](https://github.com/posthtml/posthtml-base-url/blob/main/lib/index.js)
+
+Apply the base URL only to `<img>` tags:
+
+```js [config.js]
+export default {
+  baseURL: {
+    url: 'https://cdn.example.com/',
+    tags: ['img'],
+  },
+}
+```
+
+That will apply the `url` to all known source attributes on all `<img>` elements in your HTML, like `src=""` or `srcset="`.
+
+If you need greater control, you may specify which attributes of which tags should be prepended what URL, by passing in an object instead:
+
+```js [config.js]
+export default {
+  baseURL: {
+    url: 'https://cdn.example.com/',
+    tags: {
+      img: {
+        src: true, // use the value of `url` above
+        srcset: 'https://bar.com/',
+      },
+    },
+  },
+}
+```
+
+### attributes
+
+Type: `Object`\
+Default: `{}`
+
+Key-value pairs of attributes and what to prepend to them.
+
+```js [config.js]
+export default {
+  baseURL: {
+    attributes: {
+      'data-url': 'https://example.com/',
+    },
+  },
+}
+```
+
+### styleTag
+
+Type: `Boolean`\
+Default: `true`
+
+By default, the transformer will prepend your `url` to all `url()` sources in `<style>` tags. Set this option to `false` to prevent it from doing so:
+
+```js [config.js]
+export default {
+  baseURL: {
+    url: 'https://cdn.example.com/',
+    tags: ['img'],
+    styleTag: false,
+  },
+}
+```
+
+### inlineCss
+
+Type: `Boolean`\
+Default: `true`
+
+Similarly, the transformer will prepend your `url` to all `url()` sources in `style=""` attributes. You may disable this if you need to:
+
+```js [config.js]
+export default {
+  baseURL: {
+    url: 'https://cdn.example.com/',
+    tags: ['img'],
+    inlineCss: false,
+  },
+}
+```
+
+## Front Matter
+
+You may override it for a single Template, through Front Matter:
+
+```hbs [emails/example.html]
+---
+baseURL: 'https://res.cloudinary.com/user/image/upload/'
+---
+
+<x-main>
+  <img src="example.jpg">
+</x-main>
+```
+
+## Trailing slash
+
+When `baseURL` is not an absolute URL, `path.join` is used to prepend the base URL to the source, so you don't need to worry about trailing slashes.
+
+However, you need to consider trailing slashes when the base URL is an absolute URL.
+
+```html [baseURL: 'https://example.com/img']
+<img src="/folder/product-1.png">
+
+<!-- Result -->
+<img src="https://example.com/img/folder/product-1.png">
+```
+
+If we add a trailing slash to `baseURL`, we get a double slash in the result:
+
+```html [baseURL: 'https://example.com/img/']
+<img src="/folder/product-1.png">
+
+<!-- Result -->
+<img src="https://example.com/img//folder/product-1.png">
+```
+
+## Disabling
+
+If you have `baseURL` set globally (in your config), you may disable it for a Template by setting its value to an empty string or a falsy value in Front Matter:
+
+```yaml
+---
+baseURL: ''
+---
+```
+
+or
+
+```yaml
+---
+baseURL: false
+---
+```
+
+## API
+
+```js [app.js]
+import { addBaseUrl } from '@maizzle/framework'
+
+const config = {
+  url: 'https://cdn.example.com/img/',
+}
+
+const html = await addBaseUrl('<img src="image.jpg">', config)
+```
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/filters.md</source>
+<document_content>
+---
+title: "Filters"
+description: "Apply transformations to content inside tags from your HTML email templates."
+---
+
+# Filters
+
+Maizzle includes filters that enable you to do anything you want to text nodes inside elements that you mark with custom attributes.
+
+## Usage
+
+Add a `filters` object to your Maizzle config:
+
+```js [config.js]
+export default {
+  filters: {},
+}
+```
+
+Each entry in this object is made up of a `key: value` pair.
+
+- `key` represents a custom HTML attribute name
+- `value` is a function that accepts two arguments, and must return a string
+
+Example:
+
+```js [config.js]
+export default {
+  filters: {
+    uppercase: str => str.toUpperCase(),
+  }
+}
+```
+
+Used in a Template:
+
+```html [emails/example.html]
+<p uppercase>Here is some foo.</p>
+```
+
+Result:
+
+```html
+<p>HERE IS SOME FOO BAR.</p>
+```
+
+Of course, this is just a dumb example - you could imagine more complex scenarios where you pull in packages and do stuff like:
+
+- compile CSS in some `<style>` tag with Sass or others
+- normalize html whitespace in parts of your code
+- create various content filters
+- ...
+
+## Disabling
+
+You may disable all filters by setting the option to `false`:
+
+```js [config.js]
+export default {
+  filters: false,
+}
+```
+
+## Default filters
+
+The following filters are included by default.
+
+### append
+
+Append text to the end of the string.
+
+```html [example.html]
+<p append=" bar">foo</p>
+<!-- <p>foo bar</p> -->
+```
+
+### prepend
+
+Prepend text to the beginning of the string.
+
+```html [example.html]
+<p prepend="foo ">bar</p>
+<!-- <p>foo bar</p> -->
+```
+
+### uppercase
+
+Uppercase the string.
+
+```html [example.html]
+<p uppercase>foo</p>
+<!-- <p>FOO</p> -->
+```
+
+### lowercase
+
+Lowercase the string.
+
+```html [example.html]
+<p lowercase>FOO</p>
+<!-- <p>foo</p> -->
+```
+
+### capitalize
+
+Uppercase the first letter of the string.
+
+```html [example.html]
+<p capitalize>foo</p>
+<!-- <p>Foo</p> -->
+```
+
+### ceil
+
+Round up to the nearest integer.
+
+```html [example.html]
+<p ceil>1.2</p>
+<!-- <p>2</p> -->
+```
+
+### floor
+
+Round down to the nearest integer.
+
+```html [example.html]
+<p ceil>1.2</p>
+<!-- <p>1</p> -->
+```
+
+### round
+
+Round to the nearest integer.
+
+```html [example.html]
+<p round>1234.567</p>
+<!-- <p>1235</p> -->
+```
+
+### escape
+
+Escapes a string by replacing characters with escape sequences (so that the string can be used in a URL, for example).
+
+```html [example.html]
+<p escape>"&'<></p>
+<!-- <p>&#34;&amp;&#39;&lt;&gt;</p> -->
+```
+
+### escape-once
+
+Escapes a string without changing existing escaped entities.
+
+```html [example.html]
+<p escape-once>1 &lt; 2 &amp; 3</p>
+<!-- <p>1 &lt; 2 &amp; 3</p> -->
+```
+
+### lstrip
+
+Remove leading whitespace from the string.
+
+```html [example.html]
+<p lstrip> test </p>
+<!-- <p>test </p> -->
+```
+
+### rstrip
+
+Remove trailing whitespace from the string.
+
+```html [example.html]
+<p rstrip> test </p>
+<!-- <p> test</p> -->
+```
+
+### trim
+
+Remove leading and trailing whitespace from the string.
+
+```html [example.html]
+<p trim> test </p>
+<!-- <p>test</p> -->
+```
+
+### minus
+
+Subtracts one number from another.
+
+```html [example.html]
+<p minus="2">3</p>
+<!-- <p>1</p> -->
+```
+
+### plus
+
+Adds one number to another.
+
+```html [example.html]
+<p plus="2">3</p>
+<!-- <p>5</p> -->
+```
+
+### multiply
+
+Alias: `times`
+
+```html [example.html]
+<p multiply="2">1.2</p>
+<!-- <p>2.4</p> -->
+```
+
+### divide-by
+
+Alias: `divide`
+
+```html [example.html]
+<div divide-by="2">1.2</div>
+<!-- <p>0.6</p> -->
+```
+
+### modulo
+
+Returns the remainder of one number divided by another.
+
+```html [example.html]
+<p modulo="2">3</p>
+<!-- <p>1</p> -->
+```
+
+### newline-to-br
+
+Insert an HTML line break (`<br />`) in front of each newline (`\n`) in a string.
+
+```html [example.html]
+<p newline-to-br>
+  test
+  test
+</p>
+<!-- <p><br>  test<br>  test<br></p> -->
+```
+
+### strip-newlines
+
+Remove any newline characters (line breaks) from the string.
+
+```html [example.html]
+<p strip_newlines>
+  test
+  test
+</p>
+<!-- <p>  test  test</p> -->
+```
+
+### remove
+
+Remove every occurrence of `text` from the string.
+
+```html [example.html]
+<p remove="rain">I strained to see the train through the rain</p>
+<!-- <p>I sted to see the t through the </p> -->
+```
+
+### remove-first
+
+Remove the first occurrence of `text` from the string.
+
+```html [example.html]
+<p remove-first="rain">I strained to see the train through the rain</p>
+<!-- <p>I sted to see the train through the rain</p> -->
+```
+
+### replace
+
+Replace every occurrence of the first argument with the second argument.
+
+You must separate arguments with a pipe character (`|`).
+
+```html [example.html]
+<p replace="1|test">test</p>
+<!-- <p>1es1</p> -->
+```
+
+### replace-first
+
+Replace the first occurrence of the first argument with the second argument.
+
+You must separate arguments with a pipe character (`|`).
+
+```html [example.html]
+<p replace-first="t|b">test</p>
+<!-- <p>best</p> -->
+```
+
+### size
+
+Return the number of characters in the string.
+
+```html [example.html]
+<p size>one</p>
+<!-- <p>3</p> -->
+```
+
+### slice
+
+Return a slice of the string starting at the provided index.
+
+```html [example.html]
+<p slice="1">test</p>
+<!-- <p>est</p> -->
+```
+
+You may pass a startIndex and endIndex:
+
+```html [example.html]
+<p slice="0,-1">test</p>
+<!-- <p>tes</p> -->
+```
+
+### truncate
+
+Shorten a string down to the number of characters passed as the argument.
+
+```html [example.html]
+<p truncate="17">Ground control to Major Tom.</p>
+<!-- <p>Ground control to...</p> -->
+```
+
+You may pass a custom ellipsis as the second argument.
+
+Separate arguments with a comma:
+
+```html [example.html]
+<p truncate="17, no one">Ground control to Major Tom.</p>
+<!-- <p>Ground control to no one</p> -->
+```
+
+### truncate-words
+
+Shorten a string down to the number of words passed as the argument.
+
+```html [example.html]
+<p truncate-words="2">Ground control to Major Tom.</p>
+<!-- <p>Ground control...</p> -->
+```
+
+You may pass a custom ellipsis as the second argument.
+
+Separate arguments with a comma:
+
+```html [example.html]
+<p truncate-words="2, over and out">Ground control to Major Tom.</p>
+<!-- <p>Ground control over and out</p> -->
+```
+
+### url-decode
+
+Decode a string that has been encoded as a URL.
+
+```html [example.html]
+<p url-decode>%27Stop%21%27+said+Fred</p>
+<!-- <p>'Stop!' said Fred</p> -->
+```
+
+### url-encode
+
+Convert any URL-unsafe characters in a string into percent-encoded characters.
+
+```html [example.html]
+<p url-encode>user@example.com</p>
+<!-- <p>user%40example.com</p> -->
+```
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/inline-css.md</source>
+<document_content>
+---
+title: "Inline CSS"
+description: "Inline CSS in your HTML emails for better email client compatibility."
+---
+
+# Inline CSS
+
+Automatically inline CSS from `<style>` tags in your HTML emails.
+
+CSS inlining is still important in HTML email, mainly because of Outlook on Windows, which doesn't support multiple classes on elements.
+
+It can also help preserve a decent layout in email clients that do not support embedded CSS (in `<style>` tags), or when an email is forwarded.
+
+The utility-first approach in Tailwind CSS works great with CSS inlining: utility classes are not 'global', so you won't end up with a `font-family` inlined on every element (unless you really, really want to).
+
+## Usage
+
+To enable CSS inlining, simply set `css.inline` to `true` in your config:
+
+```js [config.js]
+export default {
+  css: {
+    inline: true,
+  }
+}
+```
+
+<Alert>You will want to keep CSS inlining off when developing ⚡[AMP4EMAIL templates](/guides/amp-email)</Alert>
+
+## Customization
+
+If you need control over how your CSS is inlined, you may pass a configuration object to `inlineCSS`. Doing this in your Environment `config.js` will enable CSS inlining for all Templates when building for that Environment.
+
+### styleToAttribute
+
+Type: `Object`\
+Default: `{}`
+
+Defines which CSS properties should be duplicated as what HTML attributes.
+
+For example, this property-attribute assignment:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      styleToAttribute: {
+        'background-color': 'bgcolor',
+      }
+    }
+  }
+}
+```
+
+... will transform this:
+
+```html
+<table class="bg-slate-300">
+  <tr>
+    <td>...</td>
+  </tr>
+</table>
+```
+
+... into this:
+
+```html
+<table bgcolor="#cbd5e1" style="background-color: #cbd5e1">
+  <tr>
+    <td>...</td>
+  </tr>
+</table>
+```
+
+The available mappings are:
+
+CSS Property | HTML Attribute
+--- | ---
+`background-color` | `bgcolor`
+`background-image` | `background`
+`text-align` | `align`
+`vertical-align` | `valign`
+
+### attributeToStyle
+
+Type: `Boolean|String[]`\
+Default: `undefined`
+
+Duplicates specified HTML attributes as inline CSS.
+
+See the documentation [here](/docs/transformers/attribute-to-style).
+
+### applyWidthAttributes
+
+Type: `Boolean`\
+Default: `true`
+
+Whether to use any CSS pixel widths to create `width` attributes on elements set in `css.inline.widthElements`.
+
+Set it to `false` to prevent any `width` attributes from being added based on inline CSS width:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      applyWidthAttributes: false,
+    }
+  }
+}
+```
+
+### widthElements
+
+Type: `String[]`\
+Default: `['img', 'video']`
+
+Array of HTML elements that can receive `width` attributes based on inline CSS width.
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      widthElements: ['table', 'td', 'th'],
+    }
+  }
+}
+```
+
+### applyHeightAttributes
+
+Type: `Boolean`\
+Default: `true`
+
+Whether to use any CSS pixel heights to create `height` attributes on elements set in `css.inline.heightElements`.
+
+Set it to `false` to prevent any `height` attributes from being added based on inline CSS height:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      applyHeightAttributes: false,
+    }
+  }
+}
+```
+
+### heightElements
+
+Type: `String[]`\
+Default: `['img', 'video']`
+
+Array of HTML elements that can receive `height` attributes based on inline CSS height.
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      heightElements: ['table', 'td', 'th'],
+    }
+  }
+}
+```
+
+### excludedProperties
+
+Type: `String[]`\
+Default: `[]`
+
+Array of CSS property names that should be excluded from the CSS inlining process.
+
+Names are considered unique, so you will need to specify each one you'd like to exclude.
+
+For example:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      excludedProperties: ['padding', 'padding-left'],
+    }
+  }
+}
+```
+
+<Alert>`--tw-shadow` is automatically excluded from the properties that can be inlined.</Alert>
+
+### codeBlocks
+
+Type: `Object`\
+Default: `{ EJS: {}, HBS: {} }`
+
+An object where each value has a start and end to specify fenced code blocks that should be ignored during CSS inlining.
+
+By default, <abbr title="Embedded JavaScript Templates">EJS</abbr> and <abbr title="Handlebars">HBS</abbr> code blocks are ignored:
+
+```js
+{
+  EJS: { start: '<%', end: '%>' },
+  HBS: { start: '{{', end: '}}' },
+}
+```
+
+### removeInlinedSelectors
+
+Type: `Boolean`\
+Default: `true`
+
+When `css.inline` is enabled, classes will be removed from the `class` attribute of a tag after they have been successfully inlined.
+
+Set this option to `false` to preserve the classes in the `class` attribute.
+
+```js [config.production.js]
+export default {
+  css: {
+    inline: {
+      removeInlinedSelectors: false,
+    }
+  }
+}
+```
+
+### preferUnitlessValues
+
+Type: `Boolean`\
+Default: `true`
+
+When inlining CSS, `0` values will be inlined without units.
+
+For example, `margin: 0px` will be inlined as `margin: 0`.
+
+Set this to `false` to keep units on `0` values.
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      preferUnitlessValues: false,
+    }
+  }
+}
+```
+
+### useAttributeSizes
+
+Type: `Boolean`\
+Default: `undefined`
+
+Prefer HTML `width` and `height` attributes over inline CSS.
+
+Useful for retina images in Outlook on Windows, which doesn't respect CSS sizes and will render the image in its natural size.
+
+Set this to `true` to use HTML attributes for sizes instead of inline CSS:
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      useAttributeSizes: true,
+    }
+  }
+}
+```
+
+<alert>`useAttributeSizes` will apply to all elements defined in [`widthElements`](/docs/transformers/inline-css#widthelements) and [`heightElements`](/docs/transformers/inline-css#heightelements)</alert>
+
+### safelist
+
+Type: `String[]`
+
+An array of strings representing CSS selectors that should not be removed after inlining.
+
+These can be substring matches, so you can use `text-red` to preserve `.text-red`, `.text-red-500`, etc.
+
+```js [config.js]
+export default {
+  css: {
+    inline: {
+      safelist: ['text-red', '.bg-blue-500'],
+    }
+  }
+}
+```
+
+## Prevent inlining
+
+You may add an attribute on a `<style>` tag to prevent Juice from inlining the CSS inside it. Useful for writing email client CSS hacks, or for preserving CSS comments when using the [`removeCSSComments: false`](/docs/transformers/purge-css#removecsscomments) Cleanup option.
+
+```html
+<style data-embed>
+  /* This CSS will not be inlined */
+  .text-red { color: red; }
+</style>
+```
+
+Maizzle supports the following attributes for this purpose:
+
+-  `data-embed`
+-  `no-inline`
+-  `embed`
+
+<Alert>CSS selectors that don't appear in your markup will still need to be [whitelisted for purging](/docs/transformers/purge-css#whitelist).</Alert>
+
+## API
+
+You can use the `inlineCSS` function to inline CSS in a string of HTML.
+
+Your HTML string will need to have at least one `<style>` tag in the `<head>`.
+Alternatively, you may pass your own CSS to inline through the `customCSS` option.
+
+Additionally, you may configure the [Juice](https://www.npmjs.com/package/juice) library by passing options in the same object.
+
+```js [app.js]
+import { inlineCSS } from '@maizzle/framework'
+
+const config = {
+  customCSS: 'body { background-color: #f8f9fa; }',
+  excludedProperties: ['padding', 'padding-left'] // Juice option
+}
+
+const html = await inlineCSS('html string', config)
+```
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/minify.md</source>
+<document_content>
+---
+title: "Email Code Minification"
+description: "Minify your HTML email code so that production emails weigh even less, avoiding Gmail clipping."
+---
+
+# Minify Email Code
+
+Use the `minify` option to trim down the HTML size of your production emails.
+
+Minified email code weighs less in KB, resulting in faster sendouts, faster opens, and bandwidth savings on limited mobile data plans. Every little bit helps 🙂
+
+Additionally, it reduces the risk of [Gmail clipping](https://github.com/hteumeuleu/email-bugs/issues/41).
+
+## Usage
+
+```js [config.js]
+export default {
+  minify: true,
+}
+```
+
+## Customization
+
+You may configure the underlying `html-crush` library:
+
+```js [config.js]
+export default {
+  minify: {
+    lineLengthLimit: 500,
+  }
+}
+```
+
+Checkout the full list of [html-crush options](https://codsen.com/os/html-crush/#optional-options-object).
+
+<Alert type="warning">Minifying email code can lead to unexpected results if not done properly. Make sure you know what you're doing, and always test your emails!</Alert>
+
+## Options
+
+These are the options that can be passed inside `minify`:
+
+### lineLengthLimit
+
+Type: `Number`\
+Default: `500`
+
+Maximum line length. Works only when `removeLineBreaks` is `true`.
+
+Lines should be no longer than 998 characters, as per [RFC 2822](https://www.rfc-editor.org/rfc/rfc2822#section-2.1.1).
+
+### removeIndentations
+
+Type: `Boolean`\
+Default: `true`
+
+By default, code indentation is removed.
+
+### removeLineBreaks
+
+Type: `Boolean`\
+Default: `true`
+
+Should line breaks be removed? Maizzle defaults this option to `true`.
+
+### removeHTMLComments
+
+Type: `Boolean|Number`\
+Default: `false`
+
+When set to a number, these are the available options:
+
+  - `0` - don't remove any HTML comments
+  - `1` - remove all comments except Outlook conditional comments
+  - `2` - remove all comments, including Outlook conditional comments
+
+### removeCSSComments
+
+Type: `Boolean`\
+Default: `true`
+
+CSS comments are removed by default, both in `<style>` tags and in `style=""` attributes.
+
+### breakToTheLeftOf
+
+Type: `String[]`\
+Default: `['</td', '<html', '</html', '<head', '</head', '<meta', '<link', '<table', '<script', '</script', '<!doctype', '<style', '</style', '<title', '<body', '@media', '</body', '<!--[if', '<!--<![endif', '<![endif]']`
+
+When any of given strings are encountered and `removeLineBreaks` is `true`, current line will be terminated.
+
+Set to `false` or `null` or an empty array to disable.
+
+### mindTheInlineTags
+
+Type: `String[]`\
+Default: `['a', 'abbr', 'acronym', 'audio', 'b', 'bdi', 'bdo', 'big', 'br', 'button', 'canvas', 'cite', 'code', 'data', 'datalist', 'del', 'dfn', 'em', 'embed', 'i', 'iframe', 'img', 'input', 'ins', 'kbd', 'label', 'map', 'mark', 'meter', 'noscript', 'object', 'output', 'picture', 'progress', 'q', 'ruby', 's', 'samp', 'script', 'select', 'slot', 'small', 'span', 'strong', 'sub', 'sup', 'svg', 'template', 'textarea', 'time', 'u', 'tt', 'var', 'video', 'wbr']`
+
+Some inline tags can accidentally introduce extra text. The minifier will take extra precaution when minifying around these tags.
+
+Set to `false`, `null`, or an empty array `[]` to disable.
+
+## API
+
+```js [app.js]
+import { minify } from '@maizzle/framework'
+
+const options = {/* html-crush options */}
+
+const html = await minify('html string', options)
+```
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/prettify.md</source>
+<document_content>
+---
+title: "Prettify Email Code"
+description: "Pretty-print your HTML email code before sending it to a human."
+---
+
+# Prettify Code
+
+Maizzle can pretty print your HTML email code so that it's nicely indented.
+
+Need to send HTML to a human? Enable `prettify` in your config:
+
+## Usage
+
+```js [config.js]
+export default {
+  prettify: true,
+}
+```
+
+Enabling it will use this default configuration:
+
+```js
+{
+  space_around_combinator: true, // Preserve space around CSS selector combinators
+  newline_between_rules: false, // Remove empty lines between CSS rules
+  indent_inner_html: false, // Helps reduce file size
+  extra_liners: [] // Don't add extra new line before any tag
+}
+```
+
+## Customization
+
+You may configure JS Beautify's CSS and HTML Beautifier options.
+
+Maybe you prefer tabs for indentation?
+
+```js [config.js]
+export default {
+  prettify: {
+    indent_with_tabs: true,
+  }
+}
+```
+
+Checkout the full [list of HTML & CSS beautifier options](https://www.npmjs.com/package/js-beautify#css--html).
+
+## ocd
+
+Type: `Boolean`\
+Default: `false`
+
+```js [config.js]
+export default {
+  prettify: {
+    ocd: true,
+  }
+}
+```
+
+This option applies several code indentation strategies:
+
+- condenses multiple newlines to a single newline
+- trims leading and trailing whitespace
+- ensures that a trailing newline is inserted
+- normalizes whitespace before code comments
+
+## API
+
+```js [app.js]
+import { prettify } from '@maizzle/framework'
+
+const options = {/* prettify options */}
+
+const html = await prettify('html string', options)
+```
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/purge-css.md</source>
+<document_content>
+---
+title: "Remove unused CSS"
+description: "Purge unused CSS, remove HTML comments, or rewrite CSS selectors to be as short as possible."
+---
+
+# Remove unused CSS
+
+Cleaning up your HTML email results in smaller file sizes, which translates to faster email sendouts, faster opens (think slow 3G), and snappier paint times.
+
+Gmail will clip your email [around 102KB](https://github.com/hteumeuleu/email-bugs/issues/41), so anything past that mark won't even be in the DOM (which can lead to unexpected results like tracking pixel not loaded or, worse, hidden unsubscribe links). You might also want to consider the [environmental impact](https://github.com/email-markup-consortium/email-markup-consortium/discussions/39) of sending large, unoptimized emails.
+
+This Transformer will remove any unused CSS styles and corresponding classes in your HTML, helping you reduce your file size.
+
+## Usage
+
+Enable it in your Environment config:
+
+```js [config.js]
+export default {
+  css: {
+    purge: true,
+  }
+}
+```
+
+## Customization
+
+You may configure this Transformer through the `css.purge` key in your `config.js`.
+
+### safelist
+
+Type: `String[]`
+
+Array of classes or id's that you don't want removed.
+
+You may use any [matcher](https://www.npmjs.com/package/matcher) patterns, for example:
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      safelist: ['.External*', '.ReadMsgBody', '.yshortcuts', '.Mso*', '#*'],
+    }
+  }
+}
+```
+
+Resetting email client styles is commonly done through CSS selectors that do not exist in your email's code.
+Maizzle uses the [`tailwindcss-email-variants`](https://github.com/maizzle/tailwindcss-email-variants) plugin for this, so to make sure the plugin works as expected `safelist` defaults to this:
+
+```js
+[
+  '*body*', // Gmail
+  '.gmail*', // Gmail
+  '.apple*', // Apple Mail
+  '.ios*', // Mail on iOS
+  '.ox-*', // Open-Xchange
+  '.outlook*', // Outlook.com
+  '[data-ogs*', // Outlook.com
+  '.bloop_container', // Airmail
+  '.Singleton', // Apple Mail 10
+  '.unused', // Notes 8
+  '.moz-text-html', // Thunderbird
+  '.mail-detail-content', // Comcast, Libero webmail
+  '*edo*', // Edison (all)
+  '#*', // Freenet uses #msgBody
+  '.lang*' // Fenced code blocks
+]
+```
+
+### backend
+
+Type: `Array<Record<string, string>>`\
+Default: `[{heads: '{{', tails: '}}'}, {heads: '{%', tails: '%}'}]`
+
+If you use computed class names, like for example `class="{{ computedRed }} text-sm"`, the library will normally treat `{{` and `}}` as class names and will remove them, since there will be no corresponding CSS selectors defined.
+
+To prevent this from happening, use the `backend` option to define the delimiters:
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      backend: [
+        { heads: '[[', tails: ']]' },
+      ]
+    }
+  }
+}
+```
+
+By default, Maizzle preserves `{{ }}` and `{% %}`.
+
+### removeHTMLComments
+
+Type: `Boolean`\
+Default: `true`
+
+Set to `false` to prevent `email-comb` from removing `<!-- HTML comments -->`.
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      removeHTMLComments: false,
+    }
+  }
+}
+```
+
+### removeCSSComments
+
+Type: `Boolean`\
+Default: `true`
+
+Set to `false` to prevent `email-comb` from removing `/* CSS comments */`.
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      removeCSSComments: false,
+    }
+  }
+}
+```
+
+#### Preserving CSS comments when inlining
+
+If you have [CSS inlining](/docs/transformers/inline-css) enabled, CSS comments will still be removed, even with `removeCSSComments` disabled.
+
+You may use the `data-embed` attribute on a `<style>` tag to disable inlining for CSS inside it, if you need to preserve CSS comments.
+
+For example, MailChimp uses CSS comments to define styles that are editable in their email editor. Here's how you can preserve them:
+
+1. Set `removeCSSComments: false` in your config, as above
+2. Write your CSS with comments in a separate `<style>` tag:
+
+```html
+<style data-embed>
+  /*
+    @tab Page
+    @section Body Background
+    @tip Set the background colour for the email body.
+  */
+  .wrapper {
+    /*@editable*/background-color: #EEEEEE !important;
+  }
+</style>
+```
+
+### doNotRemoveHTMLCommentsWhoseOpeningTagContains
+
+Type: `String[]`\
+Default: `['[if', '[endif']`
+
+HTML email code often includes Outlook or IE conditional comments, which you probably want to preserve. If the opening tag of a conditional includes any of the strings you list here, the Transformer will not remove that comment.
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      doNotRemoveHTMLCommentsWhoseOpeningTagContains: ['[if', '[endif'],
+    }
+  }
+}
+```
+
+### uglify
+
+Type: `Boolean`\
+Default: `false`
+
+Enable this to rename all classes and id's in both your `<style>` tags and your body HTML elements, to be as few characters as possible.
+
+Used in production, it will help trim down your HTML size.
+
+```js [config.js]
+export default {
+  css: {
+    purge: {
+      uglify: true,
+    }
+  }
+}
+```
+
+## API
+
+The Transformer uses the email-comb library, see all available options [here](https://www.npmjs.com/package/email-comb).
+
+```js [app.js]
+import { removeUnusedCSS } from '@maizzle/framework'
+
+const config = {/* email-comb options */}
+
+const html = await removeUnusedCSS(`<div class="unused">test</div>`, config)
+```
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/remove-attributes.md</source>
+<document_content>
+---
+title: "Remove attributes"
+description: "Automatically remove attributes when building your HTML email."
+---
+
+# Remove attributes
+
+Maizzle can automatically remove attributes from your HTML.
+
+By default, it removes empty `style` and `class` attributes that are sometimes left over after the CSS inlining process.
+
+## Usage
+
+You may configure which attributes to remove through the `removeAttributes` array.
+
+### Empty values
+
+To remove attributes that have no value, specify the attribute name as a string:
+
+```js [config.js]
+export default {
+  attributes: {
+    remove: ['data-src'],
+  }
+}
+```
+
+Input:
+
+```html [emails/example.html]
+<img src="example.jpg" data-src alt="">
+```
+
+Output:
+
+```html
+<img src="example.jpg" alt="">
+```
+
+<Alert>Maizzle automatically removes empty `style` and `class` attributes, no need to add them yourself.</Alert>
+
+### By name and value
+
+If you know the exact name and value, you may pass them to the array as an object:
+
+```js [config.js]
+export default {
+  attributes: {
+    remove: [
+      {name: 'id', value: 'test'},
+    ],
+  }
+}
+```
+
+Input:
+
+```html
+<div style="color: #000" id="test">Test</div>
+```
+
+Output:
+
+```html
+<div style="color: #000">Test</div>
+```
+
+### With a RegExp
+
+You may also use a regular expression for the `value`.
+
+All attributes with a value matching the regex will be removed:
+
+```js [config.js]
+export default {
+  attributes: {
+    remove: [
+      {name: 'data-id', value: /\d/},
+    ],
+  }
+}
+```
+
+Input:
+
+```html
+<div data-id="test"></div>
+<div data-id="99"></div>
+```
+
+Output:
+
+```html
+<div data-id="test"></div>
+<div></div>
+```
+
+## API
+
+```js [app.js]
+import { removeAttributes } from '@maizzle/framework'
+
+const options = [
+  'id',
+  {name: 'role', value: 'article'},
+]
+
+const html = await removeAttributes(`<div id="" style="" role="article"></div>`, options)
+```
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/replace-strings.md</source>
+<document_content>
+---
+title: "Replace strings"
+description: "Programmatically replace strings in your HTML email content."
+---
+
+# Replace strings
+
+Maizzle can batch-replace strings in your HTML email template, and you can even use regular expressions!
+
+## Usage
+
+Use the `replaceStrings` option to define key-value pairs of regular expressions and strings to replace them with:
+
+```js [config.js]
+export default {
+  replaceStrings: {
+    'find and replace this exact string': 'with this one',
+    '\\s?data-src=""': '', // remove empty data-src="" attributes
+  }
+}
+```
+
+<Alert type="warning">Character classes need to be escaped when defining a regular expression for `replaceStrings`. As you can see above, `\s` becomes `\\s`.</Alert>
+
+## API
+
+```js [app.js]
+import { replaceStrings } from '@maizzle/framework'
+
+const html = await replaceStrings('initial text', {initial: 'updated'})
+```
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/safe-class-names.md</source>
+<document_content>
+---
+title: "Safe class names"
+description: "Replace escaped characters in class names and CSS selectors for better email client compatibility."
+---
+
+# Safe class names
+
+Some email clients don't support class names with escaped characters. Gmail in particular will discard the entire rule of such a class, so you can't safely use CSS class names like `w-1/2` or `sm:block`.
+
+Maizzle normalizes escaped character class names like `\:` or `\/` by replacing them with email-safe alternatives, so you can keep using those fancy Tailwind CSS class names and not have to worry about it.
+
+By default, it runs only when not developing locally. This means that it's disabled when you run `maizzle serve`, but it's enabled when running `maizzle build production`.
+
+## Replacements
+
+This is the default replacement strategy:
+
+| Character | Replacement |
+|-----------|-------------|
+| :         | -           |
+| /         | -           |
+| %         | pc          |
+| .         | _           |
+| ,         | _           |
+| #         | _           |
+| [         | (removed)   |
+| ]         | (removed)   |
+| (         | (removed)   |
+| )         | (removed)   |
+| {         | {           |
+| }         | }           |
+| !         | important-  |
+| &         | and-        |
+| <         | lt-         |
+| =         | eq-         |
+| >         | gt-         |
+| \|        | or-         |
+| @         | at-         |
+| ?         | q-          |
+| \         | -           |
+| "         | -           |
+| $         | -           |
+| '         | -           |
+| *         | -           |
+| +         | -           |
+| ;         | -           |
+| ^         | -           |
+| `         | -           |
+| ~         | -           |
+
+## Customization
+
+You may define new replacement mappings (or overwrite existing ones) by adding a `css.safe` key to your config:
+
+```js [config.js]
+export default {
+  css: {
+    safe: {
+      ':': '__',
+      '!': 'i-',
+    }
+  }
+}
+```
+
+That would turn `sm:w-full` into `sm__w-full` and `sm:!text-xl` into `sm__i-text-xl`.
+
+## Disabling
+
+You can prevent Maizzle from rewriting your class names with safe characters, by setting this option to `false`:
+
+```js [config.js]
+export default {
+  css: {
+    safe: false,
+  }
+}
+```
+
+## API
+
+You may use the `safeClassNames` Transformer in your application.
+
+```js [app.js]
+import { safeClassNames } from '@maizzle/framework'
+
+const html = await safeClassNames(
+  '<div class="sm:text-left w-1.5">foo</div>', // html string
+  {'.': 'dot'} // replacements object
+)
+```
+
+Result:
+
+```html
+<div class="sm-text-left w-1dot5">foo</div>
+```
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/shorthand-css.md</source>
+<document_content>
+---
+title: "Shorthand CSS"
+description: "Group CSS properties of the same type into shorthand inline CSS."
+---
+
+# Shorthand CSS
+
+Rewrite longhand CSS inside `style` attributes with shorthand syntax. Only works with `margin`, `padding` and `border`, and only when all sides are specified.
+
+Shorthand syntax for CSS properties means less code, so fewer bytes to send over the wire. Today, most email clients support shorthand CSS.
+
+Something like this:
+
+```html
+<p class="mx-2 my-4">Example</p>
+```
+
+... instead of becoming this:
+
+```html
+<p style="margin-left: 2px; margin-right: 2px; margin-top: 4px; margin-bottom: 4px;">Example</p>
+```
+
+... is rewritten to this:
+
+```html
+<p style="margin: 4px 2px;">Example</p>
+```
+
+By default, `shorthandCSS` is disabled.
+
+## Usage
+
+Enable it for all tags:
+
+```js [config.js]
+export default {
+  css: {
+    shorthand: true,
+  }
+}
+```
+
+Enable it only for a selection of tags:
+
+```js [config.js]
+export default {
+  css: {
+    shorthand: {
+      tags: ['td', 'div'],
+    }
+  }
+}
+```
+
+## Disabling
+
+Set it to `false` or simply omit it:
+
+```js [config.js]
+export default {
+  css: {
+    shorthand: false,
+  }
+}
+```
+
+## API
+
+```js [app.js]
+import { shorthandCSS } from '@maizzle/framework'
+
+const html = await shorthandCSS('html string')
+```
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/six-hex.md</source>
+<document_content>
+---
+title: "Six-digit HEX"
+description: "Using six-digit hexadecimal for improved email client compatibility."
+---
+
+# Six-digit HEX
+
+Some email clients do not support 3-digit HEX colors like `#fff` in `bgcolor` or `<font color="">`. This Transformer ensures that all your HEX colors inside `bgcolor` and `color` attributes are defined with six digits.
+
+For better email client compatibility, it is enabled by default.
+
+## Disabling
+
+You may disable it by setting it to `false`:
+
+```js [config.js]
+export default {
+  css: {
+    sixHex: false,
+  }
+}
+```
+
+## API
+
+```js [app.js]
+import { sixHEX } from '@maizzle/framework'
+
+const html = await ensureSixHEX('<td bgcolor="#fff"><font color=""#000>test</font></td>')
+```
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/url-parameters.md</source>
+<document_content>
+---
+title: "URL Parameters"
+description: "Easily append custom URL parameters to links in your HTML email template."
+---
+
+# URL Parameters
+
+Maizzle can automatically append custom parameters to your URLs.
+
+## Usage
+
+To add the same parameters to all URLs in all Templates, use the environment config:
+
+```js [config.js]
+export default {
+  urlParameters: {
+    _options: {
+      tags: ['a'],
+      qs: {}
+    },
+    utm_source: 'maizzle',
+    utm_campaign: 'Campaign Name',
+    utm_medium: 'email',
+    custom_parameter: 'foo',
+    '1stOfApril': 'bar'
+  }
+}
+```
+
+## Front Matter
+
+Of course, you may define URL parameters at a Template level, through Front Matter:
+
+```hbs [emails/example.html]
+---
+title: "These URL params are unique to this template"
+urlParameters:
+  utm_source: custom
+  utm_campaign: "Pre-launch August"
+---
+
+<x-main>
+  <!-- your email HTML... -->
+</x-main>
+```
+
+## Options
+
+Configure the tags to process and other transformer options.
+
+### tags
+
+Type: `String[]`\
+Default: `['a']`
+
+Array of tag names to process.
+
+By default, only URLs inside [known attributes](#attributes) of tags in this array will be processed.
+
+You may use CSS selectors to select only certain attributes. For example, this will apply parameters only to anchors that include example.com in their `href` value:
+
+```js [config.js]
+export default {
+  urlParameters: {
+    _options: {
+      tags: ['a[href*="example.com"]'],
+    },
+    utm_source: 'maizzle',
+  }
+}
+```
+
+### attributes
+
+Type: `String[]`\
+Default: `['src', 'href', 'poster', 'srcset', 'background']`
+
+Array of attributes to process for the given tags.
+
+You may override this with your own list of attributes - the plugin will only process URLs in these attributes.
+
+```js [config.js]
+export default {
+  urlParameters: {
+    _options: {
+      tags: ['a', 'img'],
+      attributes: ['data-href', 'src']
+    },
+    foo: 'bar',
+  }
+}
+```
+
+Given this HTML:
+
+```html
+<a href="https://foo.bar" data-href="https://example.com">Test</a>
+<img src="https://example.com">
+```
+
+The result will be:
+
+```html
+<a href="https://foo.bar" data-href="https://example.com?foo=bar">Test</a>
+<img src="https://example.com?foo=bar">
+```
+
+### strict
+
+Type: `Boolean`\
+Default: `true`
+
+By default, query parameters are appended only to valid URLs.
+
+Disable strict mode to append parameters to any string:
+
+```js [config.js]
+export default {
+  urlParameters: {
+    _options: {
+      strict: false,
+    },
+    foo: 'bar'
+  }
+}
+```
+
+Input:
+
+```html
+<a href="example.com">test</a>
+```
+
+Result:
+
+```html
+<a href="example.com?foo=bar">test</a>
+```
+
+### qs
+
+Type: `Object`\
+Default: `undefined`
+
+Options to pass to the [query-string](https://github.com/sindresorhus/query-string#stringifyobject-options) library.
+
+For example, Maizzle disables encoding by default, but you can enable it:
+
+```js [config.js]
+export default {
+  urlParameters: {
+    _options: {
+      qs: {
+        encode: true
+      }
+    },
+    foo: '@Bar@'
+  }
+}
+```
+
+Result:
+
+```html
+https://example.com/?foo=%40Bar%40
+```
+
+## API
+
+```js [app.js]
+import { addURLParams } from '@maizzle/framework'
+
+const html = await addURLParams('<a href="https://example.com">test</a>', {utm_source: 'maizzle'})
+```
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/transformers/widows.md</source>
+<document_content>
+---
+title: "Prevent Widow Words"
+description: "Preventing widow words in your HTML email content."
+---
+
+# Prevent Widow Words
+
+Add a `prevent-widows` attribute on any HTML tag to prevent widow words by adding a `&nbsp;` between the last two words inside it.
+
+```html [emails/example.html]
+<x-main>
+  <div prevent-widows>
+    <p>The quick brown fox jumped over the lazy dog.</p>
+  </div>
+</x-main>
+```
+
+The `prevent-widows` attribute will be removed and the HTML will be transformed to:
+
+```html
+<div>
+  <p>The quick brown fox jumped over the lazy&nbsp;dog.</p>
+</div>
+```
+
+## Configuration
+
+You may configure the transformer through the `widowWords` key in your `config.js`:
+
+```js [config.js]
+export default {
+  widowWords: {
+    attributes: ['fix-widows'],
+    // ...options for string-remove-widows
+  },
+}
+```
+
+### attrName
+
+Type: `String`\
+Default: `['prevent-widows', 'no-widows']`
+
+A list of attribute names that will trigger the transformer.
+
+Only tags that have this attribute will be processed.
+
+### minWords
+
+Type: `Number`\
+Default: `3`
+
+The minimum amount of words in a target string, in order to trigger the transformer.
+
+You may set it to `0` or `false` to disable it.
+
+### createWidows
+
+Type: `Boolean`\
+Default: `false`
+
+Set this to `true` if you want the opposite of preventing widow words: it will replace all widow word `nbsp;` locations with a single space.
+
+
+### ignore
+
+Type: `Array<Record<string, string>>`\
+Default: custom array
+
+Start/end pairs of strings that will prevent the transformer from removing widow words inside of them. Maizzle will ignore the following  common templating language start and end delimiters:
+
+- `{{ }}` -  Handlebars, Liquid, Nunjucks, Twig, Jinja2, Mustache
+- `{% %}` -  Liquid, Nunjucks, Twig, Jinja2
+- `<%= %>` - EJS, ERB
+- `<% %>` -  EJS, ERB
+- `{$ }` - Smarty
+- `<?php ?>` - PHP
+- `<?= ?>` - PHP
+- `#{ }` - Pug
+
+Any new pairs that you add will be merged on top of the default ones.
+
+```js [config.js]
+export default {
+  widowWords: {
+    ignore: [
+      {
+        start: '[[',
+        end: ']]'
+      },
+    ],
+  },
+}
+```
+
+## Undo Widows
+
+You can use the transformer the other way around, too.
+
+```js [config.js]
+export default {
+  widowWords: {
+    createWidows: true,
+    attributes: ['create-widows'],
+  },
+}
+```
+
+Input:
+
+```html [emails/example.html]
+<x-main>
+  <div create-widows>
+    <p>The quick brown fox jumped over the lazy&nbsp;dog.</p>
+  </div>
+</x-main>
+```
+
+Output:
+
+```html [emails/example.html]
+<div>
+  <p>The quick brown fox jumped over the lazy dog.</p>
+</div>
+```
+
+## API
+
+```js [app.js]
+import { preventWidows } from '@maizzle/framework'
+
+const html = await preventWidows(
+  '<p prevent-widows>the quick brown fox</p>',
+  {
+    minWords: 4,
+  }
+)
+```
+
+</document_content>
+</document>
+</documents>

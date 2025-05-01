@@ -1,0 +1,2079 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/build.md</source>
+<document_content>
+---
+title: "Build configuration"
+description: "Configuring content sources and other build related options in Maizzle."
+---
+
+# Build configuration
+
+Configure the paths where Maizzle should look for Templates to compile, where they should be output to, or what extensions they should use.
+
+This is done under the `build` key of your config:
+
+```js [config.js]
+export default {
+  build: {
+    content: ['emails/**/*.html'],
+  }
+}
+```
+
+## content
+
+Type: `String[]`\
+Default: `['emails/**/*.html']`
+
+Define the source directories where Maizzle should look for Templates to compile.
+
+This is an array of glob patterns, similar to how content sources are configured in Tailwind CSS. See [fast-glob](https://github.com/mrmlnc/fast-glob) for how to write glob patterns.
+
+The `content` key is unique to each config file - unlike other options in your config, it is not merged when using multiple Environments. This way, we avoid processing unwanted Templates when building for a specific Environment.
+
+To illustrate this, imagine this is your `config.js` file:
+
+```js [config.js]
+export default {
+  build: {
+    content: ['emails/**/*.html'],
+  }
+}
+```
+
+... and this is your `config.production.js` file:
+
+```js [config.production.js]
+export default {
+  build: {
+    content: ['emails/transactional/**/*.html'],
+  }
+}
+```
+
+When running `maizzle build production`, only the Templates from the `emails/transactional` folder will be compiled, no matter if the `emails` folder contains other Templates.
+
+### File types
+
+Specify which file extensions should be considered when looking for Templates to compile. For example, to include both `.html` and `.blade.php` files:
+
+```js [config.js]
+export default {
+  build: {
+    content: ['emails/**/*.{html,blade.php}'],
+  }
+}
+```
+
+### Excluding files
+
+You may exclude files from being compiled by prefixing the glob pattern with an exclamation mark `!`. For example, to exclude all files ending in `-ignore.html`:
+
+```js [config.js]
+export default {
+  build: {
+    content: [
+      'emails/**/*.html',
+      '!emails/**/*-ignore.html',
+    ],
+  }
+}
+```
+
+### Compute paths
+
+If you need to compute the content source paths dynamically, you can use a function that returns an array of strings:
+
+```js [config.js]
+const sources = () => {
+  return ['templates**/*.html', 'amp-templates/**/*.html']
+}
+
+export default {
+  build: {
+    content: sources
+  }
+}
+```
+
+<Alert>Previously this was called 'Function source', and it allowed defining sources as a function that was evaluated by Maizzle. This is deprecated starting with Maizzle 5.</Alert>
+
+### Multiple sources
+
+You may define multiple content sources:
+
+```js [config.js]
+export default {
+  build: {
+    content: [
+      'marketing/**/*.html',
+      'transactional/**/*.html'
+    ]
+  }
+}
+```
+
+## output
+
+Type: `Object`\
+Default: `{ path: 'build_[env]', extension: 'html', from: ['emails'] }`
+
+Define the output path for compiled Templates, and what file extension they should use.
+
+### path
+
+Type: `String`\
+Default: `build_[env]`
+
+Directory path where Maizzle should output the compiled emails.
+
+```js [config.production.js]
+export default {
+  build: {
+    output: {
+      path: 'build_production',
+    }
+  }
+}
+```
+
+If you omit this key, a `build_[env]` directory name will be used, where `[env]` is the current environment, i.e. `build_production` or `build_local`.
+
+### extension
+
+Type: `String`\
+Default: `undefined`
+
+Define the file extension - without the leading dot - to be used for the compiled templates. For example, let's output [Laravel Blade](https://laravel.com/docs/8.x/blade) files:
+
+```js [config.laravel.js]
+export default {
+  build: {
+    output: {
+      path: 'build_laravel',
+      extension: 'blade.php'
+    }
+  }
+}
+```
+
+The compiled Templates will be output as `build_laravel/*.blade.php`.
+
+By default, Maizzle will use the extension of the source file.
+
+### from
+
+Type: `String[]`\
+Default: `['emails']`
+
+Default directories to unwrap when outputting compiled Templates.
+
+For example, if you have a Template located at `emails/welcome.html` in your Maizzle project, by default the compiled file will be output as `build_[env]/welcome.html` - the `emails` part of the path is discarded.
+
+If you have multiple sources, you can specify additional directories to unwrap:
+
+```js [config.js]
+export default {
+  build: {
+    content: [
+      'emails/**/*.html',
+      'amp-templates/**/*.html'
+    ],
+    output: {
+      from: ['emails', 'amp-templates']
+    }
+  }
+}
+```
+
+<alert>You must specify all directories to unwrap when using `output.from` and multiple `build.content` source paths, as this option overwrites the default `[emails]` value.</alert>
+
+In this case, the compiled files will all be output at the root of the `build_[env]` directory.
+
+#### \`from\` caveat
+
+Templates in Maizzle are processed in the order their source paths are defined in `build.content`, which means files with identical names will be overwritten if they have the same output path as a result of their parent directory being unwrapped.
+
+In the `emails` and `amp-templates` example above, if both directories contain a `welcome.html` file, the content of the one in the `amp-templates` directory will overwrite that of the one in the `emails` directory.
+
+## permalink
+
+Type: `String`\
+Default: `undefined`
+
+Use the `permalink` Front Matter key to define a custom output path right in a Template:
+
+```hbs [emails/example.html]
+---
+permalink: output/this/template/here.html
+---
+
+<x-main>
+  <!-- your email HTML... -->
+</x-main>
+```
+
+This will override `output.path` from your config, but only for this Template.
+
+You may use both relative and absolute file paths.
+
+For example, output one level above project directory:
+
+```hbs [emails/example.html]
+---
+permalink: ../newsletter.html
+---
+
+<x-main>
+  <!-- your email HTML... -->
+</x-main>
+```
+
+Output at a specific system location:
+
+```hbs [emails/example.html]
+---
+permalink: C:/Users/Cosmin/Newsletter/2024/07/index.html
+---
+
+<x-main>
+  <!-- your email HTML... -->
+</x-main>
+```
+
+<Alert type="warning">`permalink` must be a <em>file</em> path, and can only be used in the Template's Front Matter. Using a directory path will result in a build error.</Alert>
+
+## static
+
+Type: `Object`\
+Default: `{ source: '', destination: 'assets' }`
+
+Source and destination directories for static asset files.
+
+At build time, `build.static.destination` will be created relative to `build.output.path`, and files inside `build.static.source` will be copied into it:
+
+```js [config.js]
+export default {
+  build: {
+    static: {
+      source: 'images/**/*',
+      destination: 'images',
+    }
+  }
+}
+```
+
+You can use it to store _any_ files you might need, not just images.
+
+## spinner
+
+Type: `String|Object`\
+Default: `'circleHalves'`
+
+Customize the spinner shown in the console during build.
+
+```js [config.js]
+export default {
+  build: {
+    spinner: 'dots'
+  }
+}
+```
+
+See the [ora spinners list](https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json) for available options.
+
+## summary
+
+Type: `Boolean`\
+Default: `false`
+
+Show a summary at the end the build process. A table with the following information will be displayed:
+
+- file name
+- file size
+- build time
+
+You may also enable this option by passing the `--summary` or `-s` flag to the build command.
+
+```sh
+maizzle build --summary
+```
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/components.md</source>
+<document_content>
+---
+title: "Components configuration"
+description: "Configuring components in Maizzle."
+---
+
+# Components configuration
+
+Control where your Components live and how you reference them.
+
+## root
+
+Type: `String`\
+Default: `'./'`
+
+Root path where to look for folders containing component files.
+
+## folders
+
+Type: `Array`\
+Default: `['components', 'layouts', 'emails']`
+
+Folder paths where to look for component files. Relative to `root`.
+
+If you keep your components in a different folder, you can add it here:
+
+```js [config.js]
+export default {
+  components: {
+    folders: ['custom-components'],
+  },
+}
+```
+
+The paths you defined will be added to the default folders.
+
+## fileExtension
+
+Type: `String`|`String[]`\
+Default: `'html'`
+
+Define the file extension(s) that component files must use.
+
+To define multiple file extensions, use an array:
+
+```js [config.js]
+export default {
+  components: {
+    fileExtension: ['html', 'php'],
+  },
+}
+```
+
+Any other files will be ignored and not be made available as components.
+
+## tagPrefix
+
+Type: `String`\
+Default: `'x-'`
+
+Prefix string to use for component tags.
+
+If you prefer to write `<a-button>` instead of `<x-button>`, do this:
+
+```js [config.js]
+export default {
+  components: {
+    tagPrefix: 'a-',
+  },
+}
+```
+
+## tag
+
+Type: `String|Boolean`\
+Default: `'component'`
+
+You may alternatively reference any component using this tag name and passing in the component file path in the `src` prop.
+
+By default, this ensures backwards compatibility with the old components system so you can continue to use syntax like `<component src="button.html" />` in your templates.
+
+For example, if you prefer to write `<module src="button.html" />`, do this:
+
+```js [config.js]
+export default {
+  components: {
+    tag: 'module',
+  },
+}
+```
+
+Set it to `false` to disable this feature and only use `x-` tags.
+
+## attribute
+
+Type: `String`\
+Default: `'src'`
+
+You may define a custom attribute name to use for the `tag`.
+
+```js [config.js]
+export default {
+  components: {
+    attribute: 'href',
+  },
+}
+```
+
+You can now use `<component href="button.html" />` in your templates.
+
+## yield
+
+Type: `String`\
+Default: `'yield'`
+
+Name of the tag that will be replaced with the content that is passed to the component.
+
+If you want to change it to be `content` as in previous versions of Maizzle, do this:
+
+```js [config.js]
+export default {
+  components: {
+    yield: 'content',
+  },
+}
+```
+
+You'd then define a component like this:
+
+```html [components/button.html]
+<a href="...">
+  <content />
+</a>
+```
+
+## slot
+
+Type: `String`\
+Default: `'slot'`
+
+Name for the [`slot` tag](/docs/components#slots).
+
+For example, maybe you want to change this to be `provide`:
+
+```js [config.js]
+export default {
+  components: {
+    slot: 'provide',
+  },
+}
+```
+
+You could then use `provide` instead of `slot` when defining a component:
+
+```html [components/footer.html]
+<script props>
+  module.exports = {
+    year: new Date().getFullYear(),
+  }
+</script>
+
+<footer>
+  <provide:footer-logo />
+
+  <p>&copy; {{ year }}</p>
+
+  <content />
+</footer>
+```
+
+You'd fill `provide` as usual:
+
+```html [emails/example.html]
+<x-footer>
+  <fill:footer-logo>
+    <img src="logo.png">
+  </fill:footer-logo>
+
+  <p>Some content</p>
+</x-footer>
+```
+
+Result:
+
+```html [build_production/example.html]
+<footer>
+  <img src="logo.png">
+
+  <p>&copy; 2023</p>
+
+  <p>Some content</p>
+</footer>
+```
+
+## fill
+
+Type: `String`\
+Default: `'fill'`
+
+Name for the [`fill` tag](/docs/components#slots).
+
+For example, maybe you want to change this to be `inject`:
+
+```js [config.js]
+export default {
+  components: {
+    fill: 'inject',
+  },
+}
+```
+
+Given the previous example, you'd now use `inject` instead of `fill` when defining a component:
+
+```html [emails/example.html]
+<x-footer>
+  <inject:footer-logo>
+    <img src="logo.png">
+  </inject:footer-logo>
+
+  <p>Some content</p>
+</x-footer>
+```
+
+## slotSeparator
+
+Type: `String`\
+Default: `':'`
+
+String to use as a separator between the `slot` tag and its name.
+
+For example, changing it to `@`:
+
+```js [config.js]
+export default {
+  components: {
+    slotSeparator: '@',
+  },
+}
+```
+
+You'd then use `<slot@footer-logo />` and `<fill@footer-logo>`:
+
+```html [emails/example.html]
+<x-footer>
+  <fill@footer-logo>
+    <img src="logo.png">
+  </fill@footer-logo>
+</x-footer>
+```
+
+## push
+
+Type: `String`\
+Default: `'push'`
+
+Name for the [\<push\> tag](/docs/components#stacks).
+
+## stack
+
+Type: `String`\
+Default: `'stack'`
+
+Name for the [\<stack\> tag](/docs/components#stacks).
+
+## propsScriptAttribute
+
+Type: `String`\
+Default: `'props'`
+
+Name of the props attribute to use in the `<script>` tag of a component.
+
+If you change it to `locals`:
+
+```js [config.js]
+export default {
+  components: {
+    propsScriptAttribute: 'locals',
+  },
+}
+```
+
+... you'd then use `locals` instead of `props` when defining the script in a component:
+
+```hbs [components/button.html]
+<script locals>
+  module.exports = {
+    href: props.href || '#',
+  }
+</script>
+
+<a href="{{ href }}">
+  <yield />
+</a>
+```
+
+## propsContext
+
+Type: `String`\
+Default: `'props'`
+
+Name of the object that will be used to store the props of a component.
+
+For example, if you change it to `data` like this:
+
+```js [config.js]
+export default {
+  components: {
+    propsContext: 'data',
+  },
+}
+```
+
+... you'd then use `data` instead of `props` when defining the props of a component:
+
+```hbs [components/button.html]
+<script props>
+  module.exports = {
+    href: data.href || '#', // using data.href instead of props.href
+  }
+</script>
+
+<a href="{{ href }}">
+  <yield />
+</a>
+```
+
+## propsAttribute
+
+Type: `String`\
+Default: `'locals'`
+
+Name of the attribute that will be used to pass props to a component as JSON.
+
+Set to `locals` by default, for backwards compatibility with the old components system.
+
+Again, let's change it to `data`:
+
+```js [config.js]
+export default {
+  components: {
+    propsAttribute: 'data',
+  },
+}
+```
+
+You'd then use `data` instead of `locals` when passing props as JSON to a component:
+
+```html [emails/example.html]
+<x-button data='{"href": "https://example.com"}'>
+  Click me
+</x-button>
+```
+
+## propsSlot
+
+Type: `String`\
+Default: `'props'`
+
+String value used to retrieve the props passed to slot via `$slots.slotName.props`.
+
+For example, if you change it to `data` and have a component with a `header` slot, you'd be able to access the props passed to the slot via `$slots.header.data`.
+
+## parserOptions
+
+Type: `Object`\
+Default: `{ recognizeSelfClosing: true }`
+
+Object to configure the underlying `posthtml-parser` library.
+
+By default, it enables support for self-closing component tags.
+
+## expressions
+
+Type: `Object`\
+Default: `{/*custom object*/}`
+
+Object to configure how expressions are handled in components.
+
+Maizzle passes your config variables and the contents of your `build.expressions` object to it, so that you have them all available inside your&nbsp;components.
+
+## plugins
+
+Type: `Array`\
+Default: `[]`
+
+Array of PostHTML plugins to apply to each parsed component.
+
+## attrsParserRules
+
+Type: `Object`\
+Default: `{}`
+
+Extra rules for the PostHTML plugin that is used by components to parse attributes.
+
+## strict
+
+Type: `Boolean`\
+Default: `true`
+
+In `strict` mode, an error will be thrown if a component cannot be rendered.
+
+## utilities
+
+Type: `Object`\
+Default: `{ merge: _.mergeWith, template: _.template }`
+
+Utility methods to be passed to `<script props>`.
+
+By default you can use `mergeWith` and `template` from `lodash`.
+
+## elementAttributes
+
+Type: `Object`\
+Default: `{}`
+
+Define additional attributes that should be preserved for specific HTML elements.
+
+It's an object with the following structure:
+
+```js
+TAG_NAME: (defaultAttributes) => {
+  // return defaultAttributes
+}
+```
+
+For example, say you have an attribute called `tracking-id` that you only use on `<div>` elements. By default, it would be stripped out in a component, because it's not a standard HTML attribute.
+
+But you can add it to the 'valid' attributes list for `<div>` elements like this:
+
+```js [config.js] {3-8}
+export default {
+  components: {
+    elementAttributes: { // [!code ++]
+      DIV: (defaultAttributes) => { // [!code ++]
+        defaultAttributes.push('tracking-id') // [!code ++]
+        return defaultAttributes // [!code ++]
+      }, // [!code ++]
+    }, // [!code ++]
+  },
+}
+```
+
+<Alert>This is only useful to control which elements can use what attributes. If you'd like to have all elements use an non-standard attribute, use `safelistAttributes` instead.</Alert>
+
+## safelistAttributes
+
+Type: `Array`\
+Default: `['data-*']`
+
+Array of attributes that should be preserved in components (on all elements).
+
+You can use a `*` wildcard to match the rest of the string:
+
+```js [config.js]
+export default {
+  components: {
+    safelistAttributes: ['data-*', 'tracking-*'],
+  },
+}
+```
+
+## blacklistAttributes
+
+Type: `Array`\
+Default: `[]`
+
+Array of attributes that should be removed from components (on all elements).
+
+```js [config.js]
+export default {
+  components: {
+    // remove the `id` attribute from all elements in components
+    blacklistAttributes: ['id'],
+  },
+}
+```
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/css.md</source>
+<document_content>
+---
+title: "Tailwind CSS configuration"
+description: "Tailwind CSS configuration options for email development in Maizzle."
+---
+
+# CSS configuration
+
+Configuring Tailwind CSS and how CSS is compiled in Maizzle.
+
+## Options
+
+CSS handling in Maizzle can be configured under the `css` key in your `config.js` file:
+
+```js [config.js]
+export default {
+  css: {
+    inline: true,
+    purge: true,
+    resolveCalc: true,
+    resolveProps: true,
+    safe: true,
+    shorthand: true,
+    sixHex: true,
+    tailwind: {},
+  },
+}
+```
+
+### inline
+
+Type: `Boolean`\
+Default: `undefined`
+
+Configure how CSS is inlined in your HTML emails.
+
+For details, see the [CSS inlining documentation](/docs/transformers/inline-css).
+
+### purge
+
+Type: `Boolean|Object`\
+Default: `undefined`
+
+Configure email-safe unused CSS purging.
+
+For details, see the [CSS Purge Transformer docs](/docs/transformers/purge-css).
+
+### resolveCalc
+
+Type: `Boolean|PostCssCalcOptions`\
+Default: `true`
+
+Whether to resolve `calc()` expressions in the CSS to their computed values.
+
+By default, something like this:
+
+```html
+<style>
+  div {
+    width: calc(100% / 3);
+  }
+</style>
+```
+
+... will be compiled to:
+
+```html
+<style>
+  div {
+    width: 33.33%;
+  }
+</style>
+```
+
+<Alert>Maizzle uses a 2-decimal precision when resolving `calc()` expressions.</Alert>
+
+This uses [`postcss-calc`](https://www.npmjs.com/package/postcss-calc) to resolve `calc()` functions in your CSS to their computed values whenever possible. When multiple units are mixed in the same `calc()` expression, the statement will be output as-is.
+
+You may pass an object to configure `postcss-calc`:
+
+```js [config.js]
+export default {
+  css: {
+    resolveCalc: {
+      precision: 3, // precision for decimal numbers (2 by default)
+    },
+  },
+}
+```
+
+See the [postcss-calc options](https://github.com/postcss/postcss-calc/#options).
+
+### resolveProps
+
+Type: `Boolean|Object`\
+Default: `true`
+
+CSS custom properties, or CSS variables, are poorly supported in email clients. Whenever you use them, Maizzle will try to resolve them to their static representation.
+
+You may configure this behavior by setting the `resolveProps` key to `false` (to disable it) or to a [`postcss-css-variables`](https://www.npmjs.com/package/postcss-css-variables) options object:
+
+```js [config.js]
+export default {
+  css: {
+    resolveProps: false, // or postcss-css-variables options
+  },
+}
+```
+
+See the [postcss-css-variables options](https://github.com/MadLittleMods/postcss-css-variables/#options).
+
+### safe
+
+Type: `Boolean|Object`\
+Default: `true`
+
+Rewrites Tailwind CSS class names to email-safe alternatives.
+
+See the [Safe Class Names Transformer docs](/docs/transformers/safe-class-names).
+
+### shorthand
+
+Type: `Boolean|Object`\
+Default: `undefined`
+
+Configure rewriting of CSS properties to their shorthand form. Disabled by default.
+
+See the [Shorthand Transformer docs](/docs/transformers/shorthand-css).
+
+### sixHex
+
+Type: `Boolean`\
+Default: `true`
+
+Whether to convert 3-digit HEX colors to 6-digit HEX colors. Enabled by default.
+
+See the [Six HEX Transformer docs](/docs/transformers/six-hex).
+
+### tailwind
+
+You'll probably only need this when using Maizzle programmatically - otherwise you can use the `@config` directive in your CSS to specify a custom Tailwind CSS config file to use.
+
+It's important to note that when using `css.tailwind` you need to provide a Tailwind CSS configuration object with all values that you need to be different from Tailwind's defaults. So you need to specify `px` values, screens etc. that work in email clients:
+
+```js [config.js]
+export default {
+  css: {
+    tailwind: {
+      content: [
+        './components/**/*.html',
+        './emails/**/*.html',
+        './layouts/**/*.html',
+      ],
+      important: true,
+      screens: {
+        sm: {max: '600px'},
+        xs: {max: '425px'},
+      },
+      spacing: {
+        px: '1px',
+        0.5: '2px',// etc.
+      },
+    },
+  },
+}
+```
+
+If you want, you can import `tailwindcss-preset-email`:
+
+```js [config.js]
+import emailPreset from 'tailwindcss-preset-email'
+
+export default {
+  css: {
+    tailwind: {
+      presets: [ emailPreset ],
+      content: [ /* ... */ ],
+    },
+  },
+}
+```
+
+## tailwind.config.js
+
+Maizzle uses [`tailwindcss-preset-email`](https://github.com/maizzle/tailwindcss-preset-email), a custom preset that configures Tailwind CSS for better email client support.
+
+This preset helps generate more email-friendly CSS, by disabling some of the default Tailwind CSS features that are not well supported in email clients.
+For example, HEX values are preferred over CSS variables, and `rem` units are replaced with `px` units.
+
+### content
+
+By default, Tailwind CSS in Maizzle is configured to scan all `.html` files in your project's `src` directory for classes to generate:
+
+```js [tailwind.config.js]
+export default {
+  content: [
+    './components/**/*.html',
+    './emails/**/*.html',
+    './layouts/**/*.html',
+  ],
+}
+```
+
+### !important
+
+HTML emails still need to use inline CSS, most notably for these reasons:
+
+- Outlook/Office 365 for Windows only reads the first class in a `class=""` attribute, ignoring the rest. So it'll only use `a` from `class="a b"`
+- Some email clients don't support embedded CSS (i.e. in `<style>`)
+- Embedded styles are often discarded when an email is forwarded
+
+The Tailwind preset in Maizzle sets `important: true` - this way, things like responsive utilities can actually override inline CSS.
+
+<Alert>Only CSS in `<style>` tags will use `!important`, inlined CSS in `style=""` attributes will not.</Alert>
+
+You may disable this behavior by setting the `important` key to `false`:
+
+```js [tailwind.config.js] {6}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  presets: [
+    require('tailwindcss-preset-email'),
+  ],
+  important: false, // [!code ++]
+}
+```
+
+### separator
+
+Characters like `:` in `hover:bg-black` need to be \escaped in CSS.
+
+Because some email clients (Gmail 👀) fail to parse selectors with escaped characters, Maizzle normalizes all your CSS selectors and HTML classes, replacing any escaped characters it finds with email-safe alternatives.
+
+So you can safely use Tailwind's awesome default separator and write classes like `sm:w-1/2` - Maizzle will convert that to `sm-w-1-2` in your compiled template.
+
+You may also [configure the replacement mappings](/docs/transformers/safe-class-names) if you need to.
+
+### screens
+
+Maizzle uses a desktop-first approach with `max-width` media queries instead of Tailwind's default, mobile-first approach that uses `min-width`.
+
+These are the default screens in Maizzle:
+
+```js [tailwind.config.js]
+export default {
+  screens: {
+    sm: {max: '600px'},
+    xs: {max: '425px'},
+  },
+}
+```
+
+Of course, you're free to adjust this as you like. For example, you might add a breakpoint that targets tablet devices based on their viewport width:
+
+```js [tailwind.config.js] diff {7}
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  presets: [
+    require('tailwindcss-preset-email'),
+  ],
+  screens: {
+    md: {min: '768px', max: '1023px'}, // [!code ++]
+    sm: {max: '600px'},
+    xs: {max: '425px'},
+  },
+}
+```
+
+That would enable you to write classes like `md:hidden` or `md:text-lg`, which will be wrapped in a `@media (min-width: 768px) and (max-width: 1023px)` media query.
+
+More on screens, in the [Tailwind CSS docs](https://tailwindcss.com/docs/responsive-design).
+
+### colors
+
+Maizzle uses the [default color palette](https://tailwindcss.com/docs/customizing-colors) from Tailwind CSS.
+
+You may define your own colors, or even extend or change the default color palette by adding a `colors` key to your Tailwind config:
+
+```js [tailwind.config.js]
+import emailPreset from 'tailwindcss-preset-email'
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  presets: [
+    emailPreset,
+  ],
+  theme: {
+    extend: {
+      colors: {
+        blue: {
+          // change 'blue-500'
+          500: '#03a9f4',
+          // add 'blue-1000'
+          1000: '#101e47',
+        },
+        // custom color
+        primary: '#FFCC00',
+      }
+    }
+  }
+}
+```
+
+### spacing
+
+The spacing scale has been extended to include more values:
+
+```js
+spacing: {
+  screen: '100vw',
+  full: '100%',
+  px: '1px',
+  0: '0',
+  0.5: '2px',
+  1: '4px',
+  // ...
+  14: '56px',
+  16: '64px',
+  18: '72px',
+  // ...
+  48: '192px',
+  50: '200px',
+  // ...
+  96: '384px',
+},
+```
+
+### borderRadius
+
+```js
+borderRadius: {
+  none: '0px',
+  sm: '2px',
+  DEFAULT: '4px',
+  md: '6px',
+  lg: '8px',
+  xl: '12px',
+  '2xl': '16px',
+  '3xl': '24px',
+},
+```
+
+### boxShadow
+
+The [tailwindcss-box-shadow](https://www.npmjs.com/package/tailwindcss-box-shadow) plugin is used to output `box-shadow` CSS values exactly as you have them defined in your Tailwind CSS config.
+
+```js
+boxShadow: {
+  sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  DEFAULT: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+  md: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+  lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+  xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+  '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  inner: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.05)',
+},
+```
+
+### fontFamily
+
+Font stacks are the default ones from Tailwind CSS, but simplified. We also include a stack for the Inter font:
+
+```js
+fontFamily: {
+  inter: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+  sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+  serif: ['ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+  mono: ['ui-monospace', 'Menlo', 'Consolas', 'monospace'],
+},
+```
+
+### fontSize
+
+Pixel values are preferred for font size utilities:
+
+```js
+fontSize: {
+  0: '0',
+  xxs: '11px',
+  xs: '12px',
+  '2xs': '13px',
+  sm: '14px',
+  '2sm': '15px',
+  base: '16px',
+  lg: '18px',
+  xl: '20px',
+  '2xl': '24px',
+  '3xl': '30px',
+  '4xl': '36px',
+  '5xl': '48px',
+  '6xl': '60px',
+  '7xl': '72px',
+  '8xl': '96px',
+  '9xl': '128px',
+},
+```
+
+### lineHeight
+
+The `lineHeight` utilities have been extended to include all `spacing` scale values:
+
+```js
+lineHeight: theme => ({
+  ...theme('spacing'),
+}),
+```
+
+So you can use `leading` utilities to easily create vertical spacing, like this:
+
+```html [emails/example.html]
+<div class="leading-16">&zwj;</div>
+```
+
+Result:
+
+```html
+<div style="line-height: 64px">&zwj;</div>
+```
+
+### maxWidth
+
+```js
+maxWidth: theme => ({
+  ...theme('spacing'),
+  xs: '160px',
+  sm: '192px',
+  md: '224px',
+  lg: '256px',
+  xl: '288px',
+  '2xl': '336px',
+  '3xl': '384px',
+  '4xl': '448px',
+  '5xl': '512px',
+  '6xl': '576px',
+  '7xl': '640px',
+}),
+```
+
+### Pixel units
+
+Because of poor email client support, our email preset for Tailwind CSS replaces `rem` units with `px`.
+This affects the following utilities:
+
+- `spacing` (width, height, margin, padding, etc)
+- `maxWidth`
+- `borderRadius`
+- `fontSize`
+- `lineHeight`
+
+### Plugins
+
+You can of course use any Tailwind CSS plugin, all you have to do is to install it from NPM and then `import` or `require` it in your `tailwind.config.js`.
+
+```sh
+npm install tailwindcss-email-variants
+```
+
+With `import`:
+
+```js [tailwind.config.js] {1, 4-6}
+ import emailVariants from 'tailwindcss-email-variants' // [!code ++]
+
+ export default {
+    plugins: [ // [!code ++]
+      emailVariants, // [!code ++]
+    ], // [!code ++]
+ }
+```
+
+With `require`:
+
+```js [tailwind.config.js] {2-4}
+module.exports = {
+   plugins: [ // [!code ++]
+     require('tailwindcss-email-variants'), // [!code ++]
+   ], // [!code ++]
+}
+```
+
+<Alert type="info">`tailwindcss-email-variants` is already included in the email preset, no need to install it.</Alert>
+
+### Disabled plugins
+
+`tailwindcss-preset-email` disables the following Tailwind CSS core plugins due to poor support in the majority of email clients:
+
+- preflight
+- backgroundOpacity
+- borderOpacity
+- borderSpacing
+- divideOpacity
+- placeholderOpacity
+- textOpacity
+- textDecoration
+
+If you want to use one of these plugins, simply set it to `true` in `corePlugins` at the bottom of your `tailwind.config.js`:
+
+```js [tailwind.config.js] {3}
+corePlugins: {
+  backgroundOpacity: false, // [!code --]
+  backgroundOpacity: true, // [!code ++]
+}
+```
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/expressions.md</source>
+<document_content>
+---
+title: "Expressions configuration"
+description: "Configuring expressions in Maizzle."
+---
+
+# Expressions configuration
+
+Expressions may be configured in your project's `config.js`:
+
+```js [config.js]
+export default {
+  expressions: {
+    // ...
+  }
+}
+```
+
+## delimiters
+
+Type: `Array`\
+Default: `['{{', '}}']`
+
+Array containing beginning and ending delimiters for expressions.
+
+It's common for templating engines (like those used by email service providers) to use `{{` and `}}` as delimiters. You may change the ones Maizzle uses in order to avoid conflicts:
+
+```js [config.js]
+export default {
+  expressions: {
+    delimiters: ['[[', ']]'],
+  }
+}
+```
+
+## unescapeDelimiters
+
+Type: `Array`\
+Default: `['{{{', '}}}']`
+
+Array containing beginning and ending delimiters for unescaped locals.
+
+You'd normally use these when you want to output HTML from a variable without escaping it:
+
+```html
+{{ '<span>escaped</span>' }}
+{{{ '<span>unescaped</span>' }}}
+```
+
+Result:
+
+```html
+&lt;span&gt;escaped&lt;/span&gt;
+<span>unescaped</span>
+```
+
+## locals
+
+Type: `Object`\
+Default: `{}`
+
+Variables defined here will be available 'locally', meaning you won't need to use the `page` object when accessing them.
+
+For example, if you set this to something like `{foo: 'bar'}`, you can access it in your templates through `{{ foo }}` instead of `{{ page.foo }}`.
+
+## localsAttr
+
+Type: `String`\
+Default: `locals`
+
+Attribute name for `<script>` tags that contain locals.
+
+Imagine you'd write `<script vars>` instead of `<script locals>` to define variables in your templates. You can change the attribute name like this:
+
+```js [config.js]
+export default {
+  expressions: {
+    localsAttr: 'vars',
+  }
+}
+```
+
+Then, you'd use it like this:
+
+```hbs [example.html]
+<script vars>
+  module.exports = {
+    foo: "bar"
+  }
+</script>
+
+{{ foo }}
+```
+
+## removeScriptLocals
+
+Type: `Boolean`\
+Default: `false`
+
+Whether to remove `<script>` tags that contain locals.
+
+## conditionalTags
+
+Type: `Array`\
+Default: `['if', 'elseif', 'else']`
+
+Array containing tag names to be used for [if/else statements](/docs/tags/#conditionals).
+
+## switchTags
+
+Type: `Array`\
+Default: `['switch', 'case', 'default']`
+
+Array containing tag names to be used for [switch statements](/docs/tags/#switch).
+
+## loopTags
+
+Type: `Array`\
+Default: `['each', 'for']`
+
+Array containing tag names to be used for [loops](/docs/tags/#loops).
+
+## scopeTags
+
+Type: `Array`\
+Default: `['scope']`
+
+Array containing tag names to be used for [scopes](/docs/tags/#scope).
+
+## ignoredTag
+
+Type: `String`\
+Default: `raw`
+
+Name of tag inside of which expression parsing is disabled.
+
+Besides `{{ }}` expressions, the following tags will be ignored and output as-is:
+
+- conditional tags (if/elseif/else)
+- switch tags (switch/case/default)
+- loop tags (each/for)
+- scope tags (scope)
+
+## strictMode
+
+Type: `Boolean`\
+Default: `false`
+
+Maizzle disables `strictMode` so that if you have an error inside an expression, it will be rendered as `undefined` and the email will still be compiled, instead of the build failing.
+
+## missingLocal
+
+Type: `undefined|String`\
+Default: `{local}`
+
+Define what to render when referencing a value that is not defined in `locals`.
+
+| missingLocal |   strictMode   | Output                              |
+|:------------:|:--------------:|:------------------------------------|
+| `undefined`  |     `true`     | Error is thrown                     |
+| `undefined`  |    `false`     | `undefined` (string)                |
+|     `''`     | `false`/`true` | `''` (empty string)                 |
+|  `{local}`   | `false`/`true` | Original reference like `{{ foo }}` |
+
+By default, Maizzle will output the string the original reference as a string, i.e. `{{ foo }}`, when a value is not defined.
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/postcss.md</source>
+<document_content>
+---
+title: "PostCSS configuration"
+description: "Configuring PostCSS in Maizzle."
+---
+
+# PostCSS configuration
+
+You may use custom PostCSS plugins in Maizzle.
+
+## Plugins
+
+Here's how you can add PostCSS plugins - we'll use [Autoprefixer](https://github.com/postcss/autoprefixer).
+
+First, install the plugin:
+
+```sh
+npm install autoprefixer
+```
+
+Then register it in `config.js`:
+
+```js [config.js]
+import autoprefixer from 'autoprefixer'
+
+export default {
+  build: {
+    postcss: {
+      plugins: [
+        autoprefixer,
+      ]
+    }
+  }
+}
+```
+
+Any plugins that you register in the `plugins` array will be added at the end of the PostCSS plugins stack, which means they'll run _after_ Tailwind CSS.
+
+## Options
+
+You may also configure PostCSS options:
+
+```js [config.js]
+export default {
+  build: {
+    postcss: {
+      options: {
+        map: true,
+      }
+    }
+  }
+}
+```
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/posthtml.md</source>
+<document_content>
+---
+title: "PostHTML configuration"
+description: "Configuring PostHTML in Maizzle."
+---
+
+# PostHTML configuration
+
+Maizzle uses PostHTML for templating and transformations, and you can configure it or even register plugins that can further transform your HTML emails.
+
+## Options
+
+PostHTML is configured under `build.posthtml.options` in your `config.js`.
+
+### directives
+
+Type: `Array`\
+Default: `[]`
+
+You can configure the PostHTML parser to correctly process custom directives.
+
+For example, you may tell it to ignore `<?php ?>` tags instead of treating them as HTML:
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      directives: [
+        { name: '?php', start: '<', end: '>' },
+      ]
+    }
+  }
+}
+```
+
+### xmlMode
+
+Type: `Boolean`\
+Default: `false`
+
+Enable `xmlMode` if you're using Maizzle to output XML content, and not actual HTML.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      xmlMode: true,
+    }
+  }
+}
+```
+
+### decodeEntities
+
+Type: `Boolean`\
+Default: `false`
+
+Set this to `true` to have entities within the document decoded.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      decodeEntities: true,
+    }
+  }
+}
+```
+
+### lowerCaseTags
+
+Type: `Boolean`\
+Default: `false`
+
+Set this to `true` to output all tags in lowercase. Works only when `xmlMode` is disabled.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      lowerCaseTags: true,
+    }
+  }
+}
+```
+
+### lowerCaseAttributeNames
+
+Type: `Boolean`\
+Default: `false`
+
+Output all attribute names in lowercase.
+
+<Alert type="warning">This has a significant impact on speed.</Alert>
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      lowerCaseAttributeNames: true,
+    }
+  }
+}
+```
+</CodeSample>
+
+### recognizeCDATA
+
+Type: `Boolean`\
+Default: `false`
+
+Recognize CDATA sections as text even if the `xmlMode` option is disabled.
+
+<Alert>If `xmlMode` is enabled, CDATA sections will always be recognized as text.</Alert>
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      recognizeCDATA: true,
+    }
+  }
+}
+```
+
+### recognizeSelfClosing
+
+Type: `Boolean`\
+Default: `true`
+
+If enabled, self-closing tags will trigger the `onclosetag` event even if `xmlMode` is disabled.
+
+<Alert>When `xmlMode` is enabled self-closing tags will always be recognized.</Alert>
+
+Maizzle sets this to `true` to ensure self-closing tags like those of Components are rendered correctly.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      recognizeSelfClosing: true,
+    }
+  }
+}
+```
+
+### sourceLocations
+
+Type: `Boolean`\
+Default: `false`
+
+If set to `true`, AST nodes will have a `location` property containing the `start` and `end` line and column position of the node.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      sourceLocations: true,
+    }
+  }
+}
+```
+
+### recognizeNoValueAttribute
+
+Type: `Boolean`\
+Default: `true`
+
+If set to `true`, PostHTML will render attributes with no values exactly as they were written and will not add `=""` to them.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      recognizeNoValueAttribute: true,
+    }
+  }
+}
+```
+
+### singleTags
+
+Type: `Array<String|RegExp>`\
+Default: `[]`
+
+Use the `singleTags` option to tell PostHTML to treat custom tags as self-closing.
+
+<Alert type="warning">This needs to be used in conjunction with `closingSingleTag` to tell PostHTML how to close the tag, otherwise you will end up with an unclosed tag.</Alert>
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      singleTags: ['custom'],
+      closingSingleTag: 'slash', // see docs below
+    }
+  }
+}
+```
+
+You may then use the `<custom />` tag as self-closing:
+
+```html [emails/example.html]
+<custom name="opencounter" type="tracking" />
+```
+
+### closingSingleTag
+
+Type: `String`\
+Default: `'default'`
+
+Define the closing format for single tags.
+
+By default it will not close self-closing tags that it knows about:
+
+```html [emails/example.html]
+<img>
+<p></p>
+```
+
+Available options:
+
+##### **tag**
+
+Will add a closing tag.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      singleTags: ['custom'],
+      closingSingleTag: 'tag',
+    }
+  }
+}
+```
+
+```html [emails/example.html]
+<custom></custom>
+```
+
+##### **slash**
+
+Will add a closing tag.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      singleTags: ['custom'],
+      closingSingleTag: 'slash',
+    }
+  }
+}
+```
+
+```html [emails/example.html]
+<custom />
+```
+
+### quoteAllAttributes
+
+Type: `Boolean`\
+Default: `true`
+
+Disable if you want to remove quotes on all attributes
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      quoteAllAttributes: false,
+    }
+  }
+}
+```
+
+```html [emails/example.html]
+<img src=example.jpg>
+```
+
+### replaceQuote
+
+Type: `Boolean`\
+Default: `true`
+
+Replaces quotes in attribute values with `&quote;`.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      replaceQuote: false,
+    }
+  }
+}
+```
+
+```html [emails/example.html]
+<!-- `true` (default) -->
+<img src="<?php echo $foo[&quote;bar&quote;] ?>">
+
+<!-- `false` -->
+<img src="<?php echo $foo["bar"] ?>">
+```
+
+### quoteStyle
+
+Type: `Number`\
+Default: `2`
+
+Specify the attribute value quotes style.
+
+```js [config.js]
+export default {
+  posthtml: {
+    options: {
+      quoteStyle: 1,
+    }
+  }
+}
+```
+
+```html [emails/example.html]
+<!-- `2` (double quotes, default) -->
+<img src="example.png" onload="testFunc("test")">
+
+<!-- `1` (single quotes) -->
+<img src='example.png' onload='testFunc("test")'>
+
+<!-- `0` (based on attribute value) -->
+<img src="example.png" onload='testFunc("test")'>
+```
+
+## Plugins
+
+Type: `Array`\
+Default: `[]`
+
+Register any PostHTML plugins that you would like to use, in the `plugins` array.
+
+You may register plugins to run either before all other plugins, or after all other plugins, by using the `before` and `after` keys.
+
+```js [config.js]
+import spaceless from 'posthtml-spaceless'
+
+export default {
+  posthtml: {
+    plugins: {
+      before: [
+        spaceless()
+      ]
+    }
+  }
+}
+```
+
+### Custom plugins
+
+You may write your own PostHTML plugins, right in your Maizzle `config.js` file.
+
+For example, here's a plugin that adds a random number to all `<img>` src URLs:
+
+```js [config.js]
+export default {
+  posthtml: {
+    plugins: {
+      after: [
+        (() => tree => {
+          const process = node => {
+            if (node.tag === 'img' && node.attrs?.src) {
+              const randomNumber = Math.floor(Math.random() * 10 ** 16).toString().padStart(16, '0')
+              node.attrs.src = node.attrs.src + `?v=${randomNumber}`
+            }
+
+            return node
+          }
+
+          return tree.walk(process)
+        })()
+      ]
+    }
+  }
+}
+```
+
+<Alert>Note that this is a naive example that doesn't take existing query strings into account.</Alert>
+
+### Built-in plugins
+
+Maizzle already uses the following PostHTML plugins internally:
+
+- [posthtml-mso](https://github.com/posthtml/posthtml-mso)
+- [posthtml-base-url](https://github.com/posthtml/posthtml-base-url)
+- [posthtml-content](https://github.com/posthtml/posthtml-content)
+- [posthtml-component](https://github.com/thewebartisan7/posthtml-components)
+- [posthtml-extra-attributes](https://github.com/posthtml/posthtml-extra-attributes)
+- [posthtml-markdownit](https://github.com/posthtml/posthtml-markdownit)
+- [posthtml-postcss-merge-longhand](https://github.com/posthtml/posthtml-postcss-merge-longhand)
+- [posthtml-remove-attributes](https://github.com/princed/posthtml-remove-attributes)
+- [posthtml-safe-class-names](https://github.com/posthtml/posthtml-safe-class-names)
+- [posthtml-url-parameters](https://github.com/posthtml/posthtml-url-parameters)
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/configuration/server.md</source>
+<document_content>
+## Dev server
+
+Maizzle includes a dev server for local email development. It can watch your Templates and other files, and immediately update them in the browser as you make changes.
+
+### hmr
+
+Type: `Boolean`\
+Default: `true`
+
+Enable Hot Markup Replacement&trade; for the dev server.
+
+When `true`, changes you make to Templates, Components, config files etc. will be instantly reflected in the browser without a full page reload.
+
+You may disable HMR and force a page reload by setting this to `false`:
+
+```js [config.js]
+export default {
+  server: {
+    hmr: false,
+  }
+}
+```
+
+### watch
+
+Type: `Array`\
+Default: `[]`
+
+An array of paths (which can be globs) to watch for changes. When a file in one of these paths changes, the dev server will update the preview in the browser.
+
+By default, Maizzle watches these paths:
+
+- all Template, Component, and Layout paths
+- `config*.js`
+- `maizzle.config*.js`
+- `tailwind*.config.js`
+- `**/*.css`
+
+You may add more paths to watch:
+
+```js [config.js]
+export default {
+  server: {
+    watch: ['./marketing/**/*'],
+  }
+}
+```
+
+### port
+
+Type: `Number`\
+Default: `3000`
+
+Port number for the dev server.
+
+```js [config.js]
+export default {
+  server: {
+    port: 8080,
+  }
+}
+```
+
+The server will now be available at `http://localhost:8080`.
+
+### maxRetries
+
+Type: `Number`\
+Default: `10`
+
+Number of times to retry starting the dev server if the port is already in use.
+
+```js [config.js]
+export default {
+  server: {
+    maxRetries: 5,
+  }
+}
+```
+
+### scrollSync
+
+Type: `Boolean`\
+Default: `false`
+
+Scrolling in one browser tab will be synchronized across all other browser tabs that are viewing the same Template. This works across devices too.
+
+Enable synchronized scrolling:
+
+```js [config.js]
+export default {
+  server: {
+    scrollSync: true,
+  }
+}
+```
+
+You can now open the same Template on both your laptop and your phone, and scrolling on one will be mirrored on the other.
+
+### reportFileSize
+
+Type: `Boolean`\
+Default: `false`
+
+When enabled, the dev server will report the size of the compiled HTML file in the console.
+This number will be color-coded based on how close the file size is to the [102KB limit for Gmail](https://github.com/hteumeuleu/email-bugs/issues/41).
+
+Enable it by setting this to `true`:
+
+```js [config.js]
+export default {
+  server: {
+    reportFileSize: true,
+  }
+}
+```
+
+Less than 50KB:
+
+<div class="inline-block px-3 py-1 rounded font-mono bg-gradient-to-t from-slate-50 to-white border border-slate-100">✔ Done in 41 ms [emails/example.html] · 6.74 KB</div>
+
+Between 50KB and 102KB:
+
+<div class="inline-block px-3 py-1 rounded font-mono bg-gradient-to-t from-slate-50 to-white border border-slate-100">✔ Done in 41 ms [emails/example.html] · <span class="text-amber-500">78.1 KB</span></div>
+
+More than 102KB:
+
+<div class="inline-block px-3 py-1 rounded font-mono bg-gradient-to-t from-slate-50 to-white border border-slate-100">✔ Done in 41 ms [emails/example.html] · <span class="text-red-500">112.3 KB</span></div>
+
+### spinner
+
+Type: `String|Object`\
+Default: `'circleHalves'`
+
+Customize the spinner shown in the console when compiling a Template.
+
+```js [config.js]
+export default {
+  server: {
+    spinner: 'dots'
+  }
+}
+```
+
+See the [ora spinners list](https://github.com/sindresorhus/cli-spinners/blob/main/spinners.json) for available options.
+
+</document_content>
+</document>
+</documents>

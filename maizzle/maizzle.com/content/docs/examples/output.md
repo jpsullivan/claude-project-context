@@ -1,0 +1,833 @@
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/buttons.md
+````
+---
+title: "Buttons"
+description: "Techniques for coding call to action buttons for HTML emails."
+---
+
+# Buttons
+
+Buttons in HTML emails can be created with simple table structures with an anchor inside, or through advanced techniques involving <abbr title="Vector Markup Language">VML</abbr> or `mso-` CSS, for fully-clickable buttons in Outlook for Windows.
+
+## Link
+
+<Alert>This is inspired by <a href="https://twitter.com/M_J_Robbins">@M_J_Robbins</a>' link button - see the original on <a href="https://www.goodemailcode.com/email-code/link-button">goodemailcode.com</a></Alert>
+
+We can use a smart combination of basic and vendor CSS properties to get fully clickable buttons in HTML - no VML required!
+
+Here's the Filled button, fully clickable in Outlook:
+
+<div class="example-preview">
+  <div>
+    <button
+      class="block py-4 px-6 text-sm/none no-underline text-white font-semibold rounded bg-indigo-500 hover:bg-indigo-600 focus:outline-none">
+        Read more
+    </button>
+  </div>
+
+  ```html
+  <a
+    href="https://maizzle.com/"
+    class="inline-block py-4 px-6 text-sm/none font-semibold rounded no-underline text-white bg-indigo-500 hover:bg-indigo-600"
+  >
+    <outlook>
+      <i class="mso-font-width-[150%] mso-text-raise-[26pt]">&nbsp;</i>
+    </outlook>
+      <span class="mso-text-raise-[13pt]">Read more</span>
+    <outlook>
+      <i class="mso-font-width-[150%]">&nbsp;</i>
+    </outlook>
+  </a>
+  ```
+</div>
+
+As you can see it's just a simple `<a>` tag, but with some nifty workarounds for Outlook's lack of support for `padding` on inline elements:
+
+- left/right padding is faked with `<i>` elements that use `mso-font-width` with a `&emsp;` to grow in width; these elements are wrapped in conditional comments, so they only show in Outlook and Windows 10 Mail
+- the text label is wrapped in a `<span>` and `mso-text-raise` adjusts its vertical position, allowing us to control the top padding
+- the first `<i>` also adds bottom padding
+
+<Alert>Line breaks and spaces between tags in the example above might render the button larger (although barely noticeable). If you want your button to be absolutely pixel perfect, just remove them.</Alert>
+
+## VML
+
+Another approach to buttons in HTML email is coding them with <abbr title="Vector Markup Language">VML</abbr>, Microsoft's obsolete and deprecated _Vector Markup Language_.
+
+[buttons.cm](https://buttons.cm/), a tool by Campaign Monitor, makes it easy to generate a VML button.
+
+However, you should keep in mind that VML buttons:
+
+- have a larger code footprint
+- must have a fixed width and height
+- require that you add the URL in two places
+- are converted to an image, which can degrade accessibility for screen reader users
+- cannot be nested inside other VML elements (for example, background images for Outlook require VML, so you can't place a VML button on top of a background image for Outlook)
+
+These limitations make VML buttons inaccessible, less flexible, and harder to maintain.
+
+### Rounded corners in Outlook
+
+Probably the only reason you'd want to use a VML button is because it's the only way to achieve rounded button corners in Outlook for Windows.
+
+Here is a simplified VML button with rounded corners, styled with Tailwind CSS:
+
+```html [vml-rounded-button.html]
+<!--[if mso]>
+<v:roundrect arcsize="50%" style="height: 48px; mso-wrap-style: none;" stroke="f" fillcolor="#1d4ed8">
+<![endif]-->
+  <a
+    href="https://example.com/"
+    class="inline-block p-0 px-6 text-base/10 rounded-md no-underline text-white bg-blue-700"
+  >
+    <outlook>
+      <i class="mso-font-width-[150%] mso-text-raise-[26pt]">&nbsp;</i>
+    </outlook>
+    <span>Link Text</span>
+    <outlook>
+      <i class="mso-font-width-[150%]">&nbsp;</i>
+    </outlook>
+  </a>
+<!--[if mso]>
+</v:roundrect>
+<![endif]-->
+```
+
+<Alert type="warning">Keep in mind that VML code cannot be nested, so you can't use such a button inside a `<v:rect>`, like when coding background images for Outlook on Windows.</Alert>
+
+## Table-based
+
+A simple table structure, with background color set on the cell.
+
+For modern email clients, we use CSS padding on the `<a>` to make the entire button clickable. In Outlook and Windows 10 Mail, because CSS padding isn't supported on anchor tags, the MSO `mso-padding-alt` CSS property can be used on the table cell in order to preserve the _visual aspect_.
+
+This means that in Outlook/Windows 10 Mail only the text itself will be clickable.
+
+Table-based buttons are easier to code and maintain than VML buttons, the main trade-off being accessibility: the click area in Outlook is not ideal.
+
+### Filled
+
+The most common type of button.
+
+For an extra touch, let's add rounded corners and a hover effect:
+
+<div class="example-preview">
+  <div>
+    <button
+      class="py-4 px-6 text-sm/none no-underline text-white font-semibold rounded bg-indigo-500 hover:bg-indigo-600 focus:outline-none">
+        Read more
+    </button>
+  </div>
+
+  ```html
+  <table>
+    <tr>
+      <th class="bg-indigo-500 hover:bg-indigo-600 rounded mso-padding-alt-[12px_24px]">
+        <a
+          href="https://maizzle.com"
+          class="block py-4 px-6 text-white text-sm/[100%] no-underline"
+        >
+          Button
+        </a>
+      </th>
+    </tr>
+  </table>
+  ```
+</div>
+
+<Alert>Outlook doesn't support <code>border-radius</code>, it will render square corners.</Alert>
+
+### Outlined
+
+No background color, so it inherits its container's background (gray in our case). We add a colored border to the table cell to create the outline.
+
+To make it more interesting, let's also change the background on hover:
+
+<div class="example-preview">
+  <div>
+    <button
+      class="py-3 px-6 rounded border-2 border-indigo-500 hover:border-indigo-600 hover:bg-indigo-600 text-sm text-indigo-500 hover:text-white font-bold leading-full focus:outline-none">
+        Read more
+    </button>
+  </div>
+
+  ```html
+  <table>
+    <tr>
+      <th class="block border-2 border-indigo-500 hover:bg-indigo-500 rounded mso-padding-alt-[12px_24px]">
+        <a
+          href="https://maizzle.com"
+          class="block py-3 px-6 text-sm/[100%] text-indigo-500 hover:text-white no-underline"
+        >
+          Button
+        </a>
+      </th>
+    </tr>
+  </table>
+  ```
+</div>
+
+### Pill
+
+Pill buttons simply use a larger border-radius value.
+
+<div class="example-preview">
+  <div>
+    <button class="py-3 px-6 rounded-full shadow-md bg-indigo-500 hover:bg-indigo-600 text-sm text-white font-bold leading-full focus:outline-none">Read more</button>
+  </div>
+
+  ```html
+  <table>
+    <tr>
+      <th class="bg-indigo-500 hover:bg-indigo-600 shadow-md rounded-full mso-padding-alt-[16px_24px]">
+        <a
+          href="https://maizzle.com"
+          class="block py-3 px-6 text-sm/none text-white no-underline"
+        >
+          Button
+        </a>
+      </th>
+    </tr>
+  </table>
+  ```
+</div>
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/cards.md
+````
+---
+title: "Cards"
+description: "Create simple, effective attention grabbers in HTML emails with Tailwind CSS in Maizzle."
+---
+
+# Cards
+
+The traditional content block for showing article excerpts, like those from a blog.
+
+## Rounded with Shadow
+
+<div class="example-preview">
+  <div class="not-prose px-4">
+    <table class="w-full sm:max-w-[400px] xl:max-w-[340px] shadow-xl rounded m-0">
+      <tr>
+        <td>
+          <img
+            class="rounded-tl rounded-tr m-0"
+            src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=600&h=300&q=80"
+            alt
+          >
+        </td>
+      </tr>
+      <tr>
+        <td class="bg-white p-6 rounded-br rounded-bl">
+          <span class="text-xs text-slate-500">April 7, 2020</span>
+          <h2 class="mt-2 mb-3 text-2xl leading-7">
+            <a href="https://example.com" style="color:#000;display:inline-block;position:relative;margin:0;" class="text-gradient-none no-underline">Lorem ipsum dolor sit amet, consectetur</a>
+          </h2>
+          <p class="m-0 mb-4 text-base text-slate-500">Anim ullamco anim ipsum Lorem id voluptate consequat excepteur proident cillum mollit.</p>
+          <a href="https://example.com" class="text-blue-500 no-underline hover:underline">Learn more &rarr;</a>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  ```html example
+  <table class="sm:w-full font-sans shadow-xl rounded">
+    <tr>
+      <td>
+        <img
+          class="rounded-t"
+          src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=600&h=300&q=80"
+        >
+      </td>
+    </tr>
+    <tr>
+      <td class="p-6 bg-white rounded-b">
+        <span class="text-xs text-slate-500">April 7, 2020</span>
+        <h2 class="m-0 mt-2 mb-3 text-2xl leading-full">
+          <a href="https://example.com" class="text-black hover:text-slate-700 no-underline">
+            Lorem ipsum dolor sit amet, consectetur
+          </a>
+        </h2>
+        <p class="m-0 mb-16 text-base text-slate-500">
+          Anim ullamco anim ipsum Lorem id voluptate consequat excepteur proident cillum mollit.
+        </p>
+        <a href="https://example.com" class="text-blue-500 no-underline hover:underline">
+          Learn more &rarr;
+        </a>
+      </td>
+    </tr>
+  </table>
+  ```
+</div>
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/dividers.md
+````
+---
+title: "Dividers"
+description: "How to create dividers or horizontal rules for HTML emails."
+---
+
+# Dividers
+
+A Divider is a visible horizontal line that separates content areas.
+
+Similar to Spacers, Dividers provide consistent vertical spacing while also offering visual separation of your content.
+
+## Div
+
+The simplest, most reliable way to create a visual, horizontal divider line in HTML emails is to use a `<div>` element:
+
+```html [emails/example.html]
+<div class="h-px leading-px bg-slate-300" role="separator">&zwj;</div>
+```
+
+The `separator` role indicates that this is a divider that separates and distinguishes sections of content.
+
+You may adjust the top and bottom spacing around the divider with margin utilities:
+
+```html [emails/example.html]
+<div class="h-px leading-px bg-slate-300 my-8" role="separator">&zwj;</div>
+```
+
+## Semantic
+
+To create a semantic Divider, we can use a regular `<hr>` element:
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-gray-500 h-px">
+```
+
+### How it works
+
+1. We first reset the `border-width`, so we can apply our own colors
+2. We use a combination of `background-color` and `color` - the latter is for Outlook (Windows)
+3. Removing the border means the element now has no `height`, so we use `h-px` to set it to `1px`
+
+The `<hr>` Divider is based on Mark Robbins' excellent work, available at [goodemailcode.com](https://www.goodemailcode.com/email-code/hr).
+
+### Customization
+
+You can customize the divider and give it a custom width or height, change its color, the top/bottom space around it, and even its alignment.
+
+#### Width
+
+An `<hr>` goes full width by default, but we can set a custom width.
+
+While we're at it, let's also use `max-w-full`, to make it responsive.
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-slate-500 h-px w-[400px] max-w-full">
+```
+
+Need a custom width for mobile devices? Use the `sm` breakpoint:
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-slate-500 h-px sm:w-16 max-w-full">
+```
+
+#### Margin
+
+You may customize top and bottom spacing with CSS margins.
+
+For example, let's add `32px` to the top and bottom:
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-slate-500 h-px my-8">
+```
+
+Need uneven spacing?
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-slate-500 h-px mt-4 mb-8">
+```
+
+<Alert>Note that `<hr>` elements come with margins by default, so you might want to set a custom one or reset it with `m-0`. For example, Chrome resets to `8px`.</Alert>
+
+#### Alignment
+
+You can use the `align` attribute to align a Divider.
+
+```html [emails/example.html]
+<hr align="right" class="border-0 bg-slate-500 text-slate-500 h-px mt-4 mb-8">
+```
+
+By default, it will be centered.
+
+#### Vertical
+
+For a vertical Divider, simply use a narrow width and a bigger height:
+
+```html [emails/example.html]
+<hr class="border-0 bg-slate-500 text-slate-500 w-px h-16 m-0">
+```
+
+### Outlook note
+
+The `<hr>` divider is harder to control in Outlook on Windows - it usually renders wider than intended and you can't use left/right CSS margins.
+
+A proposed solution, as seen in Mark's example, is to wrap it in a `<div>` and add margins to that instead:
+
+```html [emails/example.html]
+<div class="mx-6">
+  <hr class="border-0 bg-slate-500 text-gray-500 h-px">
+</div>
+```
+
+In our tests, the semantic `<hr>` divider has been hard to control in Outlook on Windows, so we recommend using the Div or Table Divider.
+
+The Maizzle Starter includes a [Divider component](/docs/components/divider) that uses the `<div>` technique.
+
+## Table divider
+
+The spacing above and below the Table Divider line is defined through the vertical padding of the inner `<td>` element, with Tailwind CSS utilities:
+
+```html [emails/example.html]
+<table class="w-full" role="separator">
+  <tr>
+    <td class="py-6">
+      <div class="bg-slate-300 h-px leading-px">&zwj;</div>
+    </td>
+  </tr>
+</table>
+```
+
+How it works:
+
+- `py-6` adds 24px top and bottom padding
+- the `<div>` is the horizontal line: we set its height and line-height to 1px, and give it a background color
+- we use a `&zwj;` to add something inside the `<div>`, so it can take up height
+
+Feel free to use `&nbsp;` instead of `&zwj;` - both work just fine 👌
+
+### Outlook note
+
+The `<div>` element where we use `leading-px` needs some extra attention for Outlook. Otherwise, it will render thicker than intended.
+
+To make Outlook respect the line height you set on elements, you may use the `mso-line-height-rule-exactly` class that is available from the `tailwindcss-mso` plugin (included in the Starter).
+
+```html [emails/example.html]
+<table class="w-full" role="separator">
+  <tr>
+    <td class="py-6">
+      <div class="bg-slate-300 h-px leading-px mso-line-height-rule-exactly">&zwj;</div>
+    </td>
+  </tr>
+</table>
+```
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/google-fonts.md
+````
+---
+title: "Google Fonts"
+description: "Easily import and use Google Fonts in your HTML email templates."
+---
+
+# Google Fonts
+
+Adding Google Fonts to your Maizzle templates is very easy: you simply copy the code they provide and paste it into your Layout or Template.
+
+For this example, we'll use Merriweather and Open Sans.
+
+## Layout
+
+Using the same Google Fonts in all your emails? Paste the code in your main Layout.
+
+For example, add it before Tailwind CSS:
+
+```html [layouts/main.html]
+<head>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather&family=Open+Sans&display=swap" rel="stylesheet" media="screen">
+
+  <style>
+    @tailwind components;
+    @tailwind utilities;
+  </style>
+</head>
+```
+
+## Template
+
+If you only need Google Fonts in a certain Template, push to the `head` stack:
+
+```html [emails/example.html]
+<x-main>
+  <push name="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      rel="stylesheet"
+      media="screen"
+      href="https://fonts.googleapis.com/css2?family=Merriweather&family=Open+Sans&display=swap"
+    >
+  </push>
+
+  <table class="font-merriweather">
+    <!-- ... -->
+  </table>
+</x-main>
+```
+
+You'll see `<stack name="head" />` in `main.html` - that's where Google Fonts will be output!
+
+<Alert>Notice the `media="screen"` attribute on the last `<link>` tag - that helps avoid the Times New Roman fallback font bug in older versions of Outlook.</Alert>
+
+## Tailwind CSS utility
+
+After pasting in the code from Google Fonts, you have one more thing to do: register the `fontFamily` utilities in your `tailwind.config.js`, so you can use classes generated by Tailwind.
+
+For example, let's register a Tailwind utility for Open Sans:
+
+```js [tailwind.config.js]
+export default {
+  theme: {
+    extend: {
+      fontFamily: {
+        'open-sans': ['"Open Sans"', 'ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
+        merriweather: ["'Merriweather'", 'ui-serif', 'Georgia', 'Cambria', '"Times New Roman"', 'Times', 'serif'],
+      },
+    },
+  }
+}
+```
+
+Now you can use the `font-open-sans` and `font-merriweather` utility classes.
+
+## Avoid inlining
+
+Although having the font-family CSS inlined on the first element in your HTML should be enough, there might be situations where that isn't desirable.
+
+Email clients that support web fonts don't actually require the `font-family` CSS to be inlined in your HTML. Therefore, we can make use of Tailwind's breakpoints and tuck the class inside an `@media screen {}` query.
+
+This way it doesn't get inlined and you can keep this CSS away from any email client that doesn't support `@media` queries.
+
+To do this, we first register a `screen` breakpoint:
+
+```js [tailwind.config.js] {6}
+export default {
+  theme: {
+    screens: {
+      sm: {max: '600px'},
+      xs: {max: '425px'},
+      screen: {raw: 'screen'}, // [!code ++]
+    }
+  }
+}
+```
+
+We can use it like this:
+
+```html [emails/example.html]
+<div class="screen:font-open-sans">
+  <h1>Lorem ipsum</h1>
+  <p>Labore exercitation consequat tempor quis eu nulla amet.</p>
+</div>
+```
+
+## @font-face
+
+Some email clients or <abbr title="Email Service Provider">ESP</abbr>s don't support `<link>` tags or CSS `import()`, but do support web fonts. In such cases, you can use `@font-face` and add your Google Fonts right inside your `<style>` tag.
+
+First, visit the URL that Google Fonts creates for you after you've selected your fonts.
+
+In our example, it's the following:
+
+```html
+https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Open+Sans:wght@400;600&display=swap
+```
+
+You will see lots of `@font-face` declarations in there, for example
+
+```css
+/* latin */
+@font-face {
+  font-family: 'Merriweather';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/merriweather/v22/u-440qyriQwlOrhSvowK_l5-fCZM.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+```
+
+Copy only the `@font-face` declarations that you need and add them either in a Template or in the Layout your templates extend (for global usage) - see our [web fonts in HTML emails guide](/guides/custom-fonts#add-in-template) to learn how to do so.
+
+Note that you'll still need to register the [Tailwind CSS utility](#tailwind-utility) in order to use the fonts.
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/grids.md
+````
+---
+title: "Grids"
+description: "Learn how to create a simple grid system for HTML email with Tailwind CSS in Maizzle."
+---
+
+# Grids
+
+You'll sometimes need to create multi-column HTML email layouts. Here's how to create a responsive email grid with Tailwind CSS in Maizzle.
+
+## Percentage
+
+The simplest (and recommended) approach is to use Tailwind percentage widths:
+
+<div class="example-preview">
+  <div class="not-prose px-4">
+    <table class="w-full max-w-[600px]">
+      <tr>
+        <td class="w-4/12 bg-slate-200 p-2">4 cols</td>
+        <td class="w-8/12 bg-slate-300 p-2">8 cols</td>
+      </tr>
+    </table>
+  </div>
+
+  ```html
+  <table class="w-[600px] sm:w-full">
+    <tr>
+      <td class="w-4/12">4 cols</td>
+      <td class="w-8/12">8 cols</td>
+    </tr>
+  </table>
+  ```
+</div>
+
+Tailwind comes configured with 2, 3, 4, 5, 6 and 12 column grids, so you can create columns with classes like `w-2/3` or `w-4/6`.
+
+## Fixed
+
+Of course, you can use fixed widths if you prefer.
+
+<div class="example-preview">
+  <div class="not-prose">
+    <table class="w-full max-w-[600px]">
+      <tr>
+        <td class="bg-slate-200 p-2 w-[300px]">300px</td>
+        <td class="bg-slate-300 p-2 w-[300px]">300px</td>
+      </tr>
+    </table>
+  </div>
+
+  ```html
+  <table class="w-[600px] sm:w-full">
+    <tr>
+      <td class="w-[300px]">6 cols</td>
+      <td class="w-[300px]">6 cols</td>
+    </tr>
+  </table>
+  ```
+</div>
+
+## Stacking
+
+Responsive HTML emails usually reset the columns to stack on mobile. We can easily achieve this with a couple utility classes.
+
+Using the [percentage](#percentage) example, we might do:
+
+<div class="example-preview">
+  <div class="not-prose">
+    <table class="w-full max-w-[600px]">
+      <tr>
+        <td class="w-full sm:w-4/12 inline-block bg-slate-200 p-2">4 cols</td>
+        <td class="w-full sm:w-8/12 inline-block bg-slate-300 p-2">8 cols</td>
+      </tr>
+    </table>
+  </div>
+
+  ```html
+  <table class="w-[600px] sm:w-full">
+    <tr>
+      <td class="w-4/12 sm:w-full inline-block">4 cols</td>
+      <td class="w-8/12 sm:w-full inline-block">8 cols</td>
+    </tr>
+  </table>
+  ```
+</div>
+
+Some email clients strip the `doctype` of your email, which prevents `inline-block` from working on `<td>`. This can be fixed by using `<th>` instead, but requires resetting the font weight and text alignment:
+
+<div class="example-preview">
+  <div class="not-prose">
+    <table class="w-full max-w-[600px]">
+      <tr>
+        <th class="w-full sm:w-4/12 inline-block bg-slate-200 p-2 font-normal text-left">4 cols</th>
+        <th class="w-full sm:w-8/12 inline-block bg-slate-300 p-2 font-normal text-left">8 cols</th>
+      </tr>
+    </table>
+  </div>
+
+  ```html
+  <table class="w-[600px] sm:w-full">
+    <tr>
+      <th class="w-4/12 sm:w-full inline-block font-normal text-left">4 cols</th>
+      <th class="w-8/12 sm:w-full inline-block font-normal text-left">8 cols</th>
+    </tr>
+  </table>
+  ```
+</div>
+
+Need a custom column stacking order on mobile? See the [reverse stack](/docs/examples/reverse-stack) docs.
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/reverse-stack.md
+````
+---
+title: "Reverse Stack"
+description: "Reorder stacked columns in a mobile responsive HTML email template with table layout CSS properties."
+---
+
+# Reverse Stack
+
+With responsive HTML emails, you sometimes need to reverse the order in which stacked columns appear on mobile. You might even want to set a custom stacking order for layouts with 3+ columns.
+
+## Reverse 2 col
+
+Imagine a two column layout, with text on the left and an image on the right:
+
+```html [2-col.html]
+<table class="w-full">
+  <tr>
+    <th class="sm:block w-1/2 sm:w-full font-sans font-normal text-left">
+      <p class="text-2xl font-hairline text-black">Left text</p>
+      <p class="text-slate-700">Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore aspernatur.</p>
+    </th>
+    <th class="sm:block w-1/2 sm:w-full font-normal text-left">
+      <img src="https://picsum.photos/600/600" alt="Unsplash photo">
+    </th>
+  </tr>
+</table>
+```
+
+Naturally, the image will show under the text when viewed on a mobile device.
+
+However, using table responsive display utilities, we can reverse the columns:
+
+```html [2-col-reverse.html]
+<table class="w-full">
+  <tr>
+    <th class="w-1/2 sm:table-footer-group font-sans font-normal text-left">
+      <div class="sm:w-full sm:px-8">
+        <h2 class="text-2xl font-hairline text-black">Left text</h2>
+        <p class="text-slate-700 m-0">Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore aspernatur.</p>
+      </div>
+    </th>
+    <th class="w-1/2 sm:table-header-group font-normal text-left">
+      <div class="sm:w-full sm:px-8">
+        <img src="https://picsum.photos/600/600" alt="Unsplash photo">
+      </div>
+    </th>
+  </tr>
+</table>
+```
+
+It's done in 2 simple steps:
+
+1. Use the responsive `table-{...}-group` utilities on each column, to reverse column order on small screens
+2. Wrap the contents of each column in a `<div>` and use it to set padding for mobile. This is required because the CSS properties used to reverse the column order do not support padding
+
+See the [2 col reorder demo on CodePen](https://codepen.io/maizzle/pen/dgpxbB?editors=1000).
+
+## Reorder 3+ cols
+
+In a similar fashion, we can reorder a 3+ column layout:
+
+```html [3-col-reverse.html]
+<table class="w-full">
+  <tr class="sm:w-full sm:table">
+    <th class="w-1/3 sm:table-footer-group">
+      <div class="sm:px-2">
+        <h2 class="text-xl font-hairline">Last on mobile</h2>
+      </div>
+    </th>
+    <th class="w-1/3 sm:table-footer-group">
+      <div class="sm:px-2">
+        <h2 class="text-xl font-hairline">Second on mobile</h2>
+      </div>
+    </th>
+    <th class="w-1/3 sm:table-caption sm:w-full">
+      <div class="sm:px-2">
+        <h2 class="text-xl font-hairline">First on mobile</h2>
+      </div>
+    </th>
+  </tr>
+</table>
+```
+
+This only needed a couple of extra steps:
+
+- Make the `<tr>` full width on mobile, by adding `sm:w-full` and `sm:table`
+- Use `sm:table-caption` and `sm:w-full` on the column that you want to display first on mobile
+
+See the [3+ col reorder demo on CodePen](https://codepen.io/maizzle/pen/dgpxLp?editors=1000).
+
+````
+/Users/josh/Documents/GitHub/maizzle/maizzle.com/content/docs/examples/spacers.md
+````
+---
+title: "Spacers"
+description: "Creating reliable vertical spacing for HTML email with Tailwind CSS."
+---
+
+# Spacers
+
+Vertical spacing in HTML emails can be tricky, mainly because of inconsistent support for (and rendering of) margin, padding, and `<br>` tags.
+
+Here's how easy it is to create simple yet reliable spacers for your emails, using basic HTML and Tailwind CSS utility classes.
+
+## Div
+
+The simplest vertical spacer for HTML emails:
+
+```html [emails/example.html]
+<div class="leading-4" role="separator">&zwj;</div>
+```
+
+How it works:
+
+1. `leading-4` sets the spacer's height with `line-height: 16px;`
+2. `role="separator"` indicates the element is a divider, improving accessibility
+3. `&zwj;` adds 'content' inside, so that the `<div>` can take up height
+
+You may specify a different height for smaller devices by using the `sm:` screen variant:
+
+```html [emails/example.html]
+<div class="leading-4 sm:leading-2" role="separator">&zwj;</div>
+```
+
+<Alert>Responsive heights will only work in email clients that support `@media` queries.</Alert>
+
+The `div` spacer is also available as a [component](/docs/components/spacer).
+
+## Row
+
+Need to add space between `<table>` rows?
+
+```html [emails/example.html]
+<tr role="separator">
+  <td class="leading-4">&zwj;</td>
+</tr>
+```
+
+The default ARIA role for a `<tr>` is `row`, so we use `role="separator"` to indicate that this is a separator, not a table row.
+
+## Semantic
+
+We can use an `<hr>` to create a semantic Spacer.
+
+```html [emails/example.html]
+<hr class="border-0 text-white my-4 min-h-full">
+```
+
+How it works:
+
+- we hide the line by resetting the border
+- we give it the same color as the background of the page (for Outlook)
+- we control the height with top and bottom margins
+
+The `min-h-full` class is used for compatibility with Apple email clients.
+
+<Alert type="warning">Do not add `role="separator"` on the `<hr>` spacer, as it is implied.</Alert>
+
+````

@@ -164,13 +164,13 @@ complete_output_base = if options[:output_dir]
                        end
 
 # Run files-to-prompt for both formats on the entire directory
-ignore_patterns = ["stories", "__tests__"] + options[:ignore_dirs]
+ignore_patterns = ["package-lock.json", "node_modules"] + options[:ignore_dirs]
 run_files_to_prompt(command_base, input_path, complete_output_base, "--cxml", ignore_patterns)
 run_files_to_prompt(command_base, input_path, complete_output_base, "--markdown", ignore_patterns)
 
 # Now process all directories recursively
 puts "\nStarting recursive directory processing..."
-options[:ignore_dirs] += ["stories", "__tests__"] unless options[:ignore_dirs].include?("stories") || options[:ignore_dirs].include?("__tests__")
+options[:ignore_dirs] += ["package-lock.json", "node_modules"] unless options[:ignore_dirs].include?("node_modules")
 process_directory(input_path, options[:output_dir] || input_path, command_base, options)
 
 puts "\nAll directories processed."

@@ -1,0 +1,267 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox-button.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { injectCheckbox } from './checkbox.token';
+
+@Directive({
+    standalone: true,
+    selector: 'button[rdxCheckboxButton]',
+    host: {
+        type: 'button',
+        role: 'checkbox',
+        tabindex: '-1',
+        '[checked]': 'checkbox.checked',
+        '[disabled]': 'checkbox.disabled',
+        '[required]': 'checkbox.required',
+        '[attr.id]': 'elementId()',
+        '[attr.aria-checked]': 'checkbox.indeterminate ? "mixed" : checkbox.checked',
+        '[attr.aria-required]': 'checkbox.required ? "" : null',
+        '[attr.data-state]': 'checkbox.state',
+        '[attr.data-disabled]': 'checkbox.disabled ? "" : null'
+    }
+})
+export class RdxCheckboxButtonDirective {
+    protected readonly checkbox = injectCheckbox();
+
+    readonly id = input<string | null>(null);
+
+    protected readonly elementId = computed(() => (this.id() ? this.id() : `rdx-checkbox-${this.id()}`));
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox-indicator.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+import { injectCheckbox } from './checkbox.token';
+
+@Directive({
+    selector: '[rdxCheckboxIndicator]',
+    standalone: true,
+    host: {
+        '[style.pointer-events]': '"none"',
+        '[attr.aria-checked]': 'checkbox.indeterminate ? "mixed" : checkbox.checked',
+        '[attr.data-state]': 'checkbox.state',
+        '[attr.data-disabled]': 'checkbox.disabled ? "" : null'
+    }
+})
+export class RdxCheckboxIndicatorDirective {
+    protected readonly checkbox = injectCheckbox();
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox-input.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { RdxVisuallyHiddenInputDirective } from '@radix-ng/primitives/visually-hidden';
+import { injectCheckbox } from './checkbox.token';
+
+@Directive({
+    standalone: true,
+    selector: 'input[rdxCheckboxInput]',
+    hostDirectives: [{ directive: RdxVisuallyHiddenInputDirective, inputs: ['feature: "fully-hidden"'] }],
+    host: {
+        type: 'checkbox',
+        tabindex: '-1',
+        '[checked]': 'checkbox.checked',
+        '[disabled]': 'checkbox.disabled',
+        '[required]': 'checkbox.required',
+        '[attr.id]': 'elementId()',
+        '[attr.aria-hidden]': 'true',
+        '[attr.aria-checked]': 'checkbox.indeterminate ? "mixed" : checkbox.checked',
+        '[attr.aria-required]': 'checkbox.required ? "" : null',
+        '[attr.data-state]': 'checkbox.state',
+        '[attr.data-disabled]': 'checkbox.disabled ? "" : null',
+        '[attr.value]': 'value()'
+    }
+})
+export class RdxCheckboxInputDirective {
+    protected readonly checkbox = injectCheckbox();
+
+    readonly id = input<string>();
+
+    protected readonly elementId = computed(() => (this.id() ? this.id() : `rdx-checkbox-${this.id()}`));
+
+    protected readonly value = computed(() => {
+        const state = this.checkbox.state;
+        if (state === 'indeterminate') {
+            return '';
+        }
+
+        return state ? 'on' : 'off';
+    });
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox.directive.ts
+```typescript
+import { booleanAttribute, Directive, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { RdxCheckboxToken } from './checkbox.token';
+
+export type CheckboxState = 'unchecked' | 'checked' | 'indeterminate';
+
+/**
+ * @group Components
+ */
+@Directive({
+    selector: '[rdxCheckboxRoot]',
+    standalone: true,
+    providers: [
+        { provide: RdxCheckboxToken, useExisting: RdxCheckboxDirective },
+        { provide: NG_VALUE_ACCESSOR, useExisting: RdxCheckboxDirective, multi: true }
+    ],
+    host: {
+        '[disabled]': 'disabled',
+        '[attr.data-disabled]': 'disabled ? "" : null',
+        '[attr.data-state]': 'state',
+
+        '(keydown)': 'onKeyDown($event)',
+        '(click)': 'onClick($event)',
+        '(blur)': 'onBlur()'
+    }
+})
+export class RdxCheckboxDirective implements ControlValueAccessor, OnChanges {
+    /**
+     * The controlled checked state of the checkbox. Must be used in conjunction with onCheckedChange.
+     * @group Props
+     */
+    @Input({ transform: booleanAttribute }) checked = false;
+
+    /**
+     * Defines whether the checkbox is indeterminate.
+     * @group Props
+     */
+    @Input({ transform: booleanAttribute }) indeterminate = false;
+
+    /**
+     * Defines whether the checkbox is disabled.
+     * @group Props
+     */
+    @Input({ transform: booleanAttribute }) disabled = false;
+
+    /**
+     * @group Props
+     */
+    @Input({ transform: booleanAttribute }) required = false;
+
+    /**
+     * Event emitted when the checkbox checked state changes.
+     * @group Emits
+     */
+    @Output() readonly checkedChange = new EventEmitter<boolean>();
+
+    /**
+     * Event emitted when the indeterminate state changes.
+     * @group Emits
+     */
+    @Output() readonly indeterminateChange = new EventEmitter<boolean>();
+
+    /**
+     * Determine the state
+     */
+    get state(): CheckboxState {
+        if (this.indeterminate) {
+            return 'indeterminate';
+        }
+        return this.checked ? 'checked' : 'unchecked';
+    }
+
+    /**
+     * Store the callback function that should be called when the checkbox checked state changes.
+     * @internal
+     */
+    private onChange?: (checked: boolean) => void;
+
+    /**
+     * Store the callback function that should be called when the checkbox is blurred.
+     * @internal
+     */
+    private onTouched?: () => void;
+
+    protected onKeyDown(event: KeyboardEvent): void {
+        // According to WAI ARIA, Checkboxes don't activate on enter keypress
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+    }
+
+    protected onClick($event: MouseEvent): void {
+        if (this.disabled) {
+            return;
+        }
+
+        this.checked = this.indeterminate ? true : !this.checked;
+        this.checkedChange.emit(this.checked);
+        this.onChange?.(this.checked);
+
+        if (this.indeterminate) {
+            this.indeterminate = false;
+            this.indeterminateChange.emit(this.indeterminate);
+        }
+
+        $event.preventDefault();
+    }
+
+    protected onBlur(): void {
+        this.onTouched?.();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['checked'] && !changes['checked'].isFirstChange()) {
+            this.checkedChange.emit(this.checked);
+        }
+        if (changes['indeterminate'] && !changes['indeterminate'].isFirstChange()) {
+            this.indeterminateChange.emit(this.indeterminate);
+        }
+    }
+
+    /**
+     * Sets the checked state of the checkbox.
+     * @param checked The checked state of the checkbox.
+     * @internal
+     */
+    writeValue(checked: boolean): void {
+        this.checked = checked;
+    }
+
+    /**
+     * Registers a callback function that should be called when the checkbox checked state changes.
+     * @param fn The callback function.
+     * @internal
+     */
+    registerOnChange(fn: (checked: boolean) => void): void {
+        this.onChange = fn;
+    }
+
+    /**
+     * Registers a callback function that should be called when the checkbox is blurred.
+     * @param fn The callback function.
+     * @internal
+     */
+    registerOnTouched(fn: () => void): void {
+        this.onTouched = fn;
+    }
+
+    /**
+     * Sets the disabled state of the checkbox.
+     * @param isDisabled The disabled state of the checkbox.
+     * @internal
+     */
+    setDisabledState(isDisabled: boolean): void {
+        this.disabled = isDisabled;
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox.token.ts
+```typescript
+import { inject, InjectionToken } from '@angular/core';
+import type { RdxCheckboxDirective } from './checkbox.directive';
+
+export const RdxCheckboxToken = new InjectionToken<RdxCheckboxDirective>('RdxCheckboxToken');
+
+export function injectCheckbox(): RdxCheckboxDirective {
+    return inject(RdxCheckboxToken);
+}
+
+```

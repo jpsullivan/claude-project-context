@@ -1,0 +1,188 @@
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/CHANGELOG.md
+```
+# @radix-ui/react-separator
+
+## 1.1.4
+
+- Updated dependencies: `@radix-ui/react-primitive@2.1.0`
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/README.md
+```
+# `react-separator`
+
+View docs [here](https://radix-ui.com/primitives/docs/components/separator).
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/eslint.config.mjs
+```
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/package.json
+```json
+{
+  "name": "@radix-ui/react-separator",
+  "version": "1.1.4",
+  "license": "MIT",
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "build": "radix-build"
+  },
+  "dependencies": {
+    "@radix-ui/react-primitive": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/builder": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/tsconfig.json
+```json
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@repo/typescript-config/react-library"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/index.ts
+```typescript
+export {
+  Separator,
+  //
+  Root,
+} from './separator';
+export type { SeparatorProps } from './separator';
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/separator/src/separator.tsx
+```
+import * as React from 'react';
+import { Primitive } from '@radix-ui/react-primitive';
+
+/* -------------------------------------------------------------------------------------------------
+ *  Separator
+ * -----------------------------------------------------------------------------------------------*/
+
+const NAME = 'Separator';
+const DEFAULT_ORIENTATION = 'horizontal';
+const ORIENTATIONS = ['horizontal', 'vertical'] as const;
+
+type Orientation = (typeof ORIENTATIONS)[number];
+type SeparatorElement = React.ElementRef<typeof Primitive.div>;
+type PrimitiveDivProps = React.ComponentPropsWithoutRef<typeof Primitive.div>;
+interface SeparatorProps extends PrimitiveDivProps {
+  /**
+   * Either `vertical` or `horizontal`. Defaults to `horizontal`.
+   */
+  orientation?: Orientation;
+  /**
+   * Whether or not the component is purely decorative. When true, accessibility-related attributes
+   * are updated so that that the rendered element is removed from the accessibility tree.
+   */
+  decorative?: boolean;
+}
+
+const Separator = React.forwardRef<SeparatorElement, SeparatorProps>((props, forwardedRef) => {
+  const { decorative, orientation: orientationProp = DEFAULT_ORIENTATION, ...domProps } = props;
+  const orientation = isValidOrientation(orientationProp) ? orientationProp : DEFAULT_ORIENTATION;
+  // `aria-orientation` defaults to `horizontal` so we only need it if `orientation` is vertical
+  const ariaOrientation = orientation === 'vertical' ? orientation : undefined;
+  const semanticProps = decorative
+    ? { role: 'none' }
+    : { 'aria-orientation': ariaOrientation, role: 'separator' };
+
+  return (
+    <Primitive.div
+      data-orientation={orientation}
+      {...semanticProps}
+      {...domProps}
+      ref={forwardedRef}
+    />
+  );
+});
+
+Separator.displayName = NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function isValidOrientation(orientation: any): orientation is Orientation {
+  return ORIENTATIONS.includes(orientation);
+}
+
+const Root = Separator;
+
+export {
+  Separator,
+  //
+  Root,
+};
+export type { SeparatorProps };
+
+```

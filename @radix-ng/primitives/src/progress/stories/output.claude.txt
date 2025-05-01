@@ -1,0 +1,275 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/progress/stories/progress-circular.ts</source>
+<document_content>
+import { Component, computed, effect, signal } from '@angular/core';
+import { RdxProgressIndicatorDirective } from '../src/progress-indicator.directive';
+import { RdxProgressRootDirective } from '../src/progress-root.directive';
+
+@Component({
+    selector: 'progress-circular',
+    imports: [RdxProgressRootDirective, RdxProgressIndicatorDirective],
+    template: `
+        <div class="progress-container">
+            <div [value]="progress()" rdxProgressRoot>
+                <svg class="svg-full" viewBox="0 0 100 100">
+                    <!-- Background circle -->
+                    <path class="circle-track" [attr.d]="trackPath()" />
+                    <!-- Progress circle -->
+                    <path
+                        class="circle-progress"
+                        [attr.d]="trackPath()"
+                        [style.stroke-linecap]="'round'"
+                        [style.stroke-dasharray]="dashOffset() + 'px, ' + circumference + 'px'"
+                        [style.stroke-dashoffset]="'0px'"
+                        rdxProgressIndicator
+                    />
+                </svg>
+                <div class="progress-center">
+                    <span class="progress-text">{{ progress() }}%</span>
+                </div>
+            </div>
+        </div>
+    `,
+    styles: [
+        `
+            .progress-container {
+                position: relative;
+                width: 160px;
+                height: 160px;
+            }
+
+            .svg-full {
+                width: 100%;
+                height: 100%;
+            }
+
+            .circle-track {
+                fill: none;
+                stroke: #e0e0e0;
+                stroke-width: 6px;
+            }
+
+            .circle-progress {
+                fill: none;
+                stroke: black;
+                stroke-width: 6px;
+                transition:
+                    stroke-dasharray 0.7s,
+                    opacity 0.7s;
+            }
+
+            .progress-center {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .progress-text {
+                font-size: 1.125rem;
+                font-weight: bold;
+                color: #333;
+            }
+        `
+
+    ]
+})
+export class ProgressCircularComponent {
+    private readonly RADIUS = 45;
+    protected readonly circumference = 2 * Math.PI * this.RADIUS;
+
+    progress = signal<number>(0);
+
+    readonly dashOffset = computed(() => (this.progress() / 100) * this.circumference);
+
+    trackPath = computed(() => {
+        const r = this.RADIUS;
+        return `
+          M 50 50
+          m 0 -${r}
+          a ${r} ${r} 0 1 1 0 ${r * 2}
+          a ${r} ${r} 0 1 1 0 -${r * 2}
+          `;
+    });
+
+    constructor() {
+        effect(() => {
+            setInterval(() => {
+                if (this.progress() < 100) {
+                    this.progress.update((value) => value + 10);
+                } else {
+                    this.progress.set(0);
+                }
+            }, 1000);
+        });
+    }
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/progress/stories/progress.docs.mdx</source>
+<document_content>
+import { ArgTypes, Canvas, Markdown, Meta } from '@storybook/blocks';
+import { RdxProgressRootDirective } from '../src/progress-root.directive';
+import * as ProgressDirectiveStories from './progress.stories';
+
+<Meta title="Primitives/Progress" />
+
+# Progress
+
+#### Displays an indicator showing the completion progress of a task, typically displayed as a progress bar.
+
+<Canvas sourceState="hidden" of={ProgressDirectiveStories.Default} />
+
+## Features
+
+- ✅ Provides context for assistive technology to read the progress of a task.
+
+## Usage
+
+Get started with importing the directive:
+
+```typescript
+import { RdxProgressRootDirective, RdxProgressIndicatorDirective } from '@radix-ng/primitives/progress';
+```
+
+## Example
+
+```html
+<div class="ProgressRoot" rdxProgressRoot [value]="progress">
+  <div class="ProgressIndicator" rdxProgressIndicator [style.transform]="'translateX(-' + (100 - progress) +'%)'"></div>
+</div>
+```
+
+## API Reference
+
+### RdxProgressRootDirective
+
+<ArgTypes of={RdxProgressRootDirective} />
+
+<Markdown>
+  {`
+  | Data Attribute | Value |
+  | ----------- | --------- |
+  | [data-state]    | "complete" or "indeterminate" or "loading"   |
+  | [data-value]    | The current value          |
+  | [data-max] |  The max value     |
+  `}
+</Markdown>
+
+### RdxProgressIndicatorDirective
+
+Used to show the progress visually. It also makes progress accessible to assistive technologies.
+
+<Markdown>
+  {`
+  | Data Attribute | Value |
+  | ----------- | --------- |
+  | [data-state]    | "complete" or "indeterminate" or "loading"   |
+  | [data-value]    | The current value          |
+  | [data-max] |  The max value     |
+  `}
+</Markdown>
+
+## Accessibility
+
+Adheres to the [`progressbar` role requirements](https://www.w3.org/WAI/ARIA/apg/patterns/meter).
+
+
+## Examples
+
+### Progress Circular
+
+<Canvas sourceState="hidden" of={ProgressDirectiveStories.ProgressCircular} />
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/progress/stories/progress.stories.ts</source>
+<document_content>
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxProgressIndicatorDirective } from '../src/progress-indicator.directive';
+import { RdxProgressRootDirective } from '../src/progress-root.directive';
+import { ProgressCircularComponent } from './progress-circular';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Progress',
+    decorators: [
+        moduleMetadata({
+            imports: [RdxProgressRootDirective, RdxProgressIndicatorDirective, ProgressCircularComponent]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div class="radix-themes light light-theme" data-radius="medium" data-scaling="100%">${story}</div>
+            `
+        )
+    ],
+    argTypes: {
+        progress: {
+            options: ['10', '30', '70', '95'],
+            control: { type: 'select' }
+        }
+    }
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    args: {
+        progress: 70
+    },
+    render: (args) => ({
+        props: args,
+        template: html`
+            <div class="ProgressRoot" rdxProgressRoot [value]="progress">
+                <div
+                    class="ProgressIndicator"
+                    rdxProgressIndicator
+                    [style.transform]="'translateX(-' + (100 - progress) +'%)'"
+                ></div>
+            </div>
+
+            <style>
+                .ProgressRoot {
+                    position: relative;
+                    overflow: hidden;
+                    background: var(--black-a9);
+                    border-radius: 99999px;
+                    width: 300px;
+                    height: 25px;
+
+                    /* Fix overflow clipping in Safari */
+                    /* https://gist.github.com/domske/b66047671c780a238b51c51ffde8d3a0 */
+                    transform: translateZ(0);
+                }
+
+                .ProgressIndicator {
+                    background-color: white;
+                    width: 100%;
+                    height: 100%;
+                    transition: transform 660ms cubic-bezier(0.65, 0, 0.35, 1);
+                }
+            </style>
+        `
+    })
+};
+
+export const ProgressCircular: Story = {
+    render: () => ({
+        template: html`
+            <progress-circular />
+        `
+    })
+};
+
+</document_content>
+</document>
+</documents>

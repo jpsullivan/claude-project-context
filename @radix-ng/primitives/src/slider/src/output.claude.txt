@@ -1,0 +1,934 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-horizontal.component.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    booleanAttribute,
+    Component,
+    ElementRef,
+    inject,
+    input,
+    Input,
+    output,
+    signal,
+    viewChild
+} from '@angular/core';
+import { RdxSliderImplDirective } from './slider-impl.directive';
+import { RdxSliderRootComponent } from './slider-root.component';
+import { BACK_KEYS, linearScale } from './utils';
+
+@Component({
+    selector: 'rdx-slider-horizontal',
+    imports: [RdxSliderImplDirective],
+    template: `
+        <span
+            #sliderElement
+            [class]="className"
+            [attr.data-orientation]="'horizontal'"
+            [style]="{ '--rdx-slider-thumb-transform': 'translateX(-50%)' }"
+            (slideStart)="onSlideStart($event)"
+            (slideMove)="onSlideMove($event)"
+            (slideEnd)="onSlideEnd()"
+            (stepKeyDown)="onStepKeyDown($event)"
+            (endKeyDown)="endKeyDown.emit($event)"
+            (homeKeyDown)="homeKeyDown.emit($event)"
+            rdxSliderImpl
+        >
+            <ng-content />
+        </span>
+    `
+})
+export class RdxSliderHorizontalComponent {
+    private readonly rootContext = inject(RdxSliderRootComponent);
+
+    @Input() dir: 'ltr' | 'rtl' = 'ltr';
+
+    readonly inverted = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    @Input() min = 0;
+    @Input() max = 100;
+
+    @Input() className = '';
+
+    readonly slideStart = output<number>();
+    readonly slideMove = output<number>();
+    readonly slideEnd = output<void>();
+    readonly stepKeyDown = output<{ event: KeyboardEvent; direction: number }>();
+    readonly endKeyDown = output<KeyboardEvent>();
+    readonly homeKeyDown = output<KeyboardEvent>();
+
+    private readonly sliderElement = viewChild<ElementRef>('sliderElement');
+
+    private readonly rect = signal<DOMRect | undefined>(undefined);
+
+    onSlideStart(event: PointerEvent) {
+        const value = this.getValueFromPointer(event.clientX);
+        this.slideStart.emit(value);
+    }
+
+    onSlideMove(event: PointerEvent) {
+        const value = this.getValueFromPointer(event.clientX);
+        this.slideMove.emit(value);
+    }
+
+    onSlideEnd() {
+        this.rect.set(undefined);
+        this.slideEnd.emit();
+    }
+
+    onStepKeyDown(event: KeyboardEvent) {
+        const slideDirection = this.rootContext.isSlidingFromLeft() ? 'from-left' : 'from-right';
+        const isBackKey = BACK_KEYS[slideDirection].includes(event.key);
+
+        this.stepKeyDown.emit({ event, direction: isBackKey ? -1 : 1 });
+    }
+
+    private getValueFromPointer(pointerPosition: number): number {
+        this.rect.set(this.sliderElement()?.nativeElement.getBoundingClientRect());
+        const rect = this.rect();
+        if (!rect) return 0;
+
+        const input: [number, number] = [0, rect.width];
+        const output: [number, number] = this.rootContext.isSlidingFromLeft()
+            ? [this.min, this.max]
+            : [this.max, this.min];
+
+        const value = linearScale(input, output);
+        this.rect.set(rect);
+
+        return value(pointerPosition - rect.left);
+    }
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-impl.directive.ts</source>
+<document_content>
+import { Directive, inject, output } from '@angular/core';
+import { RdxSliderRootComponent } from './slider-root.component';
+import { ARROW_KEYS, PAGE_KEYS } from './utils';
+
+@Directive({
+    selector: '[rdxSliderImpl]',
+    host: {
+        role: 'slider',
+        tabindex: '0',
+        '(keydown)': 'onKeyDown($event)',
+        '(pointerdown)': 'onPointerDown($event)',
+        '(pointermove)': 'onPointerMove($event)',
+        '(pointerup)': 'onPointerUp($event)'
+    }
+})
+export class RdxSliderImplDirective {
+    protected readonly rootContext = inject(RdxSliderRootComponent);
+
+    readonly slideStart = output<PointerEvent>();
+    readonly slideMove = output<PointerEvent>();
+    readonly slideEnd = output<PointerEvent>();
+    readonly homeKeyDown = output<KeyboardEvent>();
+    readonly endKeyDown = output<KeyboardEvent>();
+    readonly stepKeyDown = output<KeyboardEvent>();
+
+    onKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Home') {
+            this.homeKeyDown.emit(event);
+            // Prevent scrolling to page start
+            event.preventDefault();
+        } else if (event.key === 'End') {
+            this.endKeyDown.emit(event);
+            // Prevent scrolling to page end
+            event.preventDefault();
+        } else if (PAGE_KEYS.concat(ARROW_KEYS).includes(event.key)) {
+            this.stepKeyDown.emit(event);
+            // Prevent scrolling for directional key presses
+            event.preventDefault();
+        }
+    }
+
+    onPointerDown(event: PointerEvent) {
+        const target = event.target as HTMLElement;
+        target.setPointerCapture(event.pointerId);
+
+        // Prevent browser focus behaviour because we focus a thumb manually when values change.
+        event.preventDefault();
+
+        // Touch devices have a delay before focusing so won't focus if touch immediately moves
+        // away from target (sliding). We want thumb to focus regardless.
+        if (this.rootContext.thumbElements.includes(target)) {
+            target.focus();
+        } else {
+            this.slideStart.emit(event);
+        }
+    }
+
+    onPointerMove(event: PointerEvent) {
+        const target = event.target as HTMLElement;
+        if (target.hasPointerCapture(event.pointerId)) {
+            this.slideMove.emit(event);
+        }
+    }
+
+    onPointerUp(event: PointerEvent) {
+        const target = event.target as HTMLElement;
+        if (target.hasPointerCapture(event.pointerId)) {
+            target.releasePointerCapture(event.pointerId);
+            this.slideEnd.emit(event);
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-orientation-context.service.ts</source>
+<document_content>
+import { Injectable, signal } from '@angular/core';
+
+export interface OrientationContext {
+    startEdge: string;
+    endEdge: string;
+    direction: number;
+    size: string;
+}
+
+@Injectable()
+export class RdxSliderOrientationContextService {
+    private contextSignal = signal<OrientationContext>({
+        startEdge: 'left',
+        endEdge: 'right',
+        direction: 1,
+        size: 'width'
+    });
+
+    get context() {
+        return this.contextSignal();
+    }
+
+    updateContext(context: Partial<OrientationContext>) {
+        this.contextSignal.update((current) => ({
+            ...current,
+            ...context
+        }));
+    }
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-range.component.ts</source>
+<document_content>
+import { Component, computed, inject } from '@angular/core';
+import { RdxSliderRootComponent } from './slider-root.component';
+import { convertValueToPercentage } from './utils';
+
+@Component({
+    selector: 'rdx-slider-range',
+    host: {
+        '[attr.data-disabled]': 'rootContext.disabled() ? "" : undefined',
+        '[attr.data-orientation]': 'rootContext.orientation()',
+        '[style]': 'rangeStyles()'
+    },
+    template: `
+        <ng-content />
+    `
+})
+export class RdxSliderRangeComponent {
+    protected readonly rootContext = inject(RdxSliderRootComponent);
+
+    percentages = computed(() =>
+        this.rootContext
+            .modelValue()
+            ?.map((value) => convertValueToPercentage(value, this.rootContext.min(), this.rootContext.max()))
+    );
+
+    offsetStart = computed(() => (this.rootContext.modelValue()!.length > 1 ? Math.min(...this.percentages()!) : 0));
+    offsetEnd = computed(() => 100 - Math.max(...this.percentages()!));
+
+    rangeStyles = computed(() => {
+        const context = this.rootContext.orientationContext.context;
+
+        return {
+            [context.startEdge]: `${this.offsetStart()}%`,
+            [context.endEdge]: `${this.offsetEnd()}%`
+        };
+    });
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-root.component.ts</source>
+<document_content>
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { NgIf, NgTemplateOutlet } from '@angular/common';
+import {
+    booleanAttribute,
+    Component,
+    computed,
+    inject,
+    input,
+    Input,
+    model,
+    numberAttribute,
+    OnInit,
+    output
+} from '@angular/core';
+import { RdxSliderHorizontalComponent } from './slider-horizontal.component';
+import { RdxSliderOrientationContextService } from './slider-orientation-context.service';
+import { RdxSliderVerticalComponent } from './slider-vertical.component';
+import {
+    clamp,
+    getClosestValueIndex,
+    getDecimalCount,
+    getNextSortedValues,
+    hasMinStepsBetweenValues,
+    roundValue
+} from './utils';
+
+/**
+ * @group Components
+ */
+@Component({
+    selector: 'rdx-slider',
+    imports: [RdxSliderHorizontalComponent, RdxSliderVerticalComponent, NgIf, NgTemplateOutlet],
+    providers: [RdxSliderOrientationContextService],
+    template: `
+        <ng-template #transclude><ng-content /></ng-template>
+
+        <ng-container *ngIf="orientation() === 'horizontal'">
+            <rdx-slider-horizontal
+                [className]="styleClass() || className"
+                [min]="min()"
+                [max]="max()"
+                [dir]="dir()"
+                [inverted]="inverted()"
+                [attr.aria-disabled]="disabled()"
+                [attr.data-disabled]="disabled() ? '' : undefined"
+                (pointerdown)="onPointerDown()"
+                (slideStart)="handleSlideStart($event)"
+                (slideMove)="handleSlideMove($event)"
+                (slideEnd)="handleSlideEnd()"
+                (homeKeyDown)="updateValues(min(), 0, true)"
+                (endKeyDown)="updateValues(max(), modelValue().length - 1, true)"
+                (stepKeyDown)="handleStepKeyDown($event)"
+            >
+                <ng-container *ngTemplateOutlet="transclude" />
+            </rdx-slider-horizontal>
+        </ng-container>
+
+        <ng-container *ngIf="orientation() === 'vertical'">
+            <rdx-slider-vertical
+                [className]="styleClass() || className"
+                [min]="min()"
+                [max]="max()"
+                [dir]="dir()"
+                [inverted]="inverted()"
+                [attr.aria-disabled]="disabled()"
+                [attr.data-disabled]="disabled() ? '' : undefined"
+                (pointerdown)="onPointerDown()"
+                (slideStart)="handleSlideStart($event)"
+                (slideMove)="handleSlideMove($event)"
+                (slideEnd)="handleSlideEnd()"
+                (homeKeyDown)="updateValues(min(), 0, true)"
+                (endKeyDown)="updateValues(max(), modelValue().length - 1, true)"
+                (stepKeyDown)="handleStepKeyDown($event)"
+            >
+                <ng-container *ngTemplateOutlet="transclude" />
+            </rdx-slider-vertical>
+        </ng-container>
+    `
+})
+export class RdxSliderRootComponent implements OnInit {
+    /** @ignore */
+    readonly orientationContext = inject(RdxSliderOrientationContextService);
+
+    /**
+     * The minimum value for the range.
+     *
+     * @group Props
+     * @defaultValue 0
+     */
+    readonly min = input<number, NumberInput>(0, { transform: numberAttribute });
+
+    /**
+     * The maximum value for the range.
+     *
+     * @group Props
+     * @defaultValue 100
+     */
+    readonly max = input<number, NumberInput>(100, { transform: numberAttribute });
+
+    /**
+     * The stepping interval.
+     *
+     * @group Props
+     * @defaultValue 1
+     */
+    readonly step = input<number, NumberInput>(1, { transform: numberAttribute });
+
+    /**
+     * The minimum permitted steps between multiple thumbs.
+     *
+     * @group Props
+     * @defaultValue 0
+     */
+    readonly minStepsBetweenThumbs = input<number, NumberInput>(0, { transform: numberAttribute });
+
+    /**
+     * The orientation of the slider.
+     *
+     * @group Props
+     * @defaultValue 'horizontal'
+     */
+    readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
+
+    /**
+     * When true, prevents the user from interacting with the slider.
+     *
+     * @group Props
+     * @defaultValue false
+     */
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether the slider is visually inverted.
+     *
+     * @group Props
+     * @defaultValue false
+     */
+    readonly inverted = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * The reading direction of the combobox when applicable.
+     *
+     * @group Props
+     * @defaultValue 'ltr'
+     */
+    readonly dir = input<'ltr' | 'rtl'>('ltr');
+
+    @Input() className: string = '';
+
+    /**
+     * Style class of the component.
+     *
+     * @group Props
+     */
+    readonly styleClass = input<string>();
+
+    /**
+     * The controlled value of the slider.
+     *
+     * @group Props
+     */
+    readonly modelValue = model<number[]>([0]);
+
+    /**
+     * Event handler called when the slider value changes.
+     *
+     * @group Emits
+     */
+    readonly valueChange = output<number[]>();
+
+    /**
+     * Event handler called when the value changes at the end of an interaction.
+     *
+     * Useful when you only need to capture a final value e.g. to update a backend service.
+     *
+     * @group Emits
+     */
+    readonly valueCommit = output<number[]>();
+
+    /** @ignore */
+    readonly valueIndexToChange = model(0);
+
+    /** @ignore */
+    readonly valuesBeforeSlideStart = model<number[]>([]);
+
+    /** @ignore */
+    readonly isSlidingFromLeft = computed(
+        () => (this.dir() === 'ltr' && !this.inverted()) || (this.dir() !== 'ltr' && this.inverted())
+    );
+
+    /** @ignore */
+    readonly isSlidingFromBottom = computed(() => !this.inverted());
+
+    /** @ignore */
+    thumbElements: HTMLElement[] = [];
+
+    /** @ignore */
+    ngOnInit() {
+        const isHorizontal = this.orientation() === 'horizontal';
+
+        if (isHorizontal) {
+            this.orientationContext.updateContext({
+                direction: this.isSlidingFromLeft() ? 1 : -1,
+                size: 'width',
+                startEdge: this.isSlidingFromLeft() ? 'left' : 'right',
+                endEdge: this.isSlidingFromLeft() ? 'right' : 'left'
+            });
+        } else {
+            this.orientationContext.updateContext({
+                direction: this.isSlidingFromBottom() ? -1 : 1,
+                size: 'height',
+                startEdge: this.isSlidingFromBottom() ? 'bottom' : 'top',
+                endEdge: this.isSlidingFromBottom() ? 'top' : 'bottom'
+            });
+        }
+    }
+
+    /** @ignore */
+    onPointerDown() {
+        this.valuesBeforeSlideStart.set([...this.modelValue()]);
+    }
+
+    /** @ignore */
+    handleSlideStart(value: number): void {
+        const closestIndex = getClosestValueIndex(this.modelValue(), value);
+        this.updateValues(value, closestIndex);
+    }
+
+    /** @ignore */
+    handleSlideMove(value: number): void {
+        this.updateValues(value, this.valueIndexToChange());
+    }
+
+    /** @ignore */
+    handleSlideEnd(): void {
+        const prevValue = this.valuesBeforeSlideStart()[this.valueIndexToChange()];
+        const nextValue = this.modelValue()[this.valueIndexToChange()];
+        const hasChanged = nextValue !== prevValue;
+
+        if (hasChanged) {
+            this.valueCommit.emit([...this.modelValue()]);
+        }
+    }
+
+    /** @ignore */
+    handleStepKeyDown(event: { event: KeyboardEvent; direction: number }): void {
+        const stepInDirection = this.step() * event.direction;
+        const atIndex = this.valueIndexToChange();
+        const currentValue = this.modelValue()[atIndex];
+        this.updateValues(currentValue + stepInDirection, atIndex, true);
+    }
+
+    /** @ignore */
+    updateValues(value: number, atIndex: number, commit = false): void {
+        const decimalCount = getDecimalCount(this.step());
+        const snapToStep = roundValue(
+            Math.round((value - this.min()) / this.step()) * this.step() + this.min(),
+            decimalCount
+        );
+        const nextValue = clamp(snapToStep, this.min(), this.max());
+
+        const nextValues = getNextSortedValues(this.modelValue(), nextValue, atIndex);
+
+        if (hasMinStepsBetweenValues(nextValues, this.minStepsBetweenThumbs() * this.step())) {
+            this.valueIndexToChange.set(nextValues.indexOf(nextValue));
+            const hasChanged = String(nextValues) !== String(this.modelValue());
+
+            if (hasChanged) {
+                this.modelValue.set(nextValues);
+                this.valueChange.emit([...this.modelValue()]);
+                this.thumbElements[this.valueIndexToChange()]?.focus();
+
+                if (commit) {
+                    this.valueCommit.emit([...this.modelValue()]);
+                }
+            }
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-thumb-impl.directive.ts</source>
+<document_content>
+import { isPlatformBrowser } from '@angular/common';
+import { computed, Directive, ElementRef, inject, OnDestroy, OnInit, PLATFORM_ID, signal } from '@angular/core';
+import { RdxSliderRootComponent } from './slider-root.component';
+import { convertValueToPercentage, getThumbInBoundsOffset } from './utils';
+
+@Directive({
+    selector: '[rdxSliderThumbImpl]',
+    host: {
+        role: 'slider',
+        '[tabindex]': 'rootContext.disabled() ? undefined : 0',
+
+        '[attr.aria-valuenow]': 'rootContext.modelValue()',
+        '[attr.aria-valuemin]': 'rootContext.min()',
+        '[attr.aria-valuemax]': 'rootContext.max()',
+        '[attr.aria-orientation]': 'rootContext.orientation()',
+
+        '[attr.data-orientation]': 'rootContext.orientation()',
+        '[attr.data-disabled]': 'rootContext.disabled() ? "" : undefined',
+
+        '[style]': 'combinedStyles()',
+
+        '(focus)': 'onFocus()'
+    }
+})
+export class RdxSliderThumbImplDirective implements OnInit, OnDestroy {
+    protected readonly rootContext = inject(RdxSliderRootComponent);
+    private readonly elementRef = inject(ElementRef);
+    private readonly platformId = inject(PLATFORM_ID);
+    private resizeObserver!: ResizeObserver;
+
+    isMounted = signal(false);
+
+    thumbIndex = computed(() => {
+        const thumbElement = this.elementRef.nativeElement;
+        const index = this.rootContext.thumbElements.indexOf(thumbElement);
+        return index >= 0 ? index : null;
+    });
+
+    value = computed(() => {
+        const index = this.thumbIndex();
+        if (index === null) return undefined;
+        return this.rootContext.modelValue()?.[index];
+    });
+
+    percent = computed(() => {
+        const val = this.value();
+        if (val === undefined) return 0;
+        return convertValueToPercentage(val, this.rootContext.min(), this.rootContext.max());
+    });
+
+    transform = computed(() => {
+        const percent = this.percent();
+        const offset = this.thumbInBoundsOffset();
+        return `calc(${percent}% + ${offset}px)`;
+    });
+
+    orientationSize = signal(0);
+
+    thumbInBoundsOffset = computed(() => {
+        const context = this.rootContext.orientationContext.context;
+
+        const size = this.orientationSize();
+        const percent = this.percent();
+        const direction = context.direction;
+
+        return size ? getThumbInBoundsOffset(size, percent, direction) : 0;
+    });
+
+    combinedStyles = computed(() => {
+        const context = this.rootContext.orientationContext.context;
+
+        const startEdge = context.startEdge;
+        const percent = this.percent();
+        const offset = this.thumbInBoundsOffset();
+
+        return {
+            position: 'absolute',
+            transform: 'var(--rdx-slider-thumb-transform)',
+            display: (this.isMounted() && this.value()) === false ? 'none' : undefined,
+            [startEdge]: `calc(${percent}% + ${offset}px)`
+        };
+    });
+
+    onFocus() {
+        if (this.thumbIndex() !== null) {
+            this.rootContext.valueIndexToChange.set(this.thumbIndex()!);
+        }
+    }
+
+    ngOnInit() {
+        if (isPlatformBrowser(this.platformId)) {
+            const thumbElement = this.elementRef.nativeElement;
+            this.rootContext.thumbElements.push(thumbElement);
+
+            this.resizeObserver = new ResizeObserver(() => {
+                const rect = thumbElement.getBoundingClientRect();
+                const context = this.rootContext.orientationContext.context;
+                const size = context.size === 'width' ? rect.width : rect.height;
+                this.orientationSize.set(size);
+            });
+
+            this.resizeObserver.observe(thumbElement);
+
+            this.isMounted.set(true);
+        }
+    }
+
+    ngOnDestroy() {
+        const thumbElement = this.elementRef.nativeElement;
+        const index = this.rootContext.thumbElements.indexOf(thumbElement);
+        if (index >= 0) this.rootContext.thumbElements.splice(index, 1);
+
+        if (this.resizeObserver) {
+            this.resizeObserver.unobserve(thumbElement);
+        }
+
+        this.isMounted.set(false);
+    }
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-thumb.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { RdxSliderThumbImplDirective } from './slider-thumb-impl.directive';
+
+@Component({
+    selector: 'rdx-slider-thumb',
+    hostDirectives: [RdxSliderThumbImplDirective],
+    template: `
+        <ng-content />
+    `
+})
+export class RdxSliderThumbComponent {}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-track.component.ts</source>
+<document_content>
+import { Component, inject } from '@angular/core';
+import { RdxSliderRootComponent } from './slider-root.component';
+
+@Component({
+    selector: 'rdx-slider-track',
+    host: {
+        '[attr.data-disabled]': "rootContext.disabled() ? '' : undefined",
+        '[attr.data-orientation]': 'rootContext.orientation()'
+    },
+    template: `
+        <ng-content />
+    `
+})
+export class RdxSliderTrackComponent {
+    protected readonly rootContext = inject(RdxSliderRootComponent);
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-vertical.component.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    booleanAttribute,
+    Component,
+    ElementRef,
+    inject,
+    input,
+    Input,
+    output,
+    signal,
+    viewChild
+} from '@angular/core';
+import { RdxSliderImplDirective } from './slider-impl.directive';
+import { RdxSliderRootComponent } from './slider-root.component';
+import { BACK_KEYS, linearScale } from './utils';
+
+@Component({
+    selector: 'rdx-slider-vertical',
+    imports: [RdxSliderImplDirective],
+    template: `
+        <span
+            #sliderElement
+            [class]="className"
+            [attr.data-orientation]="'vertical'"
+            [style]="{ '--rdx-slider-thumb-transform': 'translateY(-50%)' }"
+            (slideStart)="onSlideStart($event)"
+            (slideMove)="onSlideMove($event)"
+            (slideEnd)="onSlideEnd()"
+            (stepKeyDown)="onStepKeyDown($event)"
+            (endKeyDown)="endKeyDown.emit($event)"
+            (homeKeyDown)="homeKeyDown.emit($event)"
+            rdxSliderImpl
+        >
+            <ng-content />
+        </span>
+    `
+})
+export class RdxSliderVerticalComponent {
+    private readonly rootContext = inject(RdxSliderRootComponent);
+
+    @Input() dir: 'ltr' | 'rtl' = 'ltr';
+
+    readonly inverted = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    @Input() min = 0;
+    @Input() max = 100;
+
+    @Input() className = '';
+
+    readonly slideStart = output<number>();
+    readonly slideMove = output<number>();
+    readonly slideEnd = output<void>();
+    readonly stepKeyDown = output<{ event: KeyboardEvent; direction: number }>();
+    readonly endKeyDown = output<KeyboardEvent>();
+    readonly homeKeyDown = output<KeyboardEvent>();
+
+    private readonly sliderElement = viewChild<ElementRef>('sliderElement');
+
+    private readonly rect = signal<DOMRect | undefined>(undefined);
+
+    onSlideStart(event: PointerEvent) {
+        const value = this.getValueFromPointer(event.clientY);
+        this.slideStart.emit(value);
+    }
+
+    onSlideMove(event: PointerEvent) {
+        const value = this.getValueFromPointer(event.clientY);
+        this.slideMove.emit(value);
+    }
+
+    onSlideEnd() {
+        this.rect.set(undefined);
+        this.slideEnd.emit();
+    }
+
+    onStepKeyDown(event: KeyboardEvent) {
+        const slideDirection = this.rootContext.isSlidingFromBottom() ? 'from-bottom' : 'from-top';
+        const isBackKey = BACK_KEYS[slideDirection].includes(event.key);
+
+        this.stepKeyDown.emit({ event, direction: isBackKey ? -1 : 1 });
+    }
+
+    private getValueFromPointer(pointerPosition: number): number {
+        this.rect.set(this.sliderElement()?.nativeElement.getBoundingClientRect());
+        const rect = this.rect();
+        if (!rect) return 0;
+
+        const input: [number, number] = [0, rect.height];
+        const output: [number, number] = this.rootContext.isSlidingFromBottom()
+            ? [this.max, this.min]
+            : [this.min, this.max];
+
+        const value = linearScale(input, output);
+        this.rect.set(rect);
+
+        return value(pointerPosition - rect.top);
+    }
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/utils.ts</source>
+<document_content>
+// https://github.com/tmcw-up-for-adoption/simple-linear-scale/blob/master/index.js
+export function linearScale(input: readonly [number, number], output: readonly [number, number]) {
+    return (value: number) => {
+        if (input[0] === input[1] || output[0] === output[1]) return output[0];
+        const ratio = (output[1] - output[0]) / (input[1] - input[0]);
+        return output[0] + ratio * (value - input[0]);
+    };
+}
+
+/**
+ * Verifies the minimum steps between all values is greater than or equal
+ * to the expected minimum steps.
+ *
+ * @example
+ * // returns false
+ * hasMinStepsBetweenValues([1,2,3], 2);
+ *
+ * @example
+ * // returns true
+ * hasMinStepsBetweenValues([1,2,3], 1);
+ */
+export function hasMinStepsBetweenValues(values: number[], minStepsBetweenValues: number) {
+    if (minStepsBetweenValues > 0) {
+        const stepsBetweenValues = getStepsBetweenValues(values);
+        const actualMinStepsBetweenValues = Math.min(...stepsBetweenValues);
+        return actualMinStepsBetweenValues >= minStepsBetweenValues;
+    }
+    return true;
+}
+
+/**
+ * Given a `values` array and a `nextValue`, determine which value in
+ * the array is closest to `nextValue` and return its index.
+ *
+ * @example
+ * // returns 1
+ * getClosestValueIndex([10, 30], 25);
+ */
+export function getClosestValueIndex(values: number[], nextValue: number) {
+    if (values.length === 1) return 0;
+    const distances = values.map((value) => Math.abs(value - nextValue));
+    const closestDistance = Math.min(...distances);
+    return distances.indexOf(closestDistance);
+}
+
+/**
+ * Gets an array of steps between each value.
+ *
+ * @example
+ * // returns [1, 9]
+ * getStepsBetweenValues([10, 11, 20]);
+ */
+export function getStepsBetweenValues(values: number[]) {
+    return values.slice(0, -1).map((value, index) => values[index + 1] - value);
+}
+
+/**
+ * Offsets the thumb centre point while sliding to ensure it remains
+ * within the bounds of the slider when reaching the edges
+ */
+export function getThumbInBoundsOffset(width: number, left: number, direction: number) {
+    const halfWidth = width / 2;
+    const halfPercent = 50;
+    const offset = linearScale([0, halfPercent], [0, halfWidth]);
+    return (halfWidth - offset(left) * direction) * direction;
+}
+
+export function convertValueToPercentage(value: number, min: number, max: number) {
+    const maxSteps = max - min;
+    const percentPerStep = 100 / maxSteps;
+    const percentage = percentPerStep * (value - min);
+    return clamp(percentage, 0, 100);
+}
+
+export function getDecimalCount(value: number) {
+    return (String(value).split('.')[1] || '').length;
+}
+
+export function roundValue(value: number, decimalCount: number) {
+    const rounder = 10 ** decimalCount;
+    return Math.round(value * rounder) / rounder;
+}
+
+export function getNextSortedValues(prevValues: number[] = [], nextValue: number, atIndex: number) {
+    const nextValues = [...prevValues];
+    nextValues[atIndex] = nextValue;
+    return nextValues.sort((a, b) => a - b);
+}
+
+export const PAGE_KEYS = ['PageUp', 'PageDown'];
+export const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+
+type SlideDirection = 'from-left' | 'from-right' | 'from-bottom' | 'from-top';
+export const BACK_KEYS: Record<SlideDirection, string[]> = {
+    'from-left': ['Home', 'PageDown', 'ArrowDown', 'ArrowLeft'],
+    'from-right': ['Home', 'PageDown', 'ArrowDown', 'ArrowRight'],
+    'from-bottom': ['Home', 'PageDown', 'ArrowDown', 'ArrowLeft'],
+    'from-top': ['Home', 'PageDown', 'ArrowUp', 'ArrowLeft']
+};
+
+export interface OrientationContext {
+    direction: number;
+    size: 'width' | 'height';
+    startEdge: 'left' | 'top';
+    endEdge: 'right' | 'bottom';
+}
+
+export function clamp(
+    value: number,
+    min: number = Number.NEGATIVE_INFINITY,
+    max: number = Number.POSITIVE_INFINITY
+): number {
+    return Math.min(Math.max(value, min), max);
+}
+
+</document_content>
+</document>
+</documents>

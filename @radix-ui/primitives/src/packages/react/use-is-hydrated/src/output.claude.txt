@@ -1,0 +1,31 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-is-hydrated/src/index.ts</source>
+<document_content>
+export { useIsHydrated } from './use-is-hydrated';
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-is-hydrated/src/use-is-hydrated.tsx</source>
+<document_content>
+import { useSyncExternalStore } from 'use-sync-external-store/shim';
+
+/**
+ * Determines whether or not the component tree has been hydrated.
+ */
+export function useIsHydrated() {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false
+  );
+}
+
+function subscribe() {
+  return () => {};
+}
+
+</document_content>
+</document>
+</documents>

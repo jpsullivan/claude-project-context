@@ -1,0 +1,456 @@
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/CHANGELOG.md
+```
+# @radix-ui/react-toolbar
+
+## 1.1.7
+
+- Updated dependencies: `@radix-ui/react-roving-focus@1.1.7`, `@radix-ui/react-toggle-group@1.1.7`
+
+## 1.1.6
+
+- Updated dependencies: `@radix-ui/react-roving-focus@1.1.6`, `@radix-ui/react-toggle-group@1.1.6`
+
+## 1.1.5
+
+- Updated dependencies: `@radix-ui/react-roving-focus@1.1.5`, `@radix-ui/react-toggle-group@1.1.5`
+
+## 1.1.4
+
+- Updated dependencies: `@radix-ui/react-roving-focus@1.1.4`, `@radix-ui/react-toggle-group@1.1.4`, `@radix-ui/react-primitive@2.1.0`, `@radix-ui/react-separator@1.1.4`
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/README.md
+```
+# `react-toolbar`
+
+View docs [here](https://radix-ui.com/primitives/docs/components/toolbar).
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/eslint.config.mjs
+```
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/package.json
+```json
+{
+  "name": "@radix-ui/react-toolbar",
+  "version": "1.1.7",
+  "license": "MIT",
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "build": "radix-build"
+  },
+  "dependencies": {
+    "@radix-ui/primitive": "workspace:*",
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-direction": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-roving-focus": "workspace:*",
+    "@radix-ui/react-separator": "workspace:*",
+    "@radix-ui/react-toggle-group": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/builder": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/tsconfig.json
+```json
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@repo/typescript-config/react-library"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/src/index.ts
+```typescript
+'use client';
+export {
+  createToolbarScope,
+  //
+  Toolbar,
+  ToolbarSeparator,
+  ToolbarButton,
+  ToolbarLink,
+  ToolbarToggleGroup,
+  ToolbarToggleItem,
+  //
+  Root,
+  Separator,
+  Button,
+  Link,
+  ToggleGroup,
+  ToggleItem,
+} from './toolbar';
+export type {
+  ToolbarProps,
+  ToolbarSeparatorProps,
+  ToolbarButtonProps,
+  ToolbarLinkProps,
+  ToolbarToggleGroupSingleProps,
+  ToolbarToggleGroupMultipleProps,
+  ToolbarToggleItemProps,
+} from './toolbar';
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/src/toolbar.test.tsx
+```
+import { cleanup, render, fireEvent, getByText } from '@testing-library/react';
+import * as Toolbar from './toolbar';
+import { afterEach, describe, it, vi, expect } from 'vitest';
+
+const component = (props: any) => {
+  return render(
+    <Toolbar.Root>
+      <Toolbar.ToggleGroup type="single">
+        <Toolbar.ToggleItem value="left" onClick={props.onClick}>
+          Left
+        </Toolbar.ToggleItem>
+      </Toolbar.ToggleGroup>
+    </Toolbar.Root>
+  );
+};
+
+describe('given a default Toolbar', () => {
+  afterEach(cleanup);
+  it('Click event should be called just once', async () => {
+    const spy = vi.fn();
+
+    const rendered = component({
+      onClick: spy,
+    });
+
+    fireEvent(
+      getByText(rendered.container, 'Left'),
+      new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      })
+    );
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/toolbar/src/toolbar.tsx
+```
+import * as React from 'react';
+import { composeEventHandlers } from '@radix-ui/primitive';
+import { createContextScope } from '@radix-ui/react-context';
+import * as RovingFocusGroup from '@radix-ui/react-roving-focus';
+import { createRovingFocusGroupScope } from '@radix-ui/react-roving-focus';
+import { Primitive } from '@radix-ui/react-primitive';
+import * as SeparatorPrimitive from '@radix-ui/react-separator';
+import * as ToggleGroupPrimitive from '@radix-ui/react-toggle-group';
+import { createToggleGroupScope } from '@radix-ui/react-toggle-group';
+import { useDirection } from '@radix-ui/react-direction';
+
+import type { Scope } from '@radix-ui/react-context';
+
+/* -------------------------------------------------------------------------------------------------
+ * Toolbar
+ * -----------------------------------------------------------------------------------------------*/
+
+const TOOLBAR_NAME = 'Toolbar';
+
+type ScopedProps<P> = P & { __scopeToolbar?: Scope };
+const [createToolbarContext, createToolbarScope] = createContextScope(TOOLBAR_NAME, [
+  createRovingFocusGroupScope,
+  createToggleGroupScope,
+]);
+const useRovingFocusGroupScope = createRovingFocusGroupScope();
+const useToggleGroupScope = createToggleGroupScope();
+
+type RovingFocusGroupProps = React.ComponentPropsWithoutRef<typeof RovingFocusGroup.Root>;
+type ToolbarContextValue = {
+  orientation: RovingFocusGroupProps['orientation'];
+  dir: RovingFocusGroupProps['dir'];
+};
+const [ToolbarProvider, useToolbarContext] =
+  createToolbarContext<ToolbarContextValue>(TOOLBAR_NAME);
+
+type ToolbarElement = React.ElementRef<typeof Primitive.div>;
+type PrimitiveDivProps = React.ComponentPropsWithoutRef<typeof Primitive.div>;
+interface ToolbarProps extends PrimitiveDivProps {
+  orientation?: RovingFocusGroupProps['orientation'];
+  loop?: RovingFocusGroupProps['loop'];
+  dir?: RovingFocusGroupProps['dir'];
+}
+
+const Toolbar = React.forwardRef<ToolbarElement, ToolbarProps>(
+  (props: ScopedProps<ToolbarProps>, forwardedRef) => {
+    const { __scopeToolbar, orientation = 'horizontal', dir, loop = true, ...toolbarProps } = props;
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeToolbar);
+    const direction = useDirection(dir);
+    return (
+      <ToolbarProvider scope={__scopeToolbar} orientation={orientation} dir={direction}>
+        <RovingFocusGroup.Root
+          asChild
+          {...rovingFocusGroupScope}
+          orientation={orientation}
+          dir={direction}
+          loop={loop}
+        >
+          <Primitive.div
+            role="toolbar"
+            aria-orientation={orientation}
+            dir={direction}
+            {...toolbarProps}
+            ref={forwardedRef}
+          />
+        </RovingFocusGroup.Root>
+      </ToolbarProvider>
+    );
+  }
+);
+
+Toolbar.displayName = TOOLBAR_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ToolbarSeparator
+ * -----------------------------------------------------------------------------------------------*/
+
+const SEPARATOR_NAME = 'ToolbarSeparator';
+
+type ToolbarSeparatorElement = React.ElementRef<typeof SeparatorPrimitive.Root>;
+type SeparatorProps = React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>;
+interface ToolbarSeparatorProps extends SeparatorProps {}
+
+const ToolbarSeparator = React.forwardRef<ToolbarSeparatorElement, ToolbarSeparatorProps>(
+  (props: ScopedProps<ToolbarSeparatorProps>, forwardedRef) => {
+    const { __scopeToolbar, ...separatorProps } = props;
+    const context = useToolbarContext(SEPARATOR_NAME, __scopeToolbar);
+    return (
+      <SeparatorPrimitive.Root
+        orientation={context.orientation === 'horizontal' ? 'vertical' : 'horizontal'}
+        {...separatorProps}
+        ref={forwardedRef}
+      />
+    );
+  }
+);
+
+ToolbarSeparator.displayName = SEPARATOR_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ToolbarButton
+ * -----------------------------------------------------------------------------------------------*/
+
+const BUTTON_NAME = 'ToolbarButton';
+
+type ToolbarButtonElement = React.ElementRef<typeof Primitive.button>;
+type PrimitiveButtonProps = React.ComponentPropsWithoutRef<typeof Primitive.button>;
+interface ToolbarButtonProps extends PrimitiveButtonProps {}
+
+const ToolbarButton = React.forwardRef<ToolbarButtonElement, ToolbarButtonProps>(
+  (props: ScopedProps<ToolbarButtonProps>, forwardedRef) => {
+    const { __scopeToolbar, ...buttonProps } = props;
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeToolbar);
+    return (
+      <RovingFocusGroup.Item asChild {...rovingFocusGroupScope} focusable={!props.disabled}>
+        <Primitive.button type="button" {...buttonProps} ref={forwardedRef} />
+      </RovingFocusGroup.Item>
+    );
+  }
+);
+
+ToolbarButton.displayName = BUTTON_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ToolbarLink
+ * -----------------------------------------------------------------------------------------------*/
+
+const LINK_NAME = 'ToolbarLink';
+
+type ToolbarLinkElement = React.ElementRef<typeof Primitive.a>;
+type PrimitiveLinkProps = React.ComponentPropsWithoutRef<typeof Primitive.a>;
+interface ToolbarLinkProps extends PrimitiveLinkProps {}
+
+const ToolbarLink = React.forwardRef<ToolbarLinkElement, ToolbarLinkProps>(
+  (props: ScopedProps<ToolbarLinkProps>, forwardedRef) => {
+    const { __scopeToolbar, ...linkProps } = props;
+    const rovingFocusGroupScope = useRovingFocusGroupScope(__scopeToolbar);
+    return (
+      <RovingFocusGroup.Item asChild {...rovingFocusGroupScope} focusable>
+        <Primitive.a
+          {...linkProps}
+          ref={forwardedRef}
+          onKeyDown={composeEventHandlers(props.onKeyDown, (event) => {
+            if (event.key === ' ') event.currentTarget.click();
+          })}
+        />
+      </RovingFocusGroup.Item>
+    );
+  }
+);
+
+ToolbarLink.displayName = LINK_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ToolbarToggleGroup
+ * -----------------------------------------------------------------------------------------------*/
+
+const TOGGLE_GROUP_NAME = 'ToolbarToggleGroup';
+
+type ToolbarToggleGroupElement = React.ElementRef<typeof ToggleGroupPrimitive.Root>;
+type ToggleGroupProps = React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root>;
+interface ToolbarToggleGroupSingleProps extends Extract<ToggleGroupProps, { type: 'single' }> {}
+interface ToolbarToggleGroupMultipleProps extends Extract<ToggleGroupProps, { type: 'multiple' }> {}
+
+const ToolbarToggleGroup = React.forwardRef<
+  ToolbarToggleGroupElement,
+  ToolbarToggleGroupSingleProps | ToolbarToggleGroupMultipleProps
+>(
+  (
+    props: ScopedProps<ToolbarToggleGroupSingleProps | ToolbarToggleGroupMultipleProps>,
+    forwardedRef
+  ) => {
+    const { __scopeToolbar, ...toggleGroupProps } = props;
+    const context = useToolbarContext(TOGGLE_GROUP_NAME, __scopeToolbar);
+    const toggleGroupScope = useToggleGroupScope(__scopeToolbar);
+    return (
+      <ToggleGroupPrimitive.Root
+        data-orientation={context.orientation}
+        dir={context.dir}
+        {...toggleGroupScope}
+        {...toggleGroupProps}
+        ref={forwardedRef}
+        rovingFocus={false}
+      />
+    );
+  }
+);
+
+ToolbarToggleGroup.displayName = TOGGLE_GROUP_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * ToolbarToggleItem
+ * -----------------------------------------------------------------------------------------------*/
+
+const TOGGLE_ITEM_NAME = 'ToolbarToggleItem';
+
+type ToolbarToggleItemElement = React.ElementRef<typeof ToggleGroupPrimitive.Item>;
+type ToggleGroupItemProps = React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Item>;
+interface ToolbarToggleItemProps extends ToggleGroupItemProps {}
+
+const ToolbarToggleItem = React.forwardRef<ToolbarToggleItemElement, ToolbarToggleItemProps>(
+  (props: ScopedProps<ToolbarToggleItemProps>, forwardedRef) => {
+    const { __scopeToolbar, ...toggleItemProps } = props;
+    const toggleGroupScope = useToggleGroupScope(__scopeToolbar);
+    const scope = { __scopeToolbar: props.__scopeToolbar };
+
+    return (
+      <ToolbarButton asChild {...scope}>
+        <ToggleGroupPrimitive.Item {...toggleGroupScope} {...toggleItemProps} ref={forwardedRef} />
+      </ToolbarButton>
+    );
+  }
+);
+
+ToolbarToggleItem.displayName = TOGGLE_ITEM_NAME;
+
+/* ---------------------------------------------------------------------------------------------- */
+
+const Root = Toolbar;
+const Separator = ToolbarSeparator;
+const Button = ToolbarButton;
+const Link = ToolbarLink;
+const ToggleGroup = ToolbarToggleGroup;
+const ToggleItem = ToolbarToggleItem;
+
+export {
+  createToolbarScope,
+  //
+  Toolbar,
+  ToolbarSeparator,
+  ToolbarButton,
+  ToolbarLink,
+  ToolbarToggleGroup,
+  ToolbarToggleItem,
+  //
+  Root,
+  Separator,
+  Button,
+  Link,
+  ToggleGroup,
+  ToggleItem,
+};
+export type {
+  ToolbarProps,
+  ToolbarSeparatorProps,
+  ToolbarButtonProps,
+  ToolbarLinkProps,
+  ToolbarToggleGroupSingleProps,
+  ToolbarToggleGroupMultipleProps,
+  ToolbarToggleItemProps,
+};
+
+```

@@ -1,0 +1,235 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/src/collapsible-content.directive.ts</source>
+<document_content>
+import { Directive, ElementRef, inject } from '@angular/core';
+import { RdxCollapsibleContentToken } from './collapsible-content.token';
+import { RdxCollapsibleRootDirective } from './collapsible-root.directive';
+
+@Directive({
+    selector: '[rdxCollapsibleContent]',
+    providers: [
+        {
+            provide: RdxCollapsibleContentToken,
+            useExisting: RdxCollapsibleContentDirective
+        }
+    ],
+    host: {
+        '[attr.data-state]': 'collapsible.getState()',
+        '[attr.data-disabled]': 'getDisabled()'
+    }
+})
+export class RdxCollapsibleContentDirective {
+    protected readonly collapsible = inject(RdxCollapsibleRootDirective);
+
+    /**
+     * Reference to CollapsibleContent host element
+     * @ignore
+     */
+    readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+    getDisabled(): string | undefined {
+        return this.collapsible.disabled() ? 'disabled' : undefined;
+    }
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/src/collapsible-content.token.ts</source>
+<document_content>
+import { InjectionToken } from '@angular/core';
+import { RdxCollapsibleContentDirective } from './collapsible-content.directive';
+
+export const RdxCollapsibleContentToken = new InjectionToken<RdxCollapsibleContentDirective>(
+    'RdxCollapsibleContentToken'
+);
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/src/collapsible-root.directive.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import { booleanAttribute, contentChild, Directive, inject, InjectionToken, input, Input, output } from '@angular/core';
+import { asyncScheduler } from 'rxjs';
+import { RdxCollapsibleContentToken } from './collapsible-content.token';
+
+const RdxCollapsibleRootToken = new InjectionToken<RdxCollapsibleRootDirective>('RdxCollapsibleRootToken');
+
+export function injectCollapsible(): RdxCollapsibleRootDirective {
+    return inject(RdxCollapsibleRootDirective);
+}
+
+export type RdxCollapsibleState = 'open' | 'closed';
+
+/**
+ * @group Components
+ */
+@Directive({
+    selector: '[rdxCollapsibleRoot]',
+    exportAs: 'collapsibleRoot',
+    providers: [{ provide: RdxCollapsibleRootToken, useExisting: RdxCollapsibleRootDirective }],
+    host: {
+        '[attr.data-state]': 'getState()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined'
+    }
+})
+export class RdxCollapsibleRootDirective {
+    /**
+     * Reference to RdxCollapsibleContent directive
+     */
+    private readonly contentDirective = contentChild.required(RdxCollapsibleContentToken);
+
+    /**
+     * Determines whether a directive is available for interaction.
+     * When true, prevents the user from interacting with the collapsible.
+     *
+     * @group Props
+     */
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * The controlled open state of the collapsible.
+     * Sets the state of the directive. `true` - expanded, `false` - collapsed
+     *
+     * @group Props
+     * @defaultValue false
+     */
+    @Input() set open(value: boolean) {
+        if (value !== this._open) {
+            this.onOpenChange.emit(value);
+        }
+
+        this._open = value;
+        this.setPresence();
+    }
+
+    get open(): boolean {
+        return this._open;
+    }
+
+    /**
+     * Stores collapsible state
+     */
+    private _open = false;
+
+    /**
+     * Emitted with new value when directive state changed.
+     * Event handler called when the open state of the collapsible changes.
+     *
+     * @group Emits
+     */
+    readonly onOpenChange = output<boolean>();
+
+    /**
+     * Allows to change directive state
+     * @param {boolean | undefined} value
+     * @ignore
+     */
+    setOpen(value?: boolean) {
+        if (this.disabled()) {
+            return;
+        }
+
+        if (value === undefined) {
+            this.open = !this.open;
+        } else {
+            this.open = value;
+        }
+
+        this.setPresence();
+    }
+
+    /**
+     * Returns directive state (open | closed)
+     * @ignore
+     */
+    getState(): RdxCollapsibleState {
+        return this.open ? 'open' : 'closed';
+    }
+
+    /**
+     * Returns current directive state
+     * @ignore
+     */
+    isOpen(): boolean {
+        return this.open;
+    }
+
+    /**
+     * Controls visibility of content
+     */
+    private setPresence(): void {
+        if (!this.contentDirective) {
+            return;
+        }
+
+        if (this.isOpen()) {
+            this.contentDirective().elementRef.nativeElement.removeAttribute('hidden');
+        } else {
+            asyncScheduler.schedule(() => {
+                const animations = this.contentDirective().elementRef.nativeElement.getAnimations();
+
+                if (animations === undefined || animations.length === 0) {
+                    this.contentDirective().elementRef.nativeElement.setAttribute('hidden', '');
+                }
+            });
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/src/collapsible-trigger.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { injectCollapsible, RdxCollapsibleState } from './collapsible-root.directive';
+
+@Directive({
+    selector: '[rdxCollapsibleTrigger]',
+    host: {
+        '[attr.data-state]': 'getState()',
+        '[attr.data-disabled]': 'getDisabled()',
+        '[attr.aria-expanded]': 'getState() === "open" ? "true" : "false"',
+        '[disabled]': 'getDisabled()',
+
+        '(click)': 'onOpenToggle()'
+    }
+})
+export class RdxCollapsibleTriggerDirective {
+    /**
+     * Reference to CollapsibleRoot
+     * @private
+     * @ignore
+     */
+    private readonly collapsible = injectCollapsible();
+
+    /**
+     * Called on trigger clicked
+     */
+    onOpenToggle(): void {
+        this.collapsible.setOpen();
+    }
+
+    /**
+     * Returns current directive state (open | closed)
+     * @ignore
+     */
+    getState(): RdxCollapsibleState {
+        return this.collapsible.getState();
+    }
+
+    /**
+     * Returns current trigger state
+     * @ignore
+     */
+    getDisabled(): string | undefined {
+        return this.collapsible.disabled() ? 'disabled' : undefined;
+    }
+}
+
+</document_content>
+</document>
+</documents>

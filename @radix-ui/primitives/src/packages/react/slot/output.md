@@ -1,0 +1,514 @@
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/README.md
+```
+# `react-slot`
+
+View docs [here](https://radix-ui.com/primitives/docs/utilities/slot).
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/eslint.config.mjs
+```
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/package.json
+```json
+{
+  "name": "@radix-ui/react-slot",
+  "version": "1.2.0",
+  "license": "MIT",
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "build": "radix-build"
+  },
+  "dependencies": {
+    "@radix-ui/react-compose-refs": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/builder": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/tsconfig.json
+```json
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@repo/typescript-config/react-library"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/src/index.ts
+```typescript
+export {
+  Slot,
+  Slottable,
+  //
+  Root,
+  createSlot,
+  createSlottable,
+} from './slot';
+export type { SlotProps } from './slot';
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/src/slot.test.tsx
+```
+import React from 'react';
+import { cleanup, render, screen, fireEvent } from '@testing-library/react';
+import { Slot, Slottable } from './slot';
+import { afterEach, describe, it, beforeEach, vi, expect } from 'vitest';
+
+describe('given a slotted Trigger', () => {
+  afterEach(cleanup);
+  describe('with onClick on itself', () => {
+    const handleClick = vi.fn();
+
+    beforeEach(() => {
+      handleClick.mockReset();
+      render(
+        <Trigger as={Slot} onClick={handleClick}>
+          <button type="button">Click me</button>
+        </Trigger>
+      );
+      fireEvent.click(screen.getByRole('button'));
+    });
+
+    it('should call the onClick passed to the Trigger', async () => {
+      expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('with onClick on the child', () => {
+    const handleClick = vi.fn();
+
+    beforeEach(() => {
+      handleClick.mockReset();
+      render(
+        <Trigger as={Slot}>
+          <button type="button" onClick={handleClick}>
+            Click me
+          </button>
+        </Trigger>
+      );
+      fireEvent.click(screen.getByRole('button'));
+    });
+
+    it("should call the child's onClick", async () => {
+      expect(handleClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('with onClick on itself AND the child', () => {
+    const handleTriggerClick = vi.fn();
+    const handleChildClick = vi.fn();
+
+    beforeEach(() => {
+      handleTriggerClick.mockReset();
+      handleChildClick.mockReset();
+      render(
+        <Trigger as={Slot} onClick={handleTriggerClick}>
+          <button type="button" onClick={handleChildClick}>
+            Click me
+          </button>
+        </Trigger>
+      );
+      fireEvent.click(screen.getByRole('button'));
+    });
+
+    it("should call the Trigger's onClick", async () => {
+      expect(handleTriggerClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("should call the child's onClick", async () => {
+      expect(handleChildClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('with onClick on itself AND undefined onClick on the child', () => {
+    const handleTriggerClick = vi.fn();
+
+    beforeEach(() => {
+      handleTriggerClick.mockReset();
+      render(
+        <Trigger as={Slot} onClick={handleTriggerClick}>
+          <button type="button" onClick={undefined}>
+            Click me
+          </button>
+        </Trigger>
+      );
+      fireEvent.click(screen.getByRole('button'));
+    });
+
+    it("should call the Trigger's onClick", async () => {
+      expect(handleTriggerClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('with undefined onClick on itself AND onClick on the child', () => {
+    const handleChildClick = vi.fn();
+
+    beforeEach(() => {
+      handleChildClick.mockReset();
+      render(
+        <Trigger as={Slot} onClick={undefined}>
+          <button type="button" onClick={handleChildClick}>
+            Click me
+          </button>
+        </Trigger>
+      );
+      fireEvent.click(screen.getByRole('button'));
+    });
+
+    it("should call the child's onClick", async () => {
+      expect(handleChildClick).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe('given a Button with Slottable', () => {
+  afterEach(cleanup);
+  describe('without asChild', () => {
+    it('should render a button with icon on the left/right', async () => {
+      const tree = render(
+        <Button iconLeft={<span>left</span>} iconRight={<span>right</span>}>
+          Button <em>text</em>
+        </Button>
+      );
+
+      expect(tree.container).toMatchSnapshot();
+    });
+  });
+
+  describe('with asChild', () => {
+    it('should render a link with icon on the left/right', async () => {
+      const tree = render(
+        <Button iconLeft={<span>left</span>} iconRight={<span>right</span>} asChild>
+          <a href="https://radix-ui.com">
+            Button <em>text</em>
+          </a>
+        </Button>
+      );
+
+      expect(tree.container).toMatchSnapshot();
+    });
+  });
+});
+
+type TriggerProps = React.ComponentProps<'button'> & { as: React.ElementType };
+
+const Trigger = ({ as: Comp = 'button', ...props }: TriggerProps) => <Comp {...props} />;
+
+const Button = React.forwardRef<
+  React.ElementRef<'button'>,
+  React.ComponentProps<'button'> & {
+    asChild?: boolean;
+    iconLeft?: React.ReactNode;
+    iconRight?: React.ReactNode;
+  }
+>(({ children, asChild = false, iconLeft, iconRight, ...props }, forwardedRef) => {
+  const Comp = asChild ? Slot : 'button';
+  return (
+    <Comp {...props} ref={forwardedRef}>
+      {iconLeft}
+      <Slottable>{children}</Slottable>
+      {iconRight}
+    </Comp>
+  );
+});
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/src/slot.tsx
+```
+import * as React from 'react';
+import { composeRefs } from '@radix-ui/react-compose-refs';
+
+/* -------------------------------------------------------------------------------------------------
+ * Slot
+ * -----------------------------------------------------------------------------------------------*/
+
+interface SlotProps extends React.HTMLAttributes<HTMLElement> {
+  children?: React.ReactNode;
+}
+
+/* @__NO_SIDE_EFFECTS__ */ export function createSlot(ownerName: string) {
+  const SlotClone = createSlotClone(ownerName);
+  const Slot = React.forwardRef<HTMLElement, SlotProps>((props, forwardedRef) => {
+    const { children, ...slotProps } = props;
+    const childrenArray = React.Children.toArray(children);
+    const slottable = childrenArray.find(isSlottable);
+
+    if (slottable) {
+      // the new element to render is the one passed as a child of `Slottable`
+      const newElement = slottable.props.children;
+
+      const newChildren = childrenArray.map((child) => {
+        if (child === slottable) {
+          // because the new element will be the one rendered, we are only interested
+          // in grabbing its children (`newElement.props.children`)
+          if (React.Children.count(newElement) > 1) return React.Children.only(null);
+          return React.isValidElement(newElement)
+            ? (newElement.props as { children: React.ReactNode }).children
+            : null;
+        } else {
+          return child;
+        }
+      });
+
+      return (
+        <SlotClone {...slotProps} ref={forwardedRef}>
+          {React.isValidElement(newElement)
+            ? React.cloneElement(newElement, undefined, newChildren)
+            : null}
+        </SlotClone>
+      );
+    }
+
+    return (
+      <SlotClone {...slotProps} ref={forwardedRef}>
+        {children}
+      </SlotClone>
+    );
+  });
+
+  Slot.displayName = `${ownerName}.Slot`;
+  return Slot;
+}
+
+const Slot = createSlot('Slot');
+
+/* -------------------------------------------------------------------------------------------------
+ * SlotClone
+ * -----------------------------------------------------------------------------------------------*/
+
+interface SlotCloneProps {
+  children: React.ReactNode;
+}
+
+/* @__NO_SIDE_EFFECTS__ */ function createSlotClone(ownerName: string) {
+  const SlotClone = React.forwardRef<any, SlotCloneProps>((props, forwardedRef) => {
+    const { children, ...slotProps } = props;
+
+    if (React.isValidElement(children)) {
+      const childrenRef = getElementRef(children);
+      const props = mergeProps(slotProps, children.props as AnyProps);
+      // do not pass ref to React.Fragment for React 19 compatibility
+      if (children.type !== React.Fragment) {
+        props.ref = forwardedRef ? composeRefs(forwardedRef, childrenRef) : childrenRef;
+      }
+      return React.cloneElement(children, props);
+    }
+
+    return React.Children.count(children) > 1 ? React.Children.only(null) : null;
+  });
+
+  SlotClone.displayName = `${ownerName}.SlotClone`;
+  return SlotClone;
+}
+
+/* -------------------------------------------------------------------------------------------------
+ * Slottable
+ * -----------------------------------------------------------------------------------------------*/
+
+const SLOTTABLE_IDENTIFIER = Symbol('radix.slottable');
+
+interface SlottableProps {
+  children: React.ReactNode;
+}
+
+interface SlottableComponent extends React.FC<SlottableProps> {
+  __radixId: symbol;
+}
+
+/* @__NO_SIDE_EFFECTS__ */ export function createSlottable(ownerName: string) {
+  const Slottable: SlottableComponent = ({ children }) => {
+    return <>{children}</>;
+  };
+  Slottable.displayName = `${ownerName}.Slottable`;
+  Slottable.__radixId = SLOTTABLE_IDENTIFIER;
+  return Slottable;
+}
+
+const Slottable = createSlottable('Slottable');
+
+/* ---------------------------------------------------------------------------------------------- */
+
+type AnyProps = Record<string, any>;
+
+function isSlottable(
+  child: React.ReactNode
+): child is React.ReactElement<SlottableProps, typeof Slottable> {
+  return (
+    React.isValidElement(child) &&
+    typeof child.type === 'function' &&
+    '__radixId' in child.type &&
+    child.type.__radixId === SLOTTABLE_IDENTIFIER
+  );
+}
+
+function mergeProps(slotProps: AnyProps, childProps: AnyProps) {
+  // all child props should override
+  const overrideProps = { ...childProps };
+
+  for (const propName in childProps) {
+    const slotPropValue = slotProps[propName];
+    const childPropValue = childProps[propName];
+
+    const isHandler = /^on[A-Z]/.test(propName);
+    if (isHandler) {
+      // if the handler exists on both, we compose them
+      if (slotPropValue && childPropValue) {
+        overrideProps[propName] = (...args: unknown[]) => {
+          const result = childPropValue(...args);
+          slotPropValue(...args);
+          return result;
+        };
+      }
+      // but if it exists only on the slot, we use only this one
+      else if (slotPropValue) {
+        overrideProps[propName] = slotPropValue;
+      }
+    }
+    // if it's `style`, we merge them
+    else if (propName === 'style') {
+      overrideProps[propName] = { ...slotPropValue, ...childPropValue };
+    } else if (propName === 'className') {
+      overrideProps[propName] = [slotPropValue, childPropValue].filter(Boolean).join(' ');
+    }
+  }
+
+  return { ...slotProps, ...overrideProps };
+}
+
+// Before React 19 accessing `element.props.ref` will throw a warning and suggest using `element.ref`
+// After React 19 accessing `element.ref` does the opposite.
+// https://github.com/facebook/react/pull/28348
+//
+// Access the ref using the method that doesn't yield a warning.
+function getElementRef(element: React.ReactElement) {
+  // React <=18 in DEV
+  let getter = Object.getOwnPropertyDescriptor(element.props, 'ref')?.get;
+  let mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return (element as any).ref;
+  }
+
+  // React 19 in DEV
+  getter = Object.getOwnPropertyDescriptor(element, 'ref')?.get;
+  mayWarn = getter && 'isReactWarning' in getter && getter.isReactWarning;
+  if (mayWarn) {
+    return (element.props as { ref?: React.Ref<unknown> }).ref;
+  }
+
+  // Not DEV
+  return (element.props as { ref?: React.Ref<unknown> }).ref || (element as any).ref;
+}
+
+export {
+  Slot,
+  Slottable,
+  //
+  Slot as Root,
+};
+export type { SlotProps };
+
+```
+/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/slot/src/__snapshots__/slot.test.tsx.snap
+```
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`given a Button with Slottable > with asChild > should render a link with icon on the left/right 1`] = `
+<div>
+  <a
+    href="https://radix-ui.com"
+  >
+    <span>
+      left
+    </span>
+    Button 
+    <em>
+      text
+    </em>
+    <span>
+      right
+    </span>
+  </a>
+</div>
+`;
+
+exports[`given a Button with Slottable > without asChild > should render a button with icon on the left/right 1`] = `
+<div>
+  <button>
+    <span>
+      left
+    </span>
+    Button 
+    <em>
+      text
+    </em>
+    <span>
+      right
+    </span>
+  </button>
+</div>
+`;
+
+```

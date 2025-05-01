@@ -1,0 +1,115 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/presence/__test__/presence-test.component.ts</source>
+<document_content>
+import { Component, ElementRef, NgZone, OnInit } from '@angular/core';
+import { usePresence } from '../src/presence';
+import { CollapseContext, transitionCollapsing } from '../src/transitions/transition.collapse';
+
+@Component({
+    selector: 'app-presence',
+    template: `
+        <div #element>Presence Component</div>
+    `,
+    styles: [
+        `
+            .collapse {
+                transition: height 0.5s ease-in-out;
+            }
+            .collapsing {
+                height: 0px;
+            }
+            .show {
+                height: auto;
+            }
+        `
+
+    ]
+})
+export class PresenceComponent implements OnInit {
+    private context: CollapseContext = {
+        direction: 'show',
+        dimension: 'height'
+    };
+    private element!: HTMLElement;
+
+    constructor(
+        private zone: NgZone,
+        private elRef: ElementRef
+    ) {}
+
+    ngOnInit(): void {
+        this.element = this.elRef.nativeElement.querySelector('div');
+        const options = {
+            context: this.context,
+            animation: true,
+            state: 'stop' as const
+        };
+
+        usePresence(this.zone, this.element, transitionCollapsing, options).subscribe();
+    }
+
+    getContext(): CollapseContext {
+        return this.context;
+    }
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/presence/__test__/presence.spec.ts</source>
+<document_content>
+import { NgZone } from '@angular/core';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { PresenceComponent } from './presence-test.component';
+
+describe('presence', () => {
+    let component: PresenceComponent;
+    let fixture: ComponentFixture<PresenceComponent>;
+    let zone: NgZone;
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [PresenceComponent],
+            providers: [{ provide: NgZone, useValue: new NgZone({ enableLongStackTrace: false }) }]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(PresenceComponent);
+        component = fixture.componentInstance;
+        zone = TestBed.inject(NgZone);
+
+        fixture.detectChanges(); // triggers ngOnInit
+    });
+
+    it('should create', () => {
+        expect(component).toBeTruthy();
+    });
+
+    it('should initialize element and context correctly', () => {
+        const element = fixture.debugElement.query(By.css('div')).nativeElement;
+
+        const context = component.getContext();
+
+        expect(component['element']).toBe(element);
+        expect(context).toEqual({ direction: 'show', dimension: 'height', maxSize: '0px' });
+    });
+
+    it('should complete animation correctly', fakeAsync(() => {
+        const element = fixture.debugElement.query(By.css('div')).nativeElement;
+
+        zone.runOutsideAngular(() => {
+            element.dispatchEvent(new Event('transitionend'));
+        });
+
+        tick(600);
+        fixture.detectChanges();
+
+        expect(element.classList.contains('collapsing')).toBe(false);
+        expect(element.classList.contains('show')).toBe(true);
+    }));
+});
+
+</document_content>
+</document>
+</documents>

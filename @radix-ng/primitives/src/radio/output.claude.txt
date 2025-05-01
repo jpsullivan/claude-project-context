@@ -29,6 +29,405 @@ export * from './src/radio-item.directive';
 </document_content>
 </document>
 <document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/stories/radio-group.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { RdxLabelDirective } from '@radix-ng/primitives/label';
+import { RdxRadioGroupDirective, RdxRadioIndicatorDirective, RdxRadioItemDirective } from '@radix-ng/primitives/radio';
+import { RdxRadioItemInputDirective } from '../src/radio-item-input.directive';
+
+@Component({
+    selector: 'radio-groups-forms-example',
+    template: `
+        <div
+            class="RadioGroupRoot"
+            [(ngModel)]="hotelRoom"
+            orientation="vertical"
+            rdxRadioRoot
+            aria-label="View density"
+        >
+            @for (room of rooms; track $index) {
+                <div class="RadioGroup">
+                    <button class="RadioGroupItem" [value]="room" [id]="room" rdxRadioItem>
+                        <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                        <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                    </button>
+                    <label class="Label" [htmlFor]="room" rdxLabel>
+                        {{ room }}
+                    </label>
+                </div>
+            }
+        </div>
+        <p>
+            <span>Your room is: {{ hotelRoom }}</span>
+        </p>
+    `,
+    styleUrl: 'radio-group.styles.scss',
+    imports: [
+        FormsModule,
+        RdxLabelDirective,
+        RdxRadioItemDirective,
+        RdxRadioIndicatorDirective,
+        RdxRadioGroupDirective,
+        RdxRadioItemInputDirective
+    ]
+})
+export class RadioGroupComponent {
+    hotelRoom: string | undefined;
+    rooms = ['Default', 'Comfortable'];
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/stories/radio-group.styles.scss</source>
+<document_content>
+/* reset */
+button {
+    all: unset;
+}
+
+.RadioGroup {
+    display: flex;
+    align-items: center;
+}
+
+.RadioGroupRoot {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.RadioGroupItem {
+    background-color: white;
+    width: 25px;
+    height: 25px;
+    border-radius: 100%;
+    box-shadow: 0 2px 10px var(--black-a7);
+}
+
+.RadioGroupItem:hover {
+    background-color: var(--violet-3);
+}
+
+.RadioGroupItem:focus {
+    box-shadow: 0 0 0 2px black;
+}
+
+.RadioGroupIndicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.RadioGroupIndicator::after {
+    content: '';
+    display: block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background-color: var(--violet-11);
+}
+
+.RadioGroupIndicator[data-state='unchecked'] {
+    display: none;
+}
+
+.Input {
+    transform: translateX(-100%);
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    margin: 0;
+    width: 25px;
+    height: 25px;
+}
+
+.Label {
+    color: white;
+    font-size: 15px;
+    line-height: 1;
+    padding-left: 15px;
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/stories/radio.docs.mdx</source>
+<document_content>
+import { ArgTypes, Canvas, Markdown, Meta } from '@storybook/blocks';
+import * as RadioDirectiveStories from './radio.stories';
+import { RdxRadioGroupDirective } from '../src/radio-root.directive';
+import { RdxRadioItemDirective } from '../src/radio-item.directive';
+
+<Meta title="Primitives/Radio Group" />
+
+# Radio Group
+
+#### A set of checkable buttons—known as radio buttons—where no more than one of the buttons can be checked at a time.
+
+<Canvas sourceState="hidden" of={RadioDirectiveStories.Default} />
+
+## Features
+
+- ✅ Full keyboard navigation.
+- ✅ Supports horizontal/vertical orientation.
+- ✅ Can be controlled or uncontrolled.
+
+## Import
+
+Get started with importing the directives:
+
+```typescript
+import { RdxRadioIndicatorDirective, RadioItemDirective } from '@radix-ng/primitives/radio';
+```
+
+## Anatomy
+
+```html
+<div rdxRadioRoot>
+  <button rdxRadioItem value="default">
+    <div rdxRadioIndicator></div>
+  </button>
+</div>
+```
+
+## API Reference
+
+### RadioGroup
+
+`RdxRadioGroupDirective`
+
+<ArgTypes of={RdxRadioGroupDirective} />
+
+### RadioGroupItem
+
+`RdxRadioGroupItemDirective`
+
+<ArgTypes of={RdxRadioItemDirective} />
+
+### RadioIndicator
+
+`RdxRadioIndicatorDirective`
+
+## Accessibility
+
+Adheres to the [Radio Group WAI-ARIA design pattern](https://www.w3.org/WAI/ARIA/apg/patterns/radiobutton)
+and uses [roving tabindex](https://www.w3.org/TR/wai-aria-practices-1.2/examples/radio/radio.html) to manage focus movement among radio items.
+
+### Keyboard Interactions
+
+<Markdown>
+  {`
+  | Key | Description |
+  | ----------- | --------- |
+  | Tab         | Moves focus to either the checked radio item or the first radio item in the group. |
+  | Space       | When focus is on an unchecked radio item, checks it.        |
+  | ArrowDown   | Moves focus and checks the next radio item in the group.    |
+  | ArrowRight  |  Moves focus and checks the next radio item in the group.   |
+  | ArrowUp     |  Moves focus to the previous radio item in the group.       |
+  | ArrowLeft   |  Moves focus to the previous radio item in the group.       |
+  `}
+</Markdown>
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/stories/radio.stories.ts</source>
+<document_content>
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxLabelDirective } from '../../label';
+import { RdxRovingFocusGroupDirective, RdxRovingFocusItemDirective } from '../../roving-focus';
+import { RdxRadioIndicatorDirective } from '../src/radio-indicator.directive';
+import { RdxRadioItemInputDirective } from '../src/radio-item-input.directive';
+import { RdxRadioItemDirective } from '../src/radio-item.directive';
+import { RdxRadioGroupDirective } from '../src/radio-root.directive';
+import { RadioGroupComponent } from './radio-group.component';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Radio Group',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                RdxLabelDirective,
+                RdxRadioItemDirective,
+                RdxRadioIndicatorDirective,
+                RdxRadioItemInputDirective,
+                RdxRadioGroupDirective,
+                RdxRovingFocusGroupDirective,
+                RdxRovingFocusItemDirective,
+                RadioGroupComponent
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div class="radix-themes light light-theme" data-radius="medium" data-scaling="100%">${story}</div>
+
+                <style>
+                    /* reset */
+                    button {
+                        all: unset;
+                    }
+
+                    .RadioGroupRoot {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    }
+
+                    .RadioGroupItem {
+                        background-color: white;
+                        width: 25px;
+                        height: 25px;
+                        border-radius: 100%;
+                        box-shadow: 0 2px 10px var(--black-a7);
+                    }
+                    .RadioGroupItem:hover {
+                        background-color: var(--violet-3);
+                    }
+                    .RadioGroupItem:focus {
+                        box-shadow: 0 0 0 2px black;
+                    }
+
+                    .RadioGroupItem:disabled {
+                        background-color: var(--gray-4);
+                        box-shadow: none;
+                        cursor: not-allowed;
+                    }
+
+                    .RadioGroupItem:disabled:hover {
+                        background-color: var(--gray-4);
+                    }
+
+                    .RadioGroupIndicator {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        height: 100%;
+                        position: relative;
+                    }
+                    .RadioGroupIndicator::after {
+                        content: '';
+                        display: block;
+                        width: 11px;
+                        height: 11px;
+                        border-radius: 50%;
+                        background-color: var(--violet-11);
+                    }
+
+                    .RadioGroupIndicator[data-state='unchecked'] {
+                        display: none;
+                    }
+
+                    .Input {
+                        transform: translateX(-100%);
+                        position: absolute;
+                        pointer-events: none;
+                        opacity: 0;
+                        margin: 0;
+                        width: 25px;
+                        height: 25px;
+                    }
+
+                    .Label {
+                        color: white;
+                        font-size: 15px;
+                        line-height: 1;
+                        padding-left: 15px;
+                    }
+                </style>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <form>
+                <div class="RadioGroupRoot" rdxRadioRoot orientation="vertical" aria-label="View density">
+                    <div style="display: flex; align-items: center;">
+                        <button class="RadioGroupItem" id="r1" rdxRadioItem value="default">
+                            <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                            <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                        </button>
+                        <label class="Label" rdxLabel htmlFor="r1">Default</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <button class="RadioGroupItem" id="r2" rdxRadioItem [required]="true" value="comfortable">
+                            <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                            <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                        </button>
+                        <label class="Label" rdxLabel htmlFor="r2">Comfortable</label>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <button class="RadioGroupItem" id="r3" rdxRadioItem value="compact">
+                            <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                            <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                        </button>
+                        <label class="Label" rdxLabel htmlFor="r3">Compact</label>
+                    </div>
+                </div>
+            </form>
+        `
+    })
+};
+
+export const RadioGroup: Story = {
+    render: () => ({
+        template: `<radio-groups-forms-example></radio-groups-forms-example>`
+    })
+};
+
+export const DisabledGroup: Story = {
+    render: () => ({
+        template: html`
+            <div
+                class="RadioGroupRoot"
+                rdxRadioRoot
+                [value]="'comfortable'"
+                disabled
+                orientation="vertical"
+                aria-label="View density"
+            >
+                <div style="display: flex; align-items: center;">
+                    <button class="RadioGroupItem" id="r1" rdxRadioItem value="default">
+                        <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                        <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                    </button>
+                    <label class="Label" rdxLabel htmlFor="r1">Default</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <button class="RadioGroupItem" id="r2" rdxRadioItem [required]="true" value="comfortable">
+                        <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                        <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                    </button>
+                    <label class="Label" rdxLabel htmlFor="r2">Comfortable</label>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <button class="RadioGroupItem" id="r3" rdxRadioItem value="compact">
+                        <div class="RadioGroupIndicator" rdxRadioIndicator></div>
+                        <input class="Input" rdxRadioItemInput feature="fully-hidden" />
+                    </button>
+                    <label class="Label" rdxLabel htmlFor="r3">Compact</label>
+                </div>
+            </div>
+        `
+    })
+};
+
+</document_content>
+</document>
+<document index="8">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/src/radio-indicator.directive.ts</source>
 <document_content>
 import { Directive, inject } from '@angular/core';
@@ -50,7 +449,7 @@ export class RdxRadioIndicatorDirective {
 
 </document_content>
 </document>
-<document index="5">
+<document index="9">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/src/radio-item-input.directive.ts</source>
 <document_content>
 import { computed, Directive, input } from '@angular/core';
@@ -83,7 +482,7 @@ export class RdxRadioItemInputDirective {
 
 </document_content>
 </document>
-<document index="6">
+<document index="10">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/src/radio-item.directive.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';
@@ -190,7 +589,7 @@ export class RdxRadioItemDirective implements OnInit {
 
 </document_content>
 </document>
-<document index="7">
+<document index="11">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/src/radio-root.directive.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';
@@ -300,7 +699,7 @@ export class RdxRadioGroupDirective implements RadioGroupProps, RadioGroupDirect
 
 </document_content>
 </document>
-<document index="8">
+<document index="12">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/src/radio-tokens.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';

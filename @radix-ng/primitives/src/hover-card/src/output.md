@@ -1,0 +1,1503 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-anchor.directive.ts
+```typescript
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, forwardRef, inject } from '@angular/core';
+import { injectDocument } from '@radix-ng/primitives/core';
+import { RdxHoverCardAnchorToken } from './hover-card-anchor.token';
+import { RdxHoverCardRootDirective } from './hover-card-root.directive';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+
+@Directive({
+    selector: '[rdxHoverCardAnchor]',
+    exportAs: 'rdxHoverCardAnchor',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        type: 'button',
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '(click)': 'click()'
+    },
+    providers: [
+        {
+            provide: RdxHoverCardAnchorToken,
+            useExisting: forwardRef(() => RdxHoverCardAnchorDirective)
+        }
+    ]
+})
+export class RdxHoverCardAnchorDirective {
+    /**
+     * @ignore
+     * If outside the rootDirective then null, otherwise the rootDirective directive - with optional `true` passed in as the first param.
+     * If outside the rootDirective and non-null value that means the html structure is wrong - hover-card inside hover-card.
+     * */
+    protected rootDirective = injectHoverCardRoot(true);
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+    /** @ignore */
+    readonly document = injectDocument();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-hover-card-external-anchor-${this.rootDirective?.uniqueId()}`);
+
+    /** @ignore */
+    click(): void {
+        this.emitOutsideClick();
+    }
+
+    /** @ignore */
+    setRoot(root: RdxHoverCardRootDirective) {
+        this.rootDirective = root;
+    }
+
+    private emitOutsideClick() {
+        if (!this.rootDirective?.isOpen() || this.rootDirective?.contentDirective().onOverlayOutsideClickDisabled()) {
+            return;
+        }
+        const clickEvent = new MouseEvent('click', {
+            view: this.document.defaultView,
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: this.elementRef.nativeElement
+        });
+        this.rootDirective?.triggerDirective().elementRef.nativeElement.dispatchEvent(clickEvent);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-anchor.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxHoverCardAnchorDirective } from './hover-card-anchor.directive';
+
+export const RdxHoverCardAnchorToken = new InjectionToken<RdxHoverCardAnchorDirective>('RdxHoverCardAnchorToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-arrow.directive.ts
+```typescript
+import { NumberInput } from '@angular/cdk/coercion';
+import { ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
+import {
+    afterNextRender,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    forwardRef,
+    inject,
+    input,
+    numberAttribute,
+    Renderer2,
+    signal,
+    untracked
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+    getArrowPositionParams,
+    getSideAndAlignFromAllPossibleConnectedPositions,
+    RDX_POSITIONING_DEFAULTS
+} from '@radix-ng/primitives/core';
+import { RdxHoverCardArrowToken } from './hover-card-arrow.token';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+
+@Directive({
+    selector: '[rdxHoverCardArrow]',
+    providers: [
+        {
+            provide: RdxHoverCardArrowToken,
+            useExisting: forwardRef(() => RdxHoverCardArrowDirective)
+        }
+    ]
+})
+export class RdxHoverCardArrowDirective {
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+    /** @ignore */
+    private readonly rootDirective = injectHoverCardRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+
+    /**
+     * @description The width of the arrow in pixels.
+     * @default 10
+     */
+    readonly width = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.width, { transform: numberAttribute });
+
+    /**
+     * @description The height of the arrow in pixels.
+     * @default 5
+     */
+    readonly height = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.height, { transform: numberAttribute });
+
+    /** @ignore */
+    readonly arrowSvgElement = computed<HTMLElement>(() => {
+        const width = this.width();
+        const height = this.height();
+
+        const svgElement = this.renderer.createElement('svg', 'svg');
+        this.renderer.setAttribute(svgElement, 'viewBox', '0 0 30 10');
+        this.renderer.setAttribute(svgElement, 'width', String(width));
+        this.renderer.setAttribute(svgElement, 'height', String(height));
+        const polygonElement = this.renderer.createElement('polygon', 'svg');
+        this.renderer.setAttribute(polygonElement, 'points', '0,0 30,0 15,10');
+        this.renderer.setAttribute(svgElement, 'preserveAspectRatio', 'none');
+        this.renderer.appendChild(svgElement, polygonElement);
+
+        return svgElement;
+    });
+
+    /** @ignore */
+    private readonly currentArrowSvgElement = signal<HTMLOrSVGElement | undefined>(void 0);
+    /** @ignore */
+    private readonly position = toSignal(this.rootDirective.contentDirective().positionChange());
+
+    /** @ignore */
+    private anchorOrTriggerRect: DOMRect;
+
+    constructor() {
+        afterNextRender({
+            write: () => {
+                if (this.elementRef.nativeElement.parentElement) {
+                    this.renderer.setStyle(this.elementRef.nativeElement.parentElement, 'position', 'relative');
+                }
+                this.renderer.setStyle(this.elementRef.nativeElement, 'position', 'absolute');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'boxSizing', '');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'fontSize', '0px');
+            }
+        });
+        this.onArrowSvgElementChangeEffect();
+        this.onContentPositionAndArrowDimensionsChangeEffect();
+    }
+
+    /** @ignore */
+    private setAnchorOrTriggerRect() {
+        this.anchorOrTriggerRect = (
+            this.rootDirective.anchorDirective() ?? this.rootDirective.triggerDirective()
+        ).elementRef.nativeElement.getBoundingClientRect();
+    }
+
+    /** @ignore */
+    private setPosition(position: ConnectedOverlayPositionChange, arrowDimensions: { width: number; height: number }) {
+        this.setAnchorOrTriggerRect();
+        const posParams = getArrowPositionParams(
+            getSideAndAlignFromAllPossibleConnectedPositions(position.connectionPair),
+            { width: arrowDimensions.width, height: arrowDimensions.height },
+            { width: this.anchorOrTriggerRect.width, height: this.anchorOrTriggerRect.height }
+        );
+
+        this.renderer.setStyle(this.elementRef.nativeElement, 'top', posParams.top);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'bottom', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'left', posParams.left);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'right', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transform', posParams.transform);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transformOrigin', posParams.transformOrigin);
+    }
+
+    /** @ignore */
+    private onArrowSvgElementChangeEffect() {
+        effect(() => {
+            const arrowElement = this.arrowSvgElement();
+            untracked(() => {
+                const currentArrowSvgElement = this.currentArrowSvgElement();
+                if (currentArrowSvgElement) {
+                    this.renderer.removeChild(this.elementRef.nativeElement, currentArrowSvgElement);
+                }
+                this.currentArrowSvgElement.set(arrowElement);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'width', `${this.width()}px`);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'height', `${this.height()}px`);
+                this.renderer.appendChild(this.elementRef.nativeElement, this.currentArrowSvgElement());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onContentPositionAndArrowDimensionsChangeEffect() {
+        effect(() => {
+            const position = this.position();
+            const arrowDimensions = { width: this.width(), height: this.height() };
+            untracked(() => {
+                if (!position) {
+                    return;
+                }
+                this.setPosition(position, arrowDimensions);
+            });
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-arrow.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxHoverCardArrowDirective } from './hover-card-arrow.directive';
+
+export const RdxHoverCardArrowToken = new InjectionToken<RdxHoverCardArrowDirective>('RdxHoverCardArrowToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-close.directive.ts
+```typescript
+import { Directive, effect, ElementRef, forwardRef, inject, Renderer2, untracked } from '@angular/core';
+import { RdxHoverCardCloseToken } from './hover-card-close.token';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+
+/**
+ * TODO: to be removed? But it seems to be useful when controlled from outside
+ */
+@Directive({
+    selector: '[rdxHoverCardClose]',
+    host: {
+        type: 'button',
+        '(click)': 'rootDirective.handleClose(true)'
+    },
+    providers: [
+        {
+            provide: RdxHoverCardCloseToken,
+            useExisting: forwardRef(() => RdxHoverCardCloseDirective)
+        }
+    ]
+})
+export class RdxHoverCardCloseDirective {
+    /** @ignore */
+    protected readonly rootDirective = injectHoverCardRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+
+    constructor() {
+        this.onIsControlledExternallyEffect();
+    }
+
+    /** @ignore */
+    private onIsControlledExternallyEffect() {
+        effect(() => {
+            const isControlledExternally = this.rootDirective.controlledExternally()();
+
+            untracked(() => {
+                this.renderer.setStyle(
+                    this.elementRef.nativeElement,
+                    'display',
+                    isControlledExternally ? null : 'none'
+                );
+            });
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-close.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxHoverCardCloseDirective } from './hover-card-close.directive';
+
+export const RdxHoverCardCloseToken = new InjectionToken<RdxHoverCardCloseDirective>('RdxHoverCardCloseToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-content-attributes.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, computed, forwardRef } from '@angular/core';
+import { RdxHoverCardContentAttributesToken } from './hover-card-content-attributes.token';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+import { RdxHoverCardAnimationStatus, RdxHoverCardState } from './hover-card.types';
+
+@Component({
+    selector: '[rdxHoverCardContentAttributes]',
+    template: `
+        <ng-content />
+    `,
+    host: {
+        '[attr.role]': '"dialog"',
+        '[attr.id]': 'name()',
+        '[attr.data-state]': 'rootDirective.state()',
+        '[attr.data-side]': 'rootDirective.contentDirective().side()',
+        '[attr.data-align]': 'rootDirective.contentDirective().align()',
+        '[style]': 'disableAnimation() ? {animation: "none !important"} : null',
+        '(animationstart)': 'onAnimationStart($event)',
+        '(animationend)': 'onAnimationEnd($event)',
+        '(pointerenter)': 'pointerenter()',
+        '(pointerleave)': 'pointerleave()',
+        '(focus)': 'focus()',
+        '(blur)': 'blur()'
+    },
+    providers: [
+        {
+            provide: RdxHoverCardContentAttributesToken,
+            useExisting: forwardRef(() => RdxHoverCardContentAttributesComponent)
+        }
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class RdxHoverCardContentAttributesComponent {
+    /** @ignore */
+    protected readonly rootDirective = injectHoverCardRoot();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-hover-card-content-attributes-${this.rootDirective.uniqueId()}`);
+
+    /** @ignore */
+    readonly disableAnimation = computed(() => !this.canAnimate());
+
+    /** @ignore */
+    protected onAnimationStart(_: AnimationEvent) {
+        this.rootDirective.cssAnimationStatus.set(
+            this.rootDirective.state() === RdxHoverCardState.OPEN
+                ? RdxHoverCardAnimationStatus.OPEN_STARTED
+                : RdxHoverCardAnimationStatus.CLOSED_STARTED
+        );
+    }
+
+    /** @ignore */
+    protected onAnimationEnd(_: AnimationEvent) {
+        this.rootDirective.cssAnimationStatus.set(
+            this.rootDirective.state() === RdxHoverCardState.OPEN
+                ? RdxHoverCardAnimationStatus.OPEN_ENDED
+                : RdxHoverCardAnimationStatus.CLOSED_ENDED
+        );
+    }
+
+    /** @ignore */
+    protected pointerenter(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected pointerleave(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    protected focus(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected blur(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    private canAnimate() {
+        return (
+            this.rootDirective.cssAnimation() &&
+            ((this.rootDirective.cssOpeningAnimation() && this.rootDirective.state() === RdxHoverCardState.OPEN) ||
+                (this.rootDirective.cssClosingAnimation() && this.rootDirective.state() === RdxHoverCardState.CLOSED))
+        );
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-content-attributes.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxHoverCardContentAttributesComponent } from './hover-card-content-attributes.component';
+
+export const RdxHoverCardContentAttributesToken = new InjectionToken<RdxHoverCardContentAttributesComponent>(
+    'RdxHoverCardContentAttributesToken'
+);
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-content.directive.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { CdkConnectedOverlay, Overlay } from '@angular/cdk/overlay';
+import {
+    booleanAttribute,
+    computed,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    OnInit,
+    output,
+    SimpleChange,
+    TemplateRef,
+    untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    getAllPossibleConnectedPositions,
+    getContentPosition,
+    RDX_POSITIONING_DEFAULTS,
+    RdxPositionAlign,
+    RdxPositionSide,
+    RdxPositionSideAndAlignOffsets
+} from '@radix-ng/primitives/core';
+import { filter, tap } from 'rxjs';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+import { RdxHoverCardAttachDetachEvent } from './hover-card.types';
+
+@Directive({
+    selector: '[rdxHoverCardContent]',
+    hostDirectives: [
+        CdkConnectedOverlay
+    ]
+})
+export class RdxHoverCardContentDirective implements OnInit {
+    /** @ignore */
+    private readonly rootDirective = injectHoverCardRoot();
+    /** @ignore */
+    private readonly templateRef = inject(TemplateRef);
+    /** @ignore */
+    private readonly overlay = inject(Overlay);
+    /** @ignore */
+    private readonly destroyRef = inject(DestroyRef);
+    /** @ignore */
+    private readonly connectedOverlay = inject(CdkConnectedOverlay);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-hover-card-trigger-${this.rootDirective.uniqueId()}`);
+
+    /**
+     * @description The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
+     * @default top
+     */
+    readonly side = input<RdxPositionSide>(RdxPositionSide.Top);
+    /**
+     * @description The distance in pixels from the trigger.
+     * @default undefined
+     */
+    readonly sideOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+    /**
+     * @description The preferred alignment against the trigger. May change when collisions occur.
+     * @default center
+     */
+    readonly align = input<RdxPositionAlign>(RdxPositionAlign.Center);
+    /**
+     * @description An offset in pixels from the "start" or "end" alignment options.
+     * @default undefined
+     */
+    readonly alignOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+
+    /**
+     * @description Whether to add some alternate positions of the content.
+     * @default false
+     */
+    readonly alternatePositionsDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @description Whether to prevent `onOverlayEscapeKeyDown` handler from calling. */
+    readonly onOverlayEscapeKeyDownDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /** @description Whether to prevent `onOverlayOutsideClick` handler from calling. */
+    readonly onOverlayOutsideClickDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * @description Event handler called when the escape key is down.
+     * It can be prevented by setting `onOverlayEscapeKeyDownDisabled` input to `true`.
+     */
+    readonly onOverlayEscapeKeyDown = output<KeyboardEvent>();
+    /**
+     * @description Event handler called when a pointer event occurs outside the bounds of the component.
+     * It can be prevented by setting `onOverlayOutsideClickDisabled` input to `true`.
+     */
+    readonly onOverlayOutsideClick = output<MouseEvent>();
+
+    /**
+     * @description Event handler called after the overlay is open
+     */
+    readonly onOpen = output<void>();
+    /**
+     * @description Event handler called after the overlay is closed
+     */
+    readonly onClosed = output<void>();
+
+    /** @ingore */
+    readonly positions = computed(() => this.computePositions());
+
+    constructor() {
+        this.onOriginChangeEffect();
+        this.onPositionChangeEffect();
+    }
+
+    /** @ignore */
+    ngOnInit() {
+        this.setScrollStrategy();
+        this.setHasBackdrop();
+        this.setDisableClose();
+        this.onAttach();
+        this.onDetach();
+        this.connectKeydownEscape();
+        this.connectOutsideClick();
+    }
+
+    /** @ignore */
+    open() {
+        if (this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = true;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    close() {
+        if (!this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = false;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    positionChange() {
+        return this.connectedOverlay.positionChange.asObservable();
+    }
+
+    /** @ignore */
+    private connectKeydownEscape() {
+        this.connectedOverlay.overlayKeydown
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayEscapeKeyDownDisabled() &&
+                        !this.rootDirective.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.rootDirective,
+                            'cdkOverlayEscapeKeyDown'
+                        )
+                ),
+                filter((event) => event.key === 'Escape'),
+                tap((event) => {
+                    this.onOverlayEscapeKeyDown.emit(event);
+                }),
+                filter(() => !this.rootDirective.firstDefaultOpen()),
+                tap(() => {
+                    this.rootDirective.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private connectOutsideClick() {
+        this.connectedOverlay.overlayOutsideClick
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayOutsideClickDisabled() &&
+                        !this.rootDirective.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.rootDirective,
+                            'cdkOverlayOutsideClick'
+                        )
+                ),
+                /**
+                 * Handle the situation when an anchor is added and the anchor becomes the origin of the overlay
+                 * hence  the trigger will be considered the outside element
+                 */
+                filter((event) => {
+                    return (
+                        !this.rootDirective.anchorDirective() ||
+                        !this.rootDirective
+                            .triggerDirective()
+                            .elementRef.nativeElement.contains(event.target as Element)
+                    );
+                }),
+                tap((event) => {
+                    this.onOverlayOutsideClick.emit(event);
+                }),
+                filter(() => !this.rootDirective.firstDefaultOpen()),
+                tap(() => {
+                    this.rootDirective.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onAttach() {
+        this.connectedOverlay.attach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onOpen.emit();` is being delegated to the rootDirective directive due to the opening animation
+                     */
+                    this.rootDirective.attachDetachEvent.set(RdxHoverCardAttachDetachEvent.ATTACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onDetach() {
+        this.connectedOverlay.detach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onClosed.emit();` is being delegated to the rootDirective directive due to the closing animation
+                     */
+                    this.rootDirective.attachDetachEvent.set(RdxHoverCardAttachDetachEvent.DETACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private setScrollStrategy() {
+        const prevScrollStrategy = this.connectedOverlay.scrollStrategy;
+        this.connectedOverlay.scrollStrategy = this.overlay.scrollStrategies.reposition();
+        this.fireOverlayNgOnChanges('scrollStrategy', this.connectedOverlay.scrollStrategy, prevScrollStrategy);
+    }
+
+    /** @ignore */
+    private setHasBackdrop() {
+        const prevHasBackdrop = this.connectedOverlay.hasBackdrop;
+        this.connectedOverlay.hasBackdrop = false;
+        this.fireOverlayNgOnChanges('hasBackdrop', this.connectedOverlay.hasBackdrop, prevHasBackdrop);
+    }
+
+    /** @ignore */
+    private setDisableClose() {
+        const prevDisableClose = this.connectedOverlay.disableClose;
+        this.connectedOverlay.disableClose = true;
+        this.fireOverlayNgOnChanges('disableClose', this.connectedOverlay.disableClose, prevDisableClose);
+    }
+
+    /** @ignore */
+    private setOrigin(origin: CdkConnectedOverlay['origin']) {
+        const prevOrigin = this.connectedOverlay.origin;
+        this.connectedOverlay.origin = origin;
+        this.fireOverlayNgOnChanges('origin', this.connectedOverlay.origin, prevOrigin);
+    }
+
+    /** @ignore */
+    private setPositions(positions: CdkConnectedOverlay['positions']) {
+        const prevPositions = this.connectedOverlay.positions;
+        this.connectedOverlay.positions = positions;
+        this.fireOverlayNgOnChanges('positions', this.connectedOverlay.positions, prevPositions);
+        this.connectedOverlay.overlayRef?.updatePosition();
+    }
+
+    /** @ignore */
+    private computePositions() {
+        const arrowHeight = this.rootDirective.arrowDirective()?.height() ?? 0;
+        const offsets: RdxPositionSideAndAlignOffsets = {
+            sideOffset:
+                arrowHeight + (isNaN(this.sideOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.side : this.sideOffset()),
+            alignOffset: isNaN(this.alignOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.align : this.alignOffset()
+        };
+        const basePosition = getContentPosition({
+            side: this.side(),
+            align: this.align(),
+            sideOffset: offsets.sideOffset,
+            alignOffset: offsets.alignOffset
+        });
+        const positions = [basePosition];
+        if (!this.alternatePositionsDisabled()) {
+            /**
+             * Alternate positions for better user experience along the X/Y axis (e.g. vertical/horizontal scrolling)
+             */
+            const allPossibleConnectedPositions = getAllPossibleConnectedPositions();
+            allPossibleConnectedPositions.forEach((_, key) => {
+                const sideAndAlignArray = key.split('|');
+                if (
+                    (sideAndAlignArray[0] as RdxPositionSide) !== this.side() ||
+                    (sideAndAlignArray[1] as RdxPositionAlign) !== this.align()
+                ) {
+                    positions.push(
+                        getContentPosition({
+                            side: sideAndAlignArray[0] as RdxPositionSide,
+                            align: sideAndAlignArray[1] as RdxPositionAlign,
+                            sideOffset: offsets.sideOffset,
+                            alignOffset: offsets.alignOffset
+                        })
+                    );
+                }
+            });
+        }
+        return positions;
+    }
+
+    private onOriginChangeEffect() {
+        effect(() => {
+            const origin = (this.rootDirective.anchorDirective() ?? this.rootDirective.triggerDirective())
+                .overlayOrigin;
+            untracked(() => {
+                this.setOrigin(origin);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onPositionChangeEffect() {
+        effect(() => {
+            const positions = this.positions();
+            this.alternatePositionsDisabled();
+            untracked(() => {
+                this.setPositions(positions);
+            });
+        });
+    }
+
+    /** @ignore */
+    private fireOverlayNgOnChanges<K extends keyof CdkConnectedOverlay, V extends CdkConnectedOverlay[K]>(
+        input: K,
+        currentValue: V,
+        previousValue: V,
+        firstChange = false
+    ) {
+        this.connectedOverlay.ngOnChanges({
+            [input]: new SimpleChange(previousValue, currentValue, firstChange)
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-root.directive.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import {
+    afterNextRender,
+    booleanAttribute,
+    computed,
+    contentChild,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    signal,
+    untracked,
+    ViewContainerRef
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounce, map, Subject, tap, timer } from 'rxjs';
+import { RdxHoverCardAnchorDirective } from './hover-card-anchor.directive';
+import { RdxHoverCardAnchorToken } from './hover-card-anchor.token';
+import { RdxHoverCardArrowToken } from './hover-card-arrow.token';
+import { RdxHoverCardCloseToken } from './hover-card-close.token';
+import { RdxHoverCardContentAttributesToken } from './hover-card-content-attributes.token';
+import { RdxHoverCardContentDirective } from './hover-card-content.directive';
+import { RdxHoverCardTriggerDirective } from './hover-card-trigger.directive';
+import {
+    RdxHoverCardAction,
+    RdxHoverCardAnimationStatus,
+    RdxHoverCardAttachDetachEvent,
+    RdxHoverCardState
+} from './hover-card.types';
+import { injectRdxCdkEventService } from './utils/cdk-event.service';
+
+let nextId = 0;
+
+@Directive({
+    selector: '[rdxHoverCardRoot]',
+    exportAs: 'rdxHoverCardRoot'
+})
+export class RdxHoverCardRootDirective {
+    /** @ignore */
+    readonly uniqueId = signal(++nextId);
+    /** @ignore */
+    readonly name = computed(() => `rdx-hover-card-root-${this.uniqueId()}`);
+
+    /**
+     * @description The anchor directive that comes form outside the hover-card rootDirective
+     * @default undefined
+     */
+    readonly anchor = input<RdxHoverCardAnchorDirective | undefined>(void 0);
+    /**
+     * @description The open state of the hover-card when it is initially rendered. Use when you do not need to control its open state.
+     * @default false
+     */
+    readonly defaultOpen = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description The controlled state of the hover-card. `open` input take precedence of `defaultOpen` input.
+     * @default undefined
+     */
+    readonly open = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * To customise the open delay for a specific hover-card.
+     */
+    readonly openDelay = input<number, NumberInput>(500, {
+        transform: numberAttribute
+    });
+    /**
+     * To customise the close delay for a specific hover-card.
+     */
+    readonly closeDelay = input<number, NumberInput>(200, {
+        transform: numberAttribute
+    });
+    /**
+     * @description Whether to control the state of the hover-card from external. Use in conjunction with `open` input.
+     * @default undefined
+     */
+    readonly externalControl = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening/closing animations.
+     * @default false
+     */
+    readonly cssAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssOpeningAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS closing animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssClosingAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly cssAnimationStatus = signal<RdxHoverCardAnimationStatus | null>(null);
+
+    /** @ignore */
+    readonly contentDirective = contentChild.required(RdxHoverCardContentDirective);
+    /** @ignore */
+    readonly triggerDirective = contentChild.required(RdxHoverCardTriggerDirective);
+    /** @ignore */
+    readonly arrowDirective = contentChild(RdxHoverCardArrowToken);
+    /** @ignore */
+    readonly closeDirective = contentChild(RdxHoverCardCloseToken);
+    /** @ignore */
+    readonly contentAttributesComponent = contentChild(RdxHoverCardContentAttributesToken);
+    /** @ignore */
+    private readonly internalAnchorDirective = contentChild(RdxHoverCardAnchorToken);
+
+    /** @ignore */
+    readonly viewContainerRef = inject(ViewContainerRef);
+    /** @ignore */
+    readonly rdxCdkEventService = injectRdxCdkEventService();
+    /** @ignore */
+    readonly destroyRef = inject(DestroyRef);
+
+    /** @ignore */
+    readonly state = signal(RdxHoverCardState.CLOSED);
+
+    /** @ignore */
+    readonly attachDetachEvent = signal(RdxHoverCardAttachDetachEvent.DETACH);
+
+    /** @ignore */
+    private readonly isFirstDefaultOpen = signal(false);
+
+    /** @ignore */
+    readonly anchorDirective = computed(() => this.internalAnchorDirective() ?? this.anchor());
+
+    /** @ignore */
+    readonly actionSubject$ = new Subject<RdxHoverCardAction>();
+
+    constructor() {
+        this.rdxCdkEventService?.registerPrimitive(this);
+        this.destroyRef.onDestroy(() => this.rdxCdkEventService?.deregisterPrimitive(this));
+        this.actionSubscription();
+        this.onStateChangeEffect();
+        this.onCssAnimationStatusChangeChangeEffect();
+        this.onOpenChangeEffect();
+        this.onIsFirstDefaultOpenChangeEffect();
+        this.onAnchorChangeEffect();
+        this.emitOpenOrClosedEventEffect();
+        afterNextRender({
+            write: () => {
+                if (this.defaultOpen() && !this.open()) {
+                    this.isFirstDefaultOpen.set(true);
+                }
+            }
+        });
+    }
+
+    /** @ignore */
+    getAnimationParamsSnapshot() {
+        return {
+            cssAnimation: this.cssAnimation(),
+            cssOpeningAnimation: this.cssOpeningAnimation(),
+            cssClosingAnimation: this.cssClosingAnimation(),
+            cssAnimationStatus: this.cssAnimationStatus(),
+            attachDetachEvent: this.attachDetachEvent(),
+            state: this.state(),
+            canEmitOnOpenOrOnClosed: this.canEmitOnOpenOrOnClosed()
+        };
+    }
+
+    /** @ignore */
+    controlledExternally() {
+        return this.externalControl;
+    }
+
+    /** @ignore */
+    firstDefaultOpen() {
+        return this.isFirstDefaultOpen();
+    }
+
+    /** @ignore */
+    handleOpen(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.actionSubject$.next(RdxHoverCardAction.OPEN);
+    }
+
+    /** @ignore */
+    handleClose(closeButton?: boolean): void {
+        if (this.isFirstDefaultOpen()) {
+            this.isFirstDefaultOpen.set(false);
+        }
+        if (!closeButton && this.externalControl()) {
+            return;
+        }
+        this.actionSubject$.next(RdxHoverCardAction.CLOSE);
+    }
+
+    /** @ignore */
+    handleToggle(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.isOpen() ? this.handleClose() : this.handleOpen();
+    }
+
+    /** @ignore */
+    isOpen(state?: RdxHoverCardState) {
+        return (state ?? this.state()) === RdxHoverCardState.OPEN;
+    }
+
+    /** @ignore */
+    private setState(state = RdxHoverCardState.CLOSED): void {
+        if (state === this.state()) {
+            return;
+        }
+        this.state.set(state);
+    }
+
+    /** @ignore */
+    private openContent(): void {
+        this.contentDirective().open();
+        if (!this.cssAnimation() || !this.cssOpeningAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private closeContent(): void {
+        this.contentDirective().close();
+        if (!this.cssAnimation() || !this.cssClosingAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private emitOnOpen(): void {
+        this.contentDirective().onOpen.emit();
+    }
+
+    /** @ignore */
+    private emitOnClosed(): void {
+        this.contentDirective().onClosed.emit();
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithoutAnimations(state: RdxHoverCardState) {
+        return (
+            !this.contentAttributesComponent() ||
+            !this.cssAnimation() ||
+            (this.cssAnimation() && !this.cssClosingAnimation() && state === RdxHoverCardState.CLOSED) ||
+            (this.cssAnimation() && !this.cssOpeningAnimation() && state === RdxHoverCardState.OPEN) ||
+            // !this.cssAnimationStatus() ||
+            (this.cssOpeningAnimation() &&
+                state === RdxHoverCardState.OPEN &&
+                [RdxHoverCardAnimationStatus.OPEN_STARTED].includes(this.cssAnimationStatus()!)) ||
+            (this.cssClosingAnimation() &&
+                state === RdxHoverCardState.CLOSED &&
+                [RdxHoverCardAnimationStatus.CLOSED_STARTED].includes(this.cssAnimationStatus()!))
+        );
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithAnimations(cssAnimationStatus: RdxHoverCardAnimationStatus | null) {
+        return (
+            this.contentAttributesComponent() &&
+            this.cssAnimation() &&
+            cssAnimationStatus &&
+            ((this.cssOpeningAnimation() &&
+                this.state() === RdxHoverCardState.OPEN &&
+                [RdxHoverCardAnimationStatus.OPEN_ENDED].includes(cssAnimationStatus)) ||
+                (this.cssClosingAnimation() &&
+                    this.state() === RdxHoverCardState.CLOSED &&
+                    [RdxHoverCardAnimationStatus.CLOSED_ENDED].includes(cssAnimationStatus)))
+        );
+    }
+
+    /** @ignore */
+    private openOrClose(state: RdxHoverCardState) {
+        const isOpen = this.isOpen(state);
+        isOpen ? this.openContent() : this.closeContent();
+    }
+
+    /** @ignore */
+    private emitOnOpenOrOnClosed(state: RdxHoverCardState) {
+        this.isOpen(state)
+            ? this.attachDetachEvent() === RdxHoverCardAttachDetachEvent.ATTACH && this.emitOnOpen()
+            : this.attachDetachEvent() === RdxHoverCardAttachDetachEvent.DETACH && this.emitOnClosed();
+    }
+
+    /** @ignore */
+    private canEmitOnOpenOrOnClosed() {
+        return (
+            !this.cssAnimation() ||
+            (!this.cssOpeningAnimation() && this.state() === RdxHoverCardState.OPEN) ||
+            (this.cssOpeningAnimation() &&
+                this.state() === RdxHoverCardState.OPEN &&
+                this.cssAnimationStatus() === RdxHoverCardAnimationStatus.OPEN_ENDED) ||
+            (!this.cssClosingAnimation() && this.state() === RdxHoverCardState.CLOSED) ||
+            (this.cssClosingAnimation() &&
+                this.state() === RdxHoverCardState.CLOSED &&
+                this.cssAnimationStatus() === RdxHoverCardAnimationStatus.CLOSED_ENDED)
+        );
+    }
+
+    /** @ignore */
+    private onStateChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const state = this.state();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithoutAnimations(state)) {
+                    return;
+                }
+                this.openOrClose(state);
+            });
+        }, {});
+    }
+
+    /** @ignore */
+    private onCssAnimationStatusChangeChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const cssAnimationStatus = this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithAnimations(cssAnimationStatus)) {
+                    return;
+                }
+                this.openOrClose(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private emitOpenOrClosedEventEffect() {
+        let isFirst = true;
+        effect(() => {
+            this.attachDetachEvent();
+            this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                const canEmitOpenClose = untracked(() => this.canEmitOnOpenOrOnClosed());
+                if (!canEmitOpenClose) {
+                    return;
+                }
+                this.emitOnOpenOrOnClosed(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onOpenChangeEffect() {
+        effect(() => {
+            const open = this.open();
+            untracked(() => {
+                this.setState(open ? RdxHoverCardState.OPEN : RdxHoverCardState.CLOSED);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onIsFirstDefaultOpenChangeEffect() {
+        const effectRef = effect(() => {
+            const defaultOpen = this.defaultOpen();
+            untracked(() => {
+                if (!defaultOpen || this.open()) {
+                    effectRef.destroy();
+                    return;
+                }
+                this.handleOpen();
+            });
+        });
+    }
+
+    /** @ignore */
+    private onAnchorChangeEffect = () => {
+        effect(() => {
+            const anchor = this.anchor();
+            untracked(() => {
+                if (anchor) {
+                    anchor.setRoot(this);
+                }
+            });
+        });
+    };
+
+    /** @ignore */
+    private actionSubscription() {
+        this.actionSubject$
+            .asObservable()
+            .pipe(
+                map((action) => {
+                    console.log(action);
+                    switch (action) {
+                        case RdxHoverCardAction.OPEN:
+                            return { action, duration: this.openDelay() };
+                        case RdxHoverCardAction.CLOSE:
+                            return { action, duration: this.closeDelay() };
+                    }
+                }),
+                debounce((config) => timer(config.duration)),
+                tap((config) => {
+                    switch (config.action) {
+                        case RdxHoverCardAction.OPEN:
+                            this.setState(RdxHoverCardState.OPEN);
+                            break;
+                        case RdxHoverCardAction.CLOSE:
+                            this.setState(RdxHoverCardState.CLOSED);
+                            break;
+                    }
+                }),
+                takeUntilDestroyed()
+            )
+            .subscribe();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-root.inject.ts
+```typescript
+import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
+import { RdxHoverCardRootDirective } from './hover-card-root.directive';
+
+export function injectHoverCardRoot(optional?: false): RdxHoverCardRootDirective;
+export function injectHoverCardRoot(optional: true): RdxHoverCardRootDirective | null;
+export function injectHoverCardRoot(optional = false): RdxHoverCardRootDirective | null {
+    isDevMode() && assertInInjectionContext(injectHoverCardRoot);
+    return inject(RdxHoverCardRootDirective, { optional });
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card-trigger.directive.ts
+```typescript
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, inject } from '@angular/core';
+import { injectHoverCardRoot } from './hover-card-root.inject';
+
+@Directive({
+    selector: '[rdxHoverCardTrigger]',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '[attr.aria-expanded]': 'rootDirective.isOpen()',
+        '[attr.aria-controls]': 'rootDirective.contentDirective().name()',
+        '[attr.data-state]': 'rootDirective.state()',
+        '(pointerenter)': 'pointerenter()',
+        '(pointerleave)': 'pointerleave()',
+        '(focus)': 'focus()',
+        '(blur)': 'blur()',
+        '(click)': 'click()'
+    }
+})
+export class RdxHoverCardTriggerDirective {
+    /** @ignore */
+    protected readonly rootDirective = injectHoverCardRoot();
+    /** @ignore */
+    readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-hover-card-trigger-${this.rootDirective.uniqueId()}`);
+
+    /** @ignore */
+    protected pointerenter(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected pointerleave(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    protected focus(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected blur(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    protected click(): void {
+        this.rootDirective.handleClose();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/hover-card.types.ts
+```typescript
+export enum RdxHoverCardState {
+    OPEN = 'open',
+    CLOSED = 'closed'
+}
+
+export enum RdxHoverCardAction {
+    OPEN = 'open',
+    CLOSE = 'close'
+}
+
+export enum RdxHoverCardAttachDetachEvent {
+    ATTACH = 'attach',
+    DETACH = 'detach'
+}
+
+export enum RdxHoverCardAnimationStatus {
+    OPEN_STARTED = 'open_started',
+    OPEN_ENDED = 'open_ended',
+    CLOSED_STARTED = 'closed_started',
+    CLOSED_ENDED = 'closed_ended'
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/utils/cdk-event.service.ts
+```typescript
+import {
+    DestroyRef,
+    EnvironmentProviders,
+    inject,
+    Injectable,
+    InjectionToken,
+    isDevMode,
+    makeEnvironmentProviders,
+    NgZone,
+    Provider,
+    Renderer2,
+    VERSION
+} from '@angular/core';
+import { injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { RdxCdkEventServiceWindowKey } from './constants';
+import { EventType, EventTypeAsPrimitiveConfigKey, PrimitiveConfig, PrimitiveConfigs } from './types';
+
+function eventTypeAsPrimitiveConfigKey(eventType: EventType): EventTypeAsPrimitiveConfigKey {
+    return `prevent${eventType[0].toUpperCase()}${eventType.slice(1)}` as EventTypeAsPrimitiveConfigKey;
+}
+
+@Injectable()
+class RdxCdkEventService {
+    document = injectDocument();
+    destroyRef = inject(DestroyRef);
+    ngZone = inject(NgZone);
+    renderer2 = inject(Renderer2);
+    window = injectWindow();
+
+    primitiveConfigs?: PrimitiveConfigs;
+
+    onDestroyCallbacks: Set<() => void> = new Set([() => deleteRdxCdkEventServiceWindowKey(this.window)]);
+
+    #clickDomRootEventCallbacks: Set<(event: MouseEvent) => void> = new Set();
+
+    constructor() {
+        this.#listenToClickDomRootEvent();
+        this.#registerOnDestroyCallbacks();
+    }
+
+    registerPrimitive<T extends object>(primitiveInstance: T) {
+        if (!this.primitiveConfigs) {
+            this.primitiveConfigs = new Map();
+        }
+        if (!this.primitiveConfigs.has(primitiveInstance)) {
+            this.primitiveConfigs.set(primitiveInstance, {});
+        }
+    }
+
+    deregisterPrimitive<T extends object>(primitiveInstance: T) {
+        if (this.primitiveConfigs?.has(primitiveInstance)) {
+            this.primitiveConfigs.delete(primitiveInstance);
+        }
+    }
+
+    preventPrimitiveFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+    }
+
+    allowPrimitiveForCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+    }
+
+    preventPrimitiveFromCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+        });
+    }
+
+    allowPrimitiveForCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+        });
+    }
+
+    setPreventPrimitiveFromCdkMixEvents<T extends object>(primitiveInstance: T, eventTypes: PrimitiveConfig) {
+        Object.keys(eventTypes).forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(
+                primitiveInstance,
+                eventType as EventType,
+                eventTypes[eventTypeAsPrimitiveConfigKey(eventType as EventType)]
+            );
+        });
+    }
+
+    primitivePreventedFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        return this.primitiveConfigs?.get(primitiveInstance)?.[eventTypeAsPrimitiveConfigKey(eventType)];
+    }
+
+    addClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        this.#clickDomRootEventCallbacks.add(callback);
+    }
+
+    removeClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        return this.#clickDomRootEventCallbacks.delete(callback);
+    }
+
+    #setPreventPrimitiveFromCdkEvent<
+        T extends object,
+        R extends EventType,
+        K extends PrimitiveConfig[EventTypeAsPrimitiveConfigKey<R>]
+    >(primitiveInstance: T, eventType: R, value: K) {
+        if (!this.primitiveConfigs?.has(primitiveInstance)) {
+            isDevMode() &&
+                console.error(
+                    '[RdxCdkEventService.preventPrimitiveFromCdkEvent] RDX Primitive instance has not been registered!',
+                    primitiveInstance
+                );
+            return;
+        }
+        switch (eventType) {
+            case 'cdkOverlayOutsideClick':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayOutsideClick = value;
+                break;
+            case 'cdkOverlayEscapeKeyDown':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayEscapeKeyDown = value;
+                break;
+        }
+    }
+
+    #registerOnDestroyCallbacks() {
+        this.destroyRef.onDestroy(() => {
+            this.onDestroyCallbacks.forEach((onDestroyCallback) => onDestroyCallback());
+            this.onDestroyCallbacks.clear();
+        });
+    }
+
+    #listenToClickDomRootEvent() {
+        const target = this.document;
+        const eventName = 'click';
+        const options: boolean | AddEventListenerOptions | undefined = { capture: true };
+        const callback = (event: MouseEvent) => {
+            this.#clickDomRootEventCallbacks.forEach((clickDomRootEventCallback) => clickDomRootEventCallback(event));
+        };
+
+        const major = parseInt(VERSION.major);
+        const minor = parseInt(VERSION.minor);
+
+        let destroyClickDomRootEventListener!: () => void;
+        /**
+         * @see src/cdk/platform/features/backwards-compatibility.ts in @angular/cdk
+         */
+        if (major > 19 || (major === 19 && minor > 0) || (major === 0 && minor === 0)) {
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                const destroyClickDomRootEventListenerInternal = this.renderer2.listen(
+                    target,
+                    eventName,
+                    callback,
+
+                    options
+                );
+                return () => {
+                    destroyClickDomRootEventListenerInternal();
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        } else {
+            /**
+             * This part can get removed when v19.1 or higher is on the board
+             */
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                target.addEventListener(eventName, callback, options);
+                return () => {
+                    this.ngZone.runOutsideAngular(() => target.removeEventListener(eventName, callback, options));
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        }
+        this.onDestroyCallbacks.add(destroyClickDomRootEventListener);
+    }
+}
+
+const RdxCdkEventServiceToken = new InjectionToken<RdxCdkEventService>('RdxCdkEventServiceToken');
+
+const existsErrorMessage = 'RdxCdkEventService should be provided only once!';
+
+const deleteRdxCdkEventServiceWindowKey = (window: Window & typeof globalThis) => {
+    delete (window as any)[RdxCdkEventServiceWindowKey];
+};
+
+const getProvider: (throwWhenExists?: boolean) => Provider = (throwWhenExists = true) => ({
+    provide: RdxCdkEventServiceToken,
+    useFactory: () => {
+        isDevMode() && console.log('providing RdxCdkEventService...');
+        const window = injectWindow();
+        if ((window as any)[RdxCdkEventServiceWindowKey]) {
+            if (throwWhenExists) {
+                throw Error(existsErrorMessage);
+            } else {
+                isDevMode() && console.warn(existsErrorMessage);
+            }
+        }
+        (window as any)[RdxCdkEventServiceWindowKey] ??= new RdxCdkEventService();
+        return (window as any)[RdxCdkEventServiceWindowKey];
+    }
+});
+
+export const provideRdxCdkEventServiceInRoot: () => EnvironmentProviders = () =>
+    makeEnvironmentProviders([getProvider()]);
+export const provideRdxCdkEventService: () => Provider = () => getProvider(false);
+
+export const injectRdxCdkEventService = () => inject(RdxCdkEventServiceToken, { optional: true });
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/utils/constants.ts
+```typescript
+export const RdxCdkEventServiceWindowKey = Symbol('__RdxCdkEventService__');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/hover-card/src/utils/types.ts
+```typescript
+export type EventType = 'cdkOverlayOutsideClick' | 'cdkOverlayEscapeKeyDown';
+export type EventTypeCapitalized<R extends EventType = EventType> = Capitalize<R>;
+export type EventTypeAsPrimitiveConfigKey<R extends EventType = EventType> = `prevent${EventTypeCapitalized<R>}`;
+export type PrimitiveConfig = {
+    [value in EventTypeAsPrimitiveConfigKey]?: boolean;
+};
+export type PrimitiveConfigs = Map<object, PrimitiveConfig>;
+
+```

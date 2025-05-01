@@ -1,0 +1,266 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/toggle-group/stories/toggle-group.docs.mdx
+````
+import { ArgTypes, Canvas, Markdown, Meta } from '@storybook/blocks';
+import * as ToggleGroupDirectiveStories from './toggle-group.stories';
+import { RdxToggleGroupDirective } from '../src/toggle-group.directive';
+import { RdxToggleGroupItemDirective } from '../src/toggle-group-item.directive';
+
+<Meta title="Primitives/Toggle Group" />
+
+# Toggle Group
+
+#### A set of two-\_state buttons that can be toggled on or off.
+
+<Canvas sourceState="hidden" of={ToggleGroupDirectiveStories.Default} />
+
+## Features
+
+- ✅ Full keyboard navigation.
+- ✅ Supports horizontal/vertical orientation.
+- ✅ Support single and multiple pressed buttons.
+- ✅ Can be controlled or uncontrolled.
+
+## Import
+
+Get started with importing the directives:
+
+```typescript
+import {
+  RdxToggleGroupDirective,
+  RdxToggleGroupItemDirective
+} from '@radix-ng/primitives/toggle-group';
+```
+
+## Examples
+
+```html
+<div class="ToggleGroup" rdxToggleGroup value="center" aria-label="Text alignment">
+  <button class="ToggleGroupItem" rdxToggleGroupItem value="left" aria-label="Left aligned">
+    <lucide-icon name="align-left" size="16"></lucide-icon>
+  </button>
+  <button class="ToggleGroupItem" rdxToggleGroupItem value="center" aria-label="Center aligned">
+    <lucide-icon name="align-center" size="16"></lucide-icon>
+  </button>
+  <button class="ToggleGroupItem" rdxToggleGroupItem value="right" aria-label="Right aligned">
+    <lucide-icon name="align-right" size="16"></lucide-icon>
+  </button>
+</div>
+```
+
+## API Reference
+
+### Root
+
+`RdxToggleGroupDirective`
+
+<ArgTypes of={RdxToggleGroupDirective} />
+
+<Markdown>
+  {`
+  | Data Attribute | Value |
+  | ----------- | --------- |
+  | [data-orientation]       | "vertical" or "horizontal"   |
+  `}
+</Markdown>
+
+### Item
+
+`RdxToggleGroupItemDirective`
+
+<ArgTypes of={RdxToggleGroupItemDirective} />
+
+## Accessibility
+
+Uses [roving tabindex](https://www.w3.org/TR/wai-aria-practices-1.2/examples/radio/radio.html) to manage focus movement among items.
+
+### Keyboard Interactions
+
+<Markdown>
+  {`
+  | Key | Description |
+  | ----------- | --------- |
+  | Tab         | Moves focus to either the pressed item or the first item in the group. |
+  | Space       | Activates/deactivates the item.       |
+  | Enter       | Activates/deactivates the item.  |
+  | ArrowDown   |    Moves focus to the next item in the group. |
+  | ArrowRight  | Moves focus to the next item in the group. |
+  | ArrowUp     | Moves focus to the previous item in the group. |
+  | ArrowLeft   | Moves focus to the previous item in the group.  |
+  | Home        | Moves focus to the first item. |
+  | End         | Moves focus to the last item.  |
+  `}
+</Markdown>
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/toggle-group/stories/toggle-group.stories.ts
+```typescript
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { AlignCenter, AlignLeft, AlignRight, LucideAngularModule } from 'lucide-angular';
+import { RdxToggleGroupItemDirective } from '../src/toggle-group-item.directive';
+import { RdxToggleGroupDirective } from '../src/toggle-group.directive';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Toggle Group',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                RdxToggleGroupDirective,
+                RdxToggleGroupItemDirective,
+                LucideAngularModule,
+                LucideAngularModule.pick({ AlignRight, AlignLeft, AlignCenter })
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div class="radix-themes light light-theme" data-radius="medium" data-scaling="100%">
+                    ${story}
+
+                    <style>
+                        button {
+                            all: unset;
+                        }
+                        .ToggleGroup {
+                            display: inline-flex;
+                            background-color: var(--mauve-6);
+                            border-radius: 4px;
+                            box-shadow: 0 2px 10px var(--black-a7);
+                        }
+
+                        .ToggleGroupItem {
+                            background-color: white;
+                            color: var(--mauve-11);
+                            height: 35px;
+                            width: 35px;
+                            display: flex;
+                            font-size: 15px;
+                            line-height: 1;
+                            align-items: center;
+                            justify-content: center;
+                            margin-left: 1px;
+                        }
+                        .ToggleGroupItem[disabled] {
+                            cursor: not-allowed;
+                            opacity: 0.5;
+                        }
+                        .ToggleGroupItem:first-child {
+                            margin-left: 0;
+                            border-top-left-radius: 4px;
+                            border-bottom-left-radius: 4px;
+                        }
+                        .ToggleGroupItem:last-child {
+                            border-top-right-radius: 4px;
+                            border-bottom-right-radius: 4px;
+                        }
+                        .ToggleGroupItem:hover {
+                            background-color: var(--violet-3);
+                        }
+                        .ToggleGroupItem[data-state='on'] {
+                            background-color: var(--violet-5);
+                            color: var(--violet-11);
+                        }
+                        .ToggleGroupItem:focus {
+                            position: relative;
+                            box-shadow: 0 0 0 2px black;
+                        }
+                    </style>
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <div class="ToggleGroup" rdxToggleGroup value="center" aria-label="Text alignment">
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="left" aria-label="Left aligned">
+                    <lucide-icon name="align-left" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="center" aria-label="Center aligned">
+                    <lucide-icon name="align-center" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="right" aria-label="Right aligned">
+                    <lucide-icon name="align-right" size="12"></lucide-icon>
+                </button>
+            </div>
+        `
+    })
+};
+
+export const Multiple: Story = {
+    render: () => ({
+        props: {
+            selectedValues: ['left', 'center']
+        },
+        template: html`
+            <div
+                class="ToggleGroup"
+                rdxToggleGroup
+                type="multiple"
+                [value]="selectedValues"
+                aria-label="Text alignment"
+            >
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="left" aria-label="Left aligned">
+                    <lucide-icon name="align-left" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="center" aria-label="Center aligned">
+                    <lucide-icon name="align-center" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="right" aria-label="Right aligned">
+                    <lucide-icon name="align-right" size="12"></lucide-icon>
+                </button>
+            </div>
+        `
+    })
+};
+
+export const Disable: Story = {
+    render: () => ({
+        props: {
+            selectedValues: ['center']
+        },
+        template: html`
+            <div
+                class="ToggleGroup"
+                rdxToggleGroup
+                type="multiple"
+                [value]="selectedValues"
+                aria-label="Text alignment"
+            >
+                <button class="ToggleGroupItem" disabled rdxToggleGroupItem value="left" aria-label="Left aligned">
+                    <lucide-icon name="align-left" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="center" aria-label="Center aligned">
+                    <lucide-icon name="align-center" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" disabled rdxToggleGroupItem value="right" aria-label="Right aligned">
+                    <lucide-icon name="align-right" size="12"></lucide-icon>
+                </button>
+            </div>
+        `
+    })
+};
+
+export const DisableGroup: Story = {
+    render: () => ({
+        template: html`
+            <div class="ToggleGroup" rdxToggleGroup aria-label="Text alignment" disabled>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="left" aria-label="Left aligned">
+                    <lucide-icon name="align-left" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="center" aria-label="Center aligned">
+                    <lucide-icon name="align-center" size="12"></lucide-icon>
+                </button>
+                <button class="ToggleGroupItem" rdxToggleGroupItem value="right" aria-label="Right aligned">
+                    <lucide-icon name="align-right" size="12"></lucide-icon>
+                </button>
+            </div>
+        `
+    })
+};
+
+```

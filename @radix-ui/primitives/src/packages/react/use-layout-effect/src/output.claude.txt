@@ -1,0 +1,27 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-layout-effect/src/index.ts</source>
+<document_content>
+export { useLayoutEffect } from './use-layout-effect';
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/use-layout-effect/src/use-layout-effect.tsx</source>
+<document_content>
+import * as React from 'react';
+
+/**
+ * On the server, React emits a warning when calling `useLayoutEffect`.
+ * This is because neither `useLayoutEffect` nor `useEffect` run on the server.
+ * We use this safe version which suppresses the warning by replacing it with a noop on the server.
+ *
+ * See: https://reactjs.org/docs/hooks-reference.html#uselayouteffect
+ */
+const useLayoutEffect = globalThis?.document ? React.useLayoutEffect : () => {};
+
+export { useLayoutEffect };
+
+</document_content>
+</document>
+</documents>

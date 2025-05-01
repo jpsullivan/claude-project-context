@@ -1,0 +1,1465 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/collection-legacy.tsx</source>
+<document_content>
+import React from 'react';
+import { createContextScope } from '@radix-ui/react-context';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { createSlot, type Slot } from '@radix-ui/react-slot';
+
+type SlotProps = React.ComponentPropsWithoutRef<typeof Slot>;
+type CollectionElement = HTMLElement;
+interface CollectionProps extends SlotProps {
+  scope: any;
+}
+
+// We have resorted to returning slots directly rather than exposing primitives that can then
+// be slotted like `<CollectionItem as={Slot}>…</CollectionItem>`.
+// This is because we encountered issues with generic types that cannot be statically analysed
+// due to creating them dynamically via createCollection.
+
+function createCollection<ItemElement extends HTMLElement, ItemData = {}>(name: string) {
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionProvider
+   * ---------------------------------------------------------------------------------------------*/
+
+  const PROVIDER_NAME = name + 'CollectionProvider';
+  const [createCollectionContext, createCollectionScope] = createContextScope(PROVIDER_NAME);
+
+  type ContextValue = {
+    collectionRef: React.RefObject<CollectionElement | null>;
+    itemMap: Map<
+      React.RefObject<ItemElement | null>,
+      { ref: React.RefObject<ItemElement | null> } & ItemData
+    >;
+  };
+
+  const [CollectionProviderImpl, useCollectionContext] = createCollectionContext<ContextValue>(
+    PROVIDER_NAME,
+    { collectionRef: { current: null }, itemMap: new Map() }
+  );
+
+  const CollectionProvider: React.FC<{ children?: React.ReactNode; scope: any }> = (props) => {
+    const { scope, children } = props;
+    const ref = React.useRef<CollectionElement>(null);
+    const itemMap = React.useRef<ContextValue['itemMap']>(new Map()).current;
+    return (
+      <CollectionProviderImpl scope={scope} itemMap={itemMap} collectionRef={ref}>
+        {children}
+      </CollectionProviderImpl>
+    );
+  };
+
+  CollectionProvider.displayName = PROVIDER_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionSlot
+   * ---------------------------------------------------------------------------------------------*/
+
+  const COLLECTION_SLOT_NAME = name + 'CollectionSlot';
+
+  const CollectionSlotImpl = createSlot(COLLECTION_SLOT_NAME);
+  const CollectionSlot = React.forwardRef<CollectionElement, CollectionProps>(
+    (props, forwardedRef) => {
+      const { scope, children } = props;
+      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs(forwardedRef, context.collectionRef);
+      return <CollectionSlotImpl ref={composedRefs}>{children}</CollectionSlotImpl>;
+    }
+  );
+
+  CollectionSlot.displayName = COLLECTION_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionItem
+   * ---------------------------------------------------------------------------------------------*/
+
+  const ITEM_SLOT_NAME = name + 'CollectionItemSlot';
+  const ITEM_DATA_ATTR = 'data-radix-collection-item';
+
+  type CollectionItemSlotProps = ItemData & {
+    children: React.ReactNode;
+    scope: any;
+  };
+
+  const CollectionItemSlotImpl = createSlot(ITEM_SLOT_NAME);
+  const CollectionItemSlot = React.forwardRef<ItemElement, CollectionItemSlotProps>(
+    (props, forwardedRef) => {
+      const { scope, children, ...itemData } = props;
+      const ref = React.useRef<ItemElement>(null);
+      const composedRefs = useComposedRefs(forwardedRef, ref);
+      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+
+      React.useEffect(() => {
+        context.itemMap.set(ref, { ref, ...(itemData as unknown as ItemData) });
+        return () => void context.itemMap.delete(ref);
+      });
+
+      return (
+        <CollectionItemSlotImpl {...{ [ITEM_DATA_ATTR]: '' }} ref={composedRefs}>
+          {children}
+        </CollectionItemSlotImpl>
+      );
+    }
+  );
+
+  CollectionItemSlot.displayName = ITEM_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * useCollection
+   * ---------------------------------------------------------------------------------------------*/
+
+  function useCollection(scope: any) {
+    const context = useCollectionContext(name + 'CollectionConsumer', scope);
+
+    const getItems = React.useCallback(() => {
+      const collectionNode = context.collectionRef.current;
+      if (!collectionNode) return [];
+      const orderedNodes = Array.from(collectionNode.querySelectorAll(`[${ITEM_DATA_ATTR}]`));
+      const items = Array.from(context.itemMap.values());
+      const orderedItems = items.sort(
+        (a, b) => orderedNodes.indexOf(a.ref.current!) - orderedNodes.indexOf(b.ref.current!)
+      );
+      return orderedItems;
+    }, [context.collectionRef, context.itemMap]);
+
+    return getItems;
+  }
+
+  return [
+    { Provider: CollectionProvider, Slot: CollectionSlot, ItemSlot: CollectionItemSlot },
+    useCollection,
+    createCollectionScope,
+  ] as const;
+}
+
+export { createCollection };
+export type { CollectionProps };
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/collection.tsx</source>
+<document_content>
+import React from 'react';
+import { createContextScope } from '@radix-ui/react-context';
+import { useComposedRefs } from '@radix-ui/react-compose-refs';
+import { createSlot, type Slot } from '@radix-ui/react-slot';
+import type { EntryOf } from './ordered-dictionary';
+import { OrderedDict } from './ordered-dictionary';
+
+type SlotProps = React.ComponentPropsWithoutRef<typeof Slot>;
+type CollectionElement = HTMLElement;
+interface CollectionProps extends SlotProps {
+  scope: any;
+}
+
+interface BaseItemData {
+  id?: string;
+}
+
+type ItemDataWithElement<
+  ItemData extends BaseItemData,
+  ItemElement extends HTMLElement,
+> = ItemData & {
+  element: ItemElement;
+};
+
+type ItemMap<ItemElement extends HTMLElement, ItemData extends BaseItemData> = OrderedDict<
+  ItemElement,
+  ItemDataWithElement<ItemData, ItemElement>
+>;
+
+function createCollection<
+  ItemElement extends HTMLElement,
+  ItemData extends BaseItemData = BaseItemData,
+>(name: string) {
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionProvider
+   * ---------------------------------------------------------------------------------------------*/
+
+  const PROVIDER_NAME = name + 'CollectionProvider';
+  const [createCollectionContext, createCollectionScope] = createContextScope(PROVIDER_NAME);
+
+  type ContextValue = {
+    collectionElement: CollectionElement | null;
+    collectionRef: React.Ref<CollectionElement | null>;
+    collectionRefObject: React.RefObject<CollectionElement | null>;
+    itemMap: ItemMap<ItemElement, ItemData>;
+    setItemMap: React.Dispatch<React.SetStateAction<ItemMap<ItemElement, ItemData>>>;
+  };
+
+  const [CollectionContextProvider, useCollectionContext] = createCollectionContext<ContextValue>(
+    PROVIDER_NAME,
+    {
+      collectionElement: null,
+      collectionRef: { current: null },
+      collectionRefObject: { current: null },
+      itemMap: new OrderedDict(),
+      setItemMap: () => void 0,
+    }
+  );
+
+  type CollectionState = [
+    ItemMap: ItemMap<ItemElement, ItemData>,
+    SetItemMap: React.Dispatch<React.SetStateAction<ItemMap<ItemElement, ItemData>>>,
+  ];
+
+  const CollectionProvider: React.FC<{
+    children?: React.ReactNode;
+    scope: any;
+    state?: CollectionState;
+  }> = ({ state, ...props }) => {
+    return state ? (
+      <CollectionProviderImpl {...props} state={state} />
+    ) : (
+      <CollectionInit {...props} />
+    );
+  };
+  CollectionProvider.displayName = PROVIDER_NAME;
+
+  const CollectionInit: React.FC<{
+    children?: React.ReactNode;
+    scope: any;
+  }> = (props) => {
+    const state = useInitCollection();
+    return <CollectionProviderImpl {...props} state={state} />;
+  };
+  CollectionInit.displayName = PROVIDER_NAME + 'Init';
+
+  const CollectionProviderImpl: React.FC<{
+    children?: React.ReactNode;
+    scope: any;
+    state: CollectionState;
+  }> = (props) => {
+    const { scope, children, state } = props;
+    const ref = React.useRef<CollectionElement>(null);
+    const [collectionElement, setCollectionElement] = React.useState<CollectionElement | null>(
+      null
+    );
+    const composeRefs = useComposedRefs(ref, setCollectionElement);
+    const [itemMap, setItemMap] = state;
+
+    React.useEffect(() => {
+      if (!collectionElement) return;
+
+      const observer = getChildListObserver(() => {
+        // setItemMap((map) => {
+        //   const copy = new OrderedDict(map).toSorted(([, a], [, b]) =>
+        //     !a.element || !b.element ? 0 : isElementPreceding(a.element, b.element) ? -1 : 1
+        //   );
+        //   // check if the order has changed
+        //   let index = -1;
+        //   for (const entry of copy) {
+        //     index++;
+        //     const key = map.keyAt(index)!;
+        //     const [copyKey] = entry;
+        //     if (key !== copyKey) {
+        //       // order has changed!
+        //       return copy;
+        //     }
+        //   }
+        //   return map;
+        // });
+      });
+      observer.observe(collectionElement, {
+        childList: true,
+        subtree: true,
+      });
+      return () => {
+        observer.disconnect();
+      };
+    }, [collectionElement]);
+
+    return (
+      <CollectionContextProvider
+        scope={scope}
+        itemMap={itemMap}
+        setItemMap={setItemMap}
+        collectionRef={composeRefs}
+        collectionRefObject={ref}
+        collectionElement={collectionElement}
+      >
+        {children}
+      </CollectionContextProvider>
+    );
+  };
+
+  CollectionProviderImpl.displayName = PROVIDER_NAME + 'Impl';
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionSlot
+   * ---------------------------------------------------------------------------------------------*/
+
+  const COLLECTION_SLOT_NAME = name + 'CollectionSlot';
+
+  const CollectionSlotImpl = createSlot(COLLECTION_SLOT_NAME);
+  const CollectionSlot = React.forwardRef<CollectionElement, CollectionProps>(
+    (props, forwardedRef) => {
+      const { scope, children } = props;
+      const context = useCollectionContext(COLLECTION_SLOT_NAME, scope);
+      const composedRefs = useComposedRefs(forwardedRef, context.collectionRef);
+      return <CollectionSlotImpl ref={composedRefs}>{children}</CollectionSlotImpl>;
+    }
+  );
+
+  CollectionSlot.displayName = COLLECTION_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * CollectionItem
+   * ---------------------------------------------------------------------------------------------*/
+
+  const ITEM_SLOT_NAME = name + 'CollectionItemSlot';
+  const ITEM_DATA_ATTR = 'data-radix-collection-item';
+
+  type CollectionItemSlotProps = ItemData & {
+    children: React.ReactNode;
+    scope: any;
+  };
+
+  const CollectionItemSlotImpl = createSlot(ITEM_SLOT_NAME);
+  const CollectionItemSlot = React.forwardRef<ItemElement, CollectionItemSlotProps>(
+    (props, forwardedRef) => {
+      const { scope, children, ...itemData } = props;
+      const ref = React.useRef<ItemElement>(null);
+      const [element, setElement] = React.useState<ItemElement | null>(null);
+      const composedRefs = useComposedRefs(forwardedRef, ref, setElement);
+      const context = useCollectionContext(ITEM_SLOT_NAME, scope);
+
+      const { setItemMap } = context;
+
+      const itemDataRef = React.useRef(itemData);
+      if (!shallowEqual(itemDataRef.current, itemData)) {
+        itemDataRef.current = itemData;
+      }
+      const memoizedItemData = itemDataRef.current;
+
+      React.useEffect(() => {
+        const itemData = memoizedItemData;
+        setItemMap((map) => {
+          if (!element) {
+            return map;
+          }
+
+          if (!map.has(element)) {
+            map.set(element, { ...(itemData as unknown as ItemData), element });
+            return map.toSorted(sortByDocumentPosition);
+          }
+
+          return map
+            .set(element, { ...(itemData as unknown as ItemData), element })
+            .toSorted(sortByDocumentPosition);
+        });
+
+        return () => {
+          setItemMap((map) => {
+            if (!element || !map.has(element)) {
+              return map;
+            }
+            map.delete(element);
+            return new OrderedDict(map);
+          });
+        };
+      }, [element, memoizedItemData, setItemMap]);
+
+      return (
+        <CollectionItemSlotImpl {...{ [ITEM_DATA_ATTR]: '' }} ref={composedRefs as any}>
+          {children}
+        </CollectionItemSlotImpl>
+      );
+    }
+  );
+
+  CollectionItemSlot.displayName = ITEM_SLOT_NAME;
+
+  /* -----------------------------------------------------------------------------------------------
+   * useInitCollection
+   * ---------------------------------------------------------------------------------------------*/
+
+  function useInitCollection() {
+    return React.useState<ItemMap<ItemElement, ItemData>>(new OrderedDict());
+  }
+
+  /* -----------------------------------------------------------------------------------------------
+   * useCollection
+   * ---------------------------------------------------------------------------------------------*/
+
+  function useCollection(scope: any) {
+    const { itemMap } = useCollectionContext(name + 'CollectionConsumer', scope);
+
+    return itemMap;
+  }
+
+  const functions = {
+    createCollectionScope,
+    useCollection,
+    useInitCollection,
+  };
+
+  return [
+    { Provider: CollectionProvider, Slot: CollectionSlot, ItemSlot: CollectionItemSlot },
+    functions,
+  ] as const;
+}
+
+export { createCollection };
+export type { CollectionProps };
+
+function shallowEqual(a: any, b: any) {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object') return false;
+  if (a == null || b == null) return false;
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+  if (keysA.length !== keysB.length) return false;
+  for (const key of keysA) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+function isElementPreceding(a: Element, b: Element) {
+  return !!(b.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING);
+}
+
+function sortByDocumentPosition<E extends HTMLElement, T extends BaseItemData>(
+  a: EntryOf<ItemMap<E, T>>,
+  b: EntryOf<ItemMap<E, T>>
+) {
+  return !a[1].element || !b[1].element
+    ? 0
+    : isElementPreceding(a[1].element, b[1].element)
+      ? -1
+      : 1;
+}
+
+function getChildListObserver(callback: () => void) {
+  const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        callback();
+        return;
+      }
+    }
+  });
+
+  return observer;
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/index.ts</source>
+<document_content>
+'use client';
+export { createCollection } from './collection-legacy';
+export type { CollectionProps } from './collection-legacy';
+
+export { createCollection as unstable_createCollection } from './collection';
+export type { CollectionProps as unstable_CollectionProps } from './collection-legacy';
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/ordered-dictionary.test.ts</source>
+<document_content>
+import { describe, expect, test } from 'vitest';
+import { OrderedDict } from './ordered-dictionary';
+
+describe('OrderedDict', () => {
+  test('size', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    expect(dict.size).toBe(3);
+    dict.delete('b');
+    expect(dict.size).toBe(2);
+    dict.set('d', 4);
+    expect(dict.size).toBe(3);
+    dict.clear();
+    expect(dict.size).toBe(0);
+  });
+
+  test('get()', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    expect(dict.get('a')).toBe(1);
+    expect(dict.get('b')).toBe(2);
+    expect(dict.get('d')).toBeUndefined();
+  });
+
+  test('set()', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.set('b', 4);
+    expect(dict.get('b')).toBe(4);
+    dict.set('d', 5);
+    expect(dict.get('d')).toBe(5);
+  });
+
+  test('insert(): existing key at its current index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.insert(1, 'b', 4);
+    expect(dict.get('b')).toBe(4);
+  });
+
+  test('insert(): existing key at a new index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.insert(0, 'b', 1);
+    // sets the correct value
+    expect(dict.get('b')).toBe(1);
+
+    // moves to the inserted index
+    expect(dict.at(0)).toBe(1);
+    expect(dict.keyAt(0)).toBe('b');
+
+    // previous item at the inserted index is moved up by one
+    expect(dict.keyAt(1)).toBe('a');
+    expect(dict.get('a')).toBe(1);
+  });
+
+  test('insert(): existing key at out-of-range index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.insert(20, 'd', 4);
+    expect(dict.keyAt(3)).toBe('d');
+    expect(dict.at(3)).toBe(4);
+  });
+
+  test('insert(): existing key at 0 index', () => {
+    const dict = new OrderedDict([
+      ['a', 0],
+      ['b', 2],
+      ['c', 3],
+      ['e', 5],
+    ]);
+    dict.insert(0, 'a', 1);
+    expect(dict.keyAt(0)).toBe('a');
+    expect(dict.at(0)).toBe(1);
+    expect(dict.keyAt(1)).toBe('b');
+    expect(dict.at(1)).toBe(2);
+    expect(dict.size).toBe(4);
+  });
+
+  test('insert(): new key at 0 index', () => {
+    const dict = new OrderedDict([
+      ['b', 2],
+      ['c', 3],
+      ['e', 5],
+    ]);
+    dict.insert(0, 'a', 1);
+    expect(dict.keyAt(0)).toBe('a');
+    expect(dict.at(0)).toBe(1);
+    expect(dict.keyAt(1)).toBe('b');
+    expect(dict.at(1)).toBe(2);
+    expect(dict.size).toBe(4);
+  });
+
+  test('insert(): existing key at relative negative index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['e', 5],
+      ['f', 4],
+    ]);
+    dict.insert(-1, 'f', 6);
+    expect(dict.keyAt(-1)).toBe('f');
+    expect(dict.at(-1)).toBe(6);
+    expect(dict.size).toBe(5);
+  });
+
+  test('insert(): new key at relative negative index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['e', 5],
+    ]);
+    dict.insert(-1, 'f', 6);
+    expect(dict.keyAt(-1)).toBe('f');
+    expect(dict.at(0)).toBe(1);
+    expect(dict.at(-1)).toBe(6);
+
+    dict.insert(-3, 'd', 4);
+    expect(dict.keyAt(3)).toBe('d');
+    expect(dict.at(3)).toBe(4);
+  });
+
+  test('insert(): existing key at a new index', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.insert(0, 'b', 1);
+    expect(dict.get('b')).toBe(1);
+    expect(dict.at(0)).toBe(1);
+    expect(dict.keyAt(0)).toBe('b');
+  });
+
+  test('insert(): adds item to existing object', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    const next = dict.insert(0, 'b', 1);
+    expect(next).toBe(dict);
+  });
+
+  test('with(): returns a new reference', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    const next = dict.with(0, 'b', 1);
+    expect(next).not.toBe(dict);
+  });
+
+  test('with(): does not update copied object', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    dict.with(0, 'b', 1);
+    expect(dict.get('b')).toBe(2);
+    expect(dict.keyAt(1)).toBe('b');
+  });
+
+  test('first()', () => {
+    expect(
+      new OrderedDict([
+        ['a', 1],
+        ['b', 2],
+        ['c', 3],
+        ['d', 4],
+      ]).first()
+    ).toEqual(['a', 1]);
+    expect(new OrderedDict().first()).toBeUndefined();
+  });
+
+  test('last()', () => {
+    expect(
+      new OrderedDict([
+        ['a', 1],
+        ['b', 2],
+        ['c', 3],
+        ['d', 4],
+      ]).last()
+    ).toEqual(['d', 4]);
+    expect(new OrderedDict().last()).toBeUndefined();
+  });
+
+  test('before()', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['d', 4],
+    ]);
+    expect(dict.before('b')).toEqual(['a', 1]);
+    expect(dict.before('a')).toBeUndefined();
+  });
+
+  test('after()', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['d', 4],
+    ]);
+    expect(dict.after('b')).toEqual(['c', 3]);
+    expect(dict.after('d')).toBeUndefined();
+  });
+
+  test('clear()', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+    ]);
+    dict.clear();
+    expect(dict.size).toBe(0);
+    expect(dict.get('a')).toBeUndefined();
+    expect(dict.get('b')).toBeUndefined();
+    expect(dict.at(0)).toBeUndefined();
+  });
+
+  test('delete(): existing key', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+    ]);
+    const status = dict.delete('a');
+    expect(status).toBe(true);
+    expect(dict.size).toBe(1);
+    expect(dict.get('a')).toBeUndefined();
+    expect(dict.at(0)).toBe(2);
+  });
+
+  test('delete(): non-existing key', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+    ]);
+    const status = dict.delete('c');
+    expect(status).toBe(false);
+    expect(dict.size).toBe(2);
+    expect(dict.at(0)).toBe(1);
+  });
+
+  test('deleteAt(): standard indices', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['d', 4],
+    ]);
+    const status = dict.deleteAt(0);
+    expect(status).toBe(true);
+    expect(dict.size).toBe(3);
+    expect(dict.get('a')).toBeUndefined();
+
+    dict.deleteAt(1);
+    expect(dict.size).toBe(2);
+    expect(dict.get('c')).toBeUndefined();
+  });
+
+  test('deleteAt(): negative indices', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['d', 4],
+    ]);
+    const status = dict.deleteAt(-1);
+    expect(status).toBe(true);
+    expect(dict.size).toBe(3);
+    expect(dict.get('d')).toBeUndefined();
+
+    dict.deleteAt(-2);
+    expect(dict.size).toBe(2);
+    expect(dict.get('b')).toBeUndefined();
+  });
+
+  test('deleteAt(): out-of-range indices', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+      ['d', 4],
+    ]);
+    let status = dict.deleteAt(20);
+    expect(status).toBe(false);
+    expect(dict.size).toBe(4);
+    status = dict.deleteAt(-20);
+    expect(status).toBe(false);
+    expect(dict.size).toBe(4);
+  });
+
+  describe('find', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    test('key: found', () => {
+      const result = dict.find(([key]) => key === 'b');
+      expect(result).toEqual(['b', 2]);
+    });
+
+    test('key: not found', () => {
+      const result = dict.find(([key]) => key === 'd');
+      expect(result).toBeUndefined();
+    });
+
+    test('value: found', () => {
+      const result = dict.find(([, value]) => value === 3);
+      expect(result).toEqual(['c', 3]);
+    });
+
+    test('value: not found', () => {
+      const result = dict.find(([, value]) => value === 4);
+      expect(result).toBeUndefined();
+    });
+
+    test('thisArg', () => {
+      const result = dict.find(function (this: number, [, value]) {
+        return value === this;
+      }, 1);
+      expect(result).toEqual(['a', 1]);
+    });
+
+    test('no thisArg', () => {
+      const result = dict.find(function (this: unknown, _, dictionary) {
+        return dictionary === this;
+      });
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('findIndex', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+    test('key: found', () => {
+      const result = dict.findIndex(([key]) => key === 'b');
+      expect(result).toBe(1);
+    });
+
+    test('key: not found', () => {
+      const result = dict.findIndex(([key]) => key === 'd');
+      expect(result).toBe(-1);
+    });
+
+    test('value: found', () => {
+      const result = dict.findIndex(([, value]) => value === 3);
+      expect(result).toBe(2);
+    });
+
+    test('value: not found', () => {
+      const result = dict.findIndex(([, value]) => value === 4);
+      expect(result).toBe(-1);
+    });
+
+    test('with thisArg', () => {
+      const thisArg = { key: 'b' };
+      const result = dict.findIndex(function (this: typeof thisArg, [key]) {
+        return key === this.key;
+      }, thisArg);
+      expect(result).toBe(1);
+    });
+
+    test('no thisArg', () => {
+      expect(() => {
+        dict.findIndex(function (this: unknown, [, value]) {
+          return value === (this as any).get('b');
+        });
+      }).toThrow();
+    });
+  });
+
+  describe('filter', () => {
+    test('makes a copy of the dictionary', () => {
+      const dict = new OrderedDict([
+        ['a', 1],
+        ['b', 2],
+        ['c', 3],
+      ]);
+      const result = dict.filter(() => true);
+      expect(result).not.toBe(dict);
+    });
+
+    test('misc', () => {
+      const dict = new OrderedDict([
+        ['a', 1],
+        ['b', 2],
+        ['c', 3],
+      ]);
+      const result = dict.filter(([key, value]) => key === 'b' || value === 3);
+      expect(result).toEqual(
+        new OrderedDict([
+          ['b', 2],
+          ['c', 3],
+        ])
+      );
+
+      const result2 = dict.filter(([key]) => key === 'd');
+      expect(result2).toEqual(new OrderedDict());
+
+      const result3 = dict.filter(([, value]) => value === 3);
+      expect(result3).toEqual(new OrderedDict([['c', 3]]));
+
+      const result4 = dict.filter(([, value]) => value === 4);
+      expect(result4).toEqual(new OrderedDict());
+    });
+  });
+
+  describe('some', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+
+    test('key: truthy', () => {
+      const result = dict.some(([key]) => key === 'b');
+      expect(result).toBe(true);
+    });
+
+    test('key: falsey', () => {
+      const result = dict.some(([key]) => key === 'd');
+      expect(result).toBe(false);
+    });
+
+    test('value: truthy', () => {
+      const result = dict.some(([, value]) => value === 2);
+      expect(result).toBe(true);
+    });
+
+    test('value: truthy', () => {
+      const result = dict.some(([, value]) => value === 4);
+      expect(result).toBe(false);
+    });
+
+    test('thisArg', () => {
+      const result = dict.some(function (this: string, [key]) {
+        return key === this;
+      }, 'b');
+      expect(result).toBe(true);
+    });
+
+    test('no thisArg', () => {
+      expect(() =>
+        dict.some(function (this: unknown, [, value]) {
+          return (this as any).get('b') === value;
+        })
+      ).toThrow();
+    });
+  });
+
+  describe('every', () => {
+    const dict = new OrderedDict([
+      ['a', 1],
+      ['b', 2],
+      ['c', 3],
+    ]);
+
+    test('key: truthy', () => {
+      const result = dict.every(([key]) => key.length === 1);
+      expect(result).toBe(true);
+    });
+
+    test('key: falsey', () => {
+      const result = dict.every(([key]) => key === 'a');
+      expect(result).toBe(false);
+    });
+
+    test('value: truthy', () => {
+      const result = dict.every(([, value]) => value > 0);
+      expect(result).toBe(true);
+    });
+
+    test('value: falsey', () => {
+      const result = dict.every(([, value]) => value > 1);
+      expect(result).toBe(false);
+    });
+
+    test('thisArg', () => {
+      const result = dict.every(function (this: string, [key]) {
+        return typeof key === typeof this;
+      }, 'b');
+      expect(result).toBe(true);
+    });
+
+    test('no thisArg', () => {
+      expect(() =>
+        dict.every(function (this: unknown, [, value]) {
+          return typeof (this as any).get('b') === typeof value;
+        })
+      ).toThrow();
+    });
+  });
+});
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/collection/src/ordered-dictionary.ts</source>
+<document_content>
+// Not a real member because it shouldn't be accessible, but the super class
+// calls `set` which needs to read the instanciation state, so it can't be a
+// private member.
+const __instanciated = new WeakMap<OrderedDict<any, any>, boolean>();
+export class OrderedDict<K, V> extends Map<K, V> {
+  #keys: K[];
+
+  constructor(iterable?: Iterable<readonly [K, V]> | null | undefined);
+  constructor(entries?: readonly (readonly [K, V])[] | null) {
+    super(entries);
+    this.#keys = [...super.keys()];
+    __instanciated.set(this, true);
+  }
+
+  set(key: K, value: V) {
+    if (__instanciated.get(this)) {
+      if (this.has(key)) {
+        this.#keys[this.#keys.indexOf(key)] = key;
+      } else {
+        this.#keys.push(key);
+      }
+    }
+    super.set(key, value);
+    return this;
+  }
+
+  insert(index: number, key: K, value: V) {
+    const has = this.has(key);
+    const length = this.#keys.length;
+    const relativeIndex = toSafeInteger(index);
+    let actualIndex = relativeIndex >= 0 ? relativeIndex : length + relativeIndex;
+    const safeIndex = actualIndex < 0 || actualIndex >= length ? -1 : actualIndex;
+
+    if (safeIndex === this.size || (has && safeIndex === this.size - 1) || safeIndex === -1) {
+      this.set(key, value);
+      return this;
+    }
+
+    const size = this.size + (has ? 0 : 1);
+
+    // If you insert at, say, -2, without this bit you'd replace the
+    // second-to-last item and push the rest up one, which means the new item is
+    // 3rd to last. This isn't very intuitive; inserting at -2 is more like
+    // saying "make this item the second to last".
+    if (relativeIndex < 0) {
+      actualIndex++;
+    }
+
+    const keys = [...this.#keys];
+    let nextValue: V | undefined;
+    let shouldSkip = false;
+    for (let i = actualIndex; i < size; i++) {
+      if (actualIndex === i) {
+        let nextKey = keys[i]!;
+        if (keys[i] === key) {
+          nextKey = keys[i + 1]!;
+        }
+        if (has) {
+          // delete first to ensure that the item is moved to the end
+          this.delete(key);
+        }
+        nextValue = this.get(nextKey);
+        this.set(key, value);
+      } else {
+        if (!shouldSkip && keys[i - 1] === key) {
+          shouldSkip = true;
+        }
+        const currentKey = keys[shouldSkip ? i : i - 1]!;
+        const currentValue = nextValue!;
+        nextValue = this.get(currentKey);
+        this.delete(currentKey);
+        this.set(currentKey, currentValue);
+      }
+    }
+    return this;
+  }
+
+  with(index: number, key: K, value: V) {
+    const copy = new OrderedDict(this);
+    copy.insert(index, key, value);
+    return copy;
+  }
+
+  before(key: K) {
+    const index = this.#keys.indexOf(key) - 1;
+    if (index < 0) {
+      return undefined;
+    }
+    return this.entryAt(index);
+  }
+
+  /**
+   * Sets a new key-value pair at the position before the given key.
+   */
+  setBefore(key: K, newKey: K, value: V) {
+    const index = this.#keys.indexOf(key);
+    if (index === -1) {
+      return this;
+    }
+    return this.insert(index, newKey, value);
+  }
+
+  after(key: K) {
+    let index = this.#keys.indexOf(key);
+    index = index === -1 || index === this.size - 1 ? -1 : index + 1;
+    if (index === -1) {
+      return undefined;
+    }
+    return this.entryAt(index);
+  }
+
+  /**
+   * Sets a new key-value pair at the position after the given key.
+   */
+  setAfter(key: K, newKey: K, value: V) {
+    const index = this.#keys.indexOf(key);
+    if (index === -1) {
+      return this;
+    }
+    return this.insert(index + 1, newKey, value);
+  }
+
+  first() {
+    return this.entryAt(0);
+  }
+
+  last() {
+    return this.entryAt(-1);
+  }
+
+  clear() {
+    this.#keys = [];
+    return super.clear();
+  }
+
+  delete(key: K) {
+    const deleted = super.delete(key);
+    if (deleted) {
+      this.#keys.splice(this.#keys.indexOf(key), 1);
+    }
+    return deleted;
+  }
+
+  deleteAt(index: number) {
+    const key = this.keyAt(index);
+    if (key !== undefined) {
+      return this.delete(key);
+    }
+    return false;
+  }
+
+  at(index: number) {
+    const key = at(this.#keys, index);
+    if (key !== undefined) {
+      return this.get(key);
+    }
+  }
+
+  entryAt(index: number): [K, V] | undefined {
+    const key = at(this.#keys, index);
+    if (key !== undefined) {
+      return [key, this.get(key)!];
+    }
+  }
+
+  indexOf(key: K) {
+    return this.#keys.indexOf(key);
+  }
+
+  keyAt(index: number) {
+    return at(this.#keys, index);
+  }
+
+  from(key: K, offset: number) {
+    const index = this.indexOf(key);
+    if (index === -1) {
+      return undefined;
+    }
+    let dest = index + offset;
+    if (dest < 0) dest = 0;
+    if (dest >= this.size) dest = this.size - 1;
+    return this.at(dest);
+  }
+
+  keyFrom(key: K, offset: number) {
+    const index = this.indexOf(key);
+    if (index === -1) {
+      return undefined;
+    }
+    let dest = index + offset;
+    if (dest < 0) dest = 0;
+    if (dest >= this.size) dest = this.size - 1;
+    return this.keyAt(dest);
+  }
+
+  find(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => boolean,
+    thisArg?: any
+  ) {
+    let index = 0;
+    for (const entry of this) {
+      if (Reflect.apply(predicate, thisArg, [entry, index, this])) {
+        return entry;
+      }
+      index++;
+    }
+    return undefined;
+  }
+
+  findIndex(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => boolean,
+    thisArg?: any
+  ) {
+    let index = 0;
+    for (const entry of this) {
+      if (Reflect.apply(predicate, thisArg, [entry, index, this])) {
+        return index;
+      }
+      index++;
+    }
+    return -1;
+  }
+
+  filter<KK extends K, VV extends V>(
+    predicate: (entry: [K, V], index: number, dict: OrderedDict<K, V>) => entry is [KK, VV],
+    thisArg?: any
+  ): OrderedDict<KK, VV>;
+
+  filter(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => unknown,
+    thisArg?: any
+  ): OrderedDict<K, V>;
+
+  filter(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => unknown,
+    thisArg?: any
+  ) {
+    const entries: Array<[K, V]> = [];
+    let index = 0;
+    for (const entry of this) {
+      if (Reflect.apply(predicate, thisArg, [entry, index, this])) {
+        entries.push(entry);
+      }
+      index++;
+    }
+    return new OrderedDict(entries);
+  }
+
+  map<U>(
+    callbackfn: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => U,
+    thisArg?: any
+  ): OrderedDict<K, U> {
+    const entries: [K, U][] = [];
+    let index = 0;
+    for (const entry of this) {
+      entries.push([entry[0], Reflect.apply(callbackfn, thisArg, [entry, index, this])]);
+      index++;
+    }
+    return new OrderedDict(entries);
+  }
+
+  reduce(
+    callbackfn: (
+      previousValue: [K, V],
+      currentEntry: [K, V],
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => [K, V]
+  ): [K, V];
+  reduce(
+    callbackfn: (
+      previousValue: [K, V],
+      currentEntry: [K, V],
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => [K, V],
+    initialValue: [K, V]
+  ): [K, V];
+  reduce<U>(
+    callbackfn: (
+      previousValue: U,
+      currentEntry: [K, V],
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => U,
+    initialValue: U
+  ): U;
+
+  reduce<U>(
+    ...args: [
+      (
+        previousValue: U,
+        currentEntry: [K, V],
+        currentIndex: number,
+        dictionary: OrderedDict<K, V>
+      ) => U,
+      U?,
+    ]
+  ) {
+    const [callbackfn, initialValue] = args;
+    let index = 0;
+    let accumulator = initialValue ?? this.at(0)!;
+    for (const entry of this) {
+      if (index === 0 && args.length === 1) {
+        accumulator = entry as any;
+      } else {
+        accumulator = Reflect.apply(callbackfn, this, [accumulator, entry, index, this]);
+      }
+      index++;
+    }
+    return accumulator;
+  }
+
+  reduceRight(
+    callbackfn: (
+      previousValue: [K, V],
+      currentEntry: [K, V],
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => [K, V]
+  ): [K, V];
+  reduceRight(
+    callbackfn: (
+      previousValue: [K, V],
+      currentEntry: [K, V],
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => [K, V],
+    initialValue: [K, V]
+  ): [K, V];
+  reduceRight<U>(
+    callbackfn: (
+      previousValue: [K, V],
+      currentValue: U,
+      currentIndex: number,
+      dictionary: OrderedDict<K, V>
+    ) => U,
+    initialValue: U
+  ): U;
+
+  reduceRight<U>(
+    ...args: [
+      (
+        previousValue: U,
+        currentEntry: [K, V],
+        currentIndex: number,
+        dictionary: OrderedDict<K, V>
+      ) => U,
+      U?,
+    ]
+  ) {
+    const [callbackfn, initialValue] = args;
+    let accumulator = initialValue ?? this.at(-1)!;
+    for (let index = this.size - 1; index >= 0; index--) {
+      const entry = this.at(index)!;
+      if (index === this.size - 1 && args.length === 1) {
+        accumulator = entry as any;
+      } else {
+        accumulator = Reflect.apply(callbackfn, this, [accumulator, entry, index, this]);
+      }
+    }
+    return accumulator;
+  }
+
+  toSorted(compareFn?: (a: [K, V], b: [K, V]) => number): OrderedDict<K, V> {
+    const entries = [...this.entries()].sort(compareFn);
+    return new OrderedDict(entries);
+  }
+
+  toReversed(): OrderedDict<K, V> {
+    const reversed = new OrderedDict<K, V>();
+    for (let index = this.size - 1; index >= 0; index--) {
+      const key = this.keyAt(index)!;
+      const element = this.get(key)!;
+      reversed.set(key, element);
+    }
+    return reversed;
+  }
+
+  toSpliced(start: number, deleteCount?: number): OrderedDict<K, V>;
+  toSpliced(start: number, deleteCount: number, ...items: [K, V][]): OrderedDict<K, V>;
+
+  toSpliced(...args: [start: number, deleteCount: number, ...items: [K, V][]]) {
+    const entries = [...this.entries()];
+    entries.splice(...args);
+    return new OrderedDict(entries);
+  }
+
+  slice(start?: number, end?: number) {
+    const result = new OrderedDict<K, V>();
+    let stop = this.size - 1;
+
+    if (start === undefined) {
+      return result;
+    }
+
+    if (start < 0) {
+      start = start + this.size;
+    }
+
+    if (end !== undefined && end > 0) {
+      stop = end - 1;
+    }
+
+    for (let index = start; index <= stop; index++) {
+      const key = this.keyAt(index)!;
+      const element = this.get(key)!;
+      result.set(key, element);
+    }
+    return result;
+  }
+
+  every(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => unknown,
+    thisArg?: any
+  ) {
+    let index = 0;
+    for (const entry of this) {
+      if (!Reflect.apply(predicate, thisArg, [entry, index, this])) {
+        return false;
+      }
+      index++;
+    }
+    return true;
+  }
+
+  some(
+    predicate: (entry: [K, V], index: number, dictionary: OrderedDict<K, V>) => unknown,
+    thisArg?: any
+  ) {
+    let index = 0;
+    for (const entry of this) {
+      if (Reflect.apply(predicate, thisArg, [entry, index, this])) {
+        return true;
+      }
+      index++;
+    }
+    return false;
+  }
+}
+
+export type KeyOf<D extends OrderedDict<any, any>> =
+  D extends OrderedDict<infer K, any> ? K : never;
+export type ValueOf<D extends OrderedDict<any, any>> =
+  D extends OrderedDict<any, infer V> ? V : never;
+export type EntryOf<D extends OrderedDict<any, any>> = [KeyOf<D>, ValueOf<D>];
+export type KeyFrom<E extends EntryOf<any>> = E[0];
+export type ValueFrom<E extends EntryOf<any>> = E[1];
+
+function at<T>(array: ArrayLike<T>, index: number): T | undefined {
+  if ('at' in Array.prototype) {
+    return Array.prototype.at.call(array, index);
+  }
+  const actualIndex = toSafeIndex(array, index);
+  return actualIndex === -1 ? undefined : array[actualIndex];
+}
+
+function toSafeIndex(array: ArrayLike<any>, index: number) {
+  const length = array.length;
+  const relativeIndex = toSafeInteger(index);
+  const actualIndex = relativeIndex >= 0 ? relativeIndex : length + relativeIndex;
+  return actualIndex < 0 || actualIndex >= length ? -1 : actualIndex;
+}
+
+function toSafeInteger(number: number) {
+  // eslint-disable-next-line no-self-compare
+  return number !== number || number === 0 ? 0 : Math.trunc(number);
+}
+
+</document_content>
+</document>
+</documents>

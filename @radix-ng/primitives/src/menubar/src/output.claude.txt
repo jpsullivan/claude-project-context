@@ -1,0 +1,174 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-content.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuContentDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarContent]',
+    hostDirectives: [RdxMenuContentDirective]
+})
+export class RdxMenuBarContentDirective {}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-group.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuGroupDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarGroup]',
+    hostDirectives: [RdxMenuGroupDirective]
+})
+export class RdxMenubarGroupDirective {}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-item-checkbox.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuItemCheckboxDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarCheckboxItem]',
+    hostDirectives: [
+        {
+            directive: RdxMenuItemCheckboxDirective,
+            inputs: ['checked', 'disabled']
+        }
+    ]
+})
+export class RdxMenubarItemCheckboxDirective {}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-item-indicator.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuItemIndicatorDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarItemIndicator]',
+    hostDirectives: [RdxMenuItemIndicatorDirective]
+})
+export class RdxMenubarItemIndicatorDirective {}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-item-radio.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuItemRadioDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarItemRadio]',
+    hostDirectives: [
+        {
+            directive: RdxMenuItemRadioDirective,
+            inputs: ['disabled', 'checked']
+        }
+    ]
+})
+export class RdxMenubarItemRadioDirective {}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-item.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuItemDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarItem]',
+    hostDirectives: [
+        {
+            directive: RdxMenuItemDirective,
+            inputs: ['disabled'],
+            outputs: ['onSelect']
+        }
+    ]
+})
+export class RdxMenuBarItemDirective {}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-radio-group.directive.ts</source>
+<document_content>
+import { CdkMenuGroup } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuBarRadioGroup]',
+    hostDirectives: [CdkMenuGroup]
+})
+export class RdxMenubarRadioGroupDirective {}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-root.directive.ts</source>
+<document_content>
+import { CdkMenuBar } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: '[RdxMenuBarRoot]',
+    hostDirectives: [CdkMenuBar],
+    host: {
+        tabindex: '0',
+        '[attr.data-orientation]': '"horizontal"'
+    }
+})
+export class RdxMenuBarRootDirective {}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-separator.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuSeparatorDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarSeparator]',
+    hostDirectives: [RdxMenuSeparatorDirective]
+})
+export class RdxMenubarSeparatorDirective {}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-trigger.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { RdxMenuTriggerDirective } from '@radix-ng/primitives/menu';
+
+@Directive({
+    selector: '[RdxMenuBarTrigger]',
+    hostDirectives: [
+        {
+            directive: RdxMenuTriggerDirective,
+            inputs: [
+                'disabled',
+                'menuTriggerFor',
+                'sideOffset',
+                'side',
+                'align',
+                'alignOffset'
+            ]
+        }
+    ]
+})
+export class RdxMenuBarTriggerDirective {}
+
+</document_content>
+</document>
+</documents>

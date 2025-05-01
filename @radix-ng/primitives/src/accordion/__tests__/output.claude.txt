@@ -1,0 +1,72 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/accordion/__tests__/accordion-content.directive.spec.ts</source>
+<document_content>
+import { RdxAccordionContentDirective } from '../src/accordion-content.directive';
+
+xdescribe('RdxAccordionContentDirective', () => {
+    it('should create an instance', () => {
+        const directive = new RdxAccordionContentDirective();
+        expect(directive).toBeTruthy();
+    });
+});
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/accordion/__tests__/accordion-header.directive.spec.ts</source>
+<document_content>
+import { RdxAccordionHeaderDirective } from '../src/accordion-header.directive';
+
+xdescribe('RdxAccordionHeaderDirective', () => {
+    it('should create an instance', () => {
+        const directive = new RdxAccordionHeaderDirective();
+        expect(directive).toBeTruthy();
+    });
+});
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/accordion/__tests__/accordion-item.directive.spec.ts</source>
+<document_content>
+import { RdxAccordionItemDirective } from '../src/accordion-item.directive';
+
+xdescribe('RdxAccordionItemDirective', () => {
+    it('should create an instance', () => {
+        const directive = new RdxAccordionItemDirective();
+        expect(directive).toBeTruthy();
+    });
+});
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/accordion/__tests__/accordion-root.directive.spec.ts</source>
+<document_content>
+import { RdxAccordionRootDirective } from '../src/accordion-root.directive';
+
+xdescribe('RdxAccordionRootDirective', () => {
+    it('should create an instance', () => {
+        const directive = new RdxAccordionRootDirective();
+        expect(directive).toBeTruthy();
+    });
+});
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/accordion/__tests__/accordion-trigger.directive.spec.ts</source>
+<document_content>
+import { RdxAccordionTriggerDirective } from '../src/accordion-trigger.directive';
+
+xdescribe('RdxAccordionTriggerDirective', () => {
+    it('should create an instance', () => {
+        const directive = new RdxAccordionTriggerDirective();
+        expect(directive).toBeTruthy();
+    });
+});
+
+</document_content>
+</document>
+</documents>

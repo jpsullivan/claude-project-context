@@ -1,0 +1,1915 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-a11y.component.ts
+```typescript
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { RdxVisuallyHiddenDirective } from '@radix-ng/primitives/visually-hidden';
+
+@Component({
+    selector: 'rdx-navigation-menu-focus-proxy',
+    template: `
+        <span
+            [attr.tabindex]="0"
+            [attr.aria-hidden]="true"
+            (focus)="onFocus($event)"
+            rdxVisuallyHidden
+            feature="focusable"
+        ></span>
+    `,
+    imports: [RdxVisuallyHiddenDirective]
+})
+export class RdxNavigationMenuFocusProxyComponent {
+    @Input() triggerElement: HTMLElement | null = null;
+    @Input() contentElement: HTMLElement | null = null;
+    @Output() proxyFocus = new EventEmitter<'start' | 'end'>();
+
+    onFocus(event: FocusEvent): void {
+        const prevFocusedElement = event.relatedTarget as HTMLElement | null;
+        const wasTriggerFocused = prevFocusedElement === this.triggerElement;
+        const wasFocusFromContent = this.contentElement ? this.contentElement.contains(prevFocusedElement) : false;
+
+        if (wasTriggerFocused || !wasFocusFromContent) {
+            this.proxyFocus.emit(wasTriggerFocused ? 'start' : 'end');
+        }
+    }
+}
+
+@Component({
+    selector: 'rdx-navigation-menu-aria-owns',
+    template: `
+        <span [attr.aria-owns]="contentId" rdxVisuallyHidden feature="fully-hidden"></span>
+    `,
+    imports: [RdxVisuallyHiddenDirective]
+})
+export class RdxNavigationMenuAriaOwnsComponent {
+    @Input() contentId: string = '';
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-content.directive.ts
+```typescript
+import {
+    booleanAttribute,
+    Directive,
+    ElementRef,
+    inject,
+    Input,
+    input,
+    NgZone,
+    OnDestroy,
+    OnInit,
+    TemplateRef
+} from '@angular/core';
+import { ESCAPE, injectDocument } from '@radix-ng/primitives/core';
+import { RdxNavigationMenuItemDirective } from './navigation-menu-item.directive';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+import { getMotionAttribute, makeContentId, makeTriggerId } from './utils';
+
+@Directive({
+    selector: '[rdxNavigationMenuContent]'
+})
+export class RdxNavigationMenuContentDirective implements OnInit, OnDestroy {
+    private readonly elementRef = inject(ElementRef);
+    private readonly ngZone = inject(NgZone);
+    private readonly template = inject(TemplateRef);
+    private readonly document = injectDocument();
+    private readonly item = inject(RdxNavigationMenuItemDirective);
+    private readonly context = injectNavigationMenu();
+
+    @Input({ transform: booleanAttribute })
+    set rdxNavigationMenuContent(value: boolean) {
+        // structural directive requires this input even if unused
+    }
+
+    /**
+     * Used to keep the content rendered and available in the DOM, even when closed.
+     * Useful for animations or SEO.
+     * @default false
+     */
+    readonly forceMount = input(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly contentId = makeContentId(this.context.baseId, this.item.value());
+    /** @ignore */
+    readonly triggerId = makeTriggerId(this.context.baseId, this.item.value());
+
+    private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+
+    /** @ignore */
+    ngOnInit() {
+        this.item.contentRef.set(this.elementRef.nativeElement);
+
+        // register template with viewport in root menu via context
+        if (isRootNavigationMenu(this.context) && this.context.onViewportContentChange) {
+            this.context.onViewportContentChange(this.item.value(), {
+                ref: this.elementRef,
+                templateRef: this.template,
+                forceMount: this.forceMount(),
+                value: this.item.value(),
+                getMotionAttribute: this.getMotionAttribute.bind(this),
+                additionalAttrs: {
+                    id: this.contentId,
+                    'aria-labelledby': this.triggerId,
+                    role: 'menu'
+                }
+            });
+        }
+
+        // add Escape key handler
+        this.escapeHandler = (event: KeyboardEvent) => {
+            if (event.key === ESCAPE && this.context.value() === this.item.value()) {
+                // mark that this close was triggered by Escape
+                this.item.wasEscapeCloseRef.set(true);
+
+                // close the content
+                if (this.context.onItemDismiss) {
+                    this.context.onItemDismiss();
+                }
+
+                // refocus the trigger
+                setTimeout(() => {
+                    const trigger = this.item.triggerRef();
+                    if (trigger) trigger.focus();
+                }, 0);
+
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        };
+
+        this.ngZone.runOutsideAngular(() => {
+            if (this.escapeHandler) {
+                this.document.addEventListener('keydown', this.escapeHandler);
+            }
+        });
+    }
+
+    /** @ignore */
+    ngOnDestroy() {
+        // unregister from viewport
+        if (isRootNavigationMenu(this.context) && this.context.onViewportContentRemove) {
+            this.context.onViewportContentRemove(this.item.value());
+        }
+
+        // remove escape key handler
+        if (this.escapeHandler) {
+            this.document.removeEventListener('keydown', this.escapeHandler);
+            this.escapeHandler = null;
+        }
+    }
+
+    /** @ignore - Compute motion attribute for animations */
+    getMotionAttribute(): string | null {
+        if (!isRootNavigationMenu(this.context)) return null;
+
+        const itemValues = Array.from(this.context.viewportContent?.() ?? new Map()).map(([value]) => value);
+
+        return getMotionAttribute(
+            this.context.value(),
+            this.context.previousValue(),
+            this.item.value(),
+            itemValues,
+            this.context.dir
+        );
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-indicator.directive.ts
+```typescript
+import {
+    booleanAttribute,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    inject,
+    input,
+    OnDestroy,
+    Renderer2,
+    runInInjectionContext,
+    signal,
+    untracked
+} from '@angular/core';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+
+@Directive({
+    selector: '[rdxNavigationMenuIndicator]',
+    host: {
+        '[attr.data-state]': 'isVisible() ? "visible" : "hidden"',
+        '[attr.data-orientation]': 'context.orientation',
+        '[style.display]': 'isVisible() ? null : "none"',
+        'aria-hidden': 'true'
+    }
+})
+export class RdxNavigationMenuIndicatorDirective implements OnDestroy {
+    private readonly context = injectNavigationMenu();
+    private readonly elementRef = inject(ElementRef);
+    private readonly renderer = inject(Renderer2);
+
+    /**
+     * Used to keep the indicator rendered and available in the DOM, even when hidden.
+     * Useful for animations.
+     * @default false
+     */
+    readonly forceMount = input(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    private readonly _position = signal<{ size: number; offset: number } | null>(null);
+    /** @ignore */
+    private readonly _activeTrigger = signal<HTMLElement | null>(null);
+    /** @ignore */
+    private readonly _resizeObserver = new ResizeObserver(() => this.updatePosition());
+
+    readonly isVisible = computed(() => Boolean(this.context.value() || this.forceMount()));
+
+    constructor() {
+        // set up effect for tracking active trigger and position
+        effect(() => {
+            // this effect runs when the current value changes
+            const value = this.context.value();
+
+            untracked(() => {
+                if (value && isRootNavigationMenu(this.context)) {
+                    this.findAndSetActiveTrigger();
+                }
+            });
+        });
+
+        // initialize observers for position tracking
+        runInInjectionContext(this.context as any, () => {
+            if (isRootNavigationMenu(this.context) && this.context.indicatorTrack) {
+                const track = this.context.indicatorTrack();
+                if (track) {
+                    // observe size changes on the track
+                    this._resizeObserver.observe(track);
+                }
+
+                // initial position update if menu is open
+                if (this.context.value()) {
+                    setTimeout(() => this.findAndSetActiveTrigger(), 0);
+                }
+            }
+        });
+    }
+
+    /** @ignore */
+    ngOnDestroy() {
+        this._resizeObserver.disconnect();
+    }
+
+    /** @ignore */
+    private findAndSetActiveTrigger(): void {
+        if (!isRootNavigationMenu(this.context) || !this.context.indicatorTrack) return;
+
+        const track = this.context.indicatorTrack();
+        if (!track) return;
+
+        // find all triggers within the track
+        const triggers = Array.from(track.querySelectorAll('[rdxNavigationMenuTrigger]')) as HTMLElement[];
+
+        // find the active trigger based on the current menu value
+        const activeTrigger = triggers.find((trigger) => {
+            const item = trigger.closest('[rdxNavigationMenuItem]');
+            if (!item) return false;
+
+            const value = item.getAttribute('value');
+            return value === this.context.value();
+        });
+
+        if (activeTrigger && activeTrigger !== this._activeTrigger()) {
+            this._activeTrigger.set(activeTrigger);
+            this.updatePosition();
+        }
+    }
+
+    /** @ignore */
+    private updatePosition(): void {
+        const trigger = this._activeTrigger();
+        if (!trigger) return;
+
+        const isHorizontal = this.context.orientation === 'horizontal';
+
+        // calculate new position
+        const newPosition = {
+            size: isHorizontal ? trigger.offsetWidth : trigger.offsetHeight,
+            offset: isHorizontal ? trigger.offsetLeft : trigger.offsetTop
+        };
+
+        // only update if position has changed
+        if (JSON.stringify(newPosition) !== JSON.stringify(this._position())) {
+            this._position.set(newPosition);
+
+            // apply position styles
+            const styles = isHorizontal
+                ? {
+                      position: 'absolute',
+                      left: '0',
+                      width: `${newPosition.size}px`,
+                      transform: `translateX(${newPosition.offset}px)`
+                  }
+                : {
+                      position: 'absolute',
+                      top: '0',
+                      height: `${newPosition.size}px`,
+                      transform: `translateY(${newPosition.offset}px)`
+                  };
+
+            Object.entries(styles).forEach(([key, value]) => {
+                this.renderer.setStyle(this.elementRef.nativeElement, key, value);
+            });
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-item.directive.ts
+```typescript
+import { FocusableOption } from '@angular/cdk/a11y';
+import { contentChild, Directive, ElementRef, inject, input, Signal, signal } from '@angular/core';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+import { RdxNavigationMenuFocusableOption } from './navigation-menu.types';
+import { focusFirst, getTabbableCandidates, removeFromTabOrder } from './utils';
+
+@Directive({
+    selector: '[rdxNavigationMenuItem]',
+    host: {
+        '[attr.value]': 'value()'
+    },
+    exportAs: 'rdxNavigationMenuItem'
+})
+export class RdxNavigationMenuItemDirective implements FocusableOption {
+    readonly elementRef = inject(ElementRef);
+    private readonly context = injectNavigationMenu();
+
+    readonly value = input('');
+
+    /**
+     * @ignore
+     */
+    readonly triggerOrLink = contentChild(RdxNavigationMenuFocusableOption);
+
+    readonly triggerRef = signal<HTMLElement | null>(null);
+    readonly contentRef = signal<HTMLElement | null>(null);
+    readonly focusProxyRef = signal<HTMLElement | null>(null);
+    readonly wasEscapeCloseRef = signal(false);
+
+    private readonly _restoreContentTabOrderRef = signal<(() => void) | null>(null);
+
+    get restoreContentTabOrderRef(): Signal<(() => void) | null> {
+        return this._restoreContentTabOrderRef;
+    }
+
+    /**
+     * Handle keyboard entry into content from trigger
+     */
+    onEntryKeyDown() {
+        // Check if we're using a viewport in a root menu
+        if (isRootNavigationMenu(this.context) && this.context.viewport && this.context.viewport()) {
+            const viewport = this.context.viewport();
+            if (viewport) {
+                // find tabbable elements in the viewport
+                const candidates = getTabbableCandidates(viewport);
+                if (candidates.length) {
+                    this.ensureTabOrder();
+
+                    // focus the first element
+                    focusFirst(candidates);
+                    return;
+                }
+            }
+        }
+
+        // fallback to content if no viewport or no tabbable elements in viewport
+        if (this.contentRef()) {
+            // restore tab order if needed
+            const restoreFn = this._restoreContentTabOrderRef();
+            if (restoreFn) restoreFn();
+
+            // find and focus first tabbable element
+            const candidates = getTabbableCandidates(this.contentRef()!);
+            if (candidates.length) {
+                focusFirst(candidates);
+            }
+        }
+    }
+
+    focus(): void {
+        this.triggerOrLink()?.focus();
+    }
+
+    /**
+     * Ensure elements are in the tab order by restoring any previously removed tabindex values
+     */
+    private ensureTabOrder(): void {
+        const restoreFn = this._restoreContentTabOrderRef();
+        if (restoreFn) {
+            restoreFn();
+            this._restoreContentTabOrderRef.set(null);
+        }
+    }
+
+    /**
+     * Handle focus coming from the focus proxy element
+     * @param side Which side the focus is coming from (start = from trigger, end = from after content)
+     */
+    onFocusProxyEnter(side: 'start' | 'end' = 'start') {
+        // check for viewport first
+        if (isRootNavigationMenu(this.context) && this.context.viewport && this.context.viewport()) {
+            const viewport = this.context.viewport();
+            if (viewport) {
+                const candidates = getTabbableCandidates(viewport);
+                if (candidates.length) {
+                    this.ensureTabOrder();
+
+                    // focus first or last element depending on direction
+                    focusFirst(side === 'start' ? candidates : [...candidates].reverse());
+                    return;
+                }
+            }
+        }
+
+        // fallback to content
+        if (this.contentRef()) {
+            // restore tab order if needed
+            const restoreFn = this._restoreContentTabOrderRef();
+            if (restoreFn) restoreFn();
+
+            // find and focus appropriate element based on direction
+            const candidates = getTabbableCandidates(this.contentRef()!);
+            if (candidates.length) {
+                // Focus first or last element depending on which direction we're coming from
+                focusFirst(side === 'start' ? candidates : [...candidates].reverse());
+            }
+        }
+    }
+
+    /**
+     * Handle focus moving outside of the content
+     * Remove elements from tab order when not focused
+     */
+    onContentFocusOutside() {
+        // get all tabbable elements from both viewport and content
+        let allCandidates: HTMLElement[] = [];
+
+        // check viewport first
+        if (isRootNavigationMenu(this.context) && this.context.viewport && this.context.viewport()) {
+            const viewport = this.context.viewport();
+            if (viewport) {
+                allCandidates = getTabbableCandidates(viewport);
+            }
+        }
+
+        // ... also check direct content
+        if (this.contentRef()) {
+            const contentCandidates = getTabbableCandidates(this.contentRef()!);
+            allCandidates = [...allCandidates, ...contentCandidates];
+        }
+
+        // remove from tab order and store restore function
+        if (allCandidates.length) {
+            this._restoreContentTabOrderRef.set(removeFromTabOrder(allCandidates));
+        }
+    }
+
+    /**
+     * Handle content being closed from root menu
+     */
+    onRootContentClose() {
+        this.onContentFocusOutside();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-link.directive.ts
+```typescript
+import { booleanAttribute, Directive, ElementRef, inject, input, OnInit } from '@angular/core';
+import { ENTER, SPACE } from '@radix-ng/primitives/core';
+import { RdxRovingFocusItemDirective } from '@radix-ng/primitives/roving-focus';
+import { RdxNavigationMenuFocusableOption } from './navigation-menu.types';
+import { generateId } from './utils';
+
+const LINK_SELECT = 'navigationMenu.linkSelect';
+const ROOT_CONTENT_DISMISS = 'navigationMenu.rootContentDismiss';
+
+@Directive({
+    selector: '[rdxNavigationMenuLink]',
+    hostDirectives: [{ directive: RdxRovingFocusItemDirective, inputs: ['focusable'] }],
+    host: {
+        '[attr.data-active]': 'active() ? "" : undefined',
+        '[attr.aria-current]': 'active() ? "page" : undefined',
+        '(click)': 'onClick($event)',
+        '(keydown)': 'onKeydown($event)'
+    },
+    providers: [{ provide: RdxNavigationMenuFocusableOption, useExisting: RdxNavigationMenuLinkDirective }]
+})
+export class RdxNavigationMenuLinkDirective extends RdxNavigationMenuFocusableOption implements OnInit {
+    private readonly rovingFocusItem = inject(RdxRovingFocusItemDirective, { self: true });
+    private readonly uniqueId = generateId();
+    readonly active = input(false, { transform: booleanAttribute });
+    readonly onSelect = input<(event: Event) => void>();
+    readonly elementRef = inject(ElementRef);
+
+    ngOnInit(): void {
+        this.rovingFocusItem.tabStopId = this.elementRef.nativeElement.id || `link-${this.uniqueId}`;
+    }
+
+    override focus(): void {
+        this.elementRef.nativeElement.focus();
+    }
+
+    onClick(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+
+        // dispatch link select event
+        const linkSelectEvent = new CustomEvent(LINK_SELECT, {
+            bubbles: true,
+            cancelable: true
+        });
+
+        // add one-time listener for onSelect handler
+        const onSelect = this.onSelect();
+        if (onSelect) {
+            target.addEventListener(LINK_SELECT, onSelect, { once: true });
+        }
+
+        // dispatch event
+        target.dispatchEvent(linkSelectEvent);
+
+        // if not prevented and not meta key, dismiss content
+        if (!linkSelectEvent.defaultPrevented && !event.metaKey) {
+            const dismissEvent = new CustomEvent(ROOT_CONTENT_DISMISS, {
+                bubbles: true,
+                cancelable: true
+            });
+            target.dispatchEvent(dismissEvent);
+        }
+    }
+
+    onKeydown(event: KeyboardEvent): void {
+        // activate link on Enter or Space
+        if (event.key === ENTER || event.key === SPACE) {
+            // prevent default behavior like scrolling (Space) or form submission (Enter) BEFORE simulating the click.
+            event.preventDefault();
+
+            // simulate a click event on the link element itself
+            const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+            this.elementRef.nativeElement.dispatchEvent(clickEvent);
+
+            return;
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-list.directive.ts
+```typescript
+import { FocusKeyManager } from '@angular/cdk/a11y';
+import {
+    AfterContentInit,
+    AfterViewInit,
+    contentChildren,
+    Directive,
+    ElementRef,
+    forwardRef,
+    inject,
+    Renderer2
+} from '@angular/core';
+import { TAB } from '@radix-ng/primitives/core';
+import { RdxRovingFocusGroupDirective } from '@radix-ng/primitives/roving-focus'; // Import Roving Focus Group
+import { RdxNavigationMenuItemDirective } from './navigation-menu-item.directive';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+
+@Directive({
+    selector: '[rdxNavigationMenuList]',
+    hostDirectives: [RdxRovingFocusGroupDirective],
+    host: {
+        role: 'menubar',
+        '(keydown)': 'onKeydown($event)'
+    }
+})
+export class RdxNavigationMenuListDirective implements AfterContentInit, AfterViewInit {
+    private readonly context = injectNavigationMenu();
+    private readonly elementRef = inject(ElementRef<HTMLElement>);
+    private readonly renderer = inject(Renderer2);
+    private readonly rovingFocusGroup = inject(RdxRovingFocusGroupDirective, { self: true });
+
+    /**
+     * @private
+     * @ignore
+     */
+    readonly items = contentChildren(
+        forwardRef(() => RdxNavigationMenuItemDirective),
+        { descendants: true }
+    );
+
+    /**
+     * @ignore
+     */
+    protected keyManager: FocusKeyManager<RdxNavigationMenuItemDirective>;
+
+    /**
+     * @ignore
+     */
+    ngAfterContentInit(): void {
+        const items = this.items();
+        this.keyManager = new FocusKeyManager(items);
+
+        if (this.context.orientation === 'horizontal') {
+            this.keyManager.withHorizontalOrientation(this.context.dir || 'ltr');
+        } else {
+            this.keyManager.withVerticalOrientation();
+        }
+    }
+
+    /**
+     * @ignore
+     */
+    ngAfterViewInit() {
+        this.rovingFocusGroup.orientation = this.context.orientation;
+        this.rovingFocusGroup.dir = this.context.dir;
+
+        // looping typically only applies to the root menu bar
+        if (isRootNavigationMenu(this.context)) {
+            this.rovingFocusGroup.loop = this.context.loop ?? false;
+        } else {
+            this.rovingFocusGroup.loop = false;
+        }
+
+        if (isRootNavigationMenu(this.context) && this.context.onIndicatorTrackChange) {
+            const listElement = this.elementRef.nativeElement;
+            const parent = listElement.parentNode;
+
+            // ensure parent exists and list hasn't already been wrapped
+            if (parent && !listElement.parentElement?.hasAttribute('data-radix-navigation-menu-list-wrapper')) {
+                // create a wrapper div with relative positioning
+                const wrapper = this.renderer.createElement('div');
+                this.renderer.setAttribute(wrapper, 'data-radix-navigation-menu-list-wrapper', ''); // Add marker
+                this.renderer.setStyle(wrapper, 'position', 'relative');
+
+                // insert the wrapper before the list element in the parent
+                this.renderer.insertBefore(parent, wrapper, listElement);
+
+                // move the list element inside the new wrapper
+                this.renderer.appendChild(wrapper, listElement);
+
+                // register the wrapper element as the track for the indicator positioning
+                this.context.onIndicatorTrackChange(wrapper);
+            } else if (listElement.parentElement?.hasAttribute('data-radix-navigation-menu-list-wrapper')) {
+                // if wrapper somehow already exists, ensure context has the correct reference
+                this.context.onIndicatorTrackChange(listElement.parentElement);
+            }
+        }
+    }
+
+    /**
+     * @ignore
+     */
+    onKeydown(event: KeyboardEvent) {
+        if (!this.keyManager.activeItem) {
+            this.keyManager.setFirstItemActive();
+        }
+
+        if (event.key === TAB && event.shiftKey) {
+            if (this.keyManager.activeItemIndex === 0) return;
+            this.keyManager.setPreviousItemActive();
+            event.preventDefault();
+        } else if (event.key === TAB) {
+            const items = this.items();
+            if (this.keyManager.activeItemIndex === items.length - 1) {
+                return;
+            }
+            this.keyManager.setNextItemActive();
+            event.preventDefault();
+        } else {
+            this.keyManager.onKeydown(event);
+        }
+    }
+
+    /**
+     * @ignore
+     */
+    setActiveItem(item: RdxNavigationMenuItemDirective) {
+        this.keyManager.setActiveItem(item);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-sub.directive.ts
+```typescript
+import { Directive, inject, Input, input, output, signal } from '@angular/core';
+import { RdxNavigationMenuDirective } from './navigation-menu.directive';
+import { provideNavigationMenuContext } from './navigation-menu.token';
+import { generateId } from './utils';
+
+@Directive({
+    selector: '[rdxNavigationMenuSub]',
+    providers: [provideNavigationMenuContext(RdxNavigationMenuSubDirective)],
+    host: {
+        '[attr.data-orientation]': 'orientation()'
+    }
+})
+export class RdxNavigationMenuSubDirective {
+    readonly orientation = input<'horizontal' | 'vertical'>('horizontal');
+    @Input() set defaultValue(val: string) {
+        if (val) this.value.set(val);
+    }
+
+    readonly valueChange = output<string>();
+
+    readonly value = signal<string>('');
+    readonly previousValue = signal<string>('');
+    readonly baseId = `rdx-nav-menu-sub-${generateId()}`;
+    readonly isRootMenu = false;
+
+    private readonly parent = inject(RdxNavigationMenuDirective, { optional: true });
+
+    get dir(): 'ltr' | 'rtl' {
+        if (!this.parent) {
+            return 'ltr';
+        }
+
+        return this.parent.dir || 'ltr';
+    }
+
+    get rootNavigationMenu(): HTMLElement | null {
+        return this.parent?.rootNavigationMenu() || null;
+    }
+
+    onTriggerEnter(itemValue: string) {
+        this.setValue(itemValue);
+    }
+
+    onItemSelect(itemValue: string) {
+        this.setValue(itemValue);
+    }
+
+    onItemDismiss() {
+        this.setValue('');
+    }
+
+    private setValue(value: string) {
+        this.previousValue.set(this.value());
+        this.value.set(value);
+        this.valueChange.emit(value);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-trigger.directive.ts
+```typescript
+import {
+    booleanAttribute,
+    ComponentRef,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    untracked,
+    ViewContainerRef
+} from '@angular/core';
+import { ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, ARROW_UP, ENTER, SPACE, TAB } from '@radix-ng/primitives/core';
+import { RdxRovingFocusItemDirective } from '@radix-ng/primitives/roving-focus';
+import {
+    RdxNavigationMenuAriaOwnsComponent,
+    RdxNavigationMenuFocusProxyComponent
+} from './navigation-menu-a11y.component';
+import { RdxNavigationMenuItemDirective } from './navigation-menu-item.directive';
+import { RdxNavigationMenuListDirective } from './navigation-menu-list.directive';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+import { RdxNavigationMenuFocusableOption } from './navigation-menu.types';
+import { getTabbableCandidates, makeContentId, makeTriggerId } from './utils';
+
+@Directive({
+    selector: '[rdxNavigationMenuTrigger]',
+    hostDirectives: [RdxRovingFocusItemDirective],
+    host: {
+        '[id]': 'triggerId',
+        '[attr.data-state]': 'open() ? "open" : "closed"',
+        '[attr.data-orientation]': 'context.orientation',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[disabled]': 'disabled() ? true : null',
+        '[attr.aria-expanded]': 'open()',
+        '[attr.aria-controls]': 'contentId',
+        '[attr.aria-haspopup]': '"menu"',
+        '(pointerenter)': 'onPointerEnter()',
+        '(pointermove)': 'onPointerMove($event)',
+        '(pointerleave)': 'onPointerLeave($event)',
+        '(click)': 'onClick()',
+        '(keydown)': 'onKeydown($event)',
+        type: 'button'
+    },
+    providers: [{ provide: RdxNavigationMenuFocusableOption, useExisting: RdxNavigationMenuTriggerDirective }]
+})
+export class RdxNavigationMenuTriggerDirective extends RdxNavigationMenuFocusableOption implements OnInit, OnDestroy {
+    private readonly context = injectNavigationMenu();
+    private readonly item = inject(RdxNavigationMenuItemDirective);
+    private readonly list = inject(RdxNavigationMenuListDirective);
+    private readonly rovingFocusItem = inject(RdxRovingFocusItemDirective, { self: true });
+    private readonly elementRef = inject(ElementRef);
+    private readonly viewContainerRef = inject(ViewContainerRef);
+
+    readonly disabled = input(false, { transform: booleanAttribute });
+
+    readonly triggerId = makeTriggerId(this.context.baseId, this.item.value());
+    readonly contentId = makeContentId(this.context.baseId, this.item.value());
+    readonly open = computed(() => {
+        return this.item.value() === this.context.value();
+    });
+
+    private focusProxyRef: ComponentRef<RdxNavigationMenuFocusProxyComponent> | null = null;
+    private ariaOwnsRef: ComponentRef<RdxNavigationMenuAriaOwnsComponent> | null = null;
+
+    private hasPointerMoveOpened = false;
+    private wasClickClose = false;
+
+    constructor() {
+        super();
+
+        effect(() => {
+            this.rovingFocusItem.focusable = !this.disabled();
+        });
+
+        effect(() => {
+            const isOpen = this.open();
+
+            untracked(() => {
+                // handle focus proxy and aria-owns when open state changes
+                if (isOpen) {
+                    this.createAccessibilityComponents();
+                } else {
+                    this.removeAccessibilityComponents();
+
+                    if (!this.item.wasEscapeCloseRef()) {
+                        this.item.onRootContentClose();
+                    }
+
+                    this.hasPointerMoveOpened = false;
+                }
+            });
+        });
+    }
+
+    ngOnInit() {
+        this.item.triggerRef.set(this.elementRef.nativeElement);
+
+        // configure the static part of the roving focus item directive instance
+        this.rovingFocusItem.tabStopId = this.item.value();
+    }
+
+    ngOnDestroy() {
+        this.removeAccessibilityComponents();
+    }
+
+    override focus() {
+        this.elementRef.nativeElement.focus();
+    }
+
+    private createAccessibilityComponents(): void {
+        if (this.focusProxyRef || this.ariaOwnsRef) {
+            return;
+        }
+
+        // create focus proxy component
+        this.focusProxyRef = this.viewContainerRef.createComponent(RdxNavigationMenuFocusProxyComponent);
+        this.focusProxyRef.instance.triggerElement = this.elementRef.nativeElement;
+        this.focusProxyRef.instance.contentElement = this.item.contentRef();
+        this.focusProxyRef.instance.proxyFocus.subscribe((direction: 'start' | 'end') => {
+            this.item.onFocusProxyEnter(direction);
+        });
+
+        // store reference in item directive
+        this.item.focusProxyRef.set(this.focusProxyRef.location.nativeElement);
+
+        // only add aria-owns component if using viewport
+        if (isRootNavigationMenu(this.context) && this.context.viewport && this.context.viewport()) {
+            this.ariaOwnsRef = this.viewContainerRef.createComponent(RdxNavigationMenuAriaOwnsComponent);
+            this.ariaOwnsRef.instance.contentId = this.contentId;
+        }
+    }
+
+    private removeAccessibilityComponents(): void {
+        if (this.focusProxyRef) {
+            this.focusProxyRef.destroy();
+            this.focusProxyRef = null;
+            this.item.focusProxyRef.set(null);
+        }
+
+        if (this.ariaOwnsRef) {
+            this.ariaOwnsRef.destroy();
+            this.ariaOwnsRef = null;
+        }
+    }
+
+    onPointerEnter(): void {
+        // ignore if disabled or not the root menu (hover logic primarily for root)
+        if (this.disabled() || !isRootNavigationMenu(this.context)) return;
+
+        this.wasClickClose = false; // Reset click close flag on enter
+        this.item.wasEscapeCloseRef.set(false); // Reset escape flag
+        this.context.setTriggerPointerState?.(true); // Update context state
+
+        // if the menu isn't already open for this item, trigger the enter logic (handles delays)
+        if (!this.open()) {
+            this.context.onTriggerEnter?.(this.item.value());
+        }
+    }
+
+    onPointerMove(event: PointerEvent): void {
+        // ignore if not a mouse event, disabled, closed by click/escape, or already opened by this move
+        if (
+            event.pointerType !== 'mouse' ||
+            this.disabled() ||
+            this.wasClickClose ||
+            this.item.wasEscapeCloseRef() ||
+            this.hasPointerMoveOpened ||
+            !isRootNavigationMenu(this.context)
+        ) {
+            return;
+        }
+        // trigger enter logic (handles delays) and mark that this move initiated an open attempt
+        this.context.onTriggerEnter?.(this.item.value());
+        this.hasPointerMoveOpened = true;
+    }
+
+    onPointerLeave(event: PointerEvent): void {
+        // ignore if not a mouse event or disabled
+        if (event.pointerType !== 'mouse' || this.disabled() || !isRootNavigationMenu(this.context)) {
+            return;
+        }
+
+        this.context.setTriggerPointerState?.(false); // Update context state
+        this.context.onTriggerLeave?.(); // Trigger leave logic (handles delays)
+        this.hasPointerMoveOpened = false; // Reset flag
+
+        // reset user dismissal flag if pointer leaves the whole system (trigger + content)
+        if (this.context.resetUserDismissed) {
+            // relay slightly to allow pointer movement to content area without resetting dismissal state
+            setTimeout(() => {
+                if (!this.context.isPointerInSystem?.()) {
+                    this.context.resetUserDismissed?.();
+                }
+            }, 50); // small delay for tolerance
+        }
+    }
+
+    onClick(): void {
+        if (this.disabled()) return;
+
+        // manually set the `KeyManager` active item to this trigger
+        this.list.setActiveItem(this.item);
+
+        if (this.context.onItemSelect) {
+            this.context.onItemSelect(this.item.value());
+            // track if this click action resulted in closing the menu
+            this.wasClickClose = !this.open();
+            // reset escape flag if menu was opened by click
+            if (this.open()) {
+                this.item.wasEscapeCloseRef.set(false);
+            }
+        }
+    }
+
+    onKeydown(event: KeyboardEvent): void {
+        if (this.disabled()) return;
+
+        if (event.key === ENTER || event.key === SPACE) {
+            event.preventDefault(); // prevent default button behavior
+            this.onClick();
+
+            // if menu was opened by this keypress, move focus into the content
+            if (this.open()) {
+                // defer focus slightly to ensure content is ready
+                setTimeout(() => this.item.onEntryKeyDown(), 0);
+            }
+            return;
+        }
+
+        const isHorizontal = this.context.orientation === 'horizontal';
+        const isRTL = this.context.dir === 'rtl';
+
+        // handle `ArrowDown` specifically for viewport navigation
+        if (event.key === ARROW_DOWN || event.key === TAB) {
+            if (event.key === ARROW_DOWN) {
+                event.preventDefault();
+            }
+
+            // if the menu is open, focus into the content
+            if (this.open()) {
+                if (event.key === TAB) {
+                    // needed to ensure that the `keyManager` on the list directive does not activate
+                    // any focus updates, shifting focus to the subsequent focusable list item
+                    event.stopImmediatePropagation();
+                }
+
+                // direct focus handling for viewport case
+                if (isRootNavigationMenu(this.context) && this.context.viewport && this.context.viewport()) {
+                    // get the viewport element
+                    const viewport = this.context.viewport();
+                    if (viewport) {
+                        // find all tabbable elements in the viewport
+                        const tabbables = getTabbableCandidates(viewport);
+                        if (tabbables.length > 0) {
+                            // focus the first tabbable element directly
+                            setTimeout(() => {
+                                tabbables[0].focus();
+                            }, 0);
+                            return;
+                        }
+                    }
+                }
+
+                // fallback to the standard entry key down approach
+                setTimeout(() => this.item.onEntryKeyDown(), 0);
+                return;
+            }
+
+            // if not open but in horizontal orientation, emulate right key navigation
+            if (isHorizontal) {
+                const nextEvent = new KeyboardEvent('keydown', {
+                    key: isRTL ? ARROW_LEFT : ARROW_RIGHT,
+                    bubbles: true
+                });
+                this.elementRef.nativeElement.dispatchEvent(nextEvent);
+                return;
+            }
+        }
+
+        // handle ArrowUp in horizontal orientation
+        if (isHorizontal && event.key === ARROW_UP) {
+            event.preventDefault();
+
+            // emulate a left key press to move to the previous item
+            const nextEvent = new KeyboardEvent('keydown', {
+                key: isRTL ? ARROW_RIGHT : ARROW_LEFT,
+                bubbles: true
+            });
+            this.elementRef.nativeElement.dispatchEvent(nextEvent);
+            return;
+        }
+
+        // handle vertical navigation and entry into content
+        const verticalEntryKey = isRTL ? ARROW_LEFT : ARROW_RIGHT;
+        const entryKey = isHorizontal ? ARROW_DOWN : verticalEntryKey;
+
+        if (this.item.contentRef() && event.key === entryKey && event.key !== ARROW_DOWN) {
+            // Skip if it's ArrowDown as we already handled it above
+            event.preventDefault();
+
+            if (!this.open()) {
+                // if closed, open the menu first
+                this.context.onItemSelect?.(this.item.value());
+                // defer focus movement into content until after state update and render
+                setTimeout(() => this.item.onEntryKeyDown(), 0);
+            } else {
+                // if already open, just move focus into the content
+                this.item.onEntryKeyDown();
+            }
+            return;
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu-viewport.directive.ts
+```typescript
+import {
+    booleanAttribute,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    EmbeddedViewRef,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    Renderer2,
+    signal,
+    TemplateRef,
+    untracked,
+    ViewContainerRef
+} from '@angular/core';
+import { ARROW_DOWN, ARROW_UP, injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
+import { getOpenStateLabel, getTabbableCandidates } from './utils';
+
+interface ContentNode {
+    embeddedView: EmbeddedViewRef<unknown>;
+    element: HTMLElement;
+}
+
+@Directive({
+    selector: '[rdxNavigationMenuViewport]',
+    host: {
+        '[attr.data-state]': 'getOpenState()',
+        '[attr.data-orientation]': 'context.orientation',
+        '[style.--radix-navigation-menu-viewport-width.px]': 'viewportSize()?.width',
+        '[style.--radix-navigation-menu-viewport-height.px]': 'viewportSize()?.height',
+        '(keydown)': 'onKeydown($event)',
+        '(pointerenter)': 'onPointerEnter()',
+        '(pointerleave)': 'onPointerLeave()'
+    }
+})
+export class RdxNavigationMenuViewportDirective implements OnInit, OnDestroy {
+    private readonly context = injectNavigationMenu();
+    private readonly document = injectDocument();
+    private readonly window = injectWindow();
+
+    private readonly elementRef = inject(ElementRef);
+    private readonly viewContainerRef = inject(ViewContainerRef);
+    private readonly renderer = inject(Renderer2);
+
+    /**
+     * Used to keep the viewport rendered and available in the DOM, even when closed.
+     * Useful for animations.
+     * @default false
+     */
+    readonly forceMount = input(false, { transform: booleanAttribute });
+
+    private readonly _contentNodes = signal(new Map<string, ContentNode>());
+    private readonly _activeContentNode = signal<ContentNode | null>(null);
+    private readonly _viewportSize = signal<{ width: number; height: number } | null>(null);
+    private readonly _resizeObserver = new ResizeObserver(() => this.updateSize());
+
+    // compute the active content value - either current value if open, or previous value if closing
+    readonly activeContentValue = computed(() => {
+        return this.open ? this.context.value() : this.context.previousValue();
+    });
+
+    // size for viewport CSS variables
+    readonly viewportSize = computed(() => this._viewportSize());
+
+    get open(): boolean {
+        return Boolean(this.context.value() || this.forceMount());
+    }
+
+    onKeydown(event: KeyboardEvent): void {
+        // only handle if viewport is open
+        if (!this.open) return;
+
+        // get all tabbable elements in the viewport
+        const tabbableElements = getTabbableCandidates(this.elementRef.nativeElement);
+        if (!tabbableElements.length) return;
+
+        // find the currently focused element
+        const activeElement = this.document.activeElement as HTMLElement | null;
+        const currentIndex = tabbableElements.findIndex((el) => el === activeElement);
+
+        if (event.key === ARROW_DOWN) {
+            event.preventDefault();
+
+            if (currentIndex >= 0 && currentIndex < tabbableElements.length - 1) {
+                // focus the next element
+                tabbableElements[currentIndex + 1].focus();
+            } else if (currentIndex === -1 || currentIndex === tabbableElements.length - 1) {
+                // if no element is focused or we're at the end, focus the first element
+                tabbableElements[0].focus();
+            }
+        } else if (event.key === ARROW_UP) {
+            event.preventDefault();
+
+            if (currentIndex > 0) {
+                // focus the previous element
+                tabbableElements[currentIndex - 1].focus();
+            } else if (currentIndex === 0) {
+                // if at the first element, loop to the last element
+                tabbableElements[tabbableElements.length - 1].focus();
+            } else if (currentIndex === -1) {
+                // if no element is focused, focus the last element
+                tabbableElements[tabbableElements.length - 1].focus();
+            }
+        }
+    }
+
+    constructor() {
+        // setup effect to manage content
+        effect(() => {
+            const activeValue = this.activeContentValue();
+            const open = this.open;
+
+            untracked(() => {
+                // handle visibility based on open state
+                this.renderer.setStyle(this.elementRef.nativeElement, 'display', open ? 'block' : 'none');
+
+                if (isRootNavigationMenu(this.context) && this.context.viewportContent) {
+                    const viewportContent = this.context.viewportContent();
+
+                    if (viewportContent.has(activeValue)) {
+                        const contentData = viewportContent.get(activeValue);
+
+                        // only render content when we have a templateRef
+                        if (contentData?.templateRef) {
+                            this.renderContent(contentData.templateRef, activeValue);
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    ngOnInit() {
+        // register viewport with context
+        if (isRootNavigationMenu(this.context) && this.context.onViewportChange) {
+            this.context.onViewportChange(this.elementRef.nativeElement);
+        }
+    }
+
+    ngOnDestroy() {
+        this._resizeObserver.disconnect();
+
+        // clear all views
+        this._contentNodes().forEach((node) => {
+            if (node.embeddedView) {
+                node.embeddedView.destroy();
+            }
+        });
+
+        // unregister viewport
+        if (isRootNavigationMenu(this.context) && this.context.onViewportChange) {
+            this.context.onViewportChange(null);
+        }
+    }
+
+    getOpenState() {
+        return getOpenStateLabel(this.open);
+    }
+
+    onPointerEnter(): void {
+        if (isRootNavigationMenu(this.context) && this.context.onContentEnter) {
+            this.context.onContentEnter();
+        }
+
+        // update pointer tracking state
+        if (isRootNavigationMenu(this.context) && this.context.setContentPointerState) {
+            this.context.setContentPointerState(true);
+        }
+    }
+
+    onPointerLeave(): void {
+        if (isRootNavigationMenu(this.context) && this.context.onContentLeave) {
+            this.context.onContentLeave();
+        }
+
+        // Update pointer tracking state
+        if (isRootNavigationMenu(this.context) && this.context.setContentPointerState) {
+            this.context.setContentPointerState(false);
+        }
+    }
+
+    private updateSize() {
+        const activeNode = this._activeContentNode()?.element;
+        if (!activeNode) return;
+
+        // force layout recalculation while keeping element in the DOM
+        this.window.getComputedStyle(activeNode).getPropertyValue('width');
+
+        const firstChild = activeNode.firstChild as HTMLElement;
+        const width = Math.ceil(firstChild.offsetWidth);
+        const height = Math.ceil(firstChild.offsetHeight);
+
+        // update size with valid dimensions (but only if not zero)
+        if (width !== 0 && height !== 0) {
+            this._viewportSize.set({ width, height });
+        }
+    }
+
+    private renderContent(templateRef: TemplateRef<unknown>, contentValue: string) {
+        // check if we already have a view for this content
+        let contentNode = this._contentNodes().get(contentValue);
+
+        if (!contentNode) {
+            try {
+                // create a new embedded view
+                const embeddedView = this.viewContainerRef.createEmbeddedView(templateRef);
+                embeddedView.detectChanges();
+
+                // create a container for the view
+                const container = this.renderer.createElement('div');
+                this.renderer.setAttribute(container, 'class', 'NavigationMenuContentWrapper');
+                this.renderer.setAttribute(container, 'data-content-value', contentValue);
+                this.renderer.setStyle(container, 'width', '100%');
+
+                const viewportContent = this.context.viewportContent && this.context.viewportContent();
+                if (!viewportContent) return;
+
+                const contentData = viewportContent.get(contentValue);
+
+                // apply motion attribute if available
+                if (contentData?.getMotionAttribute) {
+                    const motionAttr = contentData.getMotionAttribute();
+                    if (motionAttr) {
+                        this.renderer.setAttribute(container, 'data-motion', motionAttr);
+                    }
+                }
+
+                // apply additional a11y attributes to the first root node
+                if (contentData?.additionalAttrs && embeddedView.rootNodes.length > 0) {
+                    const rootNode = embeddedView.rootNodes[0];
+                    // check if rootNode has setAttribute (is an Element)
+                    if (rootNode.setAttribute) {
+                        Object.entries(contentData.additionalAttrs).forEach(([attr, value]) => {
+                            // don't override existing attributes that the user might have set manually
+                            if (!rootNode.hasAttribute(attr) || attr === 'id') {
+                                this.renderer.setAttribute(rootNode, attr, value as string);
+                            }
+                        });
+                    }
+                }
+
+                // add each root node to the container
+                embeddedView.rootNodes.forEach((node: Node) => {
+                    this.renderer.appendChild(container, node);
+                });
+
+                // set styles for proper measurement and display
+                this.renderer.setStyle(container, 'position', 'relative');
+                this.renderer.setStyle(container, 'visibility', 'visible');
+                this.renderer.setStyle(container, 'pointer-events', 'auto');
+                this.renderer.setStyle(container, 'display', 'block');
+
+                // store in cache
+                contentNode = { embeddedView, element: container };
+                const newMap = new Map(this._contentNodes());
+                newMap.set(contentValue, contentNode);
+                this._contentNodes.set(newMap);
+            } catch (error) {
+                console.error('Error in renderContent:', error);
+                return;
+            }
+        }
+
+        if (contentNode) {
+            this.updateActiveContent(contentNode);
+        }
+    }
+
+    private updateActiveContent(contentNode: ContentNode) {
+        if (contentNode !== this._activeContentNode()) {
+            // clear viewport
+            if (this.elementRef.nativeElement.firstChild) {
+                this.renderer.removeChild(this.elementRef.nativeElement, this.elementRef.nativeElement.firstChild);
+            }
+
+            // add content to viewport
+            this.renderer.appendChild(this.elementRef.nativeElement, contentNode.element);
+
+            // update active content reference
+            this._activeContentNode.set(contentNode);
+
+            // setup resize observation
+            this._resizeObserver.disconnect();
+            this._resizeObserver.observe(contentNode.element);
+
+            // measure after adding to DOM
+            setTimeout(() => this.updateSize(), 0);
+
+            // measure again after a frame to catch any style changes
+            requestAnimationFrame(() => this.updateSize());
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu.directive.ts
+```typescript
+import {
+    booleanAttribute,
+    Directive,
+    effect,
+    ElementRef,
+    inject,
+    Input,
+    numberAttribute,
+    OnDestroy,
+    signal,
+    WritableSignal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { debounce, map, Subject, tap, timer } from 'rxjs';
+import { provideNavigationMenuContext } from './navigation-menu.token';
+import { RdxNavigationMenuAnimationStatus } from './navigation-menu.types';
+import { generateId } from './utils';
+
+// define action types for clearer intent
+export enum RdxNavigationMenuAction {
+    OPEN = 'open',
+    CLOSE = 'close'
+}
+
+@Directive({
+    selector: '[rdxNavigationMenu]',
+    providers: [provideNavigationMenuContext(RdxNavigationMenuDirective)],
+    host: {
+        '[attr.data-orientation]': 'orientation',
+        '[attr.dir]': 'dir',
+        'aria-label': 'Main',
+        role: 'navigation'
+    },
+    exportAs: 'rdxNavigationMenu'
+})
+export class RdxNavigationMenuDirective implements OnDestroy {
+    private readonly elementRef = inject(ElementRef);
+    private readonly document = injectDocument();
+    private readonly window = injectWindow();
+
+    // State
+    readonly #value = signal<string>('');
+    readonly #previousValue = signal<string>('');
+    readonly baseId = `rdx-nav-menu-${generateId()}`;
+    readonly #indicatorTrack = signal<HTMLElement | null>(null);
+    readonly #viewport = signal<HTMLElement | null>(null);
+    readonly #viewportContent = signal<Map<string, any>>(new Map());
+    readonly #rootNavigationMenu = signal<HTMLElement | null>(this.elementRef.nativeElement);
+
+    readonly #userDismissedByClick = signal(false);
+    userDismissedByClick = () => this.#userDismissedByClick();
+    resetUserDismissed = () => this.#userDismissedByClick.set(false);
+
+    // delay timers
+    private openTimerRef = 0;
+    private closeTimerRef = 0;
+    private skipDelayTimerRef = 0;
+    readonly #isOpenDelayed = signal(true);
+
+    // pointer tracking
+    readonly #isPointerOverContent = signal(false);
+    readonly #isPointerOverTrigger = signal(false);
+    private documentMouseLeaveHandler: ((e: Event) => void) | null = null;
+
+    readonly actionSubject$ = new Subject<{ action: RdxNavigationMenuAction; itemValue?: string }>();
+
+    @Input() orientation: 'horizontal' | 'vertical' = 'horizontal';
+    @Input() dir: 'ltr' | 'rtl' = 'ltr';
+    @Input({ transform: numberAttribute }) delayDuration = 200;
+    @Input({ transform: numberAttribute }) skipDelayDuration = 300;
+    @Input({ transform: booleanAttribute }) loop = false;
+    @Input({ transform: booleanAttribute }) cssAnimation = false;
+    @Input({ transform: booleanAttribute }) cssOpeningAnimation = false;
+    @Input({ transform: booleanAttribute }) cssClosingAnimation = false;
+
+    readonly isRootMenu = true;
+    readonly cssAnimationStatus: WritableSignal<RdxNavigationMenuAnimationStatus | null> = signal(null);
+
+    // exposed state as functions for the token
+    value = () => this.#value();
+    previousValue = () => this.#previousValue();
+    rootNavigationMenu = () => this.#rootNavigationMenu();
+    indicatorTrack = () => this.#indicatorTrack();
+    viewport = () => this.#viewport();
+    viewportContent = () => this.#viewportContent();
+
+    // exposed pointer state
+    setTriggerPointerState = (isOver: boolean) => this.#isPointerOverTrigger.set(isOver);
+    setContentPointerState = (isOver: boolean) => this.#isPointerOverContent.set(isOver);
+    isPointerInSystem = () => this.#isPointerOverContent() || this.#isPointerOverTrigger();
+
+    // exposed  animation state
+    getCssAnimation = () => this.cssAnimation;
+    getCssOpeningAnimation = () => this.cssOpeningAnimation;
+    getCssClosingAnimation = () => this.cssClosingAnimation;
+
+    constructor() {
+        effect(() => {
+            const value = this.#value();
+            if (value) {
+                this.window.clearTimeout(this.skipDelayTimerRef);
+                if (this.skipDelayDuration > 0) {
+                    this.#isOpenDelayed.set(false);
+                }
+            } else {
+                // menu is closed, start skip delay timer
+                this.window.clearTimeout(this.skipDelayTimerRef);
+                this.skipDelayTimerRef = this.window.setTimeout(() => {
+                    this.#isOpenDelayed.set(true);
+                }, this.skipDelayDuration);
+            }
+        });
+
+        this.actionSubject$
+            .pipe(
+                map((config) => {
+                    // different delays for open vs close (better ux)
+                    const duration = config.action === RdxNavigationMenuAction.OPEN ? this.delayDuration : 150;
+                    return { ...config, duration };
+                }),
+                debounce((config) => timer(config.duration)),
+                tap((config) => {
+                    switch (config.action) {
+                        case RdxNavigationMenuAction.OPEN:
+                            if (config.itemValue) {
+                                this.setValue(config.itemValue);
+                            }
+                            break;
+                        case RdxNavigationMenuAction.CLOSE:
+                            // only close if not hovering over any part of the system
+                            if (!this.isPointerInSystem()) {
+                                this.setValue('');
+                            }
+                            break;
+                    }
+                }),
+                takeUntilDestroyed()
+            )
+            .subscribe();
+
+        // set up document mouseleave handler to close menu when mouse leaves window
+        this.documentMouseLeaveHandler = () => this.handleClose();
+        this.document.addEventListener('mouseleave', this.documentMouseLeaveHandler);
+    }
+
+    ngOnDestroy() {
+        this.window.clearTimeout(this.openTimerRef);
+        this.window.clearTimeout(this.closeTimerRef);
+        this.window.clearTimeout(this.skipDelayTimerRef);
+
+        // clean up document event listener
+        if (this.documentMouseLeaveHandler) {
+            document.removeEventListener('mouseleave', this.documentMouseLeaveHandler);
+        }
+    }
+
+    onIndicatorTrackChange(track: HTMLElement | null) {
+        this.#indicatorTrack.set(track);
+    }
+
+    onViewportChange(viewport: HTMLElement | null) {
+        this.#viewport.set(viewport);
+    }
+
+    onTriggerEnter(itemValue: string) {
+        // skip opening if user explicitly dismissed this menu
+        if (this.#userDismissedByClick() && itemValue === this.#previousValue()) {
+            return;
+        }
+
+        this.window.clearTimeout(this.openTimerRef);
+        this.window.clearTimeout(this.closeTimerRef);
+
+        if (this.#isOpenDelayed()) {
+            this.handleDelayedOpen(itemValue);
+        } else {
+            this.handleOpen(itemValue);
+        }
+    }
+
+    onTriggerLeave() {
+        this.window.clearTimeout(this.openTimerRef);
+        this.startCloseTimer();
+    }
+
+    onContentEnter() {
+        this.window.clearTimeout(this.closeTimerRef);
+    }
+
+    onContentLeave() {
+        this.startCloseTimer();
+    }
+
+    handleClose() {
+        this.actionSubject$.next({ action: RdxNavigationMenuAction.CLOSE });
+    }
+
+    onItemSelect(itemValue: string) {
+        const wasOpen = this.#value() === itemValue;
+        const newValue = wasOpen ? '' : itemValue;
+
+        // if user is closing an open menu, mark as user-dismissed
+        if (wasOpen) {
+            this.#userDismissedByClick.set(true);
+        } else {
+            this.#userDismissedByClick.set(false);
+        }
+
+        this.setValue(newValue);
+    }
+
+    onItemDismiss() {
+        this.setValue('');
+    }
+
+    onViewportContentChange(contentValue: string, contentData: any) {
+        const newMap = new Map(this.#viewportContent());
+        newMap.set(contentValue, contentData);
+        this.#viewportContent.set(newMap);
+    }
+
+    onViewportContentRemove(contentValue: string) {
+        const newMap = new Map(this.#viewportContent());
+        if (newMap.has(contentValue)) {
+            newMap.delete(contentValue);
+            this.#viewportContent.set(newMap);
+        }
+    }
+
+    private setValue(value: string) {
+        // Store previous value before changing
+        this.#previousValue.set(this.#value());
+        this.#value.set(value);
+    }
+
+    private startCloseTimer() {
+        this.window.clearTimeout(this.closeTimerRef);
+        this.closeTimerRef = this.window.setTimeout(() => {
+            // only close if not hovering over any part of the system
+            if (!this.isPointerInSystem()) {
+                this.setValue('');
+            }
+        }, 150);
+    }
+
+    private handleOpen(itemValue: string) {
+        this.window.clearTimeout(this.closeTimerRef);
+        this.setValue(itemValue);
+    }
+
+    private handleDelayedOpen(itemValue: string) {
+        const isOpenItem = this.#value() === itemValue;
+        if (isOpenItem) {
+            // if the item is already open, clear close timer
+            this.window.clearTimeout(this.closeTimerRef);
+        } else {
+            // otherwise, start the open timer
+            this.openTimerRef = this.window.setTimeout(() => {
+                this.window.clearTimeout(this.closeTimerRef);
+                this.setValue(itemValue);
+            }, this.delayDuration);
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu.token.ts
+```typescript
+import { inject, InjectionToken, Provider, Type } from '@angular/core';
+import { RdxNavigationMenuSubDirective } from './navigation-menu-sub.directive';
+import { RdxNavigationMenuDirective } from './navigation-menu.directive';
+
+export interface NavigationMenuContext {
+    isRootMenu: boolean;
+    value: () => string;
+    previousValue: () => string;
+    baseId: string;
+    dir: 'ltr' | 'rtl';
+    orientation: 'horizontal' | 'vertical';
+    loop: boolean;
+    rootNavigationMenu: () => HTMLElement | null;
+
+    indicatorTrack?: () => HTMLElement | null;
+    onIndicatorTrackChange?: (track: HTMLElement | null) => void;
+    userDismissedByClick?: () => boolean;
+    resetUserDismissed?: () => void;
+    viewport?: () => HTMLElement | null;
+    onViewportChange?: (viewport: HTMLElement | null) => void;
+    viewportContent?: () => Map<string, any>;
+    onViewportContentChange?: (contentValue: string, contentData: any) => void;
+    onViewportContentRemove?: (contentValue: string) => void;
+    onTriggerEnter?: (itemValue: string) => void;
+    onTriggerLeave?: () => void;
+    onContentEnter?: () => void;
+    onContentLeave?: () => void;
+    onItemSelect?: (itemValue: string) => void;
+    onItemDismiss?: () => void;
+    handleClose?: (force?: boolean) => void;
+    setTriggerPointerState?: (isOver: boolean) => void;
+    setContentPointerState?: (isOver: boolean) => void;
+    isPointerInSystem?: () => boolean;
+}
+
+export const RDX_NAVIGATION_MENU_TOKEN = new InjectionToken<NavigationMenuContext>('RdxNavigationMenuToken');
+
+export function injectNavigationMenu(): NavigationMenuContext {
+    return inject(RDX_NAVIGATION_MENU_TOKEN);
+}
+
+export function isRootNavigationMenu(context: NavigationMenuContext): boolean {
+    return context.isRootMenu;
+}
+
+export function provideNavigationMenuContext(
+    provider: Type<RdxNavigationMenuDirective | RdxNavigationMenuSubDirective>
+): Provider {
+    return {
+        provide: RDX_NAVIGATION_MENU_TOKEN,
+        useExisting: provider
+    };
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/navigation-menu.types.ts
+```typescript
+import { FocusableOption } from '@angular/cdk/a11y';
+
+export enum RdxNavigationMenuAnimationStatus {
+    OPEN_STARTED = 'open_started',
+    OPEN_ENDED = 'open_ended',
+    CLOSED_STARTED = 'closed_started',
+    CLOSED_ENDED = 'closed_ended'
+}
+
+/**
+ * A stub class solely used to query a single type of focusable element in the navigation menu.
+ */
+export abstract class RdxNavigationMenuFocusableOption implements FocusableOption {
+    focus(): void {
+        throw new Error('Method not implemented.');
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/navigation-menu/src/utils.ts
+```typescript
+export type NavigationMenuOrientation = 'horizontal' | 'vertical';
+export type NavigationMenuDirection = 'ltr' | 'rtl';
+export type MotionAttribute = 'to-start' | 'to-end' | 'from-start' | 'from-end';
+
+export const ROOT_CONTENT_DISMISS = 'navigationMenu.rootContentDismiss';
+
+/**
+ * Generate a unique ID
+ */
+export function generateId(): string {
+    return Math.random().toString(36).substring(2, 11);
+}
+
+/**
+ * Get the open state for data-state attribute
+ */
+export function getOpenStateLabel(open: boolean): 'open' | 'closed' {
+    return open ? 'open' : 'closed';
+}
+
+/**
+ * Create a trigger ID from base ID and value
+ */
+export function makeTriggerId(baseId: string, value: string): string {
+    return `${baseId}-trigger-${value}`;
+}
+
+/**
+ * Create a content ID from base ID and value
+ */
+export function makeContentId(baseId: string, value: string): string {
+    return `${baseId}-content-${value}`;
+}
+
+/**
+ * Get the motion attribute for animations
+ */
+export function getMotionAttribute(
+    currentValue: string,
+    previousValue: string,
+    itemValue: string,
+    itemValues: string[],
+    dir: NavigationMenuDirection
+): MotionAttribute | null {
+    // reverse values in RTL
+    const values = dir === 'rtl' ? [...itemValues].reverse() : itemValues;
+
+    const currentIndex = values.indexOf(currentValue);
+    const prevIndex = values.indexOf(previousValue);
+    const isSelected = itemValue === currentValue;
+    const wasSelected = prevIndex === values.indexOf(itemValue);
+
+    // only update selected and last selected content
+    if (!isSelected && !wasSelected) return null;
+
+    // don't provide direction on initial open
+    if (currentIndex !== -1 && prevIndex !== -1) {
+        // if moving to this item from another
+        if (isSelected && prevIndex !== -1) {
+            return currentIndex > prevIndex ? 'from-end' : 'from-start';
+        }
+        // if leaving this item for another
+        if (wasSelected && currentIndex !== -1) {
+            return currentIndex > prevIndex ? 'to-start' : 'to-end';
+        }
+    }
+
+    // otherwise entering/leaving the list entirely
+    return isSelected ? 'from-start' : 'from-end';
+}
+
+/**
+ * Focus the first element in a list of candidates
+ * @param candidates Array of elements that can receive focus
+ * @param preventScroll Whether to prevent scrolling when focusing
+ * @param activateKeyboardNav Whether to dispatch a dummy keydown event to activate keyboard navigation handlers
+ * @returns Whether focus was successfully moved
+ */
+export function focusFirst(candidates: HTMLElement[], preventScroll = false, activateKeyboardNav = true): boolean {
+    const prevFocusedElement = document.activeElement;
+
+    // sort candidates by tabindex to ensure proper order
+    const sortedCandidates = [...candidates].sort((a, b) => {
+        const aIndex = a.tabIndex || 0;
+        const bIndex = b.tabIndex || 0;
+        return aIndex - bIndex;
+    });
+
+    const success = sortedCandidates.some((candidate) => {
+        // if focus is already where we want it, do nothing
+        if (candidate === prevFocusedElement) return true;
+
+        try {
+            candidate.focus({ preventScroll });
+            return document.activeElement !== prevFocusedElement;
+        } catch (e) {
+            console.error('Error focusing element:', e);
+            return false;
+        }
+    });
+
+    // if focus was moved successfully and we want to activate keyboard navigation,
+    // dispatch a dummy keypress to ensure keyboard handlers are activated
+    if (success && activateKeyboardNav && document.activeElement !== prevFocusedElement) {
+        try {
+            // dispatch a no-op keydown event to activate any keyboard handlers
+            document.activeElement?.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'Tab',
+                    code: 'Tab'
+                })
+            );
+        } catch (e) {
+            console.error('Error dispatching keyboard event:', e);
+        }
+    }
+
+    return success;
+}
+
+/**
+ * Get all tabbable candidates in a container
+ */
+export function getTabbableCandidates(container: HTMLElement): HTMLElement[] {
+    if (!container || !container.querySelectorAll) return [];
+
+    const TABBABLE_SELECTOR =
+        'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), ' +
+        'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), ' +
+        '[contenteditable="true"]:not([tabindex="-1"])';
+
+    // use querySelector for better browser support
+    const elements = Array.from(container.querySelectorAll(TABBABLE_SELECTOR)) as HTMLElement[];
+
+    // filter out elements that are hidden, have display:none, etc.
+    return elements.filter((element) => {
+        if (element.tabIndex < 0) return false;
+        if (element.hasAttribute('disabled')) return false;
+        if (element.hasAttribute('aria-hidden') && element.getAttribute('aria-hidden') === 'true') return false;
+
+        // Check if element or any parent is hidden
+        let current: HTMLElement | null = element;
+        while (current) {
+            const style = window.getComputedStyle(current);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                return false;
+            }
+            current = current.parentElement;
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Remove elements from tab order and return a function to restore them
+ */
+export function removeFromTabOrder(candidates: HTMLElement[]): () => void {
+    const originalValues = new Map<HTMLElement, string | null>();
+
+    candidates.forEach((candidate) => {
+        // Store original tabindex
+        originalValues.set(candidate, candidate.getAttribute('tabindex'));
+
+        // Set to -1 to remove from tab order
+        candidate.setAttribute('tabindex', '-1');
+    });
+
+    // Return restore function
+    return () => {
+        candidates.forEach((candidate) => {
+            const originalValue = originalValues.get(candidate);
+            if (originalValue == null) {
+                candidate.removeAttribute('tabindex');
+            } else {
+                candidate.setAttribute('tabindex', originalValue);
+            }
+        });
+    };
+}
+
+/**
+ * Wrap array around itself at given start index
+ */
+export function wrapArray<T>(array: T[], startIndex: number): T[] {
+    return array.map((_, index) => array[(startIndex + index) % array.length]);
+}
+
+```

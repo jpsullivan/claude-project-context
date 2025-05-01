@@ -54,6 +54,455 @@ export class MenubarModule {}
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/stories/menubar.docs.mdx
+````
+import {ArgTypes, Canvas, Markdown, Meta} from "@storybook/blocks";
+import * as MenubarStories from "./menubar.stories";
+import {RdxMenuTriggerDirective} from "../../menu";
+
+<Meta title="Primitives/Menubar" />
+
+# Menu Bar
+
+#### A visually persistent menu common in desktop applications that provides quick access to a consistent set of commands.
+
+<Canvas sourceState="hidden" of={MenubarStories.Default} />
+
+## Features
+
+- ✅ Can be controlled or uncontrolled.
+- ✅ Supports submenus.
+- ✅ Supports items, labels, groups of items.
+- ✅ Supports checkable items (single or multiple).
+- ✅ Customize side, alignment, offsets.
+- ✅ Focus is fully managed.
+- ✅ Full keyboard navigation.
+
+## Anatomy
+
+```html
+<div rdxMenuBarRoot>
+    <div
+        rdxMenuBarItem
+        rdxMenuBarTrigger
+        [menuTriggerFor]="file"
+    >
+        File
+    </div>
+</div>
+
+<ng-template #file>
+    <div rdxMenuBarContent>
+        <div rdxMenuBarItem>New Tab</div>
+        <div rdxMenubarSeparator></div>
+        <div rdxMenuBarItem rdxMenuBarTrigger [menuTriggerFor]="share">
+            Share
+        </div>
+        <div rdxMenubarSeparator></div>
+        <div rdxMenuBarItem>Print…</div>
+    </div>
+</ng-template>
+
+<ng-template #share>
+    <div rdxMenuBarContent>
+        <div rdxMenuBarItem>Undo</div>
+        <div rdxMenuBarItem>Redo</div>
+        <div rdxMenubarSeparator></div>
+        <div rdxMenuBarItem>Cut</div>
+        <div rdxMenuBarItem>Copy</div>
+        <div rdxMenuBarItem>Paste</div>
+    </div>
+</ng-template>
+```
+
+## API Reference
+
+### Root
+Contains all the parts of a menubar and extend `CdkMenuBar`.
+
+
+### Trigger
+The button that toggles the content. By default, the `Content` will position itself against the trigger.
+
+<ArgTypes of={RdxMenuTriggerDirective}/>
+
+<Markdown>
+    {`
+| Data attribute | Value          |
+|----------------|----------------|
+| [data-state]   | <code>"closed" or "open"</code> |
+| [data-highlighted]   | Present when highlighted |
+| [data-disabled]   | Present when disabled |
+`}
+</Markdown>
+
+### Content
+The component that pops out when a menu is open.
+
+### Item
+The component that contains the menubar items.
+
+### Group
+Used to group multiple `Items`.
+
+### Label
+Used to render a label. It won't be focusable using arrow keys.
+
+### CheckboxItem
+An item that can be controlled and rendered like a checkbox.
+
+<Markdown>
+    {`
+| Data attribute | Value          |
+|----------------|----------------|
+| [data-state]   | <code>"closed" or "open"</code> |
+| [data-highlighted]   | Present when highlighted |
+| [data-disabled]   | Present when disabled |
+`}
+</Markdown>
+
+
+### RadioGroup
+Used to group multiple `RadioItems`.
+
+### ItemIndicator
+Renders when the parent `CheckboxItem` or `RadioItem` is checked.
+You can style this element directly, or you can use it as a wrapper to put an icon into, or both.
+
+<Markdown>
+    {`
+| Data attribute | Value          |
+|----------------|----------------|
+| [data-state]   | <code>"checked" or "unchecked"</code> |
+`}
+</Markdown>
+
+### Separator
+Used to visually separate items in a menubar menu.
+
+
+## Accessibility
+Adheres to the [Menu Button WAI-ARIA design pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/) and uses [roving tabindex](https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#kbd_roving_tabindex)
+to manage focus movement among menu items.
+
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/stories/menubar.stories.ts
+```typescript
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { Check, Dot, LucideAngularModule } from 'lucide-angular';
+import { MenubarModule } from '../index';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Menubar',
+    decorators: [
+        moduleMetadata({
+            imports: [MenubarModule, LucideAngularModule, LucideAngularModule.pick({ Check, Dot })]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts rt-Flex rt-r-ai-start rt-r-jc-center rt-r-position-relative"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <div class="MenubarRoot" RdxMenuBarRoot>
+                <div
+                    class="MenubarTrigger"
+                    RdxMenuBarItem
+                    RdxMenuBarTrigger
+                    align="start"
+                    sideOffset="5"
+                    alignOffset="-3"
+                    [menuTriggerFor]="file"
+                >
+                    File
+                </div>
+                <div
+                    class="MenubarTrigger"
+                    align="start"
+                    sideOffset="5"
+                    alignOffset="-3"
+                    RdxMenuBarItem
+                    RdxMenuBarTrigger
+                    [menuTriggerFor]="edit"
+                >
+                    Edit
+                </div>
+                <div
+                    class="MenubarTrigger"
+                    align="start"
+                    sideOffset="5"
+                    alignOffset="-3"
+                    RdxMenuBarItem
+                    RdxMenuBarTrigger
+                    [menuTriggerFor]="view"
+                >
+                    View
+                </div>
+                <div
+                    class="MenubarTrigger"
+                    align="start"
+                    sideOffset="5"
+                    alignOffset="-3"
+                    RdxMenuBarItem
+                    RdxMenuBarTrigger
+                    [menuTriggerFor]="profiles"
+                >
+                    Profiles
+                </div>
+            </div>
+
+            <ng-template #file>
+                <div class="MenubarContent" RdxMenuBarContent>
+                    <div class="MenubarItem" RdxMenuBarItem>
+                        New Tab
+                        <div class="RightSlot">⌘ T</div>
+                    </div>
+                    <div class="MenubarItem" RdxMenuBarItem>
+                        New Window
+                        <div class="RightSlot">⌘ N</div>
+                    </div>
+                    <div class="MenubarItem" RdxMenuBarItem disabled>New Incognito Window</div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem" RdxMenuBarItem RdxMenuBarTrigger [menuTriggerFor]="share">
+                        Share
+                        <div class="RightSlot">></div>
+                    </div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem" RdxMenuBarItem>
+                        Print…
+                        <div class="RightSlot">⌘ P</div>
+                    </div>
+                </div>
+            </ng-template>
+
+            <ng-template #profiles>
+                <div class="MenubarContent" RdxMenuBarContent>
+                    <div RdxMenuBarRadioGroup>
+                        <div class="MenubarRadioItem inset" RdxMenuBarItemRadio>
+                            <lucide-icon
+                                class="MenubarItemIndicator"
+                                size="16"
+                                strokeWidth="5"
+                                RdxMenuBarItemIndicator
+                                name="dot"
+                            />
+                            Andy
+                        </div>
+                        <div class="MenubarRadioItem inset" RdxMenuBarItemRadio checked>
+                            <lucide-icon
+                                class="MenubarItemIndicator"
+                                size="16"
+                                strokeWidth="5"
+                                RdxMenuBarItemIndicator
+                                name="dot"
+                            />
+                            Luis
+                        </div>
+                    </div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem inset" RdxMenuBarItem>Edit</div>
+                </div>
+            </ng-template>
+
+            <ng-template #view>
+                <div class="MenubarContent" RdxMenuBarContent>
+                    <div class="MenubarCheckboxItem inset" RdxMenuBarCheckboxItem>
+                        <lucide-icon class="MenubarItemIndicator" RdxMenuBarItemIndicator size="16" name="check" />
+                        Always Show Bookmarks Bar
+                    </div>
+                    <div class="MenubarCheckboxItem inset" RdxMenuBarCheckboxItem [checked]="true">
+                        <lucide-icon class="MenubarItemIndicator" RdxMenuBarItemIndicator size="16" name="check" />
+                        Always Show Full URLs
+                    </div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem inset" RdxMenuBarItem>
+                        Reload
+                        <div class="RightSlot">⌘ R</div>
+                    </div>
+                    <div class="MenubarItem inset" RdxMenuBarItem disabled>
+                        Force Reload
+                        <div class="RightSlot">⇧ ⌘ R</div>
+                    </div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem inset" RdxMenuBarItem>Toggle Fullscreen</div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem inset" RdxMenuBarItem>Hide Sidebar</div>
+                </div>
+            </ng-template>
+
+            <ng-template #edit>
+                <div class="MenubarContent" RdxMenuBarContent>
+                    <div class="MenubarItem" RdxMenuBarItem>
+                        Undo
+                        <div class="RightSlot">⌘ Z</div>
+                    </div>
+                    <div class="MenubarItem" RdxMenuBarItem>
+                        Redo
+                        <div class="RightSlot">⇧ ⌘ Z</div>
+                    </div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem" RdxMenuBarItem>Cut</div>
+                    <div class="MenubarItem" RdxMenuBarItem>Copy</div>
+                    <div class="MenubarItem" RdxMenuBarItem>Paste</div>
+                </div>
+            </ng-template>
+
+            <ng-template #share>
+                <div class="MenubarSubContent" RdxMenuBarContent>
+                    <div class="MenubarItem" RdxMenuBarItem>Undo</div>
+                    <div class="MenubarItem" RdxMenuBarItem>Redo</div>
+                    <div class="MenubarSeparator" RdxMenuBarSeparator></div>
+                    <div class="MenubarItem" RdxMenuBarItem>Cut</div>
+                    <div class="MenubarItem" RdxMenuBarItem>Copy</div>
+                    <div class="MenubarItem" RdxMenuBarItem>Paste</div>
+                </div>
+            </ng-template>
+
+            <style>
+                /* reset */
+                button {
+                    all: unset;
+                }
+
+                .MenubarRoot {
+                    display: flex;
+                    background-color: white;
+                    padding: 3px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 10px var(--black-a7);
+                }
+
+                .MenubarTrigger {
+                    padding: 8px 12px;
+                    outline: none;
+                    user-select: none;
+                    font-weight: 500;
+                    line-height: 1;
+                    border-radius: 4px;
+                    color: var(--violet-11);
+                    font-size: 13px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 2px;
+                }
+
+                .MenubarTrigger[data-highlighted],
+                .MenubarTrigger[data-state='open'] {
+                    background-color: var(--violet-4);
+                }
+
+                .MenubarContent,
+                .MenubarSubContent {
+                    min-width: 220px;
+                    background-color: white;
+                    border-radius: 6px;
+                    padding: 5px;
+                    box-shadow:
+                        0px 10px 38px -10px rgba(22, 23, 24, 0.35),
+                        0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+                    animation-duration: 400ms;
+                    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+                    will-change: transform, opacity;
+                }
+
+                .MenubarItem,
+                .MenubarSubTrigger,
+                .MenubarCheckboxItem,
+                .MenubarRadioItem {
+                    all: unset;
+                    font-size: 13px;
+                    line-height: 1;
+                    color: var(--violet-11);
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    height: 25px;
+                    padding: 0 10px;
+                    position: relative;
+                    user-select: none;
+                }
+
+                .MenubarItem.inset,
+                .MenubarSubTrigger.inset,
+                .MenubarCheckboxItem.inset,
+                .MenubarRadioItem.inset {
+                    padding-left: 20px;
+                }
+
+                .MenubarItem[data-state='open'],
+                .MenubarSubTrigger[data-state='open'] {
+                    background-color: var(--violet-4);
+                    color: var(--violet-11);
+                }
+
+                .MenubarItem[data-highlighted],
+                .MenubarSubTrigger[data-highlighted],
+                .MenubarCheckboxItem[data-highlighted],
+                .MenubarRadioItem[data-highlighted] {
+                    background-image: linear-gradient(135deg, var(--violet-9) 0%, var(--violet-10) 100%);
+                    color: var(--violet-1);
+                }
+
+                .MenubarItem[data-disabled],
+                .MenubarSubTrigger[data-disabled],
+                .MenubarCheckboxItem[data-disabled],
+                .MenubarRadioItem[data-disabled] {
+                    color: var(--mauve-8);
+                    pointer-events: none;
+                }
+
+                .MenubarItemIndicator {
+                    position: absolute;
+                    left: 0;
+                    width: 20px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .MenubarSeparator {
+                    height: 1px;
+                    background-color: var(--violet-6);
+                    margin: 5px;
+                }
+
+                .RightSlot {
+                    margin-left: auto;
+                    padding-left: 20px;
+                    color: var(--mauve-9);
+                }
+
+                [data-highlighted] > .RightSlot {
+                    color: white;
+                }
+
+                [data-disabled] > .RightSlot {
+                    color: var(--mauve-8);
+                }
+            </style>
+        `
+    })
+};
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/menubar/src/menubar-content.directive.ts
 ```typescript
 import { Directive } from '@angular/core';

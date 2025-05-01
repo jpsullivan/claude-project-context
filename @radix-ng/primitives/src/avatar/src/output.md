@@ -1,0 +1,192 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/src/avatar-fallback.directive.ts
+```typescript
+import { computed, Directive, effect, inject, input, OnDestroy, signal } from '@angular/core';
+import { RdxAvatarRootContext } from './avatar-root.directive';
+import { injectAvatarConfig } from './avatar.config';
+
+/**
+ * @group Components
+ */
+@Directive({
+    selector: 'span[rdxAvatarFallback]',
+    standalone: true,
+    exportAs: 'rdxAvatarFallback',
+    host: {
+        '[style.display]': 'shouldRender() ? null : "none" '
+    }
+})
+export class RdxAvatarFallbackDirective implements OnDestroy {
+    protected readonly avatarRoot = inject(RdxAvatarRootContext);
+
+    private readonly config = injectAvatarConfig();
+
+    /**
+     * Useful for delaying rendering so it only appears for those with slower connections.
+     *
+     * @group Props
+     * @defaultValue 0
+     */
+    readonly delayMs = input<number>(this.config.delayMs);
+
+    readonly shouldRender = computed(() => this.canRender() && this.avatarRoot.imageLoadingStatus() !== 'loaded');
+
+    protected readonly canRender = signal(false);
+    private timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    constructor() {
+        effect(() => {
+            const status = this.avatarRoot.imageLoadingStatus();
+            if (status === 'loading') {
+                this.startDelayTimer();
+            } else {
+                this.clearDelayTimer();
+                this.canRender.set(true);
+            }
+        });
+    }
+
+    private startDelayTimer() {
+        this.clearDelayTimer();
+        if (this.delayMs() > 0) {
+            this.timeoutId = setTimeout(() => {
+                this.canRender.set(true);
+            }, this.delayMs());
+        } else {
+            this.canRender.set(true);
+        }
+    }
+
+    private clearDelayTimer() {
+        if (this.timeoutId !== null) {
+            clearTimeout(this.timeoutId);
+            this.timeoutId = null;
+        }
+    }
+
+    ngOnDestroy() {
+        this.clearDelayTimer();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/src/avatar-image.directive.ts
+```typescript
+import { computed, Directive, ElementRef, inject, input, OnInit, output } from '@angular/core';
+import { RdxAvatarRootContext, RdxImageLoadingStatus } from './avatar-root.directive';
+
+/**
+ * @group Components
+ */
+@Directive({
+    selector: 'img[rdxAvatarImage]',
+    standalone: true,
+    exportAs: 'rdxAvatarImage',
+    host: {
+        '(load)': 'onLoad()',
+        '(error)': 'onError()',
+        '[style.display]': '(imageLoadingStatus() === "loaded")? null : "none"'
+    }
+})
+export class RdxAvatarImageDirective implements OnInit {
+    private readonly avatarRoot = inject(RdxAvatarRootContext);
+    private readonly elementRef = inject(ElementRef<HTMLImageElement>);
+
+    /**
+     * @group Props
+     */
+    readonly src = input<string>();
+
+    /**
+     * A callback providing information about the loading status of the image.
+     * This is useful in case you want to control more precisely what to render as the image is loading.
+     *
+     * @group Emits
+     */
+    readonly onLoadingStatusChange = output<RdxImageLoadingStatus>();
+
+    protected readonly imageLoadingStatus = computed(() => this.avatarRoot.imageLoadingStatus());
+
+    ngOnInit(): void {
+        this.nativeElement.src = this.src();
+
+        if (!this.nativeElement.src) {
+            this.setImageStatus('error');
+        } else if (this.nativeElement.complete) {
+            this.setImageStatus('loaded');
+        } else {
+            this.setImageStatus('loading');
+        }
+    }
+
+    onLoad() {
+        this.setImageStatus('loaded');
+    }
+
+    onError() {
+        this.setImageStatus('error');
+    }
+
+    private setImageStatus(status: RdxImageLoadingStatus) {
+        this.avatarRoot.imageLoadingStatus.set(status);
+        this.onLoadingStatusChange.emit(status);
+    }
+
+    get nativeElement() {
+        return this.elementRef.nativeElement;
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/src/avatar-root.directive.ts
+```typescript
+import { Directive, Injectable, signal } from '@angular/core';
+
+export type RdxImageLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
+@Injectable()
+export class RdxAvatarRootContext {
+    readonly imageLoadingStatus = signal<RdxImageLoadingStatus>('loading');
+}
+
+@Directive({
+    selector: 'span[rdxAvatarRoot]',
+    exportAs: 'rdxAvatarRoot',
+    standalone: true,
+    providers: [RdxAvatarRootContext]
+})
+export class RdxAvatarRootDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/src/avatar.config.ts
+```typescript
+import { inject, InjectionToken, Provider } from '@angular/core';
+
+export interface RdxAvatarConfig {
+    /**
+     * Define a delay before the fallback is shown.
+     * This is useful to only show the fallback for those with slower connections.
+     * @default 0
+     */
+    delayMs: number;
+}
+
+export const defaultAvatarConfig: RdxAvatarConfig = {
+    delayMs: 0
+};
+
+export const RdxAvatarConfigToken = new InjectionToken<RdxAvatarConfig>('RdxAvatarConfigToken');
+
+export function provideRdxAvatarConfig(config: Partial<RdxAvatarConfig>): Provider[] {
+    return [
+        {
+            provide: RdxAvatarConfigToken,
+            useValue: { ...defaultAvatarConfig, ...config }
+        }
+    ];
+}
+
+export function injectAvatarConfig(): RdxAvatarConfig {
+    return inject(RdxAvatarConfigToken, { optional: true }) ?? defaultAvatarConfig;
+}
+
+```

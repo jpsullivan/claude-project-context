@@ -46,6 +46,179 @@ export class RdxSliderModule {}
 </document_content>
 </document>
 <document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/stories/slider.docs.mdx</source>
+<document_content>
+import { ArgTypes, Canvas, Meta } from '@storybook/blocks';
+import * as SliderStories from './slider.stories';
+import { RdxSliderRootComponent } from '../src/slider-root.component';
+
+<Meta title="Primitives/Slider" />
+
+# Slider
+
+#### An input where the user selects a value from within a given range.
+
+<Canvas sourceState="hidden" of={SliderStories.Default} />
+
+## Features
+
+- ✅ Can be controlled or uncontrolled.
+- ✅ Supports multiple thumbs.
+- ✅ Supports a minimum value between thumbs.
+- ✅ Supports touch or click on track to update value.
+- ✅ Supports Right to Left direction.
+- ✅ Full keyboard navigation.
+
+## Anatomy
+
+Import all parts and piece them together.
+
+
+```html
+<rdx-slider>
+    <rdx-slider-track >
+        <rdx-slider-range />
+    </rdx-slider-track>
+    <rdx-slider-thumb />
+</rdx-slider>
+```
+
+## API Reference
+
+<ArgTypes of={RdxSliderRootComponent} />
+
+## Accessibility
+Adheres to the [Slider WAI-ARIA design pattern](https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb).
+
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/stories/slider.stories.ts</source>
+<document_content>
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxSliderRangeComponent } from '../src/slider-range.component';
+import { RdxSliderRootComponent } from '../src/slider-root.component';
+import { RdxSliderThumbComponent } from '../src/slider-thumb.component';
+import { RdxSliderTrackComponent } from '../src/slider-track.component';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Slider',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                RdxSliderRootComponent,
+                RdxSliderTrackComponent,
+                RdxSliderRangeComponent,
+                RdxSliderThumbComponent
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div class="radix-themes light light-theme" data-radius="medium" data-scaling="100%">
+                    ${story}
+
+                    <style>
+                        /*Look at root main.scss*/
+                    </style>
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <rdx-slider styleClass="SliderRoot" [modelValue]="[45]" [step]="5">
+                <rdx-slider-track class="SliderTrack">
+                    <rdx-slider-range class="SliderRange" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumb" />
+            </rdx-slider>
+        `
+    })
+};
+
+export const Inverted: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <rdx-slider styleClass="SliderRoot" inverted [modelValue]="[45]" [step]="5">
+                <rdx-slider-track class="SliderTrack">
+                    <rdx-slider-range class="SliderRange" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumb" />
+            </rdx-slider>
+        `
+    })
+};
+
+export const Thumbs: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <rdx-slider styleClass="SliderRoot" [modelValue]="[45, 80]" [step]="5">
+                <rdx-slider-track class="SliderTrack">
+                    <rdx-slider-range class="SliderRange" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumb" />
+                <rdx-slider-thumb class="SliderThumb" />
+            </rdx-slider>
+        `
+    })
+};
+
+export const Vertical: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <rdx-slider styleClass="SliderRootV" [orientation]="'vertical'" [modelValue]="[45]" [step]="5">
+                <rdx-slider-track class="SliderTrackV">
+                    <rdx-slider-range class="SliderRangeV" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumbV" />
+            </rdx-slider>
+
+            <rdx-slider styleClass="SliderRoot" [orientation]="'horizontal'" [modelValue]="[45]" [step]="5">
+                <rdx-slider-track class="SliderTrack">
+                    <rdx-slider-range class="SliderRange" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumb" />
+            </rdx-slider>
+        `
+    })
+};
+
+export const VerticalInverted: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <rdx-slider
+                styleClass="SliderRootV"
+                style="display: flex; height: 200px;"
+                inverted
+                [orientation]="'vertical'"
+                [modelValue]="[45]"
+                [step]="5"
+            >
+                <rdx-slider-track class="SliderTrackV">
+                    <rdx-slider-range class="SliderRangeV" />
+                </rdx-slider-track>
+                <rdx-slider-thumb class="SliderThumbV" />
+            </rdx-slider>
+        `
+    })
+};
+
+</document_content>
+</document>
+<document index="6">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-horizontal.component.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';
@@ -149,7 +322,7 @@ export class RdxSliderHorizontalComponent {
 
 </document_content>
 </document>
-<document index="5">
+<document index="7">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-impl.directive.ts</source>
 <document_content>
 import { Directive, inject, output } from '@angular/core';
@@ -227,7 +400,7 @@ export class RdxSliderImplDirective {
 
 </document_content>
 </document>
-<document index="6">
+<document index="8">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-orientation-context.service.ts</source>
 <document_content>
 import { Injectable, signal } from '@angular/core';
@@ -262,7 +435,7 @@ export class RdxSliderOrientationContextService {
 
 </document_content>
 </document>
-<document index="7">
+<document index="9">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-range.component.ts</source>
 <document_content>
 import { Component, computed, inject } from '@angular/core';
@@ -304,7 +477,7 @@ export class RdxSliderRangeComponent {
 
 </document_content>
 </document>
-<document index="8">
+<document index="10">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-root.component.ts</source>
 <document_content>
 import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
@@ -589,7 +762,7 @@ export class RdxSliderRootComponent implements OnInit {
 
 </document_content>
 </document>
-<document index="9">
+<document index="11">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-thumb-impl.directive.ts</source>
 <document_content>
 import { isPlatformBrowser } from '@angular/common';
@@ -714,7 +887,7 @@ export class RdxSliderThumbImplDirective implements OnInit, OnDestroy {
 
 </document_content>
 </document>
-<document index="10">
+<document index="12">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-thumb.component.ts</source>
 <document_content>
 import { Component } from '@angular/core';
@@ -731,7 +904,7 @@ export class RdxSliderThumbComponent {}
 
 </document_content>
 </document>
-<document index="11">
+<document index="13">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-track.component.ts</source>
 <document_content>
 import { Component, inject } from '@angular/core';
@@ -753,7 +926,7 @@ export class RdxSliderTrackComponent {
 
 </document_content>
 </document>
-<document index="12">
+<document index="14">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/slider-vertical.component.ts</source>
 <document_content>
 import { BooleanInput } from '@angular/cdk/coercion';
@@ -857,7 +1030,7 @@ export class RdxSliderVerticalComponent {
 
 </document_content>
 </document>
-<document index="13">
+<document index="15">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/slider/src/utils.ts</source>
 <document_content>
 // https://github.com/tmcw-up-for-adoption/simple-linear-scale/blob/master/index.js

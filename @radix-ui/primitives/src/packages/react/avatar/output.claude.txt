@@ -1,0 +1,681 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/CHANGELOG.md</source>
+<document_content>
+# @radix-ui/react-avatar
+
+## 1.1.6
+
+- Fix breaking `useSyncExternalStore` import in Avatar
+
+## 1.1.5
+
+- Updated dependencies: `@radix-ui/react-primitive@2.1.0`
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/README.md</source>
+<document_content>
+# `react-avatar`
+
+View docs [here](https://radix-ui.com/primitives/docs/components/avatar).
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/eslint.config.mjs</source>
+<document_content>
+// @ts-check
+import { configs } from '@repo/eslint-config/react-package';
+
+export default configs;
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/package.json</source>
+<document_content>
+{
+  "name": "@radix-ui/react-avatar",
+  "version": "1.1.6",
+  "license": "MIT",
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "lint": "eslint --max-warnings 0 src",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "build": "radix-build"
+  },
+  "dependencies": {
+    "@radix-ui/react-context": "workspace:*",
+    "@radix-ui/react-primitive": "workspace:*",
+    "@radix-ui/react-use-callback-ref": "workspace:*",
+    "@radix-ui/react-use-is-hydrated": "workspace:*",
+    "@radix-ui/react-use-layout-effect": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/builder": "workspace:*",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "eslint": "^9.18.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.7.3"
+  },
+  "peerDependencies": {
+    "@types/react": "*",
+    "@types/react-dom": "*",
+    "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc",
+    "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    },
+    "@types/react-dom": {
+      "optional": true
+    }
+  },
+  "homepage": "https://radix-ui.com/primitives",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/radix-ui/primitives.git"
+  },
+  "bugs": {
+    "url": "https://github.com/radix-ui/primitives/issues"
+  }
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/tsconfig.json</source>
+<document_content>
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@repo/typescript-config/react-library"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/src/avatar.test.tsx</source>
+<document_content>
+import { axe } from 'vitest-axe';
+import type { RenderResult } from '@testing-library/react';
+import { cleanup, render, waitFor } from '@testing-library/react';
+import * as Avatar from './avatar';
+import * as React from 'react';
+import { renderToString } from 'react-dom/server';
+import { afterEach, describe, it, beforeAll, afterAll, beforeEach, vi, expect } from 'vitest';
+
+const ROOT_TEST_ID = 'avatar-root';
+const FALLBACK_TEXT = 'AB';
+const IMAGE_ALT_TEXT = 'Fake Avatar';
+const DELAY = 300;
+const cache = new Set<string>();
+
+describe('given an Avatar with fallback and no image', () => {
+  afterEach(cleanup);
+
+  const ui = (
+    <Avatar.Root data-testid={ROOT_TEST_ID}>
+      <Avatar.Fallback>{FALLBACK_TEXT}</Avatar.Fallback>
+    </Avatar.Root>
+  );
+
+  it('should have no accessibility violations', async () => {
+    const rendered = render(ui);
+    expect(await axe(rendered.container)).toHaveNoViolations();
+  });
+
+  it('should work with SSR', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    container.innerHTML = renderToString(ui);
+    const rendered = render(ui, { hydrate: true, container });
+    const fallback = rendered.queryByText(FALLBACK_TEXT);
+    expect(fallback).toBeInTheDocument();
+  });
+});
+
+describe('given an Avatar with fallback and an image', () => {
+  let rendered: RenderResult;
+  let image: HTMLElement | null = null;
+  const originalGlobalImage = window.Image;
+  const ui = (src?: string) => (
+    <Avatar.Root data-testid={ROOT_TEST_ID}>
+      <Avatar.Fallback>{FALLBACK_TEXT}</Avatar.Fallback>
+      <Avatar.Image src={src} alt={IMAGE_ALT_TEXT} />
+    </Avatar.Root>
+  );
+
+  beforeAll(() => {
+    (window.Image as any) = MockImage;
+  });
+
+  afterAll(() => {
+    window.Image = originalGlobalImage;
+    vi.restoreAllMocks();
+  });
+
+  afterEach(cleanup);
+
+  beforeEach(() => {
+    cache.clear();
+    rendered = render(ui('/test.png'));
+  });
+
+  it('should render the fallback initially', () => {
+    const fallback = rendered.queryByText(FALLBACK_TEXT);
+    expect(fallback).toBeInTheDocument();
+  });
+
+  it('should not render the image initially', () => {
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+  });
+
+  it('should render the image after it has loaded', async () => {
+    image = await rendered.findByRole('img');
+    expect(image).toBeInTheDocument();
+  });
+
+  it('should have alt text on the image', async () => {
+    image = await rendered.findByAltText(IMAGE_ALT_TEXT);
+    expect(image).toBeInTheDocument();
+  });
+
+  it('does not leak event listeners', async () => {
+    rendered.unmount();
+    const addEventListenerSpy = vi.spyOn(window.Image.prototype, 'addEventListener');
+    const removeEventListenerSpy = vi.spyOn(window.Image.prototype, 'removeEventListener');
+    rendered = render(ui('/test.png'));
+    rendered.unmount();
+    expect(addEventListenerSpy.mock.calls.length).toEqual(removeEventListenerSpy.mock.calls.length);
+  });
+
+  it('can handle changing src', async () => {
+    image = await rendered.findByRole('img');
+    expect(image).toBeInTheDocument();
+    rendered.rerender(ui('/test2.png'));
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+    image = await rendered.findByRole('img');
+    expect(image).toBeInTheDocument();
+  });
+
+  it('should render the image immediately after it is cached', async () => {
+    image = await rendered.findByRole('img');
+    expect(image).toBeInTheDocument();
+
+    rendered.unmount();
+    rendered = render(ui('/test.png'));
+    image = rendered.queryByRole('img');
+    expect(image).toBeInTheDocument();
+  });
+
+  it('should not render image with no src', async () => {
+    rendered.rerender(ui());
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+    rendered.unmount();
+    rendered = render(ui());
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+  });
+
+  it('should not render image with empty string as src', async () => {
+    rendered.rerender(ui(''));
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+    rendered.unmount();
+    rendered = render(ui(''));
+    image = rendered.queryByRole('img');
+    expect(image).not.toBeInTheDocument();
+  });
+
+  it('should show fallback if image has no data', async () => {
+    rendered.unmount();
+    const spy = vi.spyOn(window.Image.prototype, 'naturalWidth', 'get');
+    spy.mockReturnValue(0);
+    rendered = render(ui('/test.png'));
+    const fallback = rendered.queryByText(FALLBACK_TEXT);
+    expect(fallback).toBeInTheDocument();
+    spy.mockRestore();
+  });
+
+  describe('SSR', () => {
+    afterEach(cleanup);
+
+    function renderAndHydrate(ui: React.ReactElement) {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      container.innerHTML = renderToString(ui);
+      return render(ui, { hydrate: true, container });
+    }
+
+    it('can render with working image', async () => {
+      const rendered = renderAndHydrate(ui('/test.png'));
+      let image = rendered.queryByRole('img');
+      expect(image).not.toBeInTheDocument();
+
+      image = await rendered.findByRole('img');
+      expect(image).toBeInTheDocument();
+    });
+
+    it('can render with no src', () => {
+      const rendered = renderAndHydrate(ui());
+      const image = rendered.queryByRole('img');
+      expect(image).not.toBeInTheDocument();
+      const fallback = rendered.queryByText(FALLBACK_TEXT);
+      expect(fallback).toBeInTheDocument();
+    });
+  });
+});
+
+describe('given an Avatar with fallback and delayed render', () => {
+  let rendered: RenderResult;
+  let fallback: HTMLElement | null;
+
+  beforeEach(() => {
+    rendered = render(
+      <Avatar.Root data-testid={ROOT_TEST_ID}>
+        <Avatar.Fallback delayMs={DELAY}>{FALLBACK_TEXT}</Avatar.Fallback>
+      </Avatar.Root>
+    );
+  });
+
+  afterEach(cleanup);
+
+  it('should not render a fallback immediately', () => {
+    fallback = rendered.queryByText(FALLBACK_TEXT);
+    expect(fallback).not.toBeInTheDocument();
+  });
+
+  it('should render a fallback after the delay', async () => {
+    fallback = rendered.queryByText(FALLBACK_TEXT);
+    expect(fallback).not.toBeInTheDocument();
+    fallback = await rendered.findByText(FALLBACK_TEXT);
+    expect(fallback).toBeInTheDocument();
+  });
+});
+
+describe('given an Avatar with an image that only works when referrerPolicy=no-referrer', () => {
+  let rendered: RenderResult;
+  const originalGlobalImage = window.Image;
+  const ui = (src?: string, referrerPolicy?: React.HTMLAttributeReferrerPolicy) => (
+    <Avatar.Root data-testid={ROOT_TEST_ID}>
+      <Avatar.Fallback>{FALLBACK_TEXT}</Avatar.Fallback>
+      <Avatar.Image src={src} alt={IMAGE_ALT_TEXT} referrerPolicy={referrerPolicy} />
+    </Avatar.Root>
+  );
+
+  beforeAll(() => {
+    (window.Image as any) = class MockNoReferrerImage extends MockImage {
+      referrerPolicy: string | undefined;
+
+      onSrcChange() {
+        setTimeout(() => {
+          if (this.referrerPolicy === 'no-referrer') {
+            this.dispatchEvent(new Event('load'));
+          } else {
+            this.dispatchEvent(new Event('error'));
+          }
+        }, DELAY);
+      }
+    };
+  });
+
+  afterAll(() => {
+    window.Image = originalGlobalImage;
+    vi.restoreAllMocks();
+  });
+
+  afterEach(cleanup);
+
+  describe('referrerPolicy=no-referrer', () => {
+    beforeEach(() => {
+      cache.clear();
+      rendered = render(ui('/test.png', 'no-referrer'));
+    });
+
+    it('should render the fallback initially', () => {
+      const fallback = rendered.queryByText(FALLBACK_TEXT);
+      expect(fallback).toBeInTheDocument();
+    });
+
+    it('should not render the image initially', () => {
+      const image = rendered.queryByRole('img');
+      expect(image).not.toBeInTheDocument();
+    });
+
+    it('should render the image after it has loaded', async () => {
+      const image = await rendered.findByRole('img');
+      expect(image).toBeInTheDocument();
+    });
+
+    it('should have alt text on the image', async () => {
+      const image = await rendered.findByAltText(IMAGE_ALT_TEXT);
+      expect(image).toBeInTheDocument();
+    });
+  });
+
+  describe('referrerPolicy=origin', () => {
+    beforeEach(() => {
+      cache.clear();
+      rendered = render(ui('/test.png', 'origin'));
+    });
+
+    it('should render the fallback initially', () => {
+      const fallback = rendered.queryByText(FALLBACK_TEXT);
+      expect(fallback).toBeInTheDocument();
+    });
+
+    it('should never render the image', async () => {
+      try {
+        await waitFor(() => rendered.getByRole('img'), {
+          timeout: DELAY + 100,
+        });
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).name).toBe('TestingLibraryElementError');
+        expect((error as Error).message).toContain('Unable to find role="img"');
+      }
+    });
+  });
+});
+
+class MockImage extends EventTarget {
+  _src: string = '';
+
+  constructor() {
+    super();
+    return this;
+  }
+
+  get src() {
+    return this._src;
+  }
+
+  set src(src: string) {
+    if (!src) {
+      return;
+    }
+    this._src = src;
+    this.onSrcChange();
+  }
+
+  get complete() {
+    return !this.src || cache.has(this.src);
+  }
+
+  get naturalWidth() {
+    return this.complete ? 300 : 0;
+  }
+
+  onSrcChange() {
+    setTimeout(() => {
+      this.dispatchEvent(new Event('load'));
+      cache.add(this.src);
+    }, DELAY);
+  }
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/src/avatar.tsx</source>
+<document_content>
+import * as React from 'react';
+import { createContextScope } from '@radix-ui/react-context';
+import { useCallbackRef } from '@radix-ui/react-use-callback-ref';
+import { useLayoutEffect } from '@radix-ui/react-use-layout-effect';
+import { Primitive } from '@radix-ui/react-primitive';
+import { useIsHydrated } from '@radix-ui/react-use-is-hydrated';
+
+import type { Scope } from '@radix-ui/react-context';
+
+/* -------------------------------------------------------------------------------------------------
+ * Avatar
+ * -----------------------------------------------------------------------------------------------*/
+
+const AVATAR_NAME = 'Avatar';
+
+type ScopedProps<P> = P & { __scopeAvatar?: Scope };
+const [createAvatarContext, createAvatarScope] = createContextScope(AVATAR_NAME);
+
+type ImageLoadingStatus = 'idle' | 'loading' | 'loaded' | 'error';
+
+type AvatarContextValue = {
+  imageLoadingStatus: ImageLoadingStatus;
+  onImageLoadingStatusChange(status: ImageLoadingStatus): void;
+};
+
+const [AvatarProvider, useAvatarContext] = createAvatarContext<AvatarContextValue>(AVATAR_NAME);
+
+type AvatarElement = React.ElementRef<typeof Primitive.span>;
+type PrimitiveSpanProps = React.ComponentPropsWithoutRef<typeof Primitive.span>;
+interface AvatarProps extends PrimitiveSpanProps {}
+
+const Avatar = React.forwardRef<AvatarElement, AvatarProps>(
+  (props: ScopedProps<AvatarProps>, forwardedRef) => {
+    const { __scopeAvatar, ...avatarProps } = props;
+    const [imageLoadingStatus, setImageLoadingStatus] = React.useState<ImageLoadingStatus>('idle');
+    return (
+      <AvatarProvider
+        scope={__scopeAvatar}
+        imageLoadingStatus={imageLoadingStatus}
+        onImageLoadingStatusChange={setImageLoadingStatus}
+      >
+        <Primitive.span {...avatarProps} ref={forwardedRef} />
+      </AvatarProvider>
+    );
+  }
+);
+
+Avatar.displayName = AVATAR_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * AvatarImage
+ * -----------------------------------------------------------------------------------------------*/
+
+const IMAGE_NAME = 'AvatarImage';
+
+type AvatarImageElement = React.ElementRef<typeof Primitive.img>;
+type PrimitiveImageProps = React.ComponentPropsWithoutRef<typeof Primitive.img>;
+interface AvatarImageProps extends PrimitiveImageProps {
+  onLoadingStatusChange?: (status: ImageLoadingStatus) => void;
+}
+
+const AvatarImage = React.forwardRef<AvatarImageElement, AvatarImageProps>(
+  (props: ScopedProps<AvatarImageProps>, forwardedRef) => {
+    const { __scopeAvatar, src, onLoadingStatusChange = () => {}, ...imageProps } = props;
+    const context = useAvatarContext(IMAGE_NAME, __scopeAvatar);
+    const imageLoadingStatus = useImageLoadingStatus(src, imageProps);
+    const handleLoadingStatusChange = useCallbackRef((status: ImageLoadingStatus) => {
+      onLoadingStatusChange(status);
+      context.onImageLoadingStatusChange(status);
+    });
+
+    useLayoutEffect(() => {
+      if (imageLoadingStatus !== 'idle') {
+        handleLoadingStatusChange(imageLoadingStatus);
+      }
+    }, [imageLoadingStatus, handleLoadingStatusChange]);
+
+    return imageLoadingStatus === 'loaded' ? (
+      <Primitive.img {...imageProps} ref={forwardedRef} src={src} />
+    ) : null;
+  }
+);
+
+AvatarImage.displayName = IMAGE_NAME;
+
+/* -------------------------------------------------------------------------------------------------
+ * AvatarFallback
+ * -----------------------------------------------------------------------------------------------*/
+
+const FALLBACK_NAME = 'AvatarFallback';
+
+type AvatarFallbackElement = React.ElementRef<typeof Primitive.span>;
+interface AvatarFallbackProps extends PrimitiveSpanProps {
+  delayMs?: number;
+}
+
+const AvatarFallback = React.forwardRef<AvatarFallbackElement, AvatarFallbackProps>(
+  (props: ScopedProps<AvatarFallbackProps>, forwardedRef) => {
+    const { __scopeAvatar, delayMs, ...fallbackProps } = props;
+    const context = useAvatarContext(FALLBACK_NAME, __scopeAvatar);
+    const [canRender, setCanRender] = React.useState(delayMs === undefined);
+
+    React.useEffect(() => {
+      if (delayMs !== undefined) {
+        const timerId = window.setTimeout(() => setCanRender(true), delayMs);
+        return () => window.clearTimeout(timerId);
+      }
+    }, [delayMs]);
+
+    return canRender && context.imageLoadingStatus !== 'loaded' ? (
+      <Primitive.span {...fallbackProps} ref={forwardedRef} />
+    ) : null;
+  }
+);
+
+AvatarFallback.displayName = FALLBACK_NAME;
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function resolveLoadingStatus(image: HTMLImageElement | null, src?: string): ImageLoadingStatus {
+  if (!image) {
+    return 'idle';
+  }
+  if (!src) {
+    return 'error';
+  }
+  if (image.src !== src) {
+    image.src = src;
+  }
+  return image.complete && image.naturalWidth > 0 ? 'loaded' : 'loading';
+}
+
+function useImageLoadingStatus(
+  src: string | undefined,
+  { referrerPolicy, crossOrigin }: AvatarImageProps
+) {
+  const isHydrated = useIsHydrated();
+  const imageRef = React.useRef<HTMLImageElement | null>(null);
+  const image = (() => {
+    if (!isHydrated) return null;
+    if (!imageRef.current) {
+      imageRef.current = new window.Image();
+    }
+    return imageRef.current;
+  })();
+
+  const [loadingStatus, setLoadingStatus] = React.useState<ImageLoadingStatus>(() =>
+    resolveLoadingStatus(image, src)
+  );
+
+  useLayoutEffect(() => {
+    setLoadingStatus(resolveLoadingStatus(image, src));
+  }, [image, src]);
+
+  useLayoutEffect(() => {
+    const updateStatus = (status: ImageLoadingStatus) => () => {
+      setLoadingStatus(status);
+    };
+
+    if (!image) return;
+
+    const handleLoad = updateStatus('loaded');
+    const handleError = updateStatus('error');
+    image.addEventListener('load', handleLoad);
+    image.addEventListener('error', handleError);
+    if (referrerPolicy) {
+      image.referrerPolicy = referrerPolicy;
+    }
+    if (typeof crossOrigin === 'string') {
+      image.crossOrigin = crossOrigin;
+    }
+
+    return () => {
+      image.removeEventListener('load', handleLoad);
+      image.removeEventListener('error', handleError);
+    };
+  }, [image, crossOrigin, referrerPolicy]);
+
+  return loadingStatus;
+}
+
+const Root = Avatar;
+const Image = AvatarImage;
+const Fallback = AvatarFallback;
+
+export {
+  createAvatarScope,
+  //
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  //
+  Root,
+  Image,
+  Fallback,
+};
+export type { AvatarProps, AvatarImageProps, AvatarFallbackProps };
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/avatar/src/index.ts</source>
+<document_content>
+'use client';
+export {
+  createAvatarScope,
+  //
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  //
+  Root,
+  Image,
+  Fallback,
+} from './avatar';
+export type { AvatarProps, AvatarImageProps, AvatarFallbackProps } from './avatar';
+
+</document_content>
+</document>
+</documents>

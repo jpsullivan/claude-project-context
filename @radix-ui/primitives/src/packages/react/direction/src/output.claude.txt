@@ -1,0 +1,55 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/direction/src/direction.tsx</source>
+<document_content>
+import * as React from 'react';
+
+type Direction = 'ltr' | 'rtl';
+const DirectionContext = React.createContext<Direction | undefined>(undefined);
+
+/* -------------------------------------------------------------------------------------------------
+ * Direction
+ * -----------------------------------------------------------------------------------------------*/
+
+interface DirectionProviderProps {
+  children?: React.ReactNode;
+  dir: Direction;
+}
+const DirectionProvider: React.FC<DirectionProviderProps> = (props) => {
+  const { dir, children } = props;
+  return <DirectionContext.Provider value={dir}>{children}</DirectionContext.Provider>;
+};
+
+/* -----------------------------------------------------------------------------------------------*/
+
+function useDirection(localDir?: Direction) {
+  const globalDir = React.useContext(DirectionContext);
+  return localDir || globalDir || 'ltr';
+}
+
+const Provider = DirectionProvider;
+
+export {
+  useDirection,
+  //
+  Provider,
+  //
+  DirectionProvider,
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/direction/src/index.ts</source>
+<document_content>
+export {
+  useDirection,
+  //
+  Provider,
+  //
+  DirectionProvider,
+} from './direction';
+
+</document_content>
+</document>
+</documents>

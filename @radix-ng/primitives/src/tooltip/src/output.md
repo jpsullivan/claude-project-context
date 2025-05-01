@@ -1,0 +1,1503 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-anchor.directive.ts
+```typescript
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, forwardRef, inject } from '@angular/core';
+import { injectDocument } from '@radix-ng/primitives/core';
+import { RdxTooltipAnchorToken } from './tooltip-anchor.token';
+import { RdxTooltipRootDirective } from './tooltip-root.directive';
+import { injectTooltipRoot } from './tooltip-root.inject';
+
+@Directive({
+    selector: '[rdxTooltipAnchor]',
+    exportAs: 'rdxTooltipAnchor',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        type: 'button',
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '(click)': 'click()'
+    },
+    providers: [
+        {
+            provide: RdxTooltipAnchorToken,
+            useExisting: forwardRef(() => RdxTooltipAnchorDirective)
+        }
+    ]
+})
+export class RdxTooltipAnchorDirective {
+    /**
+     * @ignore
+     * If outside the rootDirective then null, otherwise the rootDirective directive - with optional `true` passed in as the first param.
+     * If outside the rootDirective and non-null value that means the html structure is wrong - tooltip inside tooltip.
+     * */
+    protected rootDirective = injectTooltipRoot(true);
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+    /** @ignore */
+    readonly document = injectDocument();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-tooltip-external-anchor-${this.rootDirective?.uniqueId()}`);
+
+    /** @ignore */
+    click(): void {
+        this.emitOutsideClick();
+    }
+
+    /** @ignore */
+    setRoot(root: RdxTooltipRootDirective) {
+        this.rootDirective = root;
+    }
+
+    private emitOutsideClick() {
+        if (!this.rootDirective?.isOpen() || this.rootDirective?.contentDirective().onOverlayOutsideClickDisabled()) {
+            return;
+        }
+        const clickEvent = new MouseEvent('click', {
+            view: this.document.defaultView,
+            bubbles: true,
+            cancelable: true,
+            relatedTarget: this.elementRef.nativeElement
+        });
+        this.rootDirective?.triggerDirective().elementRef.nativeElement.dispatchEvent(clickEvent);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-anchor.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxTooltipAnchorDirective } from './tooltip-anchor.directive';
+
+export const RdxTooltipAnchorToken = new InjectionToken<RdxTooltipAnchorDirective>('RdxTooltipAnchorToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-arrow.directive.ts
+```typescript
+import { NumberInput } from '@angular/cdk/coercion';
+import { ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
+import {
+    afterNextRender,
+    computed,
+    Directive,
+    effect,
+    ElementRef,
+    forwardRef,
+    inject,
+    input,
+    numberAttribute,
+    Renderer2,
+    signal,
+    untracked
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+    getArrowPositionParams,
+    getSideAndAlignFromAllPossibleConnectedPositions,
+    RDX_POSITIONING_DEFAULTS
+} from '@radix-ng/primitives/core';
+import { RdxTooltipArrowToken } from './tooltip-arrow.token';
+import { injectTooltipRoot } from './tooltip-root.inject';
+
+@Directive({
+    selector: '[rdxTooltipArrow]',
+    providers: [
+        {
+            provide: RdxTooltipArrowToken,
+            useExisting: forwardRef(() => RdxTooltipArrowDirective)
+        }
+    ]
+})
+export class RdxTooltipArrowDirective {
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+    /** @ignore */
+    private readonly rootDirective = injectTooltipRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+
+    /**
+     * @description The width of the arrow in pixels.
+     * @default 10
+     */
+    readonly width = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.width, { transform: numberAttribute });
+
+    /**
+     * @description The height of the arrow in pixels.
+     * @default 5
+     */
+    readonly height = input<number, NumberInput>(RDX_POSITIONING_DEFAULTS.arrow.height, { transform: numberAttribute });
+
+    /** @ignore */
+    readonly arrowSvgElement = computed<HTMLElement>(() => {
+        const width = this.width();
+        const height = this.height();
+
+        const svgElement = this.renderer.createElement('svg', 'svg');
+        this.renderer.setAttribute(svgElement, 'viewBox', '0 0 30 10');
+        this.renderer.setAttribute(svgElement, 'width', String(width));
+        this.renderer.setAttribute(svgElement, 'height', String(height));
+        const polygonElement = this.renderer.createElement('polygon', 'svg');
+        this.renderer.setAttribute(polygonElement, 'points', '0,0 30,0 15,10');
+        this.renderer.setAttribute(svgElement, 'preserveAspectRatio', 'none');
+        this.renderer.appendChild(svgElement, polygonElement);
+
+        return svgElement;
+    });
+
+    /** @ignore */
+    private readonly currentArrowSvgElement = signal<HTMLOrSVGElement | undefined>(void 0);
+    /** @ignore */
+    private readonly position = toSignal(this.rootDirective.contentDirective().positionChange());
+
+    /** @ignore */
+    private anchorOrTriggerRect: DOMRect;
+
+    constructor() {
+        afterNextRender({
+            write: () => {
+                if (this.elementRef.nativeElement.parentElement) {
+                    this.renderer.setStyle(this.elementRef.nativeElement.parentElement, 'position', 'relative');
+                }
+                this.renderer.setStyle(this.elementRef.nativeElement, 'position', 'absolute');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'boxSizing', '');
+                this.renderer.setStyle(this.elementRef.nativeElement, 'fontSize', '0px');
+            }
+        });
+        this.onArrowSvgElementChangeEffect();
+        this.onContentPositionAndArrowDimensionsChangeEffect();
+    }
+
+    /** @ignore */
+    private setAnchorOrTriggerRect() {
+        this.anchorOrTriggerRect = (
+            this.rootDirective.anchorDirective() ?? this.rootDirective.triggerDirective()
+        ).elementRef.nativeElement.getBoundingClientRect();
+    }
+
+    /** @ignore */
+    private setPosition(position: ConnectedOverlayPositionChange, arrowDimensions: { width: number; height: number }) {
+        this.setAnchorOrTriggerRect();
+        const posParams = getArrowPositionParams(
+            getSideAndAlignFromAllPossibleConnectedPositions(position.connectionPair),
+            { width: arrowDimensions.width, height: arrowDimensions.height },
+            { width: this.anchorOrTriggerRect.width, height: this.anchorOrTriggerRect.height }
+        );
+
+        this.renderer.setStyle(this.elementRef.nativeElement, 'top', posParams.top);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'bottom', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'left', posParams.left);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'right', '');
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transform', posParams.transform);
+        this.renderer.setStyle(this.elementRef.nativeElement, 'transformOrigin', posParams.transformOrigin);
+    }
+
+    /** @ignore */
+    private onArrowSvgElementChangeEffect() {
+        effect(() => {
+            const arrowElement = this.arrowSvgElement();
+            untracked(() => {
+                const currentArrowSvgElement = this.currentArrowSvgElement();
+                if (currentArrowSvgElement) {
+                    this.renderer.removeChild(this.elementRef.nativeElement, currentArrowSvgElement);
+                }
+                this.currentArrowSvgElement.set(arrowElement);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'width', `${this.width()}px`);
+                this.renderer.setStyle(this.elementRef.nativeElement, 'height', `${this.height()}px`);
+                this.renderer.appendChild(this.elementRef.nativeElement, this.currentArrowSvgElement());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onContentPositionAndArrowDimensionsChangeEffect() {
+        effect(() => {
+            const position = this.position();
+            const arrowDimensions = { width: this.width(), height: this.height() };
+            untracked(() => {
+                if (!position) {
+                    return;
+                }
+                this.setPosition(position, arrowDimensions);
+            });
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-arrow.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxTooltipArrowDirective } from './tooltip-arrow.directive';
+
+export const RdxTooltipArrowToken = new InjectionToken<RdxTooltipArrowDirective>('RdxTooltipArrowToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-close.directive.ts
+```typescript
+import { Directive, effect, ElementRef, forwardRef, inject, Renderer2, untracked } from '@angular/core';
+import { RdxTooltipCloseToken } from './tooltip-close.token';
+import { injectTooltipRoot } from './tooltip-root.inject';
+
+/**
+ * TODO: to be removed? But it seems to be useful when controlled from outside
+ */
+@Directive({
+    selector: '[rdxTooltipClose]',
+    host: {
+        type: 'button',
+        '(click)': 'rootDirective.handleClose(true)'
+    },
+    providers: [
+        {
+            provide: RdxTooltipCloseToken,
+            useExisting: forwardRef(() => RdxTooltipCloseDirective)
+        }
+    ]
+})
+export class RdxTooltipCloseDirective {
+    /** @ignore */
+    protected readonly rootDirective = injectTooltipRoot();
+    /** @ignore */
+    readonly elementRef = inject(ElementRef);
+    /** @ignore */
+    private readonly renderer = inject(Renderer2);
+
+    constructor() {
+        this.onIsControlledExternallyEffect();
+    }
+
+    /** @ignore */
+    private onIsControlledExternallyEffect() {
+        effect(() => {
+            const isControlledExternally = this.rootDirective.controlledExternally()();
+
+            untracked(() => {
+                this.renderer.setStyle(
+                    this.elementRef.nativeElement,
+                    'display',
+                    isControlledExternally ? null : 'none'
+                );
+            });
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-close.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxTooltipCloseDirective } from './tooltip-close.directive';
+
+export const RdxTooltipCloseToken = new InjectionToken<RdxTooltipCloseDirective>('RdxTooltipCloseToken');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-content-attributes.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, computed, forwardRef } from '@angular/core';
+import { RdxTooltipContentAttributesToken } from './tooltip-content-attributes.token';
+import { injectTooltipRoot } from './tooltip-root.inject';
+import { RdxTooltipAnimationStatus, RdxTooltipState } from './tooltip.types';
+
+@Component({
+    selector: '[rdxTooltipContentAttributes]',
+    template: `
+        <ng-content />
+    `,
+    host: {
+        '[attr.role]': '"dialog"',
+        '[attr.id]': 'name()',
+        '[attr.data-state]': 'rootDirective.state()',
+        '[attr.data-side]': 'rootDirective.contentDirective().side()',
+        '[attr.data-align]': 'rootDirective.contentDirective().align()',
+        '[style]': 'disableAnimation() ? {animation: "none !important"} : null',
+        '(animationstart)': 'onAnimationStart($event)',
+        '(animationend)': 'onAnimationEnd($event)',
+        '(pointerenter)': 'pointerenter()',
+        '(pointerleave)': 'pointerleave()',
+        '(focus)': 'focus()',
+        '(blur)': 'blur()'
+    },
+    providers: [
+        {
+            provide: RdxTooltipContentAttributesToken,
+            useExisting: forwardRef(() => RdxTooltipContentAttributesComponent)
+        }
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class RdxTooltipContentAttributesComponent {
+    /** @ignore */
+    protected readonly rootDirective = injectTooltipRoot();
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-tooltip-content-attributes-${this.rootDirective.uniqueId()}`);
+
+    /** @ignore */
+    readonly disableAnimation = computed(() => !this.canAnimate());
+
+    /** @ignore */
+    protected onAnimationStart(_: AnimationEvent) {
+        this.rootDirective.cssAnimationStatus.set(
+            this.rootDirective.state() === RdxTooltipState.OPEN
+                ? RdxTooltipAnimationStatus.OPEN_STARTED
+                : RdxTooltipAnimationStatus.CLOSED_STARTED
+        );
+    }
+
+    /** @ignore */
+    protected onAnimationEnd(_: AnimationEvent) {
+        this.rootDirective.cssAnimationStatus.set(
+            this.rootDirective.state() === RdxTooltipState.OPEN
+                ? RdxTooltipAnimationStatus.OPEN_ENDED
+                : RdxTooltipAnimationStatus.CLOSED_ENDED
+        );
+    }
+
+    /** @ignore */
+    protected pointerenter(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected pointerleave(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    protected focus(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    protected blur(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    private canAnimate() {
+        return (
+            this.rootDirective.cssAnimation() &&
+            ((this.rootDirective.cssOpeningAnimation() && this.rootDirective.state() === RdxTooltipState.OPEN) ||
+                (this.rootDirective.cssClosingAnimation() && this.rootDirective.state() === RdxTooltipState.CLOSED))
+        );
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-content-attributes.token.ts
+```typescript
+import { InjectionToken } from '@angular/core';
+import { RdxTooltipContentAttributesComponent } from './tooltip-content-attributes.component';
+
+export const RdxTooltipContentAttributesToken = new InjectionToken<RdxTooltipContentAttributesComponent>(
+    'RdxTooltipContentAttributesToken'
+);
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-content.directive.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { CdkConnectedOverlay, Overlay } from '@angular/cdk/overlay';
+import {
+    booleanAttribute,
+    computed,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    OnInit,
+    output,
+    SimpleChange,
+    TemplateRef,
+    untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    getAllPossibleConnectedPositions,
+    getContentPosition,
+    RDX_POSITIONING_DEFAULTS,
+    RdxPositionAlign,
+    RdxPositionSide,
+    RdxPositionSideAndAlignOffsets
+} from '@radix-ng/primitives/core';
+import { filter, tap } from 'rxjs';
+import { injectTooltipRoot } from './tooltip-root.inject';
+import { RdxTooltipAttachDetachEvent } from './tooltip.types';
+
+@Directive({
+    selector: '[rdxTooltipContent]',
+    hostDirectives: [
+        CdkConnectedOverlay
+    ]
+})
+export class RdxTooltipContentDirective implements OnInit {
+    /** @ignore */
+    private readonly rootDirective = injectTooltipRoot();
+    /** @ignore */
+    private readonly templateRef = inject(TemplateRef);
+    /** @ignore */
+    private readonly overlay = inject(Overlay);
+    /** @ignore */
+    private readonly destroyRef = inject(DestroyRef);
+    /** @ignore */
+    private readonly connectedOverlay = inject(CdkConnectedOverlay);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-tooltip-trigger-${this.rootDirective.uniqueId()}`);
+
+    /**
+     * @description The preferred side of the trigger to render against when open. Will be reversed when collisions occur and avoidCollisions is enabled.
+     * @default top
+     */
+    readonly side = input<RdxPositionSide>(RdxPositionSide.Top);
+    /**
+     * @description The distance in pixels from the trigger.
+     * @default undefined
+     */
+    readonly sideOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+    /**
+     * @description The preferred alignment against the trigger. May change when collisions occur.
+     * @default center
+     */
+    readonly align = input<RdxPositionAlign>(RdxPositionAlign.Center);
+    /**
+     * @description An offset in pixels from the "start" or "end" alignment options.
+     * @default undefined
+     */
+    readonly alignOffset = input<number, NumberInput>(NaN, {
+        transform: numberAttribute
+    });
+
+    /**
+     * @description Whether to add some alternate positions of the content.
+     * @default false
+     */
+    readonly alternatePositionsDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @description Whether to prevent `onOverlayEscapeKeyDown` handler from calling. */
+    readonly onOverlayEscapeKeyDownDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /** @description Whether to prevent `onOverlayOutsideClick` handler from calling. */
+    readonly onOverlayOutsideClickDisabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * @description Event handler called when the escape key is down.
+     * It can be prevented by setting `onOverlayEscapeKeyDownDisabled` input to `true`.
+     */
+    readonly onOverlayEscapeKeyDown = output<KeyboardEvent>();
+    /**
+     * @description Event handler called when a pointer event occurs outside the bounds of the component.
+     * It can be prevented by setting `onOverlayOutsideClickDisabled` input to `true`.
+     */
+    readonly onOverlayOutsideClick = output<MouseEvent>();
+
+    /**
+     * @description Event handler called after the overlay is open
+     */
+    readonly onOpen = output<void>();
+    /**
+     * @description Event handler called after the overlay is closed
+     */
+    readonly onClosed = output<void>();
+
+    /** @ingore */
+    readonly positions = computed(() => this.computePositions());
+
+    constructor() {
+        this.onOriginChangeEffect();
+        this.onPositionChangeEffect();
+    }
+
+    /** @ignore */
+    ngOnInit() {
+        this.setScrollStrategy();
+        this.setHasBackdrop();
+        this.setDisableClose();
+        this.onAttach();
+        this.onDetach();
+        this.connectKeydownEscape();
+        this.connectOutsideClick();
+    }
+
+    /** @ignore */
+    open() {
+        if (this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = true;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    close() {
+        if (!this.connectedOverlay.open) {
+            return;
+        }
+        const prevOpen = this.connectedOverlay.open;
+        this.connectedOverlay.open = false;
+        this.fireOverlayNgOnChanges('open', this.connectedOverlay.open, prevOpen);
+    }
+
+    /** @ignore */
+    positionChange() {
+        return this.connectedOverlay.positionChange.asObservable();
+    }
+
+    /** @ignore */
+    private connectKeydownEscape() {
+        this.connectedOverlay.overlayKeydown
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayEscapeKeyDownDisabled() &&
+                        !this.rootDirective.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.rootDirective,
+                            'cdkOverlayEscapeKeyDown'
+                        )
+                ),
+                filter((event) => event.key === 'Escape'),
+                tap((event) => {
+                    this.onOverlayEscapeKeyDown.emit(event);
+                }),
+                filter(() => !this.rootDirective.firstDefaultOpen()),
+                tap(() => {
+                    this.rootDirective.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private connectOutsideClick() {
+        this.connectedOverlay.overlayOutsideClick
+            .asObservable()
+            .pipe(
+                filter(
+                    () =>
+                        !this.onOverlayOutsideClickDisabled() &&
+                        !this.rootDirective.rdxCdkEventService?.primitivePreventedFromCdkEvent(
+                            this.rootDirective,
+                            'cdkOverlayOutsideClick'
+                        )
+                ),
+                /**
+                 * Handle the situation when an anchor is added and the anchor becomes the origin of the overlay
+                 * hence  the trigger will be considered the outside element
+                 */
+                filter((event) => {
+                    return (
+                        !this.rootDirective.anchorDirective() ||
+                        !this.rootDirective
+                            .triggerDirective()
+                            .elementRef.nativeElement.contains(event.target as Element)
+                    );
+                }),
+                tap((event) => {
+                    this.onOverlayOutsideClick.emit(event);
+                }),
+                filter(() => !this.rootDirective.firstDefaultOpen()),
+                tap(() => {
+                    this.rootDirective.handleClose();
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onAttach() {
+        this.connectedOverlay.attach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onOpen.emit();` is being delegated to the rootDirective directive due to the opening animation
+                     */
+                    this.rootDirective.attachDetachEvent.set(RdxTooltipAttachDetachEvent.ATTACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private onDetach() {
+        this.connectedOverlay.detach
+            .asObservable()
+            .pipe(
+                tap(() => {
+                    /**
+                     * `this.onClosed.emit();` is being delegated to the rootDirective directive due to the closing animation
+                     */
+                    this.rootDirective.attachDetachEvent.set(RdxTooltipAttachDetachEvent.DETACH);
+                }),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe();
+    }
+
+    /** @ignore */
+    private setScrollStrategy() {
+        const prevScrollStrategy = this.connectedOverlay.scrollStrategy;
+        this.connectedOverlay.scrollStrategy = this.overlay.scrollStrategies.reposition();
+        this.fireOverlayNgOnChanges('scrollStrategy', this.connectedOverlay.scrollStrategy, prevScrollStrategy);
+    }
+
+    /** @ignore */
+    private setHasBackdrop() {
+        const prevHasBackdrop = this.connectedOverlay.hasBackdrop;
+        this.connectedOverlay.hasBackdrop = false;
+        this.fireOverlayNgOnChanges('hasBackdrop', this.connectedOverlay.hasBackdrop, prevHasBackdrop);
+    }
+
+    /** @ignore */
+    private setDisableClose() {
+        const prevDisableClose = this.connectedOverlay.disableClose;
+        this.connectedOverlay.disableClose = true;
+        this.fireOverlayNgOnChanges('disableClose', this.connectedOverlay.disableClose, prevDisableClose);
+    }
+
+    /** @ignore */
+    private setOrigin(origin: CdkConnectedOverlay['origin']) {
+        const prevOrigin = this.connectedOverlay.origin;
+        this.connectedOverlay.origin = origin;
+        this.fireOverlayNgOnChanges('origin', this.connectedOverlay.origin, prevOrigin);
+    }
+
+    /** @ignore */
+    private setPositions(positions: CdkConnectedOverlay['positions']) {
+        const prevPositions = this.connectedOverlay.positions;
+        this.connectedOverlay.positions = positions;
+        this.fireOverlayNgOnChanges('positions', this.connectedOverlay.positions, prevPositions);
+        this.connectedOverlay.overlayRef?.updatePosition();
+    }
+
+    /** @ignore */
+    private computePositions() {
+        const arrowHeight = this.rootDirective.arrowDirective()?.height() ?? 0;
+        const offsets: RdxPositionSideAndAlignOffsets = {
+            sideOffset:
+                arrowHeight + (isNaN(this.sideOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.side : this.sideOffset()),
+            alignOffset: isNaN(this.alignOffset()) ? RDX_POSITIONING_DEFAULTS.offsets.align : this.alignOffset()
+        };
+        const basePosition = getContentPosition({
+            side: this.side(),
+            align: this.align(),
+            sideOffset: offsets.sideOffset,
+            alignOffset: offsets.alignOffset
+        });
+        const positions = [basePosition];
+        if (!this.alternatePositionsDisabled()) {
+            /**
+             * Alternate positions for better user experience along the X/Y axis (e.g. vertical/horizontal scrolling)
+             */
+            const allPossibleConnectedPositions = getAllPossibleConnectedPositions();
+            allPossibleConnectedPositions.forEach((_, key) => {
+                const sideAndAlignArray = key.split('|');
+                if (
+                    (sideAndAlignArray[0] as RdxPositionSide) !== this.side() ||
+                    (sideAndAlignArray[1] as RdxPositionAlign) !== this.align()
+                ) {
+                    positions.push(
+                        getContentPosition({
+                            side: sideAndAlignArray[0] as RdxPositionSide,
+                            align: sideAndAlignArray[1] as RdxPositionAlign,
+                            sideOffset: offsets.sideOffset,
+                            alignOffset: offsets.alignOffset
+                        })
+                    );
+                }
+            });
+        }
+        return positions;
+    }
+
+    private onOriginChangeEffect() {
+        effect(() => {
+            const origin = (this.rootDirective.anchorDirective() ?? this.rootDirective.triggerDirective())
+                .overlayOrigin;
+            untracked(() => {
+                this.setOrigin(origin);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onPositionChangeEffect() {
+        effect(() => {
+            const positions = this.positions();
+            this.alternatePositionsDisabled();
+            untracked(() => {
+                this.setPositions(positions);
+            });
+        });
+    }
+
+    /** @ignore */
+    private fireOverlayNgOnChanges<K extends keyof CdkConnectedOverlay, V extends CdkConnectedOverlay[K]>(
+        input: K,
+        currentValue: V,
+        previousValue: V,
+        firstChange = false
+    ) {
+        this.connectedOverlay.ngOnChanges({
+            [input]: new SimpleChange(previousValue, currentValue, firstChange)
+        });
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-root.directive.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import {
+    afterNextRender,
+    booleanAttribute,
+    computed,
+    contentChild,
+    DestroyRef,
+    Directive,
+    effect,
+    inject,
+    input,
+    numberAttribute,
+    signal,
+    untracked,
+    ViewContainerRef
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { debounce, map, Subject, tap, timer } from 'rxjs';
+import { RdxTooltipAnchorDirective } from './tooltip-anchor.directive';
+import { RdxTooltipAnchorToken } from './tooltip-anchor.token';
+import { RdxTooltipArrowToken } from './tooltip-arrow.token';
+import { RdxTooltipCloseToken } from './tooltip-close.token';
+import { RdxTooltipContentAttributesToken } from './tooltip-content-attributes.token';
+import { RdxTooltipContentDirective } from './tooltip-content.directive';
+import { RdxTooltipTriggerDirective } from './tooltip-trigger.directive';
+import {
+    RdxTooltipAction,
+    RdxTooltipAnimationStatus,
+    RdxTooltipAttachDetachEvent,
+    RdxTooltipState
+} from './tooltip.types';
+import { injectRdxCdkEventService } from './utils/cdk-event.service';
+
+let nextId = 0;
+
+@Directive({
+    selector: '[rdxTooltipRoot]',
+    exportAs: 'rdxTooltipRoot'
+})
+export class RdxTooltipRootDirective {
+    /** @ignore */
+    readonly uniqueId = signal(++nextId);
+    /** @ignore */
+    readonly name = computed(() => `rdx-tooltip-root-${this.uniqueId()}`);
+
+    /**
+     * @description The anchor directive that comes form outside the tooltip rootDirective
+     * @default undefined
+     */
+    readonly anchor = input<RdxTooltipAnchorDirective | undefined>(void 0);
+    /**
+     * @description The open state of the tooltip when it is initially rendered. Use when you do not need to control its open state.
+     * @default false
+     */
+    readonly defaultOpen = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description The controlled state of the tooltip. `open` input take precedence of `defaultOpen` input.
+     * @default undefined
+     */
+    readonly open = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * To customise the open delay for a specific tooltip.
+     */
+    readonly openDelay = input<number, NumberInput>(500, {
+        transform: numberAttribute
+    });
+    /**
+     * To customise the close delay for a specific tooltip.
+     */
+    readonly closeDelay = input<number, NumberInput>(200, {
+        transform: numberAttribute
+    });
+    /**
+     * @description Whether to control the state of the tooltip from external. Use in conjunction with `open` input.
+     * @default undefined
+     */
+    readonly externalControl = input<boolean | undefined, BooleanInput>(void 0, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening/closing animations.
+     * @default false
+     */
+    readonly cssAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS opening animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssOpeningAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+    /**
+     * @description Whether to take into account CSS closing animations. `cssAnimation` input must be set to 'true'
+     * @default false
+     */
+    readonly cssClosingAnimation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly cssAnimationStatus = signal<RdxTooltipAnimationStatus | null>(null);
+
+    /** @ignore */
+    readonly contentDirective = contentChild.required(RdxTooltipContentDirective);
+    /** @ignore */
+    readonly triggerDirective = contentChild.required(RdxTooltipTriggerDirective);
+    /** @ignore */
+    readonly arrowDirective = contentChild(RdxTooltipArrowToken);
+    /** @ignore */
+    readonly closeDirective = contentChild(RdxTooltipCloseToken);
+    /** @ignore */
+    readonly contentAttributesComponent = contentChild(RdxTooltipContentAttributesToken);
+    /** @ignore */
+    private readonly internalAnchorDirective = contentChild(RdxTooltipAnchorToken);
+
+    /** @ignore */
+    readonly viewContainerRef = inject(ViewContainerRef);
+    /** @ignore */
+    readonly rdxCdkEventService = injectRdxCdkEventService();
+    /** @ignore */
+    readonly destroyRef = inject(DestroyRef);
+
+    /** @ignore */
+    readonly state = signal(RdxTooltipState.CLOSED);
+
+    /** @ignore */
+    readonly attachDetachEvent = signal(RdxTooltipAttachDetachEvent.DETACH);
+
+    /** @ignore */
+    private readonly isFirstDefaultOpen = signal(false);
+
+    /** @ignore */
+    readonly anchorDirective = computed(() => this.internalAnchorDirective() ?? this.anchor());
+
+    /** @ignore */
+    readonly actionSubject$ = new Subject<RdxTooltipAction>();
+
+    constructor() {
+        this.rdxCdkEventService?.registerPrimitive(this);
+        this.destroyRef.onDestroy(() => this.rdxCdkEventService?.deregisterPrimitive(this));
+        this.actionSubscription();
+        this.onStateChangeEffect();
+        this.onCssAnimationStatusChangeChangeEffect();
+        this.onOpenChangeEffect();
+        this.onIsFirstDefaultOpenChangeEffect();
+        this.onAnchorChangeEffect();
+        this.emitOpenOrClosedEventEffect();
+        afterNextRender({
+            write: () => {
+                if (this.defaultOpen() && !this.open()) {
+                    this.isFirstDefaultOpen.set(true);
+                }
+            }
+        });
+    }
+
+    /** @ignore */
+    getAnimationParamsSnapshot() {
+        return {
+            cssAnimation: this.cssAnimation(),
+            cssOpeningAnimation: this.cssOpeningAnimation(),
+            cssClosingAnimation: this.cssClosingAnimation(),
+            cssAnimationStatus: this.cssAnimationStatus(),
+            attachDetachEvent: this.attachDetachEvent(),
+            state: this.state(),
+            canEmitOnOpenOrOnClosed: this.canEmitOnOpenOrOnClosed()
+        };
+    }
+
+    /** @ignore */
+    controlledExternally() {
+        return this.externalControl;
+    }
+
+    /** @ignore */
+    firstDefaultOpen() {
+        return this.isFirstDefaultOpen();
+    }
+
+    /** @ignore */
+    handleOpen(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.actionSubject$.next(RdxTooltipAction.OPEN);
+    }
+
+    /** @ignore */
+    handleClose(closeButton?: boolean): void {
+        if (this.isFirstDefaultOpen()) {
+            this.isFirstDefaultOpen.set(false);
+        }
+        if (!closeButton && this.externalControl()) {
+            return;
+        }
+        this.actionSubject$.next(RdxTooltipAction.CLOSE);
+    }
+
+    /** @ignore */
+    handleToggle(): void {
+        if (this.externalControl()) {
+            return;
+        }
+        this.isOpen() ? this.handleClose() : this.handleOpen();
+    }
+
+    /** @ignore */
+    isOpen(state?: RdxTooltipState) {
+        return (state ?? this.state()) === RdxTooltipState.OPEN;
+    }
+
+    /** @ignore */
+    private setState(state = RdxTooltipState.CLOSED): void {
+        if (state === this.state()) {
+            return;
+        }
+        this.state.set(state);
+    }
+
+    /** @ignore */
+    private openContent(): void {
+        this.contentDirective().open();
+        if (!this.cssAnimation() || !this.cssOpeningAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private closeContent(): void {
+        this.contentDirective().close();
+        if (!this.cssAnimation() || !this.cssClosingAnimation()) {
+            this.cssAnimationStatus.set(null);
+        }
+    }
+
+    /** @ignore */
+    private emitOnOpen(): void {
+        this.contentDirective().onOpen.emit();
+    }
+
+    /** @ignore */
+    private emitOnClosed(): void {
+        this.contentDirective().onClosed.emit();
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithoutAnimations(state: RdxTooltipState) {
+        return (
+            !this.contentAttributesComponent() ||
+            !this.cssAnimation() ||
+            (this.cssAnimation() && !this.cssClosingAnimation() && state === RdxTooltipState.CLOSED) ||
+            (this.cssAnimation() && !this.cssOpeningAnimation() && state === RdxTooltipState.OPEN) ||
+            // !this.cssAnimationStatus() ||
+            (this.cssOpeningAnimation() &&
+                state === RdxTooltipState.OPEN &&
+                [RdxTooltipAnimationStatus.OPEN_STARTED].includes(this.cssAnimationStatus()!)) ||
+            (this.cssClosingAnimation() &&
+                state === RdxTooltipState.CLOSED &&
+                [RdxTooltipAnimationStatus.CLOSED_STARTED].includes(this.cssAnimationStatus()!))
+        );
+    }
+
+    /** @ignore */
+    private ifOpenOrCloseWithAnimations(cssAnimationStatus: RdxTooltipAnimationStatus | null) {
+        return (
+            this.contentAttributesComponent() &&
+            this.cssAnimation() &&
+            cssAnimationStatus &&
+            ((this.cssOpeningAnimation() &&
+                this.state() === RdxTooltipState.OPEN &&
+                [RdxTooltipAnimationStatus.OPEN_ENDED].includes(cssAnimationStatus)) ||
+                (this.cssClosingAnimation() &&
+                    this.state() === RdxTooltipState.CLOSED &&
+                    [RdxTooltipAnimationStatus.CLOSED_ENDED].includes(cssAnimationStatus)))
+        );
+    }
+
+    /** @ignore */
+    private openOrClose(state: RdxTooltipState) {
+        const isOpen = this.isOpen(state);
+        isOpen ? this.openContent() : this.closeContent();
+    }
+
+    /** @ignore */
+    private emitOnOpenOrOnClosed(state: RdxTooltipState) {
+        this.isOpen(state)
+            ? this.attachDetachEvent() === RdxTooltipAttachDetachEvent.ATTACH && this.emitOnOpen()
+            : this.attachDetachEvent() === RdxTooltipAttachDetachEvent.DETACH && this.emitOnClosed();
+    }
+
+    /** @ignore */
+    private canEmitOnOpenOrOnClosed() {
+        return (
+            !this.cssAnimation() ||
+            (!this.cssOpeningAnimation() && this.state() === RdxTooltipState.OPEN) ||
+            (this.cssOpeningAnimation() &&
+                this.state() === RdxTooltipState.OPEN &&
+                this.cssAnimationStatus() === RdxTooltipAnimationStatus.OPEN_ENDED) ||
+            (!this.cssClosingAnimation() && this.state() === RdxTooltipState.CLOSED) ||
+            (this.cssClosingAnimation() &&
+                this.state() === RdxTooltipState.CLOSED &&
+                this.cssAnimationStatus() === RdxTooltipAnimationStatus.CLOSED_ENDED)
+        );
+    }
+
+    /** @ignore */
+    private onStateChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const state = this.state();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithoutAnimations(state)) {
+                    return;
+                }
+                this.openOrClose(state);
+            });
+        }, {});
+    }
+
+    /** @ignore */
+    private onCssAnimationStatusChangeChangeEffect() {
+        let isFirst = true;
+        effect(() => {
+            const cssAnimationStatus = this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                if (!this.ifOpenOrCloseWithAnimations(cssAnimationStatus)) {
+                    return;
+                }
+                this.openOrClose(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private emitOpenOrClosedEventEffect() {
+        let isFirst = true;
+        effect(() => {
+            this.attachDetachEvent();
+            this.cssAnimationStatus();
+            untracked(() => {
+                if (isFirst) {
+                    isFirst = false;
+                    return;
+                }
+                const canEmitOpenClose = untracked(() => this.canEmitOnOpenOrOnClosed());
+                if (!canEmitOpenClose) {
+                    return;
+                }
+                this.emitOnOpenOrOnClosed(this.state());
+            });
+        });
+    }
+
+    /** @ignore */
+    private onOpenChangeEffect() {
+        effect(() => {
+            const open = this.open();
+            untracked(() => {
+                this.setState(open ? RdxTooltipState.OPEN : RdxTooltipState.CLOSED);
+            });
+        });
+    }
+
+    /** @ignore */
+    private onIsFirstDefaultOpenChangeEffect() {
+        const effectRef = effect(() => {
+            const defaultOpen = this.defaultOpen();
+            untracked(() => {
+                if (!defaultOpen || this.open()) {
+                    effectRef.destroy();
+                    return;
+                }
+                this.handleOpen();
+            });
+        });
+    }
+
+    /** @ignore */
+    private onAnchorChangeEffect = () => {
+        effect(() => {
+            const anchor = this.anchor();
+            untracked(() => {
+                if (anchor) {
+                    anchor.setRoot(this);
+                }
+            });
+        });
+    };
+
+    /** @ignore */
+    private actionSubscription() {
+        this.actionSubject$
+            .asObservable()
+            .pipe(
+                map((action) => {
+                    switch (action) {
+                        case RdxTooltipAction.OPEN:
+                            return { action, duration: this.openDelay() };
+                        case RdxTooltipAction.CLOSE:
+                            return { action, duration: this.closeDelay() };
+                    }
+                }),
+                debounce((config) => timer(config.duration)),
+                tap((config) => {
+                    switch (config.action) {
+                        case RdxTooltipAction.OPEN:
+                            this.setState(RdxTooltipState.OPEN);
+                            break;
+                        case RdxTooltipAction.CLOSE:
+                            this.setState(RdxTooltipState.CLOSED);
+                            break;
+                    }
+                }),
+                takeUntilDestroyed()
+            )
+            .subscribe();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-root.inject.ts
+```typescript
+import { assertInInjectionContext, inject, isDevMode } from '@angular/core';
+import { RdxTooltipRootDirective } from './tooltip-root.directive';
+
+export function injectTooltipRoot(optional?: false): RdxTooltipRootDirective;
+export function injectTooltipRoot(optional: true): RdxTooltipRootDirective | null;
+export function injectTooltipRoot(optional = false): RdxTooltipRootDirective | null {
+    isDevMode() && assertInInjectionContext(injectTooltipRoot);
+    return inject(RdxTooltipRootDirective, { optional });
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip-trigger.directive.ts
+```typescript
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { computed, Directive, ElementRef, inject } from '@angular/core';
+import { injectTooltipRoot } from './tooltip-root.inject';
+
+@Directive({
+    selector: '[rdxTooltipTrigger]',
+    hostDirectives: [CdkOverlayOrigin],
+    host: {
+        type: 'button',
+        '[attr.id]': 'name()',
+        '[attr.aria-haspopup]': '"dialog"',
+        '[attr.aria-expanded]': 'rootDirective.isOpen()',
+        '[attr.aria-controls]': 'rootDirective.contentDirective().name()',
+        '[attr.data-state]': 'rootDirective.state()',
+        '(pointerenter)': 'pointerenter()',
+        '(pointerleave)': 'pointerleave()',
+        '(focus)': 'focus()',
+        '(blur)': 'blur()',
+        '(click)': 'click()'
+    }
+})
+export class RdxTooltipTriggerDirective {
+    /** @ignore */
+    protected readonly rootDirective = injectTooltipRoot();
+    /** @ignore */
+    readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+    /** @ignore */
+    readonly overlayOrigin = inject(CdkOverlayOrigin);
+
+    /** @ignore */
+    readonly name = computed(() => `rdx-tooltip-trigger-${this.rootDirective.uniqueId()}`);
+
+    /** @ignore */
+    pointerenter(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    pointerleave(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    focus(): void {
+        this.rootDirective.handleOpen();
+    }
+
+    /** @ignore */
+    blur(): void {
+        this.rootDirective.handleClose();
+    }
+
+    /** @ignore */
+    click(): void {
+        this.rootDirective.handleClose();
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/tooltip.types.ts
+```typescript
+export enum RdxTooltipState {
+    OPEN = 'open',
+    CLOSED = 'closed'
+}
+
+export enum RdxTooltipAction {
+    OPEN = 'open',
+    CLOSE = 'close'
+}
+
+export enum RdxTooltipAttachDetachEvent {
+    ATTACH = 'attach',
+    DETACH = 'detach'
+}
+
+export enum RdxTooltipAnimationStatus {
+    OPEN_STARTED = 'open_started',
+    OPEN_ENDED = 'open_ended',
+    CLOSED_STARTED = 'closed_started',
+    CLOSED_ENDED = 'closed_ended'
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/utils/cdk-event.service.ts
+```typescript
+import {
+    DestroyRef,
+    EnvironmentProviders,
+    inject,
+    Injectable,
+    InjectionToken,
+    isDevMode,
+    makeEnvironmentProviders,
+    NgZone,
+    Provider,
+    Renderer2,
+    VERSION
+} from '@angular/core';
+import { injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { RdxCdkEventServiceWindowKey } from './constants';
+import { EventType, EventTypeAsPrimitiveConfigKey, PrimitiveConfig, PrimitiveConfigs } from './types';
+
+function eventTypeAsPrimitiveConfigKey(eventType: EventType): EventTypeAsPrimitiveConfigKey {
+    return `prevent${eventType[0].toUpperCase()}${eventType.slice(1)}` as EventTypeAsPrimitiveConfigKey;
+}
+
+@Injectable()
+class RdxCdkEventService {
+    document = injectDocument();
+    destroyRef = inject(DestroyRef);
+    ngZone = inject(NgZone);
+    renderer2 = inject(Renderer2);
+    window = injectWindow();
+
+    primitiveConfigs?: PrimitiveConfigs;
+
+    onDestroyCallbacks: Set<() => void> = new Set([() => deleteRdxCdkEventServiceWindowKey(this.window)]);
+
+    #clickDomRootEventCallbacks: Set<(event: MouseEvent) => void> = new Set();
+
+    constructor() {
+        this.#listenToClickDomRootEvent();
+        this.#registerOnDestroyCallbacks();
+    }
+
+    registerPrimitive<T extends object>(primitiveInstance: T) {
+        if (!this.primitiveConfigs) {
+            this.primitiveConfigs = new Map();
+        }
+        if (!this.primitiveConfigs.has(primitiveInstance)) {
+            this.primitiveConfigs.set(primitiveInstance, {});
+        }
+    }
+
+    deregisterPrimitive<T extends object>(primitiveInstance: T) {
+        if (this.primitiveConfigs?.has(primitiveInstance)) {
+            this.primitiveConfigs.delete(primitiveInstance);
+        }
+    }
+
+    preventPrimitiveFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+    }
+
+    allowPrimitiveForCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+    }
+
+    preventPrimitiveFromCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, true);
+        });
+    }
+
+    allowPrimitiveForCdkMultiEvents<T extends object>(primitiveInstance: T, eventTypes: EventType[]) {
+        eventTypes.forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(primitiveInstance, eventType, false);
+        });
+    }
+
+    setPreventPrimitiveFromCdkMixEvents<T extends object>(primitiveInstance: T, eventTypes: PrimitiveConfig) {
+        Object.keys(eventTypes).forEach((eventType) => {
+            this.#setPreventPrimitiveFromCdkEvent(
+                primitiveInstance,
+                eventType as EventType,
+                eventTypes[eventTypeAsPrimitiveConfigKey(eventType as EventType)]
+            );
+        });
+    }
+
+    primitivePreventedFromCdkEvent<T extends object>(primitiveInstance: T, eventType: EventType) {
+        return this.primitiveConfigs?.get(primitiveInstance)?.[eventTypeAsPrimitiveConfigKey(eventType)];
+    }
+
+    addClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        this.#clickDomRootEventCallbacks.add(callback);
+    }
+
+    removeClickDomRootEventCallback(callback: (event: MouseEvent) => void) {
+        return this.#clickDomRootEventCallbacks.delete(callback);
+    }
+
+    #setPreventPrimitiveFromCdkEvent<
+        T extends object,
+        R extends EventType,
+        K extends PrimitiveConfig[EventTypeAsPrimitiveConfigKey<R>]
+    >(primitiveInstance: T, eventType: R, value: K) {
+        if (!this.primitiveConfigs?.has(primitiveInstance)) {
+            isDevMode() &&
+                console.error(
+                    '[RdxCdkEventService.preventPrimitiveFromCdkEvent] RDX Primitive instance has not been registered!',
+                    primitiveInstance
+                );
+            return;
+        }
+        switch (eventType) {
+            case 'cdkOverlayOutsideClick':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayOutsideClick = value;
+                break;
+            case 'cdkOverlayEscapeKeyDown':
+                this.primitiveConfigs.get(primitiveInstance)!.preventCdkOverlayEscapeKeyDown = value;
+                break;
+        }
+    }
+
+    #registerOnDestroyCallbacks() {
+        this.destroyRef.onDestroy(() => {
+            this.onDestroyCallbacks.forEach((onDestroyCallback) => onDestroyCallback());
+            this.onDestroyCallbacks.clear();
+        });
+    }
+
+    #listenToClickDomRootEvent() {
+        const target = this.document;
+        const eventName = 'click';
+        const options: boolean | AddEventListenerOptions | undefined = { capture: true };
+        const callback = (event: MouseEvent) => {
+            this.#clickDomRootEventCallbacks.forEach((clickDomRootEventCallback) => clickDomRootEventCallback(event));
+        };
+
+        const major = parseInt(VERSION.major);
+        const minor = parseInt(VERSION.minor);
+
+        let destroyClickDomRootEventListener!: () => void;
+        /**
+         * @see src/cdk/platform/features/backwards-compatibility.ts in @angular/cdk
+         */
+        if (major > 19 || (major === 19 && minor > 0) || (major === 0 && minor === 0)) {
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                const destroyClickDomRootEventListenerInternal = this.renderer2.listen(
+                    target,
+                    eventName,
+                    callback,
+
+                    options
+                );
+                return () => {
+                    destroyClickDomRootEventListenerInternal();
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        } else {
+            /**
+             * This part can get removed when v19.1 or higher is on the board
+             */
+            destroyClickDomRootEventListener = this.ngZone.runOutsideAngular(() => {
+                target.addEventListener(eventName, callback, options);
+                return () => {
+                    this.ngZone.runOutsideAngular(() => target.removeEventListener(eventName, callback, options));
+                    this.#clickDomRootEventCallbacks.clear();
+                };
+            });
+        }
+        this.onDestroyCallbacks.add(destroyClickDomRootEventListener);
+    }
+}
+
+const RdxCdkEventServiceToken = new InjectionToken<RdxCdkEventService>('RdxCdkEventServiceToken');
+
+const existsErrorMessage = 'RdxCdkEventService should be provided only once!';
+
+const deleteRdxCdkEventServiceWindowKey = (window: Window & typeof globalThis) => {
+    delete (window as any)[RdxCdkEventServiceWindowKey];
+};
+
+const getProvider: (throwWhenExists?: boolean) => Provider = (throwWhenExists = true) => ({
+    provide: RdxCdkEventServiceToken,
+    useFactory: () => {
+        isDevMode() && console.log('providing RdxCdkEventService...');
+        const window = injectWindow();
+        if ((window as any)[RdxCdkEventServiceWindowKey]) {
+            if (throwWhenExists) {
+                throw Error(existsErrorMessage);
+            } else {
+                isDevMode() && console.warn(existsErrorMessage);
+            }
+        }
+        (window as any)[RdxCdkEventServiceWindowKey] ??= new RdxCdkEventService();
+        return (window as any)[RdxCdkEventServiceWindowKey];
+    }
+});
+
+export const provideRdxCdkEventServiceInRoot: () => EnvironmentProviders = () =>
+    makeEnvironmentProviders([getProvider()]);
+export const provideRdxCdkEventService: () => Provider = () => getProvider(false);
+
+export const injectRdxCdkEventService = () => inject(RdxCdkEventServiceToken, { optional: true });
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/utils/constants.ts
+```typescript
+export const RdxCdkEventServiceWindowKey = Symbol('__RdxCdkEventService__');
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tooltip/src/utils/types.ts
+```typescript
+export type EventType = 'cdkOverlayOutsideClick' | 'cdkOverlayEscapeKeyDown';
+export type EventTypeCapitalized<R extends EventType = EventType> = Capitalize<R>;
+export type EventTypeAsPrimitiveConfigKey<R extends EventType = EventType> = `prevent${EventTypeCapitalized<R>}`;
+export type PrimitiveConfig = {
+    [value in EventTypeAsPrimitiveConfigKey]?: boolean;
+};
+export type PrimitiveConfigs = Map<object, PrimitiveConfig>;
+
+```

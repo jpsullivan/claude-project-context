@@ -38,6 +38,253 @@ export class RdxCheckboxModule {}
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/stories/avatar.docs.mdx
+````
+import { Canvas, Meta } from '@storybook/blocks';
+import * as AvatarDirectiveStories from './avatar.stories';
+
+<Meta title="Primitives/Avatar" />
+
+# Avatar
+
+#### An image element with a fallback for representing the user.
+
+<Canvas sourceState="hidden" of={AvatarDirectiveStories.Default} />
+
+## Features
+
+- ✅ Automatic and manual control over when the image renders.
+- ✅ Fallback part accepts any children.
+- ✅ Optionally delayMs fallback rendering to avoid content flashing.
+
+## Global Configuration
+
+You can configure the default options for all avatars in your application by using the `provideRdxAvatarConfig` function in a providers array.
+
+```ts
+import { provideRdxAvatarConfig } from '@radix-ng/primitives/avatar';
+
+bootstrapApplication(AppComponent, {
+  providers: [provideRdxAvatarConfig({ delayMs: 1000 })]
+});
+```
+
+## Anatomy
+
+```html
+<span rdxAvatarRoot>
+  <img rdxAvatarImage src="..." alt="..." />
+  <span rdxAvatarFallback>Angular</span>
+</span>
+```
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/stories/avatar.stories.ts
+```typescript
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxAvatarFallbackDirective } from '../src/avatar-fallback.directive';
+import { RdxAvatarImageDirective } from '../src/avatar-image.directive';
+import { RdxAvatarRootDirective } from '../src/avatar-root.directive';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Avatar',
+    decorators: [
+        moduleMetadata({
+            imports: [RdxAvatarRootDirective, RdxAvatarImageDirective, RdxAvatarFallbackDirective]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+
+                    <style>
+                        .AvatarRoot {
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            vertical-align: middle;
+                            overflow: hidden;
+                            user-select: none;
+                            width: 45px;
+                            height: 45px;
+                            border-radius: 100%;
+                            background-color: var(--black-a3);
+                        }
+
+                        .AvatarImage {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                            border-radius: inherit;
+                        }
+
+                        .AvatarFallback {
+                            width: 100%;
+                            height: 100%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background-color: white;
+                            color: var(--violet-11);
+                            font-size: 15px;
+                            line-height: 1;
+                            font-weight: 500;
+                        }
+                    </style>
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <div style=" display: flex; gap: 20px">
+                <span class="AvatarRoot" rdxAvatarRoot>
+                    <img
+                        class="AvatarImage"
+                        rdxAvatarImage
+                        src="https://images.unsplash.com/photo-1492633423870-43d1cd2775eb?&w=128&h=128&dpr=2&q=80"
+                        alt="Colm Tuite"
+                    />
+                    <span class="AvatarFallback" rdxAvatarFallback [delayMs]="600">CT</span>
+                </span>
+
+                <span class="AvatarRoot" rdxAvatarRoot>
+                    <img
+                        class="AvatarImage"
+                        rdxAvatarImage
+                        src="https://images.unsplash.com/photo-1511485977113-f34c92461ad9?ixlib=rb-1.2.1&w=128&h=128&dpr=2&q=80"
+                        alt="Pedro Duarte"
+                    />
+                    <span class="AvatarFallback" rdxAvatarFallback [delayMs]="600">JD</span>
+                </span>
+
+                <span class="AvatarRoot" rdxAvatarRoot>
+                    <span class="AvatarFallback" rdxAvatarFallback>PD</span>
+                </span>
+
+                <span class="AvatarRoot" rdxAvatarRoot>
+                    <img class="AvatarImage" rdxAvatarImage src="" alt="Pedro Duarte" />
+                    <span class="AvatarFallback" rdxAvatarFallback>PD</span>
+                </span>
+            </div>
+        `
+    })
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/__tests__/avatar-fallback.directive.spec.ts
+```typescript
+import { Component, PLATFORM_ID } from '@angular/core';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { RdxAvatarFallbackDirective } from '../src/avatar-fallback.directive';
+import { RdxAvatarRootDirective } from '../src/avatar-root.directive';
+
+@Component({
+    selector: 'rdx-mock-component',
+    standalone: true,
+    imports: [RdxAvatarFallbackDirective, RdxAvatarRootDirective],
+    template: `
+        <span rdxAvatarRoot>
+            <span [delayMs]="delay" rdxAvatarFallback>fallback</span>
+            <span rdxAvatarFallback>fallback2</span>
+        </span>
+    `
+})
+class RdxMockComponent {
+    delay = 1000;
+}
+
+describe('RdxAvatarFallbackDirective', () => {
+    let component: RdxMockComponent;
+    let fixture: ComponentFixture<RdxMockComponent>;
+
+    beforeEach(() => {
+        fixture = TestBed.overrideProvider(PLATFORM_ID, { useValue: 'browser' }).createComponent(RdxMockComponent);
+        component = fixture.componentInstance;
+    });
+
+    it('should compile', () => {
+        expect(component).toBeTruthy();
+    });
+
+    it('should hide fallback initially', () => {
+        fixture.detectChanges();
+        const fallbackElement = fixture.debugElement.query(By.css('span[rdxAvatarFallback]'));
+        expect(fallbackElement.nativeElement.style.display).toBe('none');
+    });
+
+    it('should show fallback after delay', fakeAsync(() => {
+        fixture.detectChanges();
+
+        tick(1000);
+        fixture.detectChanges();
+
+        const fallbackElement = fixture.debugElement.query(By.css('span[rdxAvatarFallback]'));
+        expect(fallbackElement.nativeElement.style.display).not.toBe('none');
+    }));
+});
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/__tests__/avatar-image.directive.spec.ts
+```typescript
+import { Component } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { RdxAvatarFallbackDirective } from '../src/avatar-fallback.directive';
+import { RdxAvatarImageDirective } from '../src/avatar-image.directive';
+import { RdxAvatarRootDirective } from '../src/avatar-root.directive';
+
+@Component({
+    selector: 'rdx-mock-component',
+    standalone: true,
+    imports: [RdxAvatarImageDirective, RdxAvatarRootDirective, RdxAvatarFallbackDirective],
+    template: `
+        <span rdxAvatarRoot>
+            <img
+                rdxAvatarImage
+                alt="Angular Logo"
+                src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNTAgMjUwIj4KICAgIDxwYXRoIGZpbGw9IiNERDAwMzEiIGQ9Ik0xMjUgMzBMMzEuOSA2My4ybDE0LjIgMTIzLjFMMTI1IDIzMGw3OC45LTQzLjcgMTQuMi0xMjMuMXoiIC8+CiAgICA8cGF0aCBmaWxsPSIjQzMwMDJGIiBkPSJNMTI1IDMwdjIyLjItLjFWMjMwbDc4LjktNDMuNyAxNC4yLTEyMy4xTDEyNSAzMHoiIC8+CiAgICA8cGF0aCAgZmlsbD0iI0ZGRkZGRiIgZD0iTTEyNSA1Mi4xTDY2LjggMTgyLjZoMjEuN2wxMS43LTI5LjJoNDkuNGwxMS43IDI5LjJIMTgzTDEyNSA1Mi4xem0xNyA4My4zaC0zNGwxNy00MC45IDE3IDQwLjl6IiAvPgogIDwvc3ZnPg=="
+            />
+            <span rdxAvatarFallback>Angular Logo</span>
+        </span>
+    `
+})
+class RdxMockComponent {}
+
+describe('RdxAvatarImageDirective', () => {
+    let component: RdxMockComponent;
+    let fixture: ComponentFixture<RdxMockComponent>;
+
+    beforeEach(() => {
+        fixture = TestBed.createComponent(RdxMockComponent);
+        component = fixture.componentInstance;
+    });
+
+    it('should compile', () => {
+        expect(component).toBeTruthy();
+    });
+
+    it('should display the image initially', () => {
+        const imgElement = fixture.debugElement.query(By.css('img[rdxAvatarImage]'));
+        expect(imgElement).toBeTruthy();
+        expect(imgElement.nativeElement.src).toContain('data:image/svg+xml');
+    });
+});
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/avatar/src/avatar-fallback.directive.ts
 ```typescript
 import { computed, Directive, effect, inject, input, OnDestroy, signal } from '@angular/core';

@@ -1,0 +1,124 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/label/stories/label.docs.mdx
+````
+import { ArgTypes, Canvas, Meta } from '@storybook/blocks';
+import { RdxLabelDirective } from '../src/label.directive';
+import * as LabelDirectiveStories from './label.stories';
+
+<Meta title="Primitives/Label" />
+
+# Label
+
+#### Renders an accessible label associated with controls.
+
+<Canvas sourceState="hidden" of={LabelDirectiveStories.Default} />
+
+## Features
+
+- ✅ Text selection is prevented when double-clicking label.
+
+## Import
+
+Get started with importing the directive:
+
+```typescript
+import { RdxLabelDirective } from '@radix-ng/primitives/label';
+```
+
+## Examples
+
+```html
+<label rdxLabel htmlFor="uniqId">First name</label>
+<input class="Input" id="uniqId" type="text" />
+```
+
+## API Reference
+
+<ArgTypes of={RdxLabelDirective} />
+
+## Accessibility
+
+This component is based on the native `label` element, it will automatically apply the correct labelling
+when wrapping controls or using the `for` attribute. For your own custom controls
+to work correctly, ensure they use native elements such as `button` or `input` as a base.
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/label/stories/label.stories.ts
+```typescript
+import { CommonModule } from '@angular/common';
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { labelExclude } from '../../../../apps/storybook-radix/docs/utils/storybook';
+import { RdxLabelDirective } from '../src/label.directive';
+
+export default {
+    component: RdxLabelDirective,
+    title: 'Primitives/Label',
+    parameters: {
+        controls: {
+            exclude: labelExclude
+        }
+    },
+    decorators: [
+        moduleMetadata({
+            imports: [RdxLabelDirective, CommonModule]
+        }),
+        componentWrapperDecorator(
+            (story) =>
+                `<div class="radix-themes light light-theme"
+                      data-radius="medium"
+                      data-scaling="100%">${story}</div>`
+        )
+    ]
+} as Meta<RdxLabelDirective>;
+
+type Story = StoryObj<RdxLabelDirective>;
+
+export const Default: Story = {
+    render: (args) => ({
+        props: {
+            ...args
+        },
+        template: `
+<label rdxLabel htmlFor="uniqId">First Name </label>
+<input type="text" class="Input" id="uniqId" />
+
+<style>
+input {
+  all: unset;
+}
+
+.Input {
+  width: 200px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 0 10px;
+  margin-left: 10px;
+  height: 35px;
+  font-size: 15px;
+  line-height: 1;
+  color: white;
+  background-color: var(--black-a5);
+  box-shadow: 0 0 0 1px var(--black-a9);
+}
+
+.Input:focus {
+  box-shadow: 0 0 0 2px black;
+}
+.Input::selection {
+  background-color: var(--black-a9);
+  color: white;
+}
+
+label {
+    color: white;
+    font-size: 15px;
+    line-height: 35px;
+    font-weight: 500;
+}
+</style>
+`
+    })
+};
+
+```

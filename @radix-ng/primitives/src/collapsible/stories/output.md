@@ -1,0 +1,436 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/stories/collapsible-animation.component.ts
+```typescript
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { Component } from '@angular/core';
+import { LucideAngularModule } from 'lucide-angular';
+import { RdxCollapsibleContentDirective } from '../src/collapsible-content.directive';
+import { RdxCollapsibleRootDirective } from '../src/collapsible-root.directive';
+import { RdxCollapsibleTriggerDirective } from '../src/collapsible-trigger.directive';
+
+@Component({
+    selector: 'rdx-collapsible-animation',
+    imports: [
+        RdxCollapsibleRootDirective,
+        RdxCollapsibleTriggerDirective,
+        RdxCollapsibleContentDirective,
+        LucideAngularModule
+    ],
+    // prettier-ignore
+    animations: [
+        trigger('contentExpansion', [
+            state('expanded', style({ height: '*', opacity: 1, visibility: 'visible' })),
+            state('collapsed', style({ height: '0px', opacity: 0, visibility: 'hidden' })),
+            transition('expanded <=> collapsed', animate('200ms cubic-bezier(.37,1.04,.68,.98)'))
+        ])
+    ],
+    styles: `
+        button {
+            all: unset;
+        }
+
+        .CollapsibleRoot {
+            width: 300px;
+        }
+
+        .IconButton {
+            font-family: inherit;
+            border-radius: 100%;
+            height: 25px;
+            width: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--violet-11);
+            box-shadow: 0 2px 10px var(--black-a7);
+        }
+
+        .IconButton[data-state='closed'] {
+            background-color: white;
+        }
+
+        .IconButton[data-state='open'] {
+            background-color: var(--violet-3);
+        }
+
+        .IconButton:hover {
+            background-color: var(--violet-3);
+        }
+
+        .IconButton:focus {
+            box-shadow: 0 0 0 2px black;
+        }
+
+        .Text {
+            color: var(--violet-11);
+            font-size: 15px;
+            line-height: 25px;
+        }
+
+        .Repository {
+            background-color: white;
+            border-radius: 4px;
+            margin: 10px 0;
+            padding: 10px;
+            box-shadow: 0 2px 10px var(--black-a7);
+        }
+    `,
+    template: `
+        <div
+            class="CollapsibleRoot"
+            #collapsibleRoot="collapsibleRoot"
+            [open]="open"
+            (onOpenChange)="onOpenChange($event)"
+            rdxCollapsibleRoot
+        >
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span class="Text" style="color: white">&#64;peduarte starred 3 repositories</span>
+                <button class="IconButton" rdxCollapsibleTrigger>
+                    @if (open) {
+                        <lucide-angular size="16" name="x" style="display: flex;" />
+                    } @else {
+                        <lucide-angular size="16" name="unfold-vertical" style="display: flex;" />
+                    }
+                </button>
+            </div>
+
+            <div class="Repository">
+                <span class="Text">&#64;radix-ui/primitives</span>
+            </div>
+
+            <div [@contentExpansion]="collapsibleRoot.isOpen() ? 'expanded' : 'collapsed'" rdxCollapsibleContent>
+                <div class="Repository">
+                    <span class="Text">&#64;radix-ui/colors</span>
+                </div>
+                <div class="Repository">
+                    <span class="Text">&#64;stitches/react</span>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class RdxCollapsibleAnimationComponent {
+    open = true;
+
+    onOpenChange($event: boolean) {
+        this.open = $event;
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/stories/collapsible-external-triggering.component.ts
+```typescript
+import { Component } from '@angular/core';
+import { LucideAngularModule } from 'lucide-angular';
+import { RdxCollapsibleContentDirective } from '../src/collapsible-content.directive';
+import { RdxCollapsibleRootDirective } from '../src/collapsible-root.directive';
+
+@Component({
+    selector: 'rdx-collapsible-external-triggering',
+    imports: [
+        RdxCollapsibleRootDirective,
+        RdxCollapsibleContentDirective,
+        LucideAngularModule
+    ],
+    styles: `
+        .CollapsibleRoot {
+            width: 300px;
+        }
+
+        .ExternalTrigger {
+            font-family: inherit;
+            border-radius: 8px;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--violet-11);
+            box-shadow: 0 2px 10px var(--black-a7);
+            margin-bottom: 10px;
+            padding: 4px;
+        }
+
+        .ExternalTrigger[data-state='closed'] {
+            background-color: white;
+        }
+
+        .ExternalTrigger[data-state='open'] {
+            background-color: var(--violet-3);
+        }
+
+        .ExternalTrigger:hover {
+            background-color: var(--violet-3);
+        }
+
+        .ExternalTrigger:focus {
+            box-shadow: 0 0 0 2px black;
+        }
+
+        .Text {
+            color: var(--violet-11);
+            font-size: 15px;
+            line-height: 25px;
+        }
+
+        .Repository {
+            background-color: white;
+            border-radius: 4px;
+            margin: 10px 0;
+            padding: 10px;
+            box-shadow: 0 2px 10px var(--black-a7);
+        }
+    `,
+    template: `
+        <button class="ExternalTrigger" (click)="open = !open">External Trigger</button>
+        <div class="CollapsibleRoot" #collapsibleRoot="collapsibleRoot" [open]="open" rdxCollapsibleRoot>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span class="Text" style="color: white">&#64;peduarte starred 3 repositories</span>
+            </div>
+
+            <div class="Repository">
+                <span class="Text">&#64;radix-ui/primitives</span>
+            </div>
+
+            <div rdxCollapsibleContent>
+                <div class="Repository">
+                    <span class="Text">&#64;radix-ui/colors</span>
+                </div>
+                <div class="Repository">
+                    <span class="Text">&#64;stitches/react</span>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class RdxCollapsibleExternalTriggeringComponent {
+    open = true;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/stories/collapsible.docs.mdx
+````
+import { ArgTypes, Canvas, Meta } from '@storybook/blocks';
+import * as CollapsibleStories from './collapsible.stories';
+import { RdxCollapsibleRootDirective } from '../src/collapsible-root.directive';
+
+<Meta title="Primitives/Collapsible" />
+
+# Collapsible
+
+#### An interactive component which expands/collapses a panel.
+
+<Canvas sourceState="hidden" of={CollapsibleStories.Default} />
+
+## Features
+
+- ✅ Full keyboard navigation.
+- ✅ Can be controlled or uncontrolled.
+
+## Anatomy
+
+```html
+<div rdxCollapsibleRoot>
+  <button rdxCollapsibleTrigger>Trigger</button>
+  <div rdxCollapsibleContent>Content</div>
+</div>
+```
+
+## Import
+
+Get started with importing the directives:
+
+```typescript
+import {
+  RdxCollapsibleRootDirective,
+  RdxCollapsibleTriggerDirective,
+  RdxCollapsibleContentDirective
+} from '@radix-ng/primitives/collapsible';
+```
+
+## API Reference
+
+### Root
+
+`RdxCollapsibleRootDirective`
+
+<ArgTypes of={RdxCollapsibleRootDirective} />
+
+### Trigger
+
+`RdxCollapsibleTriggerDirective`
+
+
+### Content
+
+`RdxCollapsibleContentDirective`
+
+## Examples
+
+### Animation
+
+<Canvas sourceState="hidden" of={CollapsibleStories.Animation} />
+
+### External Trigger
+
+<Canvas sourceState="hidden" of={CollapsibleStories.ExternalTrigger} />
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/collapsible/stories/collapsible.stories.ts
+```typescript
+import { BrowserAnimationsModule, provideAnimations } from '@angular/platform-browser/animations';
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { LucideAngularModule, UnfoldVertical, X } from 'lucide-angular';
+import { RdxCollapsibleContentDirective } from '../src/collapsible-content.directive';
+import { RdxCollapsibleRootDirective } from '../src/collapsible-root.directive';
+import { RdxCollapsibleTriggerDirective } from '../src/collapsible-trigger.directive';
+import { RdxCollapsibleAnimationComponent } from './collapsible-animation.component';
+import { RdxCollapsibleExternalTriggeringComponent } from './collapsible-external-triggering.component';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Collapsible',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                RdxCollapsibleRootDirective,
+                RdxCollapsibleTriggerDirective,
+                RdxCollapsibleContentDirective,
+                RdxCollapsibleExternalTriggeringComponent,
+                RdxCollapsibleAnimationComponent,
+                BrowserAnimationsModule,
+                LucideAngularModule,
+                LucideAngularModule.pick({ X, UnfoldVertical })
+            ],
+            providers: [provideAnimations()]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>
+
+                <style>
+                    button {
+                        all: unset;
+                    }
+                    .CollapsibleRoot {
+                        width: 300px;
+                    }
+
+                    .IconButton {
+                        font-family: inherit;
+                        border-radius: 100%;
+                        height: 25px;
+                        width: 25px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: var(--violet-11);
+                        box-shadow: 0 2px 10px var(--black-a7);
+                    }
+
+                    .IconButton[data-state='closed'] {
+                        background-color: white;
+                    }
+
+                    .IconButton[data-state='open'] {
+                        background-color: var(--violet-3);
+                    }
+
+                    .IconButton:hover {
+                        background-color: var(--violet-3);
+                    }
+
+                    .IconButton:focus {
+                        box-shadow: 0 0 0 2px black;
+                    }
+
+                    .Text {
+                        color: var(--violet-11);
+                        font-size: 15px;
+                        line-height: 25px;
+                    }
+
+                    .Repository {
+                        background-color: white;
+                        border-radius: 4px;
+                        margin: 10px 0;
+                        padding: 10px;
+                        box-shadow: 0 2px 10px var(--black-a7);
+                    }
+                </style>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <div class="CollapsibleRoot" rdxCollapsibleRoot [open]="true" #collapsibleRoot="collapsibleRoot">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span class="Text" style="color: white">&#64;peduarte starred 3 repositories</span>
+                    <button class="IconButton" rdxCollapsibleTrigger>
+                        @if (collapsibleRoot.isOpen()) {
+                        <lucide-angular size="16" name="x" style="display: flex;"></lucide-angular>
+                        } @else {
+                        <lucide-angular size="16" name="unfold-vertical" style="display: flex;"></lucide-angular>
+                        }
+                    </button>
+                </div>
+
+                <div class="Repository">
+                    <span class="Text">&#64;radix-ui/primitives</span>
+                </div>
+
+                <div rdxCollapsibleContent>
+                    <div class="Repository">
+                        <span class="Text">&#64;radix-ui/colors</span>
+                    </div>
+                    <div class="Repository">
+                        <span class="Text">&#64;stitches/react</span>
+                    </div>
+                </div>
+            </div>
+        `
+    })
+};
+
+export const ExternalTrigger: Story = {
+    render: () => ({
+        template: html`
+            <div
+                class="radix-themes light light-theme radix-themes-default-fonts"
+                data-accent-color="indigo"
+                data-radius="medium"
+                data-scaling="100%"
+            >
+                <rdx-collapsible-external-triggering></rdx-collapsible-external-triggering>
+            </div>
+        `
+    })
+};
+
+export const Animation: Story = {
+    render: () => ({
+        template: html`
+            <div
+                class="radix-themes light light-theme radix-themes-default-fonts"
+                data-accent-color="indigo"
+                data-radius="medium"
+                data-scaling="100%"
+            >
+                <rdx-collapsible-animation></rdx-collapsible-animation>
+            </div>
+        `
+    })
+};
+
+```

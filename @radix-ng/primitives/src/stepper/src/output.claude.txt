@@ -1,0 +1,676 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-description.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { injectStepperItemContext } from './stepper-item-context.token';
+
+@Directive({
+    selector: '[rdxStepperDescription]',
+    host: {
+        '[attr.id]': 'itemContext.descriptionId'
+    }
+})
+export class RdxStepperDescriptionDirective {
+    readonly itemContext = injectStepperItemContext();
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-indicator.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { injectStepperItemContext } from './stepper-item-context.token';
+
+@Directive({
+    selector: '[rdxStepperIndicator]',
+    exportAs: 'rdxStepperIndicator'
+})
+export class RdxStepperIndicatorDirective {
+    readonly itemContext = injectStepperItemContext();
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-item-context.token.ts</source>
+<document_content>
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { inject, InjectionToken, InputSignalWithTransform, Signal } from '@angular/core';
+import { StepperState } from './types';
+
+export interface StepperItemContext {
+    titleId: string;
+    descriptionId: string;
+    step: InputSignalWithTransform<number, NumberInput>;
+    disabled: InputSignalWithTransform<boolean, BooleanInput>;
+    isFocusable: Signal<boolean>;
+    itemState: Signal<StepperState>;
+}
+
+export const STEPPER_ITEM_CONTEXT = new InjectionToken<StepperItemContext>('StepperItemContext');
+
+export function injectStepperItemContext(): StepperItemContext {
+    return inject(STEPPER_ITEM_CONTEXT);
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-item.directive.ts</source>
+<document_content>
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { booleanAttribute, computed, Directive, forwardRef, inject, input, numberAttribute } from '@angular/core';
+import { _IdGenerator } from '@radix-ng/primitives/core';
+import { STEPPER_ITEM_CONTEXT, StepperItemContext } from './stepper-item-context.token';
+import { injectStepperRootContext } from './stepper-root-context.token';
+import { StepperState } from './types';
+
+@Directive({
+    selector: '[rdxStepperItem]',
+    providers: [
+        {
+            provide: STEPPER_ITEM_CONTEXT,
+            useExisting: forwardRef(() => RdxStepperItemDirective)
+        }
+    ],
+    host: {
+        '[attr.aria-current]': 'itemState() === "active" ? true : undefined',
+
+        '[attr.data-state]': 'itemState()',
+        '[attr.disabled]': 'disabled() || !isFocusable() ? "" : undefined',
+        '[attr.data-disabled]': 'disabled() || !isFocusable() ? "" : undefined',
+        '[attr.data-orientation]': 'rootContext.orientation()'
+    }
+})
+export class RdxStepperItemDirective implements StepperItemContext {
+    protected readonly rootContext = injectStepperRootContext();
+
+    /** @ignore */
+    readonly titleId = inject(_IdGenerator).getId('rdx-stepper-item-title');
+
+    /** @ignore */
+    readonly descriptionId = inject(_IdGenerator).getId('rdx-stepper-item-description');
+
+    readonly step = input<number, NumberInput>(NaN, { transform: numberAttribute });
+
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly completed = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /** @ignore */
+    readonly itemState = computed<StepperState>(() => {
+        if (this.completed()) return 'completed';
+        if (this.rootContext.value() === this.step()) return 'active';
+
+        const step = this.step() ?? 1;
+        if (this.rootContext.value()! > step) {
+            return 'completed';
+        }
+
+        return 'inactive';
+    });
+
+    /** @ignore */
+    readonly isFocusable = computed(() => {
+        if (this.disabled()) return false;
+
+        const step = this.step() ?? 1;
+        if (this.rootContext.linear()) {
+            return step <= this.rootContext.value()! || step === this.rootContext.value()! + 1;
+        }
+
+        return true;
+    });
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-root-context.token.ts</source>
+<document_content>
+import { Direction } from '@angular/cdk/bidi';
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    inject,
+    InjectionToken,
+    InputSignal,
+    InputSignalWithTransform,
+    ModelSignal,
+    WritableSignal
+} from '@angular/core';
+
+export interface StepperRootContext {
+    value: ModelSignal<number | undefined>;
+    orientation: InputSignal<'vertical' | 'horizontal'>;
+    dir: InputSignal<Direction>;
+    linear: InputSignalWithTransform<boolean, BooleanInput>;
+    totalStepperItems: WritableSignal<HTMLElement[]>;
+}
+
+export const STEPPER_ROOT_CONTEXT = new InjectionToken<StepperRootContext>('StepperRootContext');
+
+export function injectStepperRootContext(): StepperRootContext {
+    return inject(STEPPER_ROOT_CONTEXT);
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-root.directive.ts</source>
+<document_content>
+import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { Direction } from '@angular/cdk/bidi';
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import {
+    booleanAttribute,
+    computed,
+    Directive,
+    effect,
+    forwardRef,
+    inject,
+    input,
+    model,
+    numberAttribute,
+    output,
+    signal
+} from '@angular/core';
+import { STEPPER_ROOT_CONTEXT, StepperRootContext } from './stepper-root-context.token';
+
+@Directive({
+    selector: '[rdxStepperRoot]',
+    exportAs: 'rdxStepperRoot',
+    providers: [
+        {
+            provide: STEPPER_ROOT_CONTEXT,
+            useExisting: forwardRef(() => RdxStepperRootDirective)
+        }
+    ],
+    host: {
+        role: 'group',
+        '[attr.aria-label]': '"progress"',
+        '[attr.data-linear]': 'linear() ? "" : undefined',
+        '[attr.data-orientation]': 'orientation()'
+    }
+})
+export class RdxStepperRootDirective implements StepperRootContext {
+    private readonly liveAnnouncer = inject(LiveAnnouncer);
+
+    readonly defaultValue = input<number, NumberInput>(undefined, { transform: numberAttribute });
+
+    readonly value = model<number | undefined>(this.defaultValue());
+
+    readonly linear = input<boolean, BooleanInput>(true, { transform: booleanAttribute });
+
+    readonly dir = input<Direction>('ltr');
+
+    readonly orientation = input<'vertical' | 'horizontal'>('horizontal');
+
+    /** @ignore */
+    readonly totalStepperItemsArray = computed(() => Array.from(this.totalStepperItems()));
+
+    readonly onValueChange = output<number>();
+
+    /** @ignore */
+    readonly isFirstStep = computed(() => this.value() === 1);
+
+    /** @ignore */
+    readonly isLastStep = computed(() => this.value() === this.totalStepperItemsArray().length);
+
+    /** @ignore */
+    readonly totalSteps = computed(() => this.totalStepperItems().length);
+
+    /** @ignore */
+    readonly isNextDisabled = computed<boolean>(() => {
+        const item = this.nextStepperItem();
+        return item ? item.hasAttribute('disabled') : true;
+    });
+
+    /** @ignore */
+    readonly isPrevDisabled = computed<boolean>(() => {
+        const item = this.prevStepperItem();
+        return item ? item.hasAttribute('disabled') : true;
+    });
+
+    /** @ignore */
+    readonly totalStepperItems = signal<HTMLElement[]>([]);
+
+    private readonly nextStepperItem = signal<HTMLElement | null>(null);
+    private readonly prevStepperItem = signal<HTMLElement | null>(null);
+
+    constructor() {
+        effect(() => {
+            const items = this.totalStepperItemsArray();
+            const currentValue = this.value();
+
+            if (currentValue) {
+                if (items.length && currentValue < items.length) {
+                    this.nextStepperItem.set(items[currentValue]);
+                } else {
+                    this.nextStepperItem.set(null);
+                }
+
+                if (items.length && currentValue > 1) {
+                    this.prevStepperItem.set(items[currentValue - 2]);
+                } else {
+                    this.prevStepperItem.set(null);
+                }
+
+                this.onValueChange.emit(currentValue);
+                this.liveAnnouncer.announce(`Step ${currentValue} of ${items.length}`);
+            }
+        });
+    }
+
+    goToStep(step: number) {
+        if (step > this.totalSteps()) {
+            return;
+        }
+
+        if (step < 1) {
+            return;
+        }
+
+        if (
+            this.totalStepperItems().length &&
+            !!this.totalStepperItemsArray()[step] &&
+            this.totalStepperItemsArray()[step].hasAttribute('disabled')
+        ) {
+            return;
+        }
+
+        if (this.linear()) {
+            const currentValue = this.value() ?? 1;
+            if (step > currentValue + 1) {
+                return;
+            }
+        }
+        this.value.set(step);
+        this.onValueChange.emit(step);
+    }
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-separator.directive.ts</source>
+<document_content>
+import { Directive, effect, inject } from '@angular/core';
+import { RdxSeparatorRootDirective } from '@radix-ng/primitives/separator';
+import { injectStepperItemContext } from './stepper-item-context.token';
+import { injectStepperRootContext } from './stepper-root-context.token';
+
+@Directive({
+    selector: '[rdxStepperSeparator]',
+    hostDirectives: [{ directive: RdxSeparatorRootDirective, inputs: ['orientation', 'decorative'] }],
+    host: {
+        '[attr.data-state]': 'itemContext.itemState()'
+    }
+})
+export class RdxStepperSeparatorDirective {
+    protected readonly rootContext = injectStepperRootContext();
+    protected readonly itemContext = injectStepperItemContext();
+
+    private readonly rdxSeparator = inject(RdxSeparatorRootDirective, { host: true });
+
+    constructor() {
+        effect(() => {
+            this.rdxSeparator.updateDecorative(true);
+            this.rdxSeparator.updateOrientation(this.rootContext.orientation());
+        });
+    }
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-title.directive.ts</source>
+<document_content>
+import { Directive } from '@angular/core';
+import { injectStepperItemContext } from './stepper-item-context.token';
+
+@Directive({
+    selector: '[rdxStepperTitle]',
+    host: {
+        '[attr.id]': 'itemContext.titleId'
+    }
+})
+export class RdxStepperTitleDirective {
+    readonly itemContext = injectStepperItemContext();
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/stepper-trigger.directive.ts</source>
+<document_content>
+import { computed, Directive, ElementRef, inject, OnDestroy, OnInit } from '@angular/core';
+import * as kbd from '@radix-ng/primitives/core';
+import { injectStepperItemContext } from './stepper-item-context.token';
+import { injectStepperRootContext } from './stepper-root-context.token';
+import { getActiveElement } from './utils/getActiveElement';
+import { useArrowNavigation } from './utils/useArrowNavigation';
+
+// as button
+@Directive({
+    selector: 'button[rdxStepperTrigger]',
+    host: {
+        '[attr.tabindex]': 'itemContext.isFocusable() ? 0 : -1',
+        '[attr.aria-describedby]': 'itemContext.descriptionId',
+        '[attr.aria-labelledby]': 'itemContext.titleId',
+
+        '[attr.data-state]': 'itemContext.itemState()',
+        '[attr.data-orientation]': 'rootContext.orientation()',
+        '[attr.disabled]': 'itemContext.disabled() || !itemContext.isFocusable() ? "" : undefined',
+        '[attr.data-disabled]': 'itemContext.disabled() || !itemContext.isFocusable() ? "" : undefined',
+
+        '(mousedown)': 'handleMouseDown($event)',
+
+        '(keydown.Enter)': 'handleKeyDown($event)',
+        '(keydown.Space)': 'handleKeyDown($event)',
+        '(keydown.ArrowLeft)': 'handleKeyDown($event)',
+        '(keydown.ArrowRight)': 'handleKeyDown($event)',
+        '(keydown.ArrowUp)': 'handleKeyDown($event)',
+        '(keydown.ArrowDown)': 'handleKeyDown($event)'
+    }
+})
+export class RdxStepperTriggerDirective implements OnInit, OnDestroy {
+    protected readonly rootContext = injectStepperRootContext();
+    protected readonly itemContext = injectStepperItemContext();
+
+    private readonly elementRef = inject(ElementRef);
+
+    readonly stepperItems = computed(() => Array.from(this.rootContext.totalStepperItems()));
+
+    ngOnInit() {
+        const current = this.rootContext.totalStepperItems();
+        this.rootContext.totalStepperItems.set([...current, this.elementRef.nativeElement]);
+    }
+
+    ngOnDestroy() {
+        const current = this.rootContext.totalStepperItems();
+        const updated = current.filter((el: HTMLElement) => el !== this.elementRef.nativeElement);
+
+        this.rootContext.totalStepperItems.set(updated);
+    }
+
+    handleMouseDown(event: MouseEvent) {
+        if (this.itemContext.disabled()) {
+            return;
+        }
+
+        // handler only left mouse click
+        if (event.button !== 0) {
+            return;
+        }
+
+        if (this.rootContext.linear()) {
+            if (
+                this.itemContext.step() <= this.rootContext.value()! ||
+                this.itemContext.step() === this.rootContext.value()! + 1
+            ) {
+                if (!event.ctrlKey) {
+                    this.rootContext.value.set(this.itemContext.step());
+                    return;
+                }
+            }
+        } else {
+            if (!event.ctrlKey) {
+                this.rootContext.value.set(this.itemContext.step());
+                return;
+            }
+        }
+
+        // prevent focus to avoid accidental activation
+        event.preventDefault();
+    }
+
+    handleKeyDown(event: KeyboardEvent) {
+        event.preventDefault();
+
+        if (this.itemContext.disabled()) {
+            return;
+        }
+
+        if ((event.key === kbd.ENTER || event.key === kbd.SPACE) && !event.ctrlKey && !event.shiftKey)
+            this.rootContext.value.set(this.itemContext.step());
+
+        if ([kbd.ARROW_LEFT, kbd.ARROW_RIGHT, kbd.ARROW_UP, kbd.ARROW_DOWN].includes(event.key)) {
+            useArrowNavigation(event, getActiveElement() as HTMLElement, undefined, {
+                itemsArray: this.stepperItems() as HTMLElement[],
+                focus: true,
+                loop: false,
+                arrowKeyOptions: this.rootContext.orientation(),
+                dir: this.rootContext.dir()
+            });
+        }
+    }
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/types.ts</source>
+<document_content>
+export type StepperState = 'completed' | 'active' | 'inactive';
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/utils/getActiveElement.ts</source>
+<document_content>
+export function getActiveElement(): Element | null {
+    let activeElement = document.activeElement;
+    if (activeElement == null) {
+        return null;
+    }
+
+    while (
+        activeElement != null &&
+        activeElement.shadowRoot != null &&
+        activeElement.shadowRoot.activeElement != null
+    ) {
+        activeElement = activeElement.shadowRoot.activeElement;
+    }
+
+    return activeElement;
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/stepper/src/utils/useArrowNavigation.ts</source>
+<document_content>
+// made by https://reka-ui.com/
+
+import { Direction } from '@angular/cdk/bidi';
+
+type ArrowKeyOptions = 'horizontal' | 'vertical' | 'both';
+
+interface ArrowNavigationOptions {
+    /**
+     * The arrow key options to allow navigation
+     *
+     * @defaultValue "both"
+     */
+    arrowKeyOptions?: ArrowKeyOptions;
+
+    /**
+     * The attribute name to find the collection items in the parent element.
+     *
+     * @defaultValue "data-reka-collection-item"
+     */
+    attributeName?: string;
+
+    /**
+     * The parent element where contains all the collection items, this will collect every item to be used when nav
+     * It will be ignored if attributeName is provided
+     *
+     * @defaultValue []
+     */
+    itemsArray?: HTMLElement[];
+
+    /**
+     * Allow loop navigation. If false, it will stop at the first and last element
+     *
+     * @defaultValue true
+     */
+    loop?: boolean;
+
+    /**
+     * The orientation of the collection
+     *
+     * @defaultValue "ltr"
+     */
+    dir?: Direction;
+
+    /**
+     * Prevent the scroll when navigating. This happens when the direction of the
+     * key matches the scroll direction of any ancestor scrollable elements.
+     *
+     * @defaultValue true
+     */
+    preventScroll?: boolean;
+
+    /**
+     * By default all currentElement would trigger navigation. If `true`, currentElement nodeName in the ignore list will return null
+     *
+     * @defaultValue false
+     */
+    enableIgnoredElement?: boolean;
+
+    /**
+     * Focus the element after navigation
+     *
+     * @defaultValue false
+     */
+    focus?: boolean;
+}
+
+const ignoredElement = ['INPUT', 'TEXTAREA'];
+
+/**
+ * Allow arrow navigation for every html element with data-reka-collection-item tag
+ *
+ * @param e               Keyboard event
+ * @param currentElement  Event initiator element or any element that wants to handle the navigation
+ * @param parentElement   Parent element where contains all the collection items, this will collect every item to be used when nav
+ * @param options         further options
+ * @returns               the navigated html element or null if none
+ */
+export function useArrowNavigation(
+    e: KeyboardEvent,
+    currentElement: HTMLElement,
+    parentElement: HTMLElement | undefined,
+    options: ArrowNavigationOptions = {}
+): HTMLElement | null {
+    if (!currentElement || (options.enableIgnoredElement && ignoredElement.includes(currentElement.nodeName)))
+        return null;
+
+    const {
+        arrowKeyOptions = 'both',
+        attributeName = '[data-reka-collection-item]',
+        itemsArray = [],
+        loop = true,
+        dir = 'ltr',
+        preventScroll = true,
+        focus = false
+    } = options;
+
+    const [right, left, up, down, home, end] = [
+        e.key === 'ArrowRight',
+        e.key === 'ArrowLeft',
+        e.key === 'ArrowUp',
+        e.key === 'ArrowDown',
+        e.key === 'Home',
+        e.key === 'End'
+    ];
+    const goingVertical = up || down;
+    const goingHorizontal = right || left;
+    if (
+        !home &&
+        !end &&
+        ((!goingVertical && !goingHorizontal) ||
+            (arrowKeyOptions === 'vertical' && goingHorizontal) ||
+            (arrowKeyOptions === 'horizontal' && goingVertical))
+    ) {
+        return null;
+    }
+
+    const allCollectionItems: HTMLElement[] = parentElement
+        ? Array.from(parentElement.querySelectorAll(attributeName))
+        : itemsArray;
+
+    if (!allCollectionItems.length) return null;
+
+    if (preventScroll) e.preventDefault();
+
+    let item: HTMLElement | null = null;
+
+    if (goingHorizontal || goingVertical) {
+        const goForward = goingVertical ? down : dir === 'ltr' ? right : left;
+        item = findNextFocusableElement(allCollectionItems, currentElement, {
+            goForward,
+            loop
+        });
+    } else if (home) {
+        item = allCollectionItems.length ? allCollectionItems[0] : null;
+    } else if (end) {
+        item = allCollectionItems.length ? allCollectionItems[allCollectionItems.length - 1] : null;
+    }
+
+    if (focus) item?.focus();
+
+    return item;
+}
+
+interface FindNextFocusableElementOptions {
+    /**
+     * Whether to search forwards or backwards.
+     */
+    goForward: boolean;
+    /**
+     * Whether to allow looping the search. If false, it will stop at the first/last element.
+     *
+     * @default true
+     */
+    loop?: boolean;
+}
+
+/**
+ * Recursive function to find the next focusable element to avoid disabled elements
+ *
+ * @param elements Elements to navigate
+ * @param currentElement Current active element
+ * @param options
+ * @returns next focusable element
+ */
+function findNextFocusableElement(
+    elements: HTMLElement[],
+    currentElement: HTMLElement,
+    options: FindNextFocusableElementOptions,
+    iterations = elements.length
+): HTMLElement | null {
+    if (--iterations === 0) return null;
+
+    const index = elements.indexOf(currentElement);
+    const newIndex = options.goForward ? index + 1 : index - 1;
+
+    if (!options.loop && (newIndex < 0 || newIndex >= elements.length)) return null;
+
+    const adjustedNewIndex = (newIndex + elements.length) % elements.length;
+    const candidate = elements[adjustedNewIndex];
+    if (!candidate) return null;
+
+    const isDisabled = candidate.hasAttribute('disabled') && candidate.getAttribute('disabled') !== 'false';
+    if (isDisabled) {
+        return findNextFocusableElement(elements, candidate, options, iterations);
+    }
+    return candidate;
+}
+
+</document_content>
+</document>
+</documents>

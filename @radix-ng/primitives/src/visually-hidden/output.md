@@ -21,6 +21,157 @@ export * from './src/visually-hidden.directive';
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/visually-hidden/stories/visually-hidden-input.stories.ts
+```typescript
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxVisuallyHiddenInputBubbleDirective } from '../src/visually-hidden-input-bubble.directive';
+import { RdxVisuallyHiddenInputDirective } from '../src/visually-hidden-input.directive';
+import { RdxVisuallyHiddenDirective } from '../src/visually-hidden.directive';
+
+const html = String.raw;
+
+export default {
+    title: 'Utilities/Visually-HiddenInput',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                RdxVisuallyHiddenDirective,
+                RdxVisuallyHiddenInputBubbleDirective,
+                RdxVisuallyHiddenInputDirective
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) =>
+                `
+                    <div class="radix-themes light light-theme"
+                      data-radius="medium"
+                      data-scaling="100%">${story}</div>`
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: (args) => ({
+        props: args,
+        template: html`
+            <div>
+                <div>
+                    <label class="Label" for="visibleInput">Visible Input:</label>
+                    <input class="Input" id="visibleInput" type="text" name="visibleInput" value="Visible Input" />
+                </div>
+
+                <div>
+                    <label for="hiddenInput">Hidden Input:</label>
+                    <input
+                        rdxVisuallyHiddenInput
+                        [feature]="'fully-hidden'"
+                        [name]="'hiddenInput'"
+                        [value]="'Hidden Value'"
+                        [checked]="true"
+                        [required]="true"
+                        [disabled]="false"
+                    />
+                </div>
+
+                <input
+                    rdxVisuallyHiddenInput
+                    [feature]="'fully-hidden'"
+                    [name]="'testInput'"
+                    [value]="{ key1: 'value1', key2: 'value2' }"
+                    [checked]="true"
+                    [required]="true"
+                />
+                <p>The input above is visually hidden but still interactable.</p>
+            </div>
+
+            <style>
+                p {
+                    color: white;
+                    font-size: 15px;
+                }
+
+                input {
+                    all: unset;
+                }
+
+                .Input {
+                    width: 200px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                    padding: 0 10px;
+                    margin-left: 10px;
+                    height: 35px;
+                    font-size: 15px;
+                    line-height: 1;
+                    color: white;
+                    background-color: var(--black-a5);
+                    box-shadow: 0 0 0 1px var(--black-a9);
+                }
+
+                .Input:focus {
+                    box-shadow: 0 0 0 2px black;
+                }
+                .Input::selection {
+                    background-color: var(--black-a9);
+                    color: white;
+                }
+
+                label {
+                    color: white;
+                    font-size: 15px;
+                    line-height: 35px;
+                    font-weight: 500;
+                }
+            </style>
+        `
+    })
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/visually-hidden/stories/visually-hidden.docs.mdx
+````
+import { Meta } from '@storybook/blocks';
+
+<Meta title="Utilities/Visually Hidden" />
+
+# Visually Hidden
+
+#### Hides content from the screen in an accessible way.
+
+#### You can use also [a11y](https://material.angular.io/cdk/a11y), they also have an auxiliary class for this.
+
+## Features
+
+- ✅ Visually hides content while preserving it for assistive technology.
+
+## Import
+
+Screen readers and other assistive technology skip elements that have display: none, visibility: hidden, opacity: 0, height: 0, or width: 0. In some cases you may need to visually hide an element while keeping it available to assistive technology.
+You can do so using the a11y-visually-hidden Sass mixin, which emits the .cdk-visually-hidden CSS class:
+
+```scss
+@use '@angular/cdk';
+
+@include cdk.a11y-visually-hidden();
+```
+
+## Examples
+
+```html
+<div class="custom-checkbox">
+  <input class="cdk-visually-hidden" type="checkbox" />
+</div>
+```
+
+## Accessibility
+
+This is useful in certain scenarios as an alternative to traditional labelling with aria-label or aria-labelledby.
+
+````
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/visually-hidden/src/visually-hidden-input-bubble.directive.ts
 ```typescript
 import { Directive, effect, ElementRef, inject, input, linkedSignal } from '@angular/core';

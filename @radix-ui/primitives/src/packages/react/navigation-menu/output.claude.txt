@@ -1,24 +1,34 @@
 <documents>
 <document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/CHANGELOG.md</source>
+<document_content>
+# @radix-ui/react-navigation-menu
+
+## 1.2.9
+
+- Updated dependencies: `@radix-ui/react-use-controllable-state@1.2.2`
+
+## 1.2.8
+
+- Updated dependencies: `@radix-ui/react-use-controllable-state@1.2.1`
+
+## 1.2.7
+
+- Minor improvements to `useControllableState` to enhance performance, reduce surface area for bugs, and log warnings when misused (#3455)
+- Updated dependencies: `@radix-ui/react-collection@1.1.4`, `@radix-ui/react-use-controllable-state@1.2.0`, `@radix-ui/react-visually-hidden@1.2.0`, `@radix-ui/react-primitive@2.1.0`, `@radix-ui/react-dismissable-layer@1.1.7`
+
+</document_content>
+</document>
+<document index="2">
 <source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/README.md</source>
 <document_content>
 # `react-navigation-menu`
-
-## Installation
-
-```sh
-$ yarn add @radix-ui/react-navigation-menu
-# or
-$ npm install @radix-ui/react-navigation-menu
-```
-
-## Usage
 
 View docs [here](https://radix-ui.com/primitives/docs/components/navigation-menu).
 
 </document_content>
 </document>
-<document index="2">
+<document index="3">
 <source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/eslint.config.mjs</source>
 <document_content>
 // @ts-check
@@ -28,29 +38,33 @@ export default configs;
 
 </document_content>
 </document>
-<document index="3">
+<document index="4">
 <source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/package.json</source>
 <document_content>
 {
   "name": "@radix-ui/react-navigation-menu",
-  "version": "1.2.6-rc.6",
+  "version": "1.2.9",
   "license": "MIT",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/index.d.mts",
-        "default": "./dist/index.mjs"
-      },
-      "require": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
+  "source": "./src/index.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "import": {
+          "types": "./dist/index.d.mts",
+          "default": "./dist/index.mjs"
+        },
+        "require": {
+          "types": "./dist/index.d.ts",
+          "default": "./dist/index.js"
+        }
       }
     }
   },
-  "source": "./src/index.ts",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "README.md"
@@ -59,7 +73,8 @@ export default configs;
   "scripts": {
     "lint": "eslint --max-warnings 0 src",
     "clean": "rm -rf dist",
-    "version": "yarn version"
+    "typecheck": "tsc --noEmit",
+    "build": "radix-build"
   },
   "dependencies": {
     "@radix-ui/primitive": "workspace:*",
@@ -78,13 +93,14 @@ export default configs;
     "@radix-ui/react-visually-hidden": "workspace:*"
   },
   "devDependencies": {
+    "@repo/builder": "workspace:*",
     "@repo/eslint-config": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
     "eslint": "^9.18.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "typescript": "^5.7.3"
   },
   "peerDependencies": {
@@ -108,13 +124,27 @@ export default configs;
   },
   "bugs": {
     "url": "https://github.com/radix-ui/primitives/issues"
-  },
-  "stableVersion": "1.2.5"
+  }
 }
 
 </document_content>
 </document>
-<document index="4">
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/tsconfig.json</source>
+<document_content>
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["@repo/typescript-config/react-library"]
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+
+</document_content>
+</document>
+<document index="6">
 <source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/src/index.ts</source>
 <document_content>
 'use client';
@@ -155,924 +185,9 @@ export type {
 
 </document_content>
 </document>
-<document index="5">
-<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/src/navigation-menu.stories.module.css</source>
-<document_content>
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.borderdList {
-  background-color: #f3f4f5;
-  border: 1px solid #d4d6d8;
-  padding: 25px;
-  border-radius: 8px;
-}
-
-/* -----------------------------------------------------------------------------------------------*/
-
-@keyframes navigationMenu-fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes navigationMenu-fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes navigationMenu-scaleIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes navigationMenu-scaleOut {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-}
-
-@keyframes navigationMenu-enterFromRight {
-  from {
-    transform: translate3d(200px, 0, 0);
-    opacity: 0;
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes navigationMenu-enterFromLeft {
-  from {
-    transform: translate3d(-200px, 0, 0);
-    opacity: 0;
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-}
-
-@keyframes navigationMenu-exitToRight {
-  from {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-  to {
-    transform: translate3d(200px, 0, 0);
-    opacity: 0;
-  }
-}
-
-@keyframes navigationMenu-exitToLeft {
-  from {
-    transform: translate3d(0, 0, 0);
-    opacity: 1;
-  }
-  to {
-    transform: translate3d(-200px, 0, 0);
-    opacity: 0;
-  }
-}
-
-/* -----------------------------------------------------------------------------------------------*/
-
-.mainList {
-  all: unset;
-  list-style: none;
-  display: flex;
-
-  &[data-orientation='vertical'] {
-    flex-direction: column;
-  }
-}
-
-.expandableItem {
-  position: relative;
-}
-
-.trigger,
-.link,
-.submenusSubTrigger {
-  padding: 10px 16px;
-  font-weight: bold;
-}
-
-.trigger {
-  display: flex;
-  align-items: center;
-  border: 0;
-  background: transparent;
-  font-size: inherit;
-  gap: 4px;
-
-  & > svg {
-    transition: transform 200ms ease;
-  }
-
-  &[data-state='open'] > svg {
-    transform: rotate(-180deg);
-  }
-}
-
-.link {
-  color: inherit;
-  text-decoration: none;
-  display: block;
-}
-
-/* -----------------------------------------------------------------------------------------------*/
-
-.basicContent {
-  position: absolute;
-  top: 100%;
-  width: max-content;
-  left: 0;
-  margin-top: 5px;
-  gap: 20px;
-  border-radius: 10px;
-  background-color: white;
-  padding: 20px;
-  transform-origin: top left;
-  box-shadow:
-    0 10px 100px -20px rgba(50, 50, 93, 0.25),
-    0 30px 60px -30px rgba(0, 0, 0, 0.3);
-  z-index: 1;
-
-  [dir='rtl'] & {
-    left: unset;
-    right: 0;
-    transform-origin: top right;
-  }
-
-  &[data-state='open'] {
-    animation: navigationMenu-scaleIn 250ms ease;
-  }
-  &[data-state='closed'] {
-    animation: navigationMenu-scaleOut 250ms ease;
-  }
-}
-
-/* -----------------------------------------------------------------------------------------------*/
-
-.viewportIndicator {
-  display: flex;
-  justify-content: center;
-  height: 10px;
-  bottom: -30px;
-  z-index: 1;
-  transition:
-    transform,
-    width,
-    250ms ease;
-  overflow: hidden;
-
-  &[data-state='visible'] {
-    animation: navigationMenu-fadeIn 250ms ease;
-  }
-  &[data-state='hidden'] {
-    animation: navigationMenu-fadeOut 250ms ease;
-  }
-}
-
-.viewportInnerIndicator {
-  position: relative;
-  top: 4px;
-  width: 20px;
-  height: 20px;
-  background-color: white;
-  transform: rotate(45deg);
-  border-radius: 3px;
-}
-
-.viewportViewport {
-  position: relative;
-  background-color: white;
-  transition:
-    width,
-    height,
-    300ms ease;
-  width: var(--radix-navigation-menu-viewport-width);
-  height: var(--radix-navigation-menu-viewport-height);
-  transform-origin: top center;
-  overflow: hidden;
-  margin-top: 15px;
-  border-radius: 8px;
-  box-shadow:
-    0 50px 100px -20px rgba(50, 50, 93, 0.25),
-    0 30px 60px -30px rgba(0, 0, 0, 0.3);
-  &[data-state='open'] {
-    animation: navigationMenu-scaleIn 300ms ease;
-  }
-  &[data-state='closed'] {
-    animation: navigationMenu-scaleOut 300ms ease;
-  }
-}
-
-.viewportContent {
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: grid;
-  gap: 20px;
-  padding: 40px;
-
-  &[data-motion='from-start'] {
-    animation: navigationMenu-enterFromLeft 250ms ease;
-  }
-  &[data-motion='from-end'] {
-    animation: navigationMenu-enterFromRight 250ms ease;
-  }
-  &[data-motion='to-start'] {
-    animation: navigationMenu-exitToLeft 250ms ease;
-  }
-  &[data-motion='to-end'] {
-    animation: navigationMenu-exitToRight 250ms ease;
-  }
-}
-
-/* -----------------------------------------------------------------------------------------------*/
-
-.submenusRoot {
-  display: grid;
-  width: 100%;
-  max-width: 800px;
-  gap: 20px;
-
-  &[data-orientation='vertical'] {
-    grid-template-columns: 0.3fr 1fr;
-  }
-
-  &[data-orientation='horizontal'] {
-    justify-items: center;
-    margin-top: -10px;
-  }
-}
-
-.submenusViewport {
-  position: absolute;
-  left: 0;
-  top: 100%;
-  border-top: 1px solid #dcdfe3;
-  transform-origin: top center;
-  width: 100vw;
-  background-color: white;
-  height: var(--radix-navigation-menu-viewport-height);
-  transition: height 300ms ease;
-  overflow: hidden;
-  box-shadow:
-    0 50px 100px -20px rgba(50, 50, 93, 0.1),
-    0 30px 60px -30px rgba(0, 0, 0, 0.2);
-
-  &[data-state='open'] {
-    animation: navigationMenu-fadeIn 250ms ease;
-  }
-  &[data-state='closed'] {
-    animation: navigationMenu-fadeOut 250ms ease;
-  }
-}
-
-.submenusContent {
-  display: flex;
-  justify-content: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding-top: 35px;
-  padding-bottom: 35px;
-  &[data-motion='from-start'] {
-    animation: navigationMenu-enterFromLeft 250ms ease;
-  }
-  &[data-motion='from-end'] {
-    animation: navigationMenu-enterFromRight 250ms ease;
-  }
-  &[data-motion='to-start'] {
-    animation: navigationMenu-exitToLeft 250ms ease;
-  }
-  &[data-motion='to-end'] {
-    animation: navigationMenu-exitToRight 250ms ease;
-  }
-}
-
-.submenusSubContent {
-  display: grid;
-  gap: 20px;
-  width: 100%;
-}
-
-.submenusSubViewport {
-  width: 100%;
-}
-
-.submenusSubTrigger {
-  position: relative;
-  display: flex;
-  align-items: center;
-  border: 0;
-  background: transparent;
-  font-size: inherit;
-  width: 100%;
-  border-radius: 4px;
-  &[data-state='open'] {
-    background-color: #f3f4f5;
-  }
-}
-
-.submenusSubIndicator {
-  background-color: black;
-  border-radius: 4px;
-
-  &[data-orientation='vertical'] {
-    width: 3px;
-    transition:
-      transform,
-      height,
-      250ms ease;
-    [dir='ltr'] & {
-      right: 0;
-    }
-    [dir='rtl'] {
-      left: 0;
-    }
-  }
-
-  &[data-orientation='horizontal'] {
-    height: 3px;
-    bottom: 0;
-    transition:
-      transform,
-      width,
-      250ms ease;
-  }
-}
-
-</document_content>
-</document>
-<document index="6">
-<source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/src/navigation-menu.stories.tsx</source>
-<document_content>
-import * as React from 'react';
-import * as NavigationMenu from '@radix-ui/react-navigation-menu';
-import { DirectionProvider } from '@radix-ui/react-direction';
-import styles from './navigation-menu.stories.module.css';
-
-export default { title: 'Components/NavigationMenu' };
-
-export const Basic = () => {
-  return (
-    <StoryFrame>
-      <NavigationMenu.Root>
-        <NavigationMenu.List className={styles.mainList}>
-          <NavigationMenu.Item className={styles.expandableItem}>
-            <TriggerWithIndicator>Products</TriggerWithIndicator>
-            <NavigationMenu.Content className={styles.basicContent}>
-              <LinkGroup
-                bordered={false}
-                items={[
-                  'Fusce pellentesque',
-                  'Aliquam porttitor',
-                  'Pellentesque',
-                  'Fusce pellentesque',
-                  'Aliquam porttitor',
-                  'Pellentesque',
-                ]}
-              />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item className={styles.expandableItem}>
-            <TriggerWithIndicator>Company</TriggerWithIndicator>
-            <NavigationMenu.Content className={styles.basicContent}>
-              <LinkGroup
-                bordered={false}
-                items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-              />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item className={styles.expandableItem}>
-            <TriggerWithIndicator disabled>Developers</TriggerWithIndicator>
-            <NavigationMenu.Content className={styles.basicContent}>
-              <LinkGroup bordered={false} items={['Aliquam porttitor', 'Pellentesque']} />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <NavigationMenu.Link href="#example" className={styles.link}>
-              Link
-            </NavigationMenu.Link>
-          </NavigationMenu.Item>
-        </NavigationMenu.List>
-      </NavigationMenu.Root>
-    </StoryFrame>
-  );
-};
-
-export const CustomDurations = () => {
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#e5e8eb',
-        paddingBottom: 150,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-      }}
-    >
-      <h1>Delay duration</h1>
-      <h2>Default (200ms)</h2>
-      <DurationNavigation />
-
-      <h2>Custom (0ms = instant open)</h2>
-      <DurationNavigation delayDuration={0} />
-
-      <h2>Custom (700ms)</h2>
-      <DurationNavigation delayDuration={700} />
-
-      <h1 style={{ marginTop: 50 }}>Skip delay duration</h1>
-      <h2>Default (300ms to move from one trigger to another)</h2>
-      <DurationNavigation />
-
-      <h2>Custom (0ms to move from one trigger to another = never skip)</h2>
-      <DurationNavigation skipDelayDuration={0} />
-
-      <h2>Custom (2000ms to move from one trigger to another)</h2>
-      <DurationNavigation delayDuration={500} skipDelayDuration={2000} />
-    </div>
-  );
-};
-
-export const Viewport = () => {
-  return (
-    <StoryFrame>
-      <NavigationMenu.Root>
-        <NavigationMenu.List className={styles.mainList}>
-          <NavigationMenu.Item>
-            <TriggerWithIndicator>Products</TriggerWithIndicator>
-            <NavigationMenu.Content
-              className={styles.viewportContent}
-              style={{
-                gridTemplateColumns: '1fr 2fr',
-                width: 600,
-              }}
-            >
-              <LinkGroup
-                items={[
-                  'Fusce pellentesque',
-                  'Aliquam porttitor',
-                  'Pellentesque',
-                  'Fusce pellentesque',
-                  'Aliquam porttitor',
-                  'Pellentesque',
-                ]}
-              />
-
-              <LinkGroup items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']} />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <TriggerWithIndicator>Company</TriggerWithIndicator>
-            <NavigationMenu.Content
-              className={styles.viewportContent}
-              style={{
-                gridTemplateColumns: '1fr 1fr',
-                width: 450,
-              }}
-            >
-              <LinkGroup
-                items={[
-                  'Fusce pellentesque',
-                  'Aliquam porttitor',
-                  'Pellentesque',
-                  'Aliquam porttitor',
-                ]}
-              />
-
-              <LinkGroup items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']} />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <TriggerWithIndicator disabled>Developers</TriggerWithIndicator>
-            <NavigationMenu.Content
-              className={styles.viewportContent}
-              style={{
-                gridTemplateColumns: '1.6fr 1fr',
-                width: 650,
-              }}
-            >
-              <LinkGroup items={['Donec quis dui', 'Vestibulum']} />
-              <LinkGroup items={['Fusce pellentesque', 'Aliquam porttitor']} />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <NavigationMenu.Link href="#example" className={styles.link}>
-              Link
-            </NavigationMenu.Link>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Indicator className={styles.viewportIndicator}>
-            <div className={styles.viewportInnerIndicator} />
-          </NavigationMenu.Indicator>
-        </NavigationMenu.List>
-
-        <div
-          style={{
-            position: 'absolute',
-            display: 'flex',
-            justifyContent: 'center',
-            width: '100%',
-            top: '100%',
-            left: 0,
-          }}
-        >
-          <NavigationMenu.Viewport className={styles.viewportViewport} />
-        </div>
-      </NavigationMenu.Root>
-    </StoryFrame>
-  );
-};
-
-export const Submenus = () => {
-  return (
-    <StoryFrame>
-      <NavigationMenu.Root>
-        <NavigationMenu.List className={styles.mainList}>
-          <NavigationMenu.Item>
-            <TriggerWithIndicator>Products</TriggerWithIndicator>
-            <NavigationMenu.Content className={styles.submenusContent}>
-              <NavigationMenu.Sub className={styles.submenusRoot} defaultValue="extensibility">
-                <NavigationMenu.List className={styles.mainList}>
-                  <NavigationMenu.Item value="extensibility">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Extensibility
-                    </NavigationMenu.Trigger>
-
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1.5fr 1fr 1fr',
-                      }}
-                    >
-                      <LinkGroup items={['Donec quis dui', 'Vestibulum', 'Nunc dignissim']} />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Item value="security">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Security
-                    </NavigationMenu.Trigger>
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1fr 1fr 1fr',
-                      }}
-                    >
-                      <LinkGroup
-                        items={[
-                          'Fusce pellentesque',
-                          'Aliquam porttitor',
-                          'Pellentesque',
-                          'Vestibulum',
-                        ]}
-                      />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                      <LinkGroup items={['Fusce pellentesque', 'Aliquam porttitor']} />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Item value="authentication">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Authentication
-                    </NavigationMenu.Trigger>
-
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1.5fr 1fr 1fr',
-                      }}
-                    >
-                      <LinkGroup items={['Donec quis dui', 'Vestibulum', 'Nunc dignissim']} />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Indicator className={styles.submenusSubIndicator} />
-                </NavigationMenu.List>
-
-                <NavigationMenu.Viewport className={styles.submenusSubViewport} />
-              </NavigationMenu.Sub>
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <TriggerWithIndicator>Company</TriggerWithIndicator>
-            <NavigationMenu.Content className={styles.submenusContent}>
-              <NavigationMenu.Sub
-                className={styles.submenusRoot}
-                orientation="vertical"
-                defaultValue="customers"
-              >
-                <NavigationMenu.List className={styles.mainList}>
-                  <NavigationMenu.Item value="customers">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Customers
-                    </NavigationMenu.Trigger>
-
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1.5fr 1fr',
-                      }}
-                    >
-                      <LinkGroup items={['Donec quis dui', 'Vestibulum', 'Nunc dignissim']} />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Item value="partners">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Partners
-                    </NavigationMenu.Trigger>
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1fr 1fr',
-                      }}
-                    >
-                      <LinkGroup
-                        items={[
-                          'Fusce pellentesque',
-                          'Aliquam porttitor',
-                          'Pellentesque',
-                          'Vestibulum',
-                        ]}
-                      />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Item value="enterprise">
-                    <NavigationMenu.Trigger className={styles.submenusSubTrigger}>
-                      Enterprise
-                    </NavigationMenu.Trigger>
-
-                    <NavigationMenu.Content
-                      className={styles.submenusSubContent}
-                      style={{
-                        gridTemplateColumns: '1.5fr 1fr',
-                      }}
-                    >
-                      <LinkGroup items={['Donec quis dui', 'Vestibulum', 'Nunc dignissim']} />
-                      <LinkGroup
-                        items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-                      />
-                    </NavigationMenu.Content>
-                  </NavigationMenu.Item>
-
-                  <NavigationMenu.Indicator className={styles.submenusSubIndicator} />
-                </NavigationMenu.List>
-
-                <NavigationMenu.Viewport className={styles.submenusSubViewport} />
-              </NavigationMenu.Sub>
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <TriggerWithIndicator disabled>Developers</TriggerWithIndicator>
-            <NavigationMenu.Content
-              className={styles.submenusSubContent}
-              style={{ gridTemplateColumns: '1fr 1fr' }}
-            >
-              <LinkGroup items={['Donec quis dui', 'Vestibulum']} />
-              <LinkGroup items={['Fusce pellentesque', 'Aliquam porttitor']} />
-            </NavigationMenu.Content>
-          </NavigationMenu.Item>
-
-          <NavigationMenu.Item>
-            <NavigationMenu.Link href="#example" className={styles.link}>
-              Link
-            </NavigationMenu.Link>
-          </NavigationMenu.Item>
-        </NavigationMenu.List>
-
-        <NavigationMenu.Viewport className={styles.submenusViewport} />
-      </NavigationMenu.Root>
-    </StoryFrame>
-  );
-};
-
-/* -----------------------------------------------------------------------------------------------*/
-
-const StoryFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [rtl, setRtl] = React.useState(false);
-
-  return (
-    <div style={{ height: '100vh', backgroundColor: '#e5e8eb' }}>
-      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 20, paddingBottom: 30 }}>
-        <label>
-          <input
-            type="checkbox"
-            checked={rtl}
-            onChange={(event) => setRtl(event.currentTarget.checked)}
-          />
-          Right-to-left
-        </label>
-      </div>
-      <DirectionProvider dir={rtl ? 'rtl' : 'ltr'}>
-        <div dir={rtl ? 'rtl' : 'ltr'}>
-          <div
-            style={{
-              position: 'relative',
-              display: 'flex',
-              boxSizing: 'border-box',
-              alignItems: 'center',
-              padding: '15px 20px',
-              justifyContent: 'space-between',
-              width: '100%',
-              backgroundColor: 'white',
-              boxShadow: '0 50px 100px -20px rgba(50,50,93,0.1),0 30px 60px -30px rgba(0,0,0,0.2)',
-            }}
-          >
-            <button>Logo</button>
-            {children}
-            <button>Login</button>
-          </div>
-          <div style={{ maxWidth: 800, margin: 'auto', lineHeight: 1.5, paddingTop: 25 }}>
-            <h2>Test page content</h2>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam purus odio, vestibulum
-              in dictum et, <a href="#example">sagittis vel nibh</a>. Fusce placerat arcu lorem, a
-              scelerisque odio fringilla sit amet. Suspendisse volutpat sed diam ut cursus. Nulla
-              facilisi. Ut at volutpat nibh. Nullam justo mi, elementum vitae ex eu,{' '}
-              <a href="#example">gravida dictum metus</a>. Morbi vulputate consectetur cursus. Fusce
-              vitae nisi nunc. Suspendisse pellentesque aliquet tincidunt. Aenean molestie pulvinar
-              ipsum.
-            </p>
-
-            <button>Button</button>
-          </div>
-        </div>
-      </DirectionProvider>
-    </div>
-  );
-};
-
-const DurationNavigation = React.forwardRef<
-  React.ElementRef<typeof NavigationMenu.Root>,
-  React.ComponentProps<typeof NavigationMenu.Root>
->((props, forwardedRef) => {
-  return (
-    <NavigationMenu.Root
-      {...props}
-      style={{ backgroundColor: 'white', borderRadius: 500, padding: '2px 12px', ...props.style }}
-      ref={forwardedRef}
-    >
-      <NavigationMenu.List className={styles.mainList}>
-        <NavigationMenu.Item className={styles.expandableItem}>
-          <TriggerWithIndicator>Products</TriggerWithIndicator>
-          <NavigationMenu.Content className={styles.basicContent}>
-            <LinkGroup
-              bordered={false}
-              items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-            />
-          </NavigationMenu.Content>
-        </NavigationMenu.Item>
-
-        <NavigationMenu.Item className={styles.expandableItem}>
-          <TriggerWithIndicator>Company</TriggerWithIndicator>
-          <NavigationMenu.Content className={styles.basicContent}>
-            <LinkGroup
-              bordered={false}
-              items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-            />
-          </NavigationMenu.Content>
-        </NavigationMenu.Item>
-
-        <NavigationMenu.Item className={styles.expandableItem}>
-          <TriggerWithIndicator>Developers</TriggerWithIndicator>
-          <NavigationMenu.Content className={styles.basicContent}>
-            <LinkGroup
-              bordered={false}
-              items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-            />
-          </NavigationMenu.Content>
-        </NavigationMenu.Item>
-
-        <NavigationMenu.Item className={styles.expandableItem}>
-          <TriggerWithIndicator>About</TriggerWithIndicator>
-          <NavigationMenu.Content className={styles.basicContent}>
-            <LinkGroup
-              bordered={false}
-              items={['Fusce pellentesque', 'Aliquam porttitor', 'Pellentesque']}
-            />
-          </NavigationMenu.Content>
-        </NavigationMenu.Item>
-      </NavigationMenu.List>
-    </NavigationMenu.Root>
-  );
-});
-
-const TriggerWithIndicator: React.FC<{ children?: React.ReactNode; disabled?: boolean }> = ({
-  children,
-  disabled,
-}) => {
-  return (
-    <NavigationMenu.Trigger className={styles.trigger} disabled={disabled}>
-      {children}
-      <CaretDownIcon />
-    </NavigationMenu.Trigger>
-  );
-};
-
-const CaretDownIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path
-      d="M4.18179 6.18181C4.35753 6.00608 4.64245 6.00608 4.81819 6.18181L7.49999 8.86362L10.1818 6.18181C10.3575 6.00608 10.6424 6.00608 10.8182 6.18181C10.9939 6.35755 10.9939 6.64247 10.8182 6.81821L7.81819 9.81821C7.73379 9.9026 7.61934 9.95001 7.49999 9.95001C7.38064 9.95001 7.26618 9.9026 7.18179 9.81821L4.18179 6.81821C4.00605 6.64247 4.00605 6.35755 4.18179 6.18181Z"
-      fill="currentColor"
-      fillRule="evenodd"
-      clipRule="evenodd"
-    ></path>
-  </svg>
-);
-
-const LinkGroup: React.FC<{ items: string[]; bordered?: boolean }> = ({
-  items,
-  bordered = true,
-}) => {
-  return (
-    <ul className={[bordered && styles.borderdList, styles.list].filter(Boolean).join(' ')}>
-      {items.map((item, i) => (
-        <li key={i}>
-          <NavigationMenu.Link
-            href="#example"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: 'black',
-            }}
-          >
-            {item}
-          </NavigationMenu.Link>
-        </li>
-      ))}
-    </ul>
-  );
-};
-
-</document_content>
-</document>
 <document index="7">
 <source>/Users/josh/Documents/GitHub/radix-ui/primitives/packages/react/navigation-menu/src/navigation-menu.tsx</source>
 <document_content>
-/// <reference types="resize-observer-browser" />
-
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import { createContextScope } from '@radix-ui/react-context';
@@ -1190,7 +305,7 @@ const NavigationMenu = React.forwardRef<NavigationMenuElement, NavigationMenuPro
     const closeTimerRef = React.useRef(0);
     const skipDelayTimerRef = React.useRef(0);
     const [isOpenDelayed, setIsOpenDelayed] = React.useState(true);
-    const [value = '', setValue] = useControllableState({
+    const [value, setValue] = useControllableState({
       prop: valueProp,
       onChange: (value) => {
         const isOpen = value !== '';
@@ -1209,7 +324,8 @@ const NavigationMenu = React.forwardRef<NavigationMenuElement, NavigationMenuPro
 
         onValueChange?.(value);
       },
-      defaultProp: defaultValue,
+      defaultProp: defaultValue ?? '',
+      caller: NAVIGATION_MENU_NAME,
     });
 
     const startCloseTimer = React.useCallback(() => {
@@ -1316,10 +432,11 @@ const NavigationMenuSub = React.forwardRef<NavigationMenuSubElement, NavigationM
       ...subProps
     } = props;
     const context = useNavigationMenuContext(SUB_NAME, __scopeNavigationMenu);
-    const [value = '', setValue] = useControllableState({
+    const [value, setValue] = useControllableState({
       prop: valueProp,
       onChange: onValueChange,
-      defaultProp: defaultValue,
+      defaultProp: defaultValue ?? '',
+      caller: SUB_NAME,
     });
 
     return (

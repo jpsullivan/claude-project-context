@@ -50,6 +50,739 @@ export class RdxDialogModule {}
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/stories/dialog.docs.mdx
+````
+import { Canvas, Meta } from '@storybook/blocks';
+import * as DialogStories from './dialog.stories';
+import * as SheetStories from './sheet.stories';
+
+<Meta title="Primitives/Dialog" />
+
+# Dialog
+
+#### A window overlaid on either the primary window or another dialog window, rendering the content underneath inert.
+
+<Canvas sourceState="hidden" of={DialogStories.Default} />
+
+## Features
+- ✅ Supports modal and non-modal modes.
+- ✅ Focus is automatically trapped when modal.
+- ✅ Can be controlled or uncontrolled.
+- ✅ Esc closes the component automatically.
+
+### Anatomy
+Import all parts and piece them together.
+
+```html
+
+<button [rdxDialogTrigger]="dialog">Open Dialog</button>
+
+<ng-template #dialog>
+    <div rdxDialogContent>
+        <h2 rdxDialogTitle></h2>
+        <p rdxDialogDescription></p>
+        <button rdxDialogClose></button>
+        <button rdxDialogDismiss>X</button>
+    </div>
+</ng-template>
+```
+
+## Examples
+
+### Sheet
+
+<Canvas sourceState="hidden" of={SheetStories.Default} />
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/stories/dialog.stories.ts
+```typescript
+import { applicationConfig, componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxDialogCloseDirective } from '../src/dialog-close.directive';
+import { RdxDialogContentDirective } from '../src/dialog-content.directive';
+import { RdxDialogDescriptionDirective } from '../src/dialog-description.directive';
+import { RdxDialogTitleDirective } from '../src/dialog-title.directive';
+import { RdxDialogTriggerDirective } from '../src/dialog-trigger.directive';
+import { provideRdxDialogConfig } from '../src/dialog.providers';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Dialog',
+    decorators: [
+        applicationConfig({
+            providers: [provideRdxDialogConfig()]
+        }),
+        moduleMetadata({
+            imports: [
+                RdxDialogTriggerDirective,
+                RdxDialogContentDirective,
+                RdxDialogTitleDirective,
+                RdxDialogCloseDirective,
+                RdxDialogDescriptionDirective
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => `
+                <div class="radix-themes light light-theme radix-themes-default-fonts rt-Flex rt-r-ai-start rt-r-jc-center rt-r-position-relative"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>`
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    argTypes: {
+        mode: {
+            options: ['default', 'sheet-right', 'sheet-bottom'],
+            control: {
+                type: 'select'
+            }
+        }
+    },
+    render: (args) => ({
+        props: {
+            config: args
+        },
+        template: html`
+            <button class="Button violet" [rdxDialogConfig]="config" [rdxDialogTrigger]="dialog">Open Dialog</button>
+
+            <ng-template #dialog>
+                <div class="DialogContent" rdxDialogContent>
+                    <h2 class="DialogTitle" rdxDialogTitle>Edit profile</h2>
+                    <p class="DialogDescription" rdxDialogDescription>
+                        Make changes to your profile here. Click save when you're done.
+                    </p>
+                    <fieldset class="Fieldset">
+                        <label class="Label" htmlFor="name">Name</label>
+                        <input class="Input" id="name" defaultValue="Pedro Duarte" />
+                    </fieldset>
+                    <fieldset class="Fieldset">
+                        <label class="Label" htmlFor="username">Username</label>
+                        <input class="Input" id="username" defaultValue="@peduarte" />
+                    </fieldset>
+                    <div style="display:flex; margin-top: 25px; justify-content: flex-end;">
+                        <button class="Button green" rdxDialogClose>Save changes</button>
+                    </div>
+                    <button class="IconButton" rdxDialogClose aria-label="Close">X</button>
+                </div>
+            </ng-template>
+
+            <style>
+                /* reset */
+                button,
+                fieldset,
+                input {
+                    all: unset;
+                }
+
+                .DialogOverlay {
+                    background-color: var(--black-a9);
+                    position: fixed;
+                    inset: 0;
+                    animation: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .DialogContent {
+                    background-color: white;
+                    border-radius: 6px;
+                    box-shadow:
+                        hsl(206 22% 7% / 35%) 0px 10px 38px -10px,
+                        hsl(206 22% 7% / 20%) 0px 10px 20px -15px;
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 90vw;
+                    max-width: 450px;
+                    max-height: 85vh;
+                    padding: 25px;
+                    animation: contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .DialogContent:focus {
+                    outline: none;
+                }
+
+                .DialogTitle {
+                    margin: 0;
+                    font-weight: 500;
+                    color: var(--mauve-12);
+                    font-size: 17px;
+                }
+
+                .DialogDescription {
+                    margin: 10px 0 20px;
+                    color: var(--mauve-11);
+                    font-size: 15px;
+                    line-height: 1.5;
+                }
+
+                .Button {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                    padding: 0 15px;
+                    font-size: 15px;
+                    line-height: 1;
+                    font-weight: 500;
+                    height: 35px;
+                }
+
+                .Button.violet {
+                    background-color: white;
+                    color: var(--violet-11);
+                    box-shadow: 0 2px 10px var(--black-a7);
+                }
+
+                .Button.violet:hover {
+                    background-color: var(--mauve-3);
+                }
+
+                .Button.violet:focus {
+                    box-shadow: 0 0 0 2px black;
+                }
+
+                .Button.green {
+                    background-color: var(--green-4);
+                    color: var(--green-11);
+                }
+
+                .Button.green:hover {
+                    background-color: var(--green-5);
+                }
+
+                .Button.green:focus {
+                    box-shadow: 0 0 0 2px var(--green-7);
+                }
+
+                .IconButton {
+                    font-family: inherit;
+                    border-radius: 100%;
+                    height: 25px;
+                    width: 25px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--violet-11);
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                }
+
+                .IconButton:hover {
+                    background-color: var(--violet-4);
+                }
+
+                .IconButton:focus {
+                    box-shadow: 0 0 0 2px var(--violet-7);
+                }
+
+                .Fieldset {
+                    display: flex;
+                    gap: 20px;
+                    align-items: center;
+                    margin-bottom: 15px;
+                }
+
+                .Label {
+                    font-size: 15px;
+                    color: var(--violet-11);
+                    width: 90px;
+                    text-align: right;
+                }
+
+                .Input {
+                    width: 100%;
+                    flex: 1;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 4px;
+                    padding: 0 10px;
+                    font-size: 15px;
+                    line-height: 1;
+                    color: var(--violet-11);
+                    box-shadow: 0 0 0 1px var(--violet-7);
+                    height: 35px;
+                }
+
+                .Input:focus {
+                    box-shadow: 0 0 0 2px var(--violet-8);
+                }
+            </style>
+        `
+    })
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/stories/sheet.docs.mdx
+```
+import { Canvas, Controls, Meta } from '@storybook/blocks';
+import * as SheetStories from './sheet.stories';
+
+<Meta of={SheetStories} title="Examples/Sheet" />
+
+# Sheet
+
+<Canvas sourceState="hidden" of={SheetStories.Default} />
+
+<Controls />
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/stories/sheet.stories.ts
+```typescript
+import { applicationConfig, componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { RdxDialogCloseDirective } from '../src/dialog-close.directive';
+import { RdxDialogContentDirective } from '../src/dialog-content.directive';
+import { RdxDialogDescriptionDirective } from '../src/dialog-description.directive';
+import { RdxDialogTitleDirective } from '../src/dialog-title.directive';
+import { RdxDialogTriggerDirective } from '../src/dialog-trigger.directive';
+import { provideRdxDialogConfig } from '../src/dialog.providers';
+
+const html = String.raw;
+
+export default {
+    title: 'Examples/Sheet',
+    decorators: [
+        applicationConfig({
+            providers: [provideRdxDialogConfig()]
+        }),
+        moduleMetadata({
+            imports: [
+                RdxDialogTriggerDirective,
+                RdxDialogContentDirective,
+                RdxDialogTitleDirective,
+                RdxDialogCloseDirective,
+                RdxDialogDescriptionDirective
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts rt-Flex rt-r-ai-start rt-r-jc-center rt-r-position-relative"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>
+            `
+        )
+    ],
+    argTypes: {
+        mode: {
+            options: ['sheet-right', 'sheet-bottom'],
+            control: {
+                type: 'select'
+            }
+        },
+        backdropClass: {
+            options: ['cdk-overlay-dark-backdrop', 'DialogSheetOverlay'],
+            control: {
+                type: 'select'
+            }
+        }
+    },
+    render: (args) => {
+        return {
+            props: {
+                config: args
+            },
+            template: html`
+                <button class="Button violet" [rdxDialogConfig]="config" [rdxDialogTrigger]="sheetTpl">
+                    Open Sheet
+                </button>
+
+                <ng-template #sheetTpl>
+                    <div class="DialogContent" rdxDialogContent>
+                        <h2 class="DialogTitle" rdxDialogTitle>Edit profile</h2>
+                        <p class="DialogDescription" rdxDialogDescription>
+                            Make changes to your profile here. Click save when you're done.
+                        </p>
+                        <fieldset class="Fieldset">
+                            <label class="Label" htmlFor="name">Name</label>
+                            <input class="Input" id="name" defaultValue="Pedro Duarte" />
+                        </fieldset>
+                        <fieldset class="Fieldset">
+                            <label class="Label" htmlFor="username">Username</label>
+                            <input class="Input" id="username" defaultValue="@peduarte" />
+                        </fieldset>
+                        <div style="display:flex; margin-top: 25px; justify-content: flex-end;">
+                            <button class="Button green" rdxDialogClose>Save changes</button>
+                        </div>
+                        <button class="IconButton" rdxDialogClose aria-label="Close">X</button>
+                    </div>
+                </ng-template>
+
+                <style>
+                    /* reset */
+                    button,
+                    fieldset,
+                    input {
+                        all: unset;
+                    }
+
+                    .DialogContent {
+                        margin: 25px;
+                    }
+
+                    .DialogTitle {
+                        margin: 0;
+                        font-weight: 500;
+                        color: var(--mauve-12);
+                        font-size: 17px;
+                    }
+
+                    .DialogDescription {
+                        margin: 10px 0 20px;
+                        color: var(--mauve-11);
+                        font-size: 15px;
+                        line-height: 1.5;
+                    }
+
+                    .Button {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 4px;
+                        padding: 0 15px;
+                        font-size: 15px;
+                        line-height: 1;
+                        font-weight: 500;
+                        height: 35px;
+                    }
+
+                    .Button.violet {
+                        background-color: white;
+                        color: var(--violet-11);
+                        box-shadow: 0 2px 10px var(--black-a7);
+                    }
+
+                    .Button.violet:hover {
+                        background-color: var(--mauve-3);
+                    }
+
+                    .Button.violet:focus {
+                        box-shadow: 0 0 0 2px black;
+                    }
+
+                    .Button.green {
+                        background-color: var(--green-4);
+                        color: var(--green-11);
+                    }
+
+                    .Button.green:hover {
+                        background-color: var(--green-5);
+                    }
+
+                    .Button.green:focus {
+                        box-shadow: 0 0 0 2px var(--green-7);
+                    }
+
+                    .IconButton {
+                        font-family: inherit;
+                        border-radius: 100%;
+                        height: 25px;
+                        width: 25px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        color: var(--violet-11);
+                        position: absolute;
+                        top: 10px;
+                        right: 10px;
+                    }
+
+                    .IconButton:hover {
+                        background-color: var(--violet-4);
+                    }
+
+                    .IconButton:focus {
+                        box-shadow: 0 0 0 2px var(--violet-7);
+                    }
+
+                    .Fieldset {
+                        display: flex;
+                        gap: 20px;
+                        align-items: center;
+                        margin-bottom: 15px;
+                    }
+
+                    .Label {
+                        font-size: 15px;
+                        color: var(--violet-11);
+                        width: 90px;
+                        text-align: right;
+                    }
+
+                    .Input {
+                        width: 100%;
+                        flex: 1;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 4px;
+                        padding: 0 10px;
+                        font-size: 15px;
+                        line-height: 1;
+                        color: var(--violet-11);
+                        box-shadow: 0 0 0 1px var(--violet-7);
+                        height: 35px;
+                    }
+
+                    .Input:focus {
+                        box-shadow: 0 0 0 2px var(--violet-8);
+                    }
+                </style>
+            `
+        };
+    }
+} as Meta;
+
+export const Default: StoryObj = {
+    args: {
+        backdropClass: 'cdk-overlay-dark-backdrop',
+        mode: 'sheet-right',
+        panelClasses: ['DialogSheet']
+    }
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/stories/sheet/sheet.styles.scss
+```
+.DialogSheet {
+    background-color: white;
+    position: fixed !important;
+    margin: auto;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+
+    inset: 0 0 0 auto;
+    width: 40rem;
+    height: 100%;
+    max-width: calc(100vw - 2rem);
+    max-height: none;
+    border-radius: 6px 0 0 6px;
+
+    &:where(.mod-right) {
+        animation: slideFromRight 250ms ease;
+    }
+
+    &:where(.mod-bottom) {
+        inset: auto 0 0 0;
+        width: 100%;
+        height: fit-content;
+        max-width: none;
+        max-height: calc(100dvh - 2rem);
+        border-radius: 6px 6px 0 0;
+
+        animation: slideFromBottom 250ms ease;
+    }
+
+    @keyframes scaleIn {
+        0% {
+            transform: scale(0);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @keyframes slideFromBottom {
+        0% {
+            transform: translateY(100%);
+        }
+
+        100% {
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideFromRight {
+        0% {
+            transform: translateX(100%);
+        }
+
+        100% {
+            transform: translateX(0);
+        }
+    }
+}
+
+.DialogSheetOverlay {
+    background-color: var(--black-a9);
+    position: fixed;
+    inset: 0;
+    opacity: 0.4;
+    animation: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/__tests__/dialog-content.directive.spec.ts
+```typescript
+import { Component, DebugElement } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { Subject } from 'rxjs';
+import { RdxDialogContentDirective } from '../src/dialog-content.directive';
+import { RdxDialogRef } from '../src/dialog-ref';
+
+@Component({
+    template: '<div rdxDialogContent>Dialog Content</div>',
+    imports: [RdxDialogContentDirective]
+})
+class TestComponent {}
+
+describe('RdxDialogContentDirective', () => {
+    let fixture: ComponentFixture<TestComponent>;
+    let directiveElement: DebugElement;
+    let directive: RdxDialogContentDirective;
+    let dialogRefMock: jest.Mocked<RdxDialogRef>;
+    let closedSubject: Subject<any>;
+
+    beforeEach(async () => {
+        closedSubject = new Subject();
+        dialogRefMock = {
+            closed$: closedSubject.asObservable(),
+            close: jest.fn(),
+            dismiss: jest.fn()
+        } as any;
+
+        await TestBed.configureTestingModule({
+            imports: [TestComponent],
+            providers: [
+                { provide: RdxDialogRef, useValue: dialogRefMock }]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(TestComponent);
+        directiveElement = fixture.debugElement.query(By.directive(RdxDialogContentDirective));
+        directive = directiveElement.injector.get(RdxDialogContentDirective);
+        fixture.detectChanges();
+    });
+
+    it('should create', () => {
+        expect(directive).toBeTruthy();
+    });
+
+    it('should have correct initial state', () => {
+        expect(directive['state']()).toBe('open');
+    });
+
+    it('should update state when dialog is closed', () => {
+        closedSubject.next(undefined);
+        fixture.detectChanges();
+        expect(directive['state']()).toBe('closed');
+    });
+
+    it('should call dialogRef.dismiss when dismiss method is called', () => {
+        directive.dismiss();
+        expect(dialogRefMock.dismiss).toHaveBeenCalled();
+    });
+
+    it('should call dialogRef.dismiss when dismiss method is called', () => {
+        directive.dismiss();
+        expect(dialogRefMock.dismiss).toHaveBeenCalled();
+    });
+
+    it('should have correct host bindings', () => {
+        const element = directiveElement.nativeElement;
+        expect(element.getAttribute('role')).toBe('dialog');
+        expect(element.getAttribute('aria-describedby')).toBe('true');
+        expect(element.getAttribute('aria-labelledby')).toBe('true');
+        expect(element.getAttribute('data-state')).toBe('open');
+
+        closedSubject.next(undefined);
+        fixture.detectChanges();
+
+        expect(element.getAttribute('data-state')).toBe('closed');
+    });
+});
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/__tests__/dialog-trigger.directive.spec.ts
+```typescript
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
+import { RdxDialogRef } from '../src/dialog-ref';
+import { RdxDialogTriggerDirective } from '../src/dialog-trigger.directive';
+import { RdxDialogConfig } from '../src/dialog.config';
+import { RdxDialogService } from '../src/dialog.service';
+
+@Component({
+    template: `
+        <button [rdxDialogTrigger]="dialogTemplate" [rdxDialogConfig]="config">Open Dialog</button>
+        <ng-template #dialogTemplate>Dialog Content</ng-template>
+    `,
+    imports: [RdxDialogTriggerDirective]
+})
+class TestHostComponent implements OnInit {
+    @ViewChild('dialogTemplate') dialogTemplate: TemplateRef<any>;
+
+    config: RdxDialogConfig<unknown>;
+
+    ngOnInit() {
+        this.config = {
+            content: this.dialogTemplate,
+            modal: true,
+            ariaLabel: 'Test Dialog',
+            autoFocus: 'first-tabbable',
+            canClose: () => true,
+            canCloseWithBackdrop: true,
+            mode: 'default'
+        };
+    }
+}
+
+describe('RdxDialogTriggerDirective', () => {
+    let fixture: ComponentFixture<TestHostComponent>;
+    let directive: RdxDialogTriggerDirective;
+    let dialogServiceMock: jest.Mocked<RdxDialogService>;
+    let dialogRefMock: jest.Mocked<RdxDialogRef>;
+
+    beforeEach(async () => {
+        dialogRefMock = {
+            closed$: of(undefined)
+        } as any;
+
+        dialogServiceMock = {
+            open: jest.fn().mockReturnValue(dialogRefMock)
+        } as any;
+
+        await TestBed.configureTestingModule({
+            imports: [TestHostComponent],
+            providers: [
+                { provide: RdxDialogService, useValue: dialogServiceMock }]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(TestHostComponent);
+        fixture.detectChanges();
+
+        const directiveEl = fixture.debugElement.query(By.directive(RdxDialogTriggerDirective));
+        directive = directiveEl.injector.get(RdxDialogTriggerDirective);
+    });
+
+    it('should create', () => {
+        expect(directive).toBeTruthy();
+    });
+
+    it('should have correct initial state', () => {
+        expect(directive.isOpen()).toBe(false);
+        expect(directive.state()).toBe('closed');
+    });
+});
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/dialog/src/dialog-close.directive.ts
 ```typescript
 import { Directive, inject } from '@angular/core';

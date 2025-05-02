@@ -29,7 +29,7 @@ export class RdxProgressIndicatorDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/progress/src/progress-root.directive.ts
 ```typescript
 import { computed, Directive, effect, inject, InjectionToken, input, model } from '@angular/core';
-import { isNullish, isNumber } from '@radix-ng/primitives/core';
+import { isNullish, isNumber, provideToken } from '@radix-ng/primitives/core';
 
 export const RdxProgressToken = new InjectionToken<RdxProgressRootDirective>('RdxProgressDirective');
 
@@ -68,7 +68,7 @@ const DEFAULT_MAX = 100;
 @Directive({
     selector: '[rdxProgressRoot]',
     exportAs: 'rdxProgressRoot',
-    providers: [{ provide: RdxProgressToken, useExisting: RdxProgressRootDirective }],
+    providers: [provideToken(RdxProgressToken, RdxProgressRootDirective)],
     host: {
         role: 'progressbar',
         '[attr.aria-valuemax]': 'max()',

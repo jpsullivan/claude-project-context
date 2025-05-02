@@ -1,0 +1,1133 @@
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-cell-trigger.directive.ts
+```typescript
+import { AfterViewInit, computed, Directive, ElementRef, inject, input } from '@angular/core';
+import { DateValue, getLocalTimeZone, isSameDay, isSameMonth, isToday } from '@internationalized/date';
+import * as kbd from '@radix-ng/primitives/core';
+import { getDaysInMonth, toDate } from '@radix-ng/primitives/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: '[rdxCalendarCellTrigger]',
+    exportAs: 'rdxCalendarCellTrigger',
+    host: {
+        role: 'button',
+        '[attr.aria-label]': 'labelText()',
+        '[attr.aria-disabled]': 'isDisabled() || isUnavailable() ? true : undefined',
+        '[attr.data-rdx-calendar-cell-trigger]': '""',
+        '[attr.tabindex]': 'isFocusedDate() ? 0 : isOutsideView() || isDisabled() ? undefined : -1',
+        '[attr.data-value]': 'day()?.toString()',
+        '[attr.data-disabled]': 'isDisabled() ? "" : undefined',
+        '[attr.data-today]': 'isDateToday() ? "" : undefined',
+        '[attr.data-outside-view]': 'isOutsideView() ? "" : undefined',
+        '[attr.data-selected]': 'isSelectedDate() ? "" : undefined',
+        '[attr.data-unavailable]': 'isUnavailable() ? "" : undefined',
+        '[attr.data-focus]': 'isFocusedDate() ? "" : undefined',
+
+        '(click)': 'onClick()',
+
+        '(keydown)': 'onArrowKey($event)'
+    }
+})
+export class RdxCalendarCellTriggerDirective implements AfterViewInit {
+    private readonly rootContext = injectCalendarRootContext();
+    private readonly elementRef = inject(ElementRef<HTMLElement>);
+
+    /**
+     * The date value provided to the cell trigger
+     */
+    readonly day = input<DateValue>();
+
+    /**
+     * The month in which the cell is rendered
+     */
+    readonly month = input<DateValue>();
+
+    /**
+     * Current day
+     */
+    readonly dayValue = computed(() => this.day()?.day.toLocaleString());
+
+    /**
+     * Current today state
+     */
+    readonly isDateToday = computed(() => {
+        return isToday(<DateValue>this.day(), getLocalTimeZone());
+    });
+
+    /**
+     * Current selected state
+     */
+    readonly isSelectedDate = computed(() => this.rootContext.isDateSelected!(<DateValue>this.day()));
+
+    readonly isDisabled = computed(() => this.rootContext.isDateDisabled!(<DateValue>this.day()));
+
+    readonly isOutsideView = computed(() => {
+        return !isSameMonth(<DateValue>this.day(), <DateValue>this.month());
+    });
+
+    readonly isFocusedDate = computed(() => {
+        return !this.rootContext.disabled() && isSameDay(<DateValue>this.day(), this.rootContext.placeholder());
+    });
+
+    readonly isUnavailable = computed(() => this.rootContext.isDateUnavailable?.(<DateValue>this.day()) ?? false);
+
+    readonly labelText = computed(() => {
+        return this.rootContext.formatter.custom(toDate(<DateValue>this.day()), {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    });
+
+    /**
+     * @ignore
+     */
+    currentElement!: HTMLElement;
+
+    ngAfterViewInit() {
+        this.currentElement = this.elementRef.nativeElement;
+    }
+
+    protected onClick() {
+        this.changeDate(this.day()!);
+    }
+
+    protected onArrowKey(event: KeyboardEvent) {
+        const code = event.code;
+        if (![
+                kbd.ARROW_RIGHT,
+                kbd.ARROW_LEFT,
+                kbd.ARROW_UP,
+                kbd.ARROW_DOWN,
+                kbd.ENTER,
+                kbd.SPACE_CODE
+            ].includes(code)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const indexIncrementation = 7;
+        const sign = this.rootContext.dir() === 'rtl' ? -1 : 1;
+
+        switch (code) {
+            case kbd.ARROW_RIGHT:
+                this.shiftFocus(this.currentElement, sign);
+                break;
+            case kbd.ARROW_LEFT:
+                this.shiftFocus(this.currentElement, -sign);
+                break;
+            case kbd.ARROW_UP:
+                this.shiftFocus(this.currentElement, -indexIncrementation);
+                break;
+            case kbd.ARROW_DOWN:
+                this.shiftFocus(this.currentElement, indexIncrementation);
+                break;
+            case kbd.ENTER:
+            case kbd.SPACE_CODE:
+                this.changeDate(<DateValue>this.day());
+        }
+    }
+
+    private shiftFocus(node: HTMLElement, add: number) {
+        const parentElement = this.rootContext.currentElement;
+
+        const allCollectionItems: HTMLElement[] = this.getSelectableCells(parentElement);
+        if (!allCollectionItems.length) return;
+
+        const index = allCollectionItems.indexOf(node);
+        const newIndex = index + add;
+
+        if (newIndex >= 0 && newIndex < allCollectionItems.length) {
+            if (allCollectionItems[newIndex].hasAttribute('data-disabled')) {
+                this.shiftFocus(allCollectionItems[newIndex], add);
+            }
+            allCollectionItems[newIndex].focus();
+            return;
+        }
+
+        if (newIndex < 0) {
+            if (!this.rootContext.prevPage) return;
+
+            this.rootContext.prevPage();
+
+            setTimeout(() => {
+                const newCollectionItems = this.getSelectableCells(parentElement);
+                if (!newCollectionItems.length) return;
+
+                if (!this.rootContext.pagedNavigation && this.rootContext.numberOfMonths() > 1) {
+                    // Placeholder is set to the first month of the new page
+                    const numberOfDays = getDaysInMonth(this.rootContext.placeholder());
+                    const computedIndex = numberOfDays - Math.abs(newIndex);
+                    if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                        this.shiftFocus(newCollectionItems[computedIndex], add);
+                    }
+                    newCollectionItems[computedIndex].focus();
+                    return;
+                }
+
+                const computedIndex = newCollectionItems.length - Math.abs(newIndex);
+                if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                    this.shiftFocus(newCollectionItems[computedIndex], add);
+                }
+                newCollectionItems[computedIndex].focus();
+            });
+        }
+
+        if (newIndex >= allCollectionItems.length) {
+            if (!this.rootContext.nextPage) return;
+
+            this.rootContext.nextPage();
+
+            setTimeout(() => {
+                const newCollectionItems = this.getSelectableCells(parentElement);
+                if (!newCollectionItems.length) return;
+
+                if (!this.rootContext.pagedNavigation && this.rootContext.numberOfMonths() > 1) {
+                    const numberOfDays = getDaysInMonth(
+                        this.rootContext.placeholder().add({ months: this.rootContext.numberOfMonths() - 1 })
+                    );
+
+                    const computedIndex =
+                        newIndex - allCollectionItems.length + (newCollectionItems.length - numberOfDays);
+
+                    if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                        this.shiftFocus(newCollectionItems[computedIndex], add);
+                    }
+                    newCollectionItems[computedIndex].focus();
+                    return;
+                }
+
+                const computedIndex = newIndex - allCollectionItems.length;
+                if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                    this.shiftFocus(newCollectionItems[computedIndex], add);
+                }
+
+                newCollectionItems[computedIndex].focus();
+            });
+        }
+    }
+
+    /**
+     * @ignore
+     */
+    SELECTOR = '[data-rdx-calendar-cell-trigger]:not([data-outside-view]):not([data-outside-visible-view])';
+
+    /**
+     * @ignore
+     */
+    getSelectableCells(calendar: HTMLElement): HTMLElement[] {
+        return Array.from(calendar.querySelectorAll(this.SELECTOR)) ?? [];
+    }
+
+    /**
+     * @ignore
+     */
+    changeDate(date: DateValue) {
+        this.rootContext.onDateChange(date);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-cell.directive.ts
+```typescript
+import { Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'td[rdxCalendarCell]',
+    host: {
+        role: 'gridcell',
+        '[attr.aria-selected]': 'rootContext.isDateSelected?.(date()!) ? true : undefined',
+        '[attr.aria-disabled]': 'rootContext.isDateSelected?.(date()!) ||  rootContext.isDateUnavailable?.(date()!)',
+        '[attr.data-disabled]': 'rootContext.isDateSelected?.(date()!) ? "" : undefined'
+    }
+})
+export class RdxCalendarCellDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The date of the cell
+     */
+    readonly date = input<DateValue>();
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-body.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'tbody[rdxCalendarGridBody]'
+})
+export class RdxCalendarGridBodyDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-head.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'thead[rdxCalendarGridHead]',
+    host: {
+        '[attr.aria-hidden]': 'true'
+    }
+})
+export class RdxCalendarGridHeadDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-row.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'tr[rdxCalendarGridRow]'
+})
+export class RdxCalendarGridRowDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid.directive.ts
+```typescript
+import { computed, Directive } from '@angular/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'table[rdxCalendarGrid]',
+    host: {
+        tabindex: '-1',
+        role: 'grid',
+        '[attr.aria-readonly]': 'readonly()',
+        '[attr.aria-disabled]': 'disabled()',
+        '[attr.data-readonly]': 'readonly() && ""',
+        '[attr.data-disabled]': 'disabled() && ""'
+    }
+})
+export class RdxCalendarGridDirective {
+    private readonly rootContext = injectCalendarRootContext();
+
+    readonly disabled = computed(() => (this.rootContext.disabled() ? true : undefined));
+    readonly readonly = computed(() => (this.rootContext.readonly ? true : undefined));
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-head-cell.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'th[rdxCalendarHeadCell]'
+})
+export class RdxCalendarHeadCellDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-header.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'div[rdxCalendarHeader]'
+})
+export class RdxCalendarHeaderDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-heading.directive.ts
+```typescript
+import { computed, Directive } from '@angular/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'div[rdxCalendarHeading]',
+    exportAs: 'rdxCalendarHeading',
+    host: {
+        '[attr.data-disabled]': 'rootContext.disabled() ? "" : undefined'
+    }
+})
+export class RdxCalendarHeadingDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    readonly headingValue = computed(() => this.rootContext.headingValue());
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-next.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'button[rdxCalendarNext]',
+    exportAs: 'rdxCalendarNext',
+    host: {
+        '(click)': 'onClick()',
+        '[disabled]': 'disabled()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.aria-disabled]': 'disabled() ? "" : undefined',
+        'aria-label': 'Next page'
+    }
+})
+export class RdxCalendarNextDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The function to be used for the `next page`. Overwrites the nextPage function set on the `CalendarRoot`.
+     */
+    readonly nextPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * @ignore
+     */
+    readonly disabled = computed(
+        () => this.rootContext.disabled() || this.rootContext.isNextButtonDisabled(this.nextPage())
+    );
+
+    protected onClick() {
+        this.rootContext.nextPage!(this.nextPage());
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-prev.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'button[rdxCalendarPrev]',
+    exportAs: 'rdxCalendarPrev',
+    host: {
+        '(click)': 'onClick()',
+        '[disabled]': 'disabled()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.aria-disabled]': 'disabled() ? "" : undefined',
+        'aria-label': 'Previous page'
+    }
+})
+export class RdxCalendarPrevDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The function to be used for the `prev page`. Overwrites the prevPage function set on the `CalendarRoot`.
+     */
+    readonly prevPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * @ignore
+     */
+    readonly disabled = computed(
+        () => this.rootContext.disabled() || this.rootContext.isNextButtonDisabled(this.prevPage())
+    );
+
+    protected onClick() {
+        this.rootContext.prevPage!(this.prevPage());
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-root.directive.ts
+```typescript
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    AfterViewInit,
+    booleanAttribute,
+    Directive,
+    effect,
+    ElementRef,
+    forwardRef,
+    inject,
+    input,
+    linkedSignal,
+    model,
+    signal
+} from '@angular/core';
+import { DateValue, isEqualDay, isSameDay } from '@internationalized/date';
+import { DateMatcher, Formatter, getDefaultDate, Month, watch } from '@radix-ng/primitives/core';
+import { calendar, calendarState } from './calendar';
+import { CALENDAR_ROOT_CONTEXT } from './сalendar-сontext.token';
+
+@Directive({
+    selector: '[rdxCalendarRoot]',
+    exportAs: 'rdxCalendarRoot',
+    providers: [
+        { provide: CALENDAR_ROOT_CONTEXT, useExisting: forwardRef(() => RdxCalendarRootDirective) }],
+    host: {
+        role: 'application',
+        '[attr.aria-label]': 'fullCalendarLabel()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.data-readonly]': 'readonly() ? "" : undefined',
+        '[attr.data-invalid]': 'isInvalid ? "" : undefined',
+        '[attr.dir]': 'dir()'
+    }
+})
+export class RdxCalendarRootDirective implements AfterViewInit {
+    private readonly elementRef = inject(ElementRef<HTMLElement>);
+
+    /**
+     * The controlled checked state of the calendar
+     */
+    readonly value = model<DateValue | DateValue[] | undefined>();
+
+    /**
+     * The default placeholder date
+     */
+    readonly defaultPlaceholder = model<DateValue>();
+
+    readonly locale = input<string>('en');
+
+    readonly defaultDate = getDefaultDate({
+        defaultPlaceholder: this.defaultPlaceholder(),
+        defaultValue: this.value(),
+        locale: this.locale()
+    });
+
+    /**
+     * The placeholder date, which is used to determine what month to display when no date is selected.
+     * This updates as the user navigates the calendar and can be used to programmatically control the calendar view
+     */
+    readonly placeholder = model<DateValue>(this.defaultPlaceholder() ?? this.defaultDate.copy());
+
+    readonly multiple = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether to always display 6 weeks in the calendar
+     */
+    readonly fixedWeeks = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether the calendar is disabled
+     */
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether to prevent the user from deselecting a date without selecting another date first
+     */
+    readonly preventDeselect = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * The day of the week to start the calendar on
+     */
+    readonly weekStartsOn = input<0 | 1 | 2 | 3 | 4 | 5 | 6>(1);
+
+    /**
+     * The number of months to display at once
+     */
+    readonly numberOfMonths = input<number>(1);
+
+    /**
+     * The reading direction of the calendar when applicable.
+     */
+    readonly dir = input<'ltr' | 'rtl'>('ltr');
+
+    /**
+     * The minimum date that can be selected
+     */
+    readonly minValue = input<DateValue>();
+
+    /**
+     * The maximum date that can be selected
+     */
+    readonly maxValue = input<DateValue>();
+
+    /**
+     * The format to use for the weekday strings provided via the weekdays slot prop
+     */
+    readonly weekdayFormat = input<Intl.DateTimeFormatOptions['weekday']>('narrow');
+
+    /**
+     * The accessible label for the calendar
+     */
+    readonly calendarLabel = input<string>();
+
+    /**
+     * Whether the calendar is readonly
+     */
+    readonly readonly = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * This property causes the previous and next buttons to navigate by the number of months displayed at once, rather than one month
+     */
+    readonly pagedNavigation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly propsNextPage = input<(placeholder: DateValue) => DateValue>();
+
+    readonly propsPrevPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * A function that returns whether a date is disabled
+     */
+    readonly isDateDisabled = input<DateMatcher>();
+
+    /**
+     * A function that returns whether a date is unavailable
+     */
+    readonly isDateUnavailable = input<DateMatcher>();
+
+    readonly initialFocus = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly months = model<Month<DateValue>[]>();
+
+    /**
+     * The days of the week
+     */
+    readonly weekDays = model<string[]>();
+
+    protected readonly _fixedWeeks = linkedSignal(this.fixedWeeks);
+
+    protected readonly _disabled = linkedSignal(this.disabled);
+
+    protected readonly _pagedNavigation = linkedSignal(this.pagedNavigation);
+
+    /**
+     * @ignore
+     */
+    readonly headingValue = signal<string>('');
+
+    /**
+     * @ignore
+     */
+    readonly fullCalendarLabel = signal<string>('');
+
+    /**
+     * @ignore
+     */
+    nextPage: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+
+    /**
+     * @ignore
+     */
+    prevPage: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+
+    /**
+     * @ignore
+     */
+    isNextButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    isPrevButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    isDateSelected: DateMatcher;
+
+    /**
+     * @ignore
+     */
+    isInvalid: boolean;
+
+    /**
+     * @ignore
+     */
+    isOutsideVisibleView: (date: DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    formatter: Formatter;
+
+    /**
+     * @ignore
+     */
+    currentElement!: HTMLElement;
+
+    private readonly calendar = calendar({
+        locale: this.locale,
+        placeholder: this.placeholder,
+        weekStartsOn: this.weekStartsOn,
+        fixedWeeks: this._fixedWeeks,
+        numberOfMonths: this.numberOfMonths,
+        minValue: this.minValue,
+        maxValue: this.maxValue,
+        disabled: this._disabled,
+        weekdayFormat: this.weekdayFormat,
+        pagedNavigation: this._pagedNavigation,
+        isDateDisabled: this.isDateDisabled,
+        isDateUnavailable: this.isDateUnavailable,
+        calendarLabel: this.calendarLabel,
+        nextPage: this.propsNextPage,
+        prevPage: this.propsPrevPage
+    });
+
+    constructor() {
+        this.nextPage = this.calendar.nextPage;
+        this.prevPage = this.calendar.prevPage;
+        this.isOutsideVisibleView = this.calendar.isOutsideVisibleView;
+        this.isNextButtonDisabled = this.calendar.isNextButtonDisabled;
+        this.isPrevButtonDisabled = this.calendar.isPrevButtonDisabled;
+        this.formatter = this.calendar.formatter;
+
+        effect(() => {
+            this.months.set(this.calendar.month());
+
+            this.weekDays.set(this.calendar.weekdays());
+
+            this.fullCalendarLabel.set(this.calendar.fullCalendarLabel());
+
+            this.headingValue.set(this.calendar.headingValue());
+
+            const { isInvalid, isDateSelected } = calendarState({
+                date: this.value,
+                isDateDisabled: this.isDateDisabled(),
+                isDateUnavailable: this.isDateUnavailable()
+            });
+
+            this.isDateSelected = isDateSelected;
+            this.isInvalid = isInvalid();
+        });
+
+        watch([this.value], (_modelValue) => {
+            if (Array.isArray(_modelValue) && _modelValue.length) {
+                const lastValue = _modelValue[_modelValue.length - 1];
+                if (lastValue && !isEqualDay(this.placeholder(), <DateValue>lastValue)) {
+                    this.onPlaceholderChange(<DateValue>lastValue);
+                }
+            } else if (!Array.isArray(_modelValue) && _modelValue && !isEqualDay(this.placeholder(), _modelValue)) {
+                this.onPlaceholderChange(_modelValue);
+            }
+        });
+    }
+
+    ngAfterViewInit() {
+        this.currentElement = this.elementRef.nativeElement;
+    }
+
+    /**
+     * @ignore
+     */
+    onPlaceholderChange(value: DateValue) {
+        this.placeholder.set(value.copy());
+    }
+
+    /**
+     * @ignore
+     */
+    onDateChange(date: DateValue) {
+        const currentValue = this.value();
+
+        if (!this.multiple()) {
+            // for single selection
+            if (!this.value()) {
+                this.value.set(date.copy());
+                return;
+            }
+
+            if (!this.preventDeselect() && isEqualDay(this.value() as DateValue, date)) {
+                this.placeholder.set(date.copy());
+                this.value.set(undefined);
+            } else {
+                this.value.set(date.copy());
+            }
+        } else if (!this.value()) {
+            // for multiple selection
+            this.value.set([date.copy()]);
+        } else if (Array.isArray(currentValue)) {
+            const index = currentValue.findIndex((d: DateValue) => isSameDay(d, date));
+            if (index === -1) {
+                this.value.set([...currentValue, date.copy()]);
+            } else if (!this.preventDeselect()) {
+                const next = currentValue.filter((d: DateValue) => !isSameDay(d, date));
+                if (next.length === 0) {
+                    this.placeholder.set(date.copy());
+                    this.value.set(undefined);
+                    return;
+                }
+                this.value.set(next.map((d) => d.copy()));
+            }
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar.ts
+```typescript
+import { computed, InputSignal, ModelSignal, signal, WritableSignal } from '@angular/core';
+import { DateFields, DateValue, isEqualMonth, isSameDay } from '@internationalized/date';
+import {
+    createFormatter,
+    createMonths,
+    DateFormatterOptions,
+    DateMatcher,
+    getDaysInMonth,
+    isAfter,
+    isBefore,
+    Month,
+    toDate,
+    watch
+} from '@radix-ng/primitives/core';
+
+export type CalendarProps = {
+    locale: InputSignal<string>;
+    placeholder: WritableSignal<DateValue>;
+    weekStartsOn: InputSignal<0 | 1 | 2 | 3 | 4 | 5 | 6>;
+    fixedWeeks: WritableSignal<boolean>;
+    numberOfMonths: InputSignal<number>;
+    minValue: InputSignal<DateValue | undefined>;
+    maxValue: InputSignal<DateValue | undefined>;
+    disabled: WritableSignal<boolean>;
+    weekdayFormat: InputSignal<Intl.DateTimeFormatOptions['weekday']>;
+    pagedNavigation: WritableSignal<boolean>;
+    isDateDisabled?: InputSignal<DateMatcher | undefined>;
+    isDateUnavailable?: InputSignal<DateMatcher | undefined>;
+    calendarLabel: InputSignal<string | undefined>;
+    nextPage: InputSignal<((placeholder: DateValue) => DateValue) | undefined>;
+    prevPage: InputSignal<((placeholder: DateValue) => DateValue) | undefined>;
+};
+
+export type CalendarStateProps = {
+    date: ModelSignal<DateValue | DateValue[] | undefined>;
+    isDateDisabled?: DateMatcher;
+    isDateUnavailable?: DateMatcher;
+};
+
+export function calendarState(props: CalendarStateProps) {
+    function isDateSelected(dateObj: DateValue): boolean {
+        const currentValue = props.date(); // signal read
+
+        if (Array.isArray(currentValue)) {
+            return currentValue.some((d) => isSameDay(d, dateObj));
+        } else if (!currentValue) {
+            return false;
+        } else {
+            return isSameDay(currentValue, dateObj);
+        }
+    }
+
+    const isInvalid = computed(() => {
+        const currentValue = props.date();
+
+        if (Array.isArray(currentValue)) {
+            if (!currentValue.length) {
+                return false;
+            }
+            for (const dateObj of currentValue) {
+                if (props.isDateDisabled?.(dateObj)) return true;
+                if (props.isDateUnavailable?.(dateObj)) return true;
+            }
+        } else {
+            if (!currentValue) {
+                return false;
+            }
+            if (props.isDateDisabled?.(currentValue)) return true;
+            if (props.isDateUnavailable?.(currentValue)) return true;
+        }
+        return false;
+    });
+
+    return {
+        isDateSelected,
+        isInvalid
+    };
+}
+
+function handleNextDisabled(lastPeriodInView: DateValue, nextPageFunc: (date: DateValue) => DateValue): DateValue {
+    const firstPeriodOfNextPage = nextPageFunc(lastPeriodInView);
+    const diff = firstPeriodOfNextPage.compare(lastPeriodInView);
+    const duration: DateFields = {};
+    if (diff >= 7) duration.day = 1;
+    if (diff >= getDaysInMonth(lastPeriodInView)) duration.month = 1;
+    return firstPeriodOfNextPage.set({ ...duration });
+}
+
+function handlePrevDisabled(firstPeriodInView: DateValue, prevPageFunc: (date: DateValue) => DateValue): DateValue {
+    const lastPeriodOfPrevPage = prevPageFunc(firstPeriodInView);
+    const diff = firstPeriodInView.compare(lastPeriodOfPrevPage);
+    const duration: DateFields = {};
+    if (diff >= 7) duration.day = 35;
+    if (diff >= getDaysInMonth(firstPeriodInView)) duration.month = 13;
+    return lastPeriodOfPrevPage.set({ ...duration });
+}
+
+function handleNextPage(date: DateValue, nextPageFunc: (date: DateValue) => DateValue): DateValue {
+    return nextPageFunc(date);
+}
+
+function handlePrevPage(date: DateValue, prevPageFunc: (date: DateValue) => DateValue): DateValue {
+    return prevPageFunc(date);
+}
+
+export function calendar(props: CalendarProps) {
+    const formatter = createFormatter(props.locale());
+
+    const headingFormatOptions = computed(() => {
+        const options: DateFormatterOptions = {
+            calendar: props.placeholder().calendar.identifier
+        };
+
+        if (props.placeholder().calendar.identifier === 'gregory' && props.placeholder().era === 'BC') {
+            options.era = 'short';
+        }
+
+        return options;
+    });
+
+    const month = signal<Month<DateValue>[]>(
+        createMonths({
+            dateObj: props.placeholder(),
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        })
+    );
+
+    const visibleView = computed(() => {
+        return month().map((month) => month.value);
+    });
+
+    function isOutsideVisibleView(date: DateValue) {
+        return !visibleView().some((month) => isEqualMonth(date, month));
+    }
+
+    const isNextButtonDisabled = (nextPageFunc?: (date: DateValue) => DateValue) => {
+        if (!props.maxValue() || !month().length) return false;
+        if (props.disabled()) return true;
+
+        const lastPeriodInView = month()[month().length - 1].value;
+
+        if (!nextPageFunc && !props.nextPage()) {
+            const firstPeriodOfNextPage = lastPeriodInView.add({ months: 1 }).set({ day: 1 });
+            return isAfter(firstPeriodOfNextPage, <DateValue>props.maxValue());
+        }
+
+        const firstPeriodOfNextPage = handleNextDisabled(lastPeriodInView, nextPageFunc || props.nextPage()!);
+        return isAfter(firstPeriodOfNextPage, <DateValue>props.maxValue());
+    };
+
+    const isPrevButtonDisabled = (prevPageFunc?: (date: DateValue) => DateValue) => {
+        if (!props.minValue() || !month().length) return false;
+        if (props.disabled()) return true;
+        const firstPeriodInView = month()[0].value;
+
+        if (!prevPageFunc && !props.prevPage()) {
+            const lastPeriodOfPrevPage = firstPeriodInView.subtract({ months: 1 }).set({ day: 35 });
+            return isBefore(lastPeriodOfPrevPage, <DateValue>props.minValue());
+        }
+
+        const lastPeriodOfPrevPage = handlePrevDisabled(firstPeriodInView, prevPageFunc || props.prevPage()!);
+        return isBefore(lastPeriodOfPrevPage, <DateValue>props.minValue());
+    };
+
+    const nextPage = (nextPageFunc?: (date: DateValue) => DateValue) => {
+        const firstDate = month()[0].value;
+
+        if (!nextPageFunc && !props.nextPage()) {
+            const newDate = firstDate.add({ months: props.pagedNavigation() ? props.numberOfMonths() : 1 });
+
+            const newMonth = createMonths({
+                dateObj: newDate,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            });
+
+            month.set(newMonth);
+            props.placeholder.set(newMonth[0].value.set({ day: 1 }));
+
+            return;
+        }
+
+        const newDate = handleNextPage(firstDate, nextPageFunc || props.nextPage()!);
+        const newMonth = createMonths({
+            dateObj: newDate,
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        });
+
+        month.set(newMonth);
+
+        const duration: DateFields = {};
+
+        if (!nextPageFunc) {
+            const diff = newMonth[0].value.compare(firstDate);
+            if (diff >= getDaysInMonth(firstDate)) {
+                duration.day = 1;
+            }
+
+            if (diff >= 365) {
+                duration.month = 1;
+            }
+        }
+
+        props.placeholder.set(newMonth[0].value.set({ ...duration }));
+    };
+
+    const prevPage = (prevPageFunc?: (date: DateValue) => DateValue) => {
+        const firstDate = month()[0].value;
+
+        if (!prevPageFunc && !props.prevPage()) {
+            const newDate = firstDate.subtract({ months: props.pagedNavigation() ? props.numberOfMonths() : 1 });
+
+            const newMonth = createMonths({
+                dateObj: newDate,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            });
+
+            month.set(newMonth);
+
+            props.placeholder.set(newMonth[0].value.set({ day: 1 }));
+            return;
+        }
+
+        const newDate = handlePrevPage(firstDate, prevPageFunc || props.prevPage()!);
+        const newMonth = createMonths({
+            dateObj: newDate,
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        });
+
+        month.set(newMonth);
+
+        const duration: DateFields = {};
+
+        // Do not adjust the placeholder if the prevPageFunc is defined (overwrite)
+        if (!prevPageFunc) {
+            const diff = firstDate.compare(newMonth[0].value);
+            if (diff >= getDaysInMonth(firstDate)) duration.day = 1;
+
+            if (diff >= 365) duration.month = 1;
+        }
+
+        props.placeholder.set(newMonth[0].value.set({ ...duration }));
+    };
+
+    function isDateDisabled(dateObj: DateValue) {
+        if (props.isDateDisabled?.()?.(dateObj) || props.disabled()) return true;
+        if (props.maxValue() && isAfter(dateObj, <DateValue>props.maxValue())) return true;
+        if (props.minValue() && isBefore(dateObj, <DateValue>props.minValue())) return true;
+        return false;
+    }
+
+    const isDateUnavailable = (date: DateValue) => {
+        return !!props.isDateUnavailable?.()?.(date);
+    };
+
+    const weekdays = computed(() => {
+        if (!month().length) return [];
+        return month()[0].weeks[0].map((date) => {
+            return formatter.dayOfWeek(toDate(date), props.weekdayFormat());
+        });
+    });
+
+    watch([props.placeholder], ([placeholder]) => {
+        if (visibleView().some((month) => isEqualMonth(month, placeholder))) {
+            return;
+        }
+
+        month.set(
+            createMonths({
+                dateObj: placeholder,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            })
+        );
+    });
+
+    watch(
+        [props.locale, props.weekStartsOn, props.fixedWeeks, props.numberOfMonths],
+        ([locale, weekStartsOn, fixedWeeks, numberOfMonths]) => {
+            month.set(
+                createMonths({
+                    dateObj: props.placeholder(),
+                    weekStartsOn: weekStartsOn,
+                    locale: locale,
+                    fixedWeeks: fixedWeeks,
+                    numberOfMonths: numberOfMonths
+                })
+            );
+        }
+    );
+
+    const headingValue = computed(() => {
+        if (!month().length) {
+            return '';
+        }
+
+        if (props.locale() !== formatter.getLocale()) formatter.setLocale(props.locale());
+
+        if (month().length === 1) {
+            const _month = month()[0].value;
+            return `${formatter.fullMonthAndYear(toDate(_month), headingFormatOptions())}`;
+        }
+
+        const startMonth = toDate(month()[0].value);
+        const endMonth = toDate(month()[month().length - 1].value);
+
+        const startMonthName = formatter.fullMonth(startMonth, headingFormatOptions());
+        const endMonthName = formatter.fullMonth(endMonth, headingFormatOptions());
+        const startMonthYear = formatter.fullYear(startMonth, headingFormatOptions());
+        const endMonthYear = formatter.fullYear(endMonth, headingFormatOptions());
+
+        return startMonthYear === endMonthYear
+            ? `${startMonthName} - ${endMonthName} ${endMonthYear}`
+            : `${startMonthName} ${startMonthYear} - ${endMonthName} ${endMonthYear}`;
+    });
+
+    const fullCalendarLabel = computed(() => `${props.calendarLabel() ?? 'Event Date'}, ${headingValue()}`);
+
+    return {
+        isDateDisabled,
+        isDateUnavailable,
+        isNextButtonDisabled,
+        isPrevButtonDisabled,
+        month,
+        weekdays,
+        visibleView,
+        isOutsideVisibleView,
+        formatter,
+        nextPage,
+        prevPage,
+        headingValue,
+        fullCalendarLabel
+    };
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/сalendar-сontext.token.ts
+```typescript
+import { inject, InjectionToken, InputSignal, ModelSignal, WritableSignal } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { DateMatcher, Formatter } from '@radix-ng/primitives/core';
+
+export interface CalendarRootContextToken {
+    nextPage?: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+    prevPage?: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+    isNextButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+    isPrevButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+    headingValue: WritableSignal<string>;
+    dir: InputSignal<'ltr' | 'rtl'>;
+    readonly: boolean;
+    numberOfMonths: InputSignal<number>;
+    placeholder: ModelSignal<DateValue>;
+    pagedNavigation: boolean;
+    disabled: InputSignal<boolean>;
+    isDateSelected?: DateMatcher;
+    isDateDisabled?: DateMatcher;
+    isDateUnavailable: DateMatcher;
+    formatter: Formatter;
+    onDateChange: (date: DateValue) => void;
+    currentElement: HTMLElement;
+}
+
+export const CALENDAR_ROOT_CONTEXT = new InjectionToken<CalendarRootContextToken>('CalendarRootContext');
+
+export function injectCalendarRootContext(): CalendarRootContextToken {
+    return inject(CALENDAR_ROOT_CONTEXT);
+}
+
+```

@@ -6,7 +6,6 @@ import { makeContentId, makeTriggerId } from './utils';
 
 @Directive({
     selector: '[rdxTabsContent]',
-    standalone: true,
     host: {
         role: 'tabpanel',
         tabindex: '0',
@@ -45,7 +44,6 @@ export interface TabsListProps {
 
 @Directive({
     selector: '[rdxTabsList]',
-    standalone: true,
     hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
     host: {
         role: 'tablist',
@@ -61,6 +59,7 @@ export class RdxTabsListDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-root.directive.ts
 ```typescript
 import { Directive, InjectionToken, input, model, OnInit, output } from '@angular/core';
+import { provideToken } from '@radix-ng/primitives/core';
 
 export interface TabsProps {
     /** The value for the selected tab, if controlled */
@@ -92,9 +91,8 @@ export const RDX_TABS_ROOT_TOKEN = new InjectionToken<RdxTabsRootDirective>('Rdx
 
 @Directive({
     selector: '[rdxTabsRoot]',
-    standalone: true,
     providers: [
-        { provide: RDX_TABS_ROOT_TOKEN, useExisting: RdxTabsRootDirective }],
+        provideToken(RDX_TABS_ROOT_TOKEN, RdxTabsRootDirective)],
     host: {
         '[attr.data-orientation]': 'orientation()',
         '[attr.dir]': 'dir()'
@@ -158,7 +156,6 @@ interface TabsTriggerProps {
 
 @Directive({
     selector: '[rdxTabsTrigger]',
-    standalone: true,
     hostDirectives: [
         {
             directive: RdxRovingFocusItemDirective,

@@ -1,6 +1,6 @@
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/accessor/provide-value-accessor.ts
 ````typescript
-import { Provider, Type } from '@angular/core';
+import { forwardRef, Provider, Type } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
@@ -13,10 +13,10 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
  * export class ExampleDirective{}
  * ```
  */
-export function provideValueAccessor(type: Type<never>): Provider {
+export function provideValueAccessor<T>(type: Type<T>): Provider {
     return {
         provide: NG_VALUE_ACCESSOR,
-        useExisting: type,
+        useExisting: forwardRef(() => type),
         multi: true
     };
 }

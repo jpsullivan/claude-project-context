@@ -1,5 +1,27 @@
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/CHANGELOG.md
 ```
+## 0.34.0 (2025-04-27)
+
+### 🚀 Features
+
+- **calendar:** new Calendar primitive ([#295](https://github.com/radix-ng/primitives/pull/295))
+
+### ❤️ Thank You
+
+- Oleg Pimenov @pimenovoleg
+
+## 0.33.1 (2025-04-23)
+
+### 🩹 Fixes
+
+- **navigation-menu:** motion state ([#307](https://github.com/radix-ng/primitives/pull/307))
+- **hover-card:** remove console log from action handling ([#306](https://github.com/radix-ng/primitives/pull/306))
+- **navigation-menu:** simplify viewport content existence validation ([#302](https://github.com/radix-ng/primitives/pull/302))
+
+### ❤️ Thank You
+
+- Josh Sullivan @jpsullivan
+
 ## 0.33.0 (2025-04-12)
 
 ### 🚀 Features
@@ -675,7 +697,7 @@ export default {
 ```json
 {
     "name": "@radix-ng/primitives",
-    "version": "0.33.0",
+    "version": "0.34.0",
     "license": "MIT",
     "publishConfig": {
         "access": "public"
@@ -697,7 +719,8 @@ export default {
         "@angular/cdk": "^19.2.7"
     },
     "devDependencies": {
-        "@angular-devkit/schematics": "^19.2.5"
+        "@angular-devkit/schematics": "^19.2.5",
+        "@internationalized/date": "^3.7.0"
     },
     "schematics": "./schematics/collection.json",
     "sideEffects": false,
@@ -782,9 +805,12 @@ export default {
 ```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/test-setup.ts
 ```typescript
+import '@testing-library/jest-dom';
+import { toHaveNoViolations } from 'jest-axe';
 import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 setupZoneTestEnv();
+expect.extend(toHaveNoViolations);
 
 ```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tsconfig.doc.json
@@ -1407,7 +1433,6 @@ import { makeContentId, makeTriggerId } from './utils';
 
 @Directive({
     selector: '[rdxTabsContent]',
-    standalone: true,
     host: {
         role: 'tabpanel',
         tabindex: '0',
@@ -1446,7 +1471,6 @@ export interface TabsListProps {
 
 @Directive({
     selector: '[rdxTabsList]',
-    standalone: true,
     hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
     host: {
         role: 'tablist',
@@ -1462,6 +1486,7 @@ export class RdxTabsListDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/tabs/src/tabs-root.directive.ts
 ```typescript
 import { Directive, InjectionToken, input, model, OnInit, output } from '@angular/core';
+import { provideToken } from '@radix-ng/primitives/core';
 
 export interface TabsProps {
     /** The value for the selected tab, if controlled */
@@ -1493,9 +1518,8 @@ export const RDX_TABS_ROOT_TOKEN = new InjectionToken<RdxTabsRootDirective>('Rdx
 
 @Directive({
     selector: '[rdxTabsRoot]',
-    standalone: true,
     providers: [
-        { provide: RDX_TABS_ROOT_TOKEN, useExisting: RdxTabsRootDirective }],
+        provideToken(RDX_TABS_ROOT_TOKEN, RdxTabsRootDirective)],
     host: {
         '[attr.data-orientation]': 'orientation()',
         '[attr.dir]': 'dir()'
@@ -1559,7 +1583,6 @@ interface TabsTriggerProps {
 
 @Directive({
     selector: '[rdxTabsTrigger]',
-    standalone: true,
     hostDirectives: [
         {
             directive: RdxRovingFocusItemDirective,
@@ -6021,6 +6044,2033 @@ The Angular CDK Portal utility consists of a few key elements:
    An Angular directive (`CdkPortalOutlet`) or a host (`DomPortalOutlet`) where the portal content will be rendered.
 
 ````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/README.md
+```
+# @radix-ng/primitives/calendar
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+
+export { RdxCalendarCellTriggerDirective } from './src/calendar-cell-trigger.directive';
+export { RdxCalendarCellDirective } from './src/calendar-cell.directive';
+export { RdxCalendarGridBodyDirective } from './src/calendar-grid-body.directive';
+export { RdxCalendarGridHeadDirective } from './src/calendar-grid-head.directive';
+export { RdxCalendarGridRowDirective } from './src/calendar-grid-row.directive';
+export { RdxCalendarGridDirective } from './src/calendar-grid.directive';
+export { RdxCalendarHeadCellDirective } from './src/calendar-head-cell.directive';
+export { RdxCalendarHeaderDirective } from './src/calendar-header.directive';
+export { RdxCalendarHeadingDirective } from './src/calendar-heading.directive';
+export { RdxCalendarNextDirective } from './src/calendar-next.directive';
+export { RdxCalendarPrevDirective } from './src/calendar-prev.directive';
+export { RdxCalendarRootDirective } from './src/calendar-root.directive';
+
+import { RdxCalendarCellTriggerDirective } from './src/calendar-cell-trigger.directive';
+import { RdxCalendarCellDirective } from './src/calendar-cell.directive';
+import { RdxCalendarGridBodyDirective } from './src/calendar-grid-body.directive';
+import { RdxCalendarGridHeadDirective } from './src/calendar-grid-head.directive';
+import { RdxCalendarGridRowDirective } from './src/calendar-grid-row.directive';
+import { RdxCalendarGridDirective } from './src/calendar-grid.directive';
+import { RdxCalendarHeadCellDirective } from './src/calendar-head-cell.directive';
+import { RdxCalendarHeaderDirective } from './src/calendar-header.directive';
+import { RdxCalendarHeadingDirective } from './src/calendar-heading.directive';
+import { RdxCalendarNextDirective } from './src/calendar-next.directive';
+import { RdxCalendarPrevDirective } from './src/calendar-prev.directive';
+import { RdxCalendarRootDirective } from './src/calendar-root.directive';
+
+const _imports = [
+    RdxCalendarCellTriggerDirective,
+    RdxCalendarCellDirective,
+    RdxCalendarGridBodyDirective,
+    RdxCalendarGridHeadDirective,
+    RdxCalendarGridRowDirective,
+    RdxCalendarGridDirective,
+    RdxCalendarHeadCellDirective,
+    RdxCalendarHeaderDirective,
+    RdxCalendarPrevDirective,
+    RdxCalendarRootDirective,
+    RdxCalendarHeadingDirective,
+    RdxCalendarNextDirective
+];
+
+@NgModule({
+    imports: [..._imports],
+    exports: [..._imports]
+})
+export class RdxCalendarModule {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/ng-package.json
+```json
+{
+    "lib": {
+        "entryFile": "index.ts"
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-default.component.ts
+```typescript
+import { Component } from '@angular/core';
+import { CalendarDate, DateValue } from '@internationalized/date';
+import { ChevronLeft, ChevronRight, LucideAngularModule } from 'lucide-angular';
+import { RdxCalendarCellTriggerDirective } from '../src/calendar-cell-trigger.directive';
+import { RdxCalendarCellDirective } from '../src/calendar-cell.directive';
+import { RdxCalendarGridHeadDirective } from '../src/calendar-grid-head.directive';
+import { RdxCalendarGridDirective } from '../src/calendar-grid.directive';
+import { RdxCalendarHeadCellDirective } from '../src/calendar-head-cell.directive';
+import { RdxCalendarHeaderDirective } from '../src/calendar-header.directive';
+import { RdxCalendarHeadingDirective } from '../src/calendar-heading.directive';
+import { RdxCalendarNextDirective } from '../src/calendar-next.directive';
+import { RdxCalendarPrevDirective } from '../src/calendar-prev.directive';
+import { RdxCalendarRootDirective } from '../src/calendar-root.directive';
+
+@Component({
+    selector: 'app-calendar-default',
+    imports: [
+        RdxCalendarRootDirective,
+        RdxCalendarHeaderDirective,
+        RdxCalendarGridDirective,
+        RdxCalendarGridHeadDirective,
+        RdxCalendarCellTriggerDirective,
+        RdxCalendarCellDirective,
+        RdxCalendarHeadingDirective,
+        RdxCalendarNextDirective,
+        RdxCalendarPrevDirective,
+        LucideAngularModule,
+        RdxCalendarHeadCellDirective
+    ],
+    styleUrl: 'calendar-default.style.css',
+    template: `
+        <div class="wrapper">
+            <div
+                class="calendar-root"
+                #root="rdxCalendarRoot"
+                [value]="date"
+                data-testid="calendar"
+                rdxCalendarRoot
+                fixedWeeks
+            >
+                <div class="calendar-header" rdxCalendarHeader>
+                    <button class="icon-button" type="button" rdxCalendarPrev>
+                        <lucide-angular [img]="ChevronLeft" size="16" style="display: flex;" />
+                    </button>
+                    <div class="calendar-heading" #head="rdxCalendarHeading" data-testid="heading" rdxCalendarHeading>
+                        {{ head.headingValue() }}
+                    </div>
+                    <button class="icon-button" type="button" data-testid="next-button" rdxCalendarNext>
+                        <lucide-angular [img]="ChevronRight" size="16" style="display: flex;" />
+                    </button>
+                </div>
+
+                <div class="calendar-container">
+                    <table class="calendar-grid" rdxCalendarGrid>
+                        @for (month of root.months(); track $index) {
+                            <thead rdxCalendarGridHead>
+                                <tr class="calendar-grid-head-row">
+                                    @for (day of root.weekDays(); track $index) {
+                                        <th class="calendar-head-cell" rdxCalendarHeadCell>{{ day }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="calendar-grid-body" rdxCalendarGridBody>
+                                @for (weekDates of month.weeks; track $index) {
+                                    <tr class="calendar-week-row">
+                                        @for (weekDate of weekDates; track $index) {
+                                            <td class="calendar-cell-wrapper" [date]="weekDate" rdxCalendarCell>
+                                                <div
+                                                    class="calendar-day"
+                                                    #cell="rdxCalendarCellTrigger"
+                                                    [day]="weekDate"
+                                                    [month]="month.value"
+                                                    rdxCalendarCellTrigger
+                                                >
+                                                    {{ cell.dayValue() }}
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class CalendarDefaultComponent {
+    date: DateValue = new CalendarDate(2024, 10, 3);
+
+    protected readonly ChevronLeft = ChevronLeft;
+    protected readonly ChevronRight = ChevronRight;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-default.style.css
+```css
+/* calendar-default.style.css */
+
+/* Общие обёртки */
+.wrapper {
+    max-width: 680px;
+    width: 300px;
+}
+
+.calendar-root {
+    margin-top: 1.5rem;
+    border-radius: 0.75rem;
+    background-color: #ffffff;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+/* Заголовок календаря */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.calendar-heading {
+    font-size: 0.875rem;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Кнопки навигации */
+button {
+    all: unset;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #000000;
+    background-color: transparent;
+    border-radius: 0.375rem;
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.icon-button:hover {
+    background-color: #f5f5f4;
+}
+
+.icon-button:active {
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}
+
+.icon-button:focus {
+    box-shadow: 0 0 0 2px black;
+}
+
+/* Контейнер таблицы */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+}
+
+/* Сетка календаря */
+.calendar-grid {
+    width: 100%;
+    border-collapse: collapse;
+    user-select: none;
+}
+
+/* Заголовок дней недели */
+.calendar-grid-head-row {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin-bottom: 0.25rem;
+}
+
+.calendar-head-cell {
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    color: #30a46c;
+    text-align: center;
+}
+
+/* Тело календаря */
+.calendar-grid-body {
+    display: grid;
+}
+
+.calendar-week-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell-wrapper {
+    position: relative;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+/* Клетки дней */
+.calendar-day {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: black;
+    outline: none;
+    cursor: pointer;
+}
+
+.calendar-day:focus {
+    box-shadow: 0 0 0 2px black;
+}
+
+.calendar-day:hover {
+    background-color: #c3e8d1;
+}
+
+.calendar-day[data-selected] {
+    background-color: #30a46c !important;
+    color: white;
+}
+
+.calendar-day[data-outside-view],
+.calendar-day[data-unavailable] {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day[data-unavailable] {
+    pointer-events: none;
+    text-decoration: line-through;
+}
+
+.calendar-day::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 9999px;
+    background-color: white;
+    display: none;
+}
+
+.calendar-day[data-today]::before {
+    display: block;
+    background-color: #298459;
+}
+
+.calendar-day[data-highlighted] {
+    background-color: #c3e8d1;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-with-locale.component.ts
+```typescript
+import { Component, computed, signal } from '@angular/core';
+import { createCalendar, getLocalTimeZone, toCalendar, today } from '@internationalized/date';
+import { ChevronLeft, ChevronRight, LucideAngularModule } from 'lucide-angular';
+import { RdxCalendarCellTriggerDirective } from '../src/calendar-cell-trigger.directive';
+import { RdxCalendarGridHeadDirective } from '../src/calendar-grid-head.directive';
+import { RdxCalendarGridDirective } from '../src/calendar-grid.directive';
+import { RdxCalendarHeaderDirective } from '../src/calendar-header.directive';
+import { RdxCalendarHeadingDirective } from '../src/calendar-heading.directive';
+import { RdxCalendarNextDirective } from '../src/calendar-next.directive';
+import { RdxCalendarPrevDirective } from '../src/calendar-prev.directive';
+import { RdxCalendarRootDirective } from '../src/calendar-root.directive';
+
+@Component({
+    selector: 'app-calendar-with-locale',
+    imports: [
+        RdxCalendarRootDirective,
+        RdxCalendarHeaderDirective,
+        RdxCalendarGridDirective,
+        RdxCalendarGridHeadDirective,
+        RdxCalendarCellTriggerDirective,
+        RdxCalendarHeadingDirective,
+        RdxCalendarNextDirective,
+        RdxCalendarPrevDirective,
+        LucideAngularModule
+    ],
+    styleUrl: 'calendar-default.style.css',
+    template: `
+        <div class="wrapper" style="display: flex; flex-direction: column; gap: 1rem;">
+            <label style="color: white;">Locale</label>
+            <select [value]="locale()" (change)="updateLocale($event)">
+                @for (option of preferences; track $index) {
+                    <option [value]="option.locale">{{ option.label }}</option>
+                }
+            </select>
+
+            <label style="color: white;">Calendar</label>
+            <select [value]="calendar()">
+                @for (option of preferredCalendars(); track $index) {
+                    <option [value]="option!.key">{{ option!.name }}</option>
+                }
+            </select>
+
+            <div
+                class="calendar-root"
+                #root="rdxCalendarRoot"
+                [value]="value()"
+                [locale]="locale()"
+                rdxCalendarRoot
+                fixedWeeks
+            >
+                <div class="calendar-header" rdxCalendarHeader>
+                    <button class="icon-button" type="button" rdxCalendarPrev>
+                        <lucide-angular [img]="ChevronLeft" size="16" style="display: flex;" />
+                    </button>
+                    <div class="calendar-heading" #head="rdxCalendarHeading" rdxCalendarHeading>
+                        {{ head.headingValue() }}
+                    </div>
+                    <button class="icon-button" type="button" rdxCalendarNext>
+                        <lucide-angular [img]="ChevronRight" size="16" style="display: flex;" />
+                    </button>
+                </div>
+
+                <div class="calendar-container">
+                    <table class="calendar-grid" rdxCalendarGrid>
+                        @for (month of root.months(); track $index) {
+                            <thead rdxCalendarGridHead>
+                                <tr class="calendar-grid-head-row">
+                                    @for (day of root.weekDays(); track $index) {
+                                        <th class="calendar-head-cell">{{ day }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="calendar-grid-body" rdxCalendarGridBody>
+                                @for (weekDates of month.weeks; track $index) {
+                                    <tr class="calendar-week-row">
+                                        @for (weekDate of weekDates; track $index) {
+                                            <td class="calendar-cell-wrapper">
+                                                <div
+                                                    class="calendar-day"
+                                                    #cell="rdxCalendarCellTrigger"
+                                                    [day]="weekDate"
+                                                    [month]="month.value"
+                                                    rdxCalendarCellTrigger
+                                                >
+                                                    {{ cell.dayValue() }}
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class CalendarWithLocaleComponent {
+    readonly preferences = [
+        { locale: 'en-US', label: 'Default', ordering: 'gregory' },
+        {
+            label: 'Arabic (Algeria)',
+            locale: 'ar-DZ',
+            territories: 'DJ DZ EH ER IQ JO KM LB LY MA MR OM PS SD SY TD TN YE',
+            ordering: 'gregory islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (United Arab Emirates)',
+            locale: 'ar-AE',
+            territories: 'AE BH KW QA',
+            ordering: 'gregory islamic-umalqura islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (Egypt)',
+            locale: 'AR-EG',
+            territories: 'EG',
+            ordering: 'gregory coptic islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (Saudi Arabia)',
+            locale: 'ar-SA',
+            territories: 'SA',
+            ordering: 'islamic-umalqura gregory islamic islamic-rgsa'
+        },
+        {
+            label: 'Farsi (Iran)',
+            locale: 'fa-IR',
+            territories: 'IR',
+            ordering: 'persian gregory islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Farsi (Afghanistan)',
+            locale: 'fa-AF',
+            territories: 'AF IR',
+            ordering: 'persian gregory islamic islamic-civil islamic-tbla'
+        },
+        { label: 'Amharic (Ethiopia)', locale: 'am-ET', territories: 'ET', ordering: 'gregory ethiopic ethioaa' },
+        {
+            label: 'Hebrew (Israel)',
+            locale: 'he-IL',
+            territories: 'IL',
+            ordering: 'gregory hebrew islamic islamic-civil islamic-tbla'
+        },
+        { label: 'Hindi (India)', locale: 'hi-IN', territories: 'IN', ordering: 'gregory indian' },
+        { label: 'Japanese (Japan)', locale: 'ja-JP', territories: 'JP', ordering: 'gregory japanese' },
+        { label: 'Thai (Thailand)', locale: 'th-TH', territories: 'TH', ordering: 'buddhist gregory' },
+        { label: 'Chinese (Taiwan)', locale: 'zh-TW', territories: 'TW', ordering: 'gregory roc chinese' }
+    ];
+
+    readonly calendars = [
+        { key: 'gregory', name: 'Gregorian' },
+        { key: 'japanese', name: 'Japanese' },
+        { key: 'buddhist', name: 'Buddhist' },
+        { key: 'roc', name: 'Taiwan' },
+        { key: 'persian', name: 'Persian' },
+        { key: 'indian', name: 'Indian' },
+        { key: 'islamic-umalqura', name: 'Islamic (Umm al-Qura)' },
+        { key: 'islamic-civil', name: 'Islamic Civil' },
+        { key: 'islamic-tbla', name: 'Islamic Tabular' },
+        { key: 'hebrew', name: 'Hebrew' },
+        { key: 'coptic', name: 'Coptic' },
+        { key: 'ethiopic', name: 'Ethiopic' },
+        { key: 'ethioaa', name: 'Ethiopic (Amete Alem)' }
+    ];
+
+    readonly locale = signal(this.preferences[0].locale);
+    readonly calendar = signal(this.calendars[0].key);
+
+    readonly pref = computed(() => this.preferences.find((p) => p.locale === this.locale()));
+
+    readonly preferredCalendars = computed(() => {
+        const currentPref = this.pref();
+        return currentPref
+            ? currentPref.ordering
+                  .split(' ')
+                  .map((p) => this.calendars.find((c) => c.key === p))
+                  .filter(Boolean)
+            : [this.calendars[0]];
+    });
+
+    readonly otherCalendars = computed(() =>
+        this.calendars.filter((c) => !this.preferredCalendars().some((p) => p!.key === c.key))
+    );
+
+    readonly value = computed(() => toCalendar(today(getLocalTimeZone()), createCalendar(this.calendar())));
+
+    updateLocale(event: Event) {
+        const newLocale = (event.target as HTMLSelectElement).value;
+
+        this.locale.set(newLocale);
+        this.calendar.set(this.pref()!.ordering.split(' ')[0]);
+    }
+
+    protected readonly ChevronLeft = ChevronLeft;
+    protected readonly ChevronRight = ChevronRight;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar.docs.mdx
+````
+import { ArgTypes, Canvas, Markdown, Meta } from "@storybook/blocks";
+import * as Stories from './calendar.stories';
+import { RdxCalendarRootDirective } from "../src/calendar-root.directive";
+import {RdxCalendarPrevDirective} from "../src/calendar-prev.directive";
+import {RdxCalendarNextDirective} from "../src/calendar-next.directive";
+import {RdxCalendarCellDirective} from "../src/calendar-cell.directive";
+
+<Meta title="Primitives/Calendar" />
+
+# Calendar
+
+####  Displays dates and days of the week, facilitating date-related interactions.
+
+<Canvas sourceState="hidden" of={Stories.Default} />
+
+## Features
+
+- ✅ Full keyboard navigation.
+- ✅ Can be controlled or uncontrolled
+- ✅ Focus is fully managed
+- ✅ Localization support
+- ✅ Highly composable
+
+## Preface
+
+The component depends on the [@internationalized/date package](https://react-spectrum.adobe.com/internationalized/date/index.html),
+which solves a lot of the problems that come with working with dates and times in JavaScript.
+
+We highly recommend reading through the documentation for the package to get a solid feel
+for how it works, and you'll need to install it in your project to use the date-related components.
+
+## Installation
+
+Install the date package.
+
+```bash
+npm install @internationalized/date
+```
+
+Install the component from your command line.
+
+```bash
+npm install @radix-ng/primitives
+```
+
+## Anatomy
+
+Import all parts and piece them together.
+
+```html
+<div
+    rdxCalendarRoot
+    #root="rdxCalendarRoot">
+    <div rdxCalendarHeader>
+        <button type="button" rdxCalendarPrev></button>
+        <div #head="rdxCalendarHeading" rdxCalendarHeading>
+            {{ head.headingValue() }}
+        </div>
+        <button type="button" rdxCalendarNext></button>
+    </div>
+
+    <table rdxCalendarGrid>
+        @for (month of root.months(); track $index) {
+            <thead rdxCalendarGridHead>
+                <tr rdxCalendarGridRow>
+                    @for (day of root.weekDays(); track $index) {
+                        <th rdxCalendarHeadCell>{{ day }}</th>
+                    }
+                </tr>
+            </thead>
+            <tbody rdxCalendarGridBody>
+                @for (weekDates of month.weeks; track $index) {
+                    <tr rdxCalendarGridRow>
+                        @for (weekDate of weekDates; track $index) {
+                            <td rdxCalendarCell>
+                                <div
+                                    #cell="rdxCalendarCellTrigger"
+                                    rdxCalendarCellTrigger
+                                >
+                                    {{ cell.dayValue() }}
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+</div>
+```
+
+## API Reference
+
+### Root
+
+`RdxCalendarRootDirective` Contains all the parts of a calendar
+
+<ArgTypes of={RdxCalendarRootDirective} />
+
+### Header
+
+`RdxCalendarHeaderDirective` Contains the navigation buttons and the heading segments.
+
+### Prev Button
+
+`RdxCalendarPrevDirective` Calendar navigation button. It navigates the calendar one month/year/decade in the past based on the current calendar view.
+
+<ArgTypes of={RdxCalendarPrevDirective} />
+
+### Next Button
+
+`RdxCalendarNextDirective` Calendar navigation button. It navigates the calendar one month/year/decade in the future based on the current calendar view.
+
+<ArgTypes of={RdxCalendarNextDirective} />
+
+### Heading
+
+`RdxCalendarHeadingDirective` Heading for displaying the current month and year.
+
+
+| exportAs       | Description |
+| ------------- | --------- |
+| `headingValue`  | `string` Current month and year |
+
+### Grid
+
+`RdxCalendarGridDirective` Container for wrapping the calendar grid.
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-readonly]`  | Present when readonly |
+| `[data-disabled]`  | Present when disabled |
+
+### Grid Head
+
+`RdxCalendarGridHeadDirective` Container for wrapping the grid head as `thead`.
+
+### Grid Body
+
+`RdxCalendarGridBodyDirective` Container for wrapping the grid body as `tbody`.
+
+### Grid Row
+
+`RdxCalendarGridRowDirective` Container for wrapping the grid row as `tr`.
+
+### Head Cell
+
+`RdxCalendarHeadCellDirective` Container for wrapping the head cell. Used for displaying the week days as `th`.
+
+### Cell
+
+`RdxCalendarCellDirective` Container for wrapping the calendar cells as `td`.
+
+<ArgTypes of={RdxCalendarCellDirective} />
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-disabled]`  | Present when disabled |
+
+### Cell Trigger
+
+`RdxCalendarCellTriggerDirective` Interactable container for displaying the cell dates. Clicking it selects the date.
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-selected]`  | Present when selected |
+| `[data-value]`  | The ISO string value of the date. |
+| `[data-disabled]`  | Present when disabled |
+| `[data-unavailable]`  | Present when unavailable |
+| `[data-today]`  | Present when today |
+| `[data-outside-view]`  | Present when the date is outside the current month it is displayed in. |
+| `[data-outside-visible-view]`  | Present when the date is outside the months that are visible on the calendar. |
+| `[data-focused]`  | Present when focused |
+
+## Examples
+
+### Calendar with Locale and Calendar System Selection
+
+This example showcases some of the available locales and how the calendar systems are displayed.
+
+<Canvas sourceState="hidden" of={Stories.WithLocale} />
+
+
+## Accessibility
+
+### Keyboard Interactions
+| Key     | Description |
+| ------------------ | --------- |
+| `Tab`  | When focus moves onto the calendar, focuses the first navigation button. |
+| `Space`  |  When the focus is on either `CalendarNext` or `CalendarPrev`, it navigates the calendar. Otherwise, it selects the date.  |
+| `Enter`  |  When the focus is on either `CalendarNext` or `CalendarPrev`, it navigates the calendar. Otherwise, it selects the date.  |
+| `ArrowLeft` `ArrowRight` `ArrowUp` `ArrowDown`  |  When the focus is on `CalendarCellTrigger`, it navigates the dates, changing the month/year/decade if necessary.  |
+
+````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar.stories.ts
+```typescript
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { CalendarDefaultComponent } from './calendar-default.component';
+import { CalendarWithLocaleComponent } from './calendar-with-locale.component';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Calendar',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                CalendarDefaultComponent,
+                CalendarWithLocaleComponent
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <app-calendar-default />
+        `
+    })
+};
+
+export const WithLocale: Story = {
+    render: () => ({
+        template: html`
+            <app-calendar-with-locale />
+        `
+    })
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/__tests__/calendar.spec.ts
+```typescript
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CalendarDate, CalendarDateTime, DateValue, toZoned } from '@internationalized/date';
+import { userEvent } from '@testing-library/user-event';
+import { axe } from 'jest-axe';
+import { CalendarDefaultComponent } from '../stories/calendar-default.component';
+
+type SetupConfig = {
+    modelValue?: DateValue;
+    prevPage?: (placeholder: DateValue) => DateValue;
+};
+
+function getSelectedDay(calendar: HTMLElement) {
+    return calendar.querySelector<HTMLElement>('[data-selected]') as HTMLElement;
+}
+
+function getByTestId(id: string, hostEl: HTMLElement) {
+    return hostEl.querySelector<HTMLElement>(`[data-testId=${id}]`)!;
+}
+
+const calendarDate = new CalendarDate(1980, 1, 20);
+const calendarDateTime = new CalendarDateTime(1980, 1, 20, 12, 30, 0, 0);
+const zonedDateTime = toZoned(calendarDateTime, 'America/New_York');
+
+const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+];
+
+describe('Calendar', () => {
+    let fixture: ComponentFixture<CalendarDefaultComponent>;
+    let component: CalendarDefaultComponent;
+    let hostEl: HTMLElement;
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [
+                CalendarDefaultComponent
+            ]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(CalendarDefaultComponent);
+        component = fixture.componentInstance;
+        hostEl = fixture.nativeElement;
+    });
+
+    async function setup({ modelValue }: SetupConfig = {}) {
+        if (modelValue !== undefined) {
+            component.date = modelValue;
+        }
+
+        fixture.detectChanges();
+
+        const user = userEvent.setup();
+
+        const calendar = hostEl.querySelector<HTMLElement>('[data-testId="calendar"]')!;
+        expect(calendar).toBeTruthy();
+
+        return { fixture, component, hostEl, calendar, user };
+    }
+
+    it('should pass axe accessibility tests', async () => {
+        const { calendar } = await setup({ modelValue: calendarDate });
+
+        expect(await axe(calendar)).toHaveNoViolations();
+    });
+
+    it('respects a default value if provided - `CalendarDate`', async () => {
+        const { calendar } = await setup({ modelValue: calendarDate });
+        expect(getSelectedDay(calendar)).toHaveTextContent(String(calendarDate.day));
+        expect(getByTestId('heading', hostEl)).toHaveTextContent('January 1980');
+    });
+
+    it('respects a default value if provided - `CalendarDateTime`', async () => {
+        const { calendar } = await setup({ modelValue: calendarDateTime });
+
+        expect(getSelectedDay(calendar)).toHaveTextContent(String(calendarDateTime.day));
+        expect(getByTestId('heading', hostEl)).toHaveTextContent('January 1980');
+    });
+
+    it('respects a default value if provided - `ZonedDateTime`', async () => {
+        const { calendar } = await setup({ modelValue: zonedDateTime });
+
+        expect(getSelectedDay(calendar)).toHaveTextContent(String(zonedDateTime.day));
+        expect(getByTestId('heading', hostEl)).toHaveTextContent('January 1980');
+    });
+
+    it('navigates the months forward using the next button', async () => {
+        const { user } = await setup({ modelValue: calendarDate });
+
+        const heading = getByTestId('heading', hostEl);
+        const nextBtn = getByTestId('next-button', hostEl);
+
+        for (const month of months) {
+            expect(heading).toHaveTextContent(`${month} 1980`);
+            await user.click(nextBtn);
+            fixture.detectChanges();
+        }
+        expect(heading).toHaveTextContent('January 1981');
+    });
+});
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-cell-trigger.directive.ts
+```typescript
+import { AfterViewInit, computed, Directive, ElementRef, inject, input } from '@angular/core';
+import { DateValue, getLocalTimeZone, isSameDay, isSameMonth, isToday } from '@internationalized/date';
+import * as kbd from '@radix-ng/primitives/core';
+import { getDaysInMonth, toDate } from '@radix-ng/primitives/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: '[rdxCalendarCellTrigger]',
+    exportAs: 'rdxCalendarCellTrigger',
+    host: {
+        role: 'button',
+        '[attr.aria-label]': 'labelText()',
+        '[attr.aria-disabled]': 'isDisabled() || isUnavailable() ? true : undefined',
+        '[attr.data-rdx-calendar-cell-trigger]': '""',
+        '[attr.tabindex]': 'isFocusedDate() ? 0 : isOutsideView() || isDisabled() ? undefined : -1',
+        '[attr.data-value]': 'day()?.toString()',
+        '[attr.data-disabled]': 'isDisabled() ? "" : undefined',
+        '[attr.data-today]': 'isDateToday() ? "" : undefined',
+        '[attr.data-outside-view]': 'isOutsideView() ? "" : undefined',
+        '[attr.data-selected]': 'isSelectedDate() ? "" : undefined',
+        '[attr.data-unavailable]': 'isUnavailable() ? "" : undefined',
+        '[attr.data-focus]': 'isFocusedDate() ? "" : undefined',
+
+        '(click)': 'onClick()',
+
+        '(keydown)': 'onArrowKey($event)'
+    }
+})
+export class RdxCalendarCellTriggerDirective implements AfterViewInit {
+    private readonly rootContext = injectCalendarRootContext();
+    private readonly elementRef = inject(ElementRef<HTMLElement>);
+
+    /**
+     * The date value provided to the cell trigger
+     */
+    readonly day = input<DateValue>();
+
+    /**
+     * The month in which the cell is rendered
+     */
+    readonly month = input<DateValue>();
+
+    /**
+     * Current day
+     */
+    readonly dayValue = computed(() => this.day()?.day.toLocaleString());
+
+    /**
+     * Current today state
+     */
+    readonly isDateToday = computed(() => {
+        return isToday(<DateValue>this.day(), getLocalTimeZone());
+    });
+
+    /**
+     * Current selected state
+     */
+    readonly isSelectedDate = computed(() => this.rootContext.isDateSelected!(<DateValue>this.day()));
+
+    readonly isDisabled = computed(() => this.rootContext.isDateDisabled!(<DateValue>this.day()));
+
+    readonly isOutsideView = computed(() => {
+        return !isSameMonth(<DateValue>this.day(), <DateValue>this.month());
+    });
+
+    readonly isFocusedDate = computed(() => {
+        return !this.rootContext.disabled() && isSameDay(<DateValue>this.day(), this.rootContext.placeholder());
+    });
+
+    readonly isUnavailable = computed(() => this.rootContext.isDateUnavailable?.(<DateValue>this.day()) ?? false);
+
+    readonly labelText = computed(() => {
+        return this.rootContext.formatter.custom(toDate(<DateValue>this.day()), {
+            weekday: 'long',
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    });
+
+    /**
+     * @ignore
+     */
+    currentElement!: HTMLElement;
+
+    ngAfterViewInit() {
+        this.currentElement = this.elementRef.nativeElement;
+    }
+
+    protected onClick() {
+        this.changeDate(this.day()!);
+    }
+
+    protected onArrowKey(event: KeyboardEvent) {
+        const code = event.code;
+        if (![
+                kbd.ARROW_RIGHT,
+                kbd.ARROW_LEFT,
+                kbd.ARROW_UP,
+                kbd.ARROW_DOWN,
+                kbd.ENTER,
+                kbd.SPACE_CODE
+            ].includes(code)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const indexIncrementation = 7;
+        const sign = this.rootContext.dir() === 'rtl' ? -1 : 1;
+
+        switch (code) {
+            case kbd.ARROW_RIGHT:
+                this.shiftFocus(this.currentElement, sign);
+                break;
+            case kbd.ARROW_LEFT:
+                this.shiftFocus(this.currentElement, -sign);
+                break;
+            case kbd.ARROW_UP:
+                this.shiftFocus(this.currentElement, -indexIncrementation);
+                break;
+            case kbd.ARROW_DOWN:
+                this.shiftFocus(this.currentElement, indexIncrementation);
+                break;
+            case kbd.ENTER:
+            case kbd.SPACE_CODE:
+                this.changeDate(<DateValue>this.day());
+        }
+    }
+
+    private shiftFocus(node: HTMLElement, add: number) {
+        const parentElement = this.rootContext.currentElement;
+
+        const allCollectionItems: HTMLElement[] = this.getSelectableCells(parentElement);
+        if (!allCollectionItems.length) return;
+
+        const index = allCollectionItems.indexOf(node);
+        const newIndex = index + add;
+
+        if (newIndex >= 0 && newIndex < allCollectionItems.length) {
+            if (allCollectionItems[newIndex].hasAttribute('data-disabled')) {
+                this.shiftFocus(allCollectionItems[newIndex], add);
+            }
+            allCollectionItems[newIndex].focus();
+            return;
+        }
+
+        if (newIndex < 0) {
+            if (!this.rootContext.prevPage) return;
+
+            this.rootContext.prevPage();
+
+            setTimeout(() => {
+                const newCollectionItems = this.getSelectableCells(parentElement);
+                if (!newCollectionItems.length) return;
+
+                if (!this.rootContext.pagedNavigation && this.rootContext.numberOfMonths() > 1) {
+                    // Placeholder is set to the first month of the new page
+                    const numberOfDays = getDaysInMonth(this.rootContext.placeholder());
+                    const computedIndex = numberOfDays - Math.abs(newIndex);
+                    if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                        this.shiftFocus(newCollectionItems[computedIndex], add);
+                    }
+                    newCollectionItems[computedIndex].focus();
+                    return;
+                }
+
+                const computedIndex = newCollectionItems.length - Math.abs(newIndex);
+                if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                    this.shiftFocus(newCollectionItems[computedIndex], add);
+                }
+                newCollectionItems[computedIndex].focus();
+            });
+        }
+
+        if (newIndex >= allCollectionItems.length) {
+            if (!this.rootContext.nextPage) return;
+
+            this.rootContext.nextPage();
+
+            setTimeout(() => {
+                const newCollectionItems = this.getSelectableCells(parentElement);
+                if (!newCollectionItems.length) return;
+
+                if (!this.rootContext.pagedNavigation && this.rootContext.numberOfMonths() > 1) {
+                    const numberOfDays = getDaysInMonth(
+                        this.rootContext.placeholder().add({ months: this.rootContext.numberOfMonths() - 1 })
+                    );
+
+                    const computedIndex =
+                        newIndex - allCollectionItems.length + (newCollectionItems.length - numberOfDays);
+
+                    if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                        this.shiftFocus(newCollectionItems[computedIndex], add);
+                    }
+                    newCollectionItems[computedIndex].focus();
+                    return;
+                }
+
+                const computedIndex = newIndex - allCollectionItems.length;
+                if (newCollectionItems[computedIndex].hasAttribute('data-disabled')) {
+                    this.shiftFocus(newCollectionItems[computedIndex], add);
+                }
+
+                newCollectionItems[computedIndex].focus();
+            });
+        }
+    }
+
+    /**
+     * @ignore
+     */
+    SELECTOR = '[data-rdx-calendar-cell-trigger]:not([data-outside-view]):not([data-outside-visible-view])';
+
+    /**
+     * @ignore
+     */
+    getSelectableCells(calendar: HTMLElement): HTMLElement[] {
+        return Array.from(calendar.querySelectorAll(this.SELECTOR)) ?? [];
+    }
+
+    /**
+     * @ignore
+     */
+    changeDate(date: DateValue) {
+        this.rootContext.onDateChange(date);
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-cell.directive.ts
+```typescript
+import { Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'td[rdxCalendarCell]',
+    host: {
+        role: 'gridcell',
+        '[attr.aria-selected]': 'rootContext.isDateSelected?.(date()!) ? true : undefined',
+        '[attr.aria-disabled]': 'rootContext.isDateSelected?.(date()!) ||  rootContext.isDateUnavailable?.(date()!)',
+        '[attr.data-disabled]': 'rootContext.isDateSelected?.(date()!) ? "" : undefined'
+    }
+})
+export class RdxCalendarCellDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The date of the cell
+     */
+    readonly date = input<DateValue>();
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-body.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'tbody[rdxCalendarGridBody]'
+})
+export class RdxCalendarGridBodyDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-head.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'thead[rdxCalendarGridHead]',
+    host: {
+        '[attr.aria-hidden]': 'true'
+    }
+})
+export class RdxCalendarGridHeadDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid-row.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'tr[rdxCalendarGridRow]'
+})
+export class RdxCalendarGridRowDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-grid.directive.ts
+```typescript
+import { computed, Directive } from '@angular/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'table[rdxCalendarGrid]',
+    host: {
+        tabindex: '-1',
+        role: 'grid',
+        '[attr.aria-readonly]': 'readonly()',
+        '[attr.aria-disabled]': 'disabled()',
+        '[attr.data-readonly]': 'readonly() && ""',
+        '[attr.data-disabled]': 'disabled() && ""'
+    }
+})
+export class RdxCalendarGridDirective {
+    private readonly rootContext = injectCalendarRootContext();
+
+    readonly disabled = computed(() => (this.rootContext.disabled() ? true : undefined));
+    readonly readonly = computed(() => (this.rootContext.readonly ? true : undefined));
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-head-cell.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'th[rdxCalendarHeadCell]'
+})
+export class RdxCalendarHeadCellDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-header.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+    selector: 'div[rdxCalendarHeader]'
+})
+export class RdxCalendarHeaderDirective {}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-heading.directive.ts
+```typescript
+import { computed, Directive } from '@angular/core';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'div[rdxCalendarHeading]',
+    exportAs: 'rdxCalendarHeading',
+    host: {
+        '[attr.data-disabled]': 'rootContext.disabled() ? "" : undefined'
+    }
+})
+export class RdxCalendarHeadingDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    readonly headingValue = computed(() => this.rootContext.headingValue());
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-next.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'button[rdxCalendarNext]',
+    exportAs: 'rdxCalendarNext',
+    host: {
+        '(click)': 'onClick()',
+        '[disabled]': 'disabled()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.aria-disabled]': 'disabled() ? "" : undefined',
+        'aria-label': 'Next page'
+    }
+})
+export class RdxCalendarNextDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The function to be used for the `next page`. Overwrites the nextPage function set on the `CalendarRoot`.
+     */
+    readonly nextPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * @ignore
+     */
+    readonly disabled = computed(
+        () => this.rootContext.disabled() || this.rootContext.isNextButtonDisabled(this.nextPage())
+    );
+
+    protected onClick() {
+        this.rootContext.nextPage!(this.nextPage());
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-prev.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { injectCalendarRootContext } from './сalendar-сontext.token';
+
+@Directive({
+    selector: 'button[rdxCalendarPrev]',
+    exportAs: 'rdxCalendarPrev',
+    host: {
+        '(click)': 'onClick()',
+        '[disabled]': 'disabled()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.aria-disabled]': 'disabled() ? "" : undefined',
+        'aria-label': 'Previous page'
+    }
+})
+export class RdxCalendarPrevDirective {
+    protected readonly rootContext = injectCalendarRootContext();
+
+    /**
+     * The function to be used for the `prev page`. Overwrites the prevPage function set on the `CalendarRoot`.
+     */
+    readonly prevPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * @ignore
+     */
+    readonly disabled = computed(
+        () => this.rootContext.disabled() || this.rootContext.isNextButtonDisabled(this.prevPage())
+    );
+
+    protected onClick() {
+        this.rootContext.prevPage!(this.prevPage());
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar-root.directive.ts
+```typescript
+import { BooleanInput } from '@angular/cdk/coercion';
+import {
+    AfterViewInit,
+    booleanAttribute,
+    Directive,
+    effect,
+    ElementRef,
+    forwardRef,
+    inject,
+    input,
+    linkedSignal,
+    model,
+    signal
+} from '@angular/core';
+import { DateValue, isEqualDay, isSameDay } from '@internationalized/date';
+import { DateMatcher, Formatter, getDefaultDate, Month, watch } from '@radix-ng/primitives/core';
+import { calendar, calendarState } from './calendar';
+import { CALENDAR_ROOT_CONTEXT } from './сalendar-сontext.token';
+
+@Directive({
+    selector: '[rdxCalendarRoot]',
+    exportAs: 'rdxCalendarRoot',
+    providers: [
+        { provide: CALENDAR_ROOT_CONTEXT, useExisting: forwardRef(() => RdxCalendarRootDirective) }],
+    host: {
+        role: 'application',
+        '[attr.aria-label]': 'fullCalendarLabel()',
+        '[attr.data-disabled]': 'disabled() ? "" : undefined',
+        '[attr.data-readonly]': 'readonly() ? "" : undefined',
+        '[attr.data-invalid]': 'isInvalid ? "" : undefined',
+        '[attr.dir]': 'dir()'
+    }
+})
+export class RdxCalendarRootDirective implements AfterViewInit {
+    private readonly elementRef = inject(ElementRef<HTMLElement>);
+
+    /**
+     * The controlled checked state of the calendar
+     */
+    readonly value = model<DateValue | DateValue[] | undefined>();
+
+    /**
+     * The default placeholder date
+     */
+    readonly defaultPlaceholder = model<DateValue>();
+
+    readonly locale = input<string>('en');
+
+    readonly defaultDate = getDefaultDate({
+        defaultPlaceholder: this.defaultPlaceholder(),
+        defaultValue: this.value(),
+        locale: this.locale()
+    });
+
+    /**
+     * The placeholder date, which is used to determine what month to display when no date is selected.
+     * This updates as the user navigates the calendar and can be used to programmatically control the calendar view
+     */
+    readonly placeholder = model<DateValue>(this.defaultPlaceholder() ?? this.defaultDate.copy());
+
+    readonly multiple = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether to always display 6 weeks in the calendar
+     */
+    readonly fixedWeeks = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether the calendar is disabled
+     */
+    readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * Whether to prevent the user from deselecting a date without selecting another date first
+     */
+    readonly preventDeselect = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * The day of the week to start the calendar on
+     */
+    readonly weekStartsOn = input<0 | 1 | 2 | 3 | 4 | 5 | 6>(1);
+
+    /**
+     * The number of months to display at once
+     */
+    readonly numberOfMonths = input<number>(1);
+
+    /**
+     * The reading direction of the calendar when applicable.
+     */
+    readonly dir = input<'ltr' | 'rtl'>('ltr');
+
+    /**
+     * The minimum date that can be selected
+     */
+    readonly minValue = input<DateValue>();
+
+    /**
+     * The maximum date that can be selected
+     */
+    readonly maxValue = input<DateValue>();
+
+    /**
+     * The format to use for the weekday strings provided via the weekdays slot prop
+     */
+    readonly weekdayFormat = input<Intl.DateTimeFormatOptions['weekday']>('narrow');
+
+    /**
+     * The accessible label for the calendar
+     */
+    readonly calendarLabel = input<string>();
+
+    /**
+     * Whether the calendar is readonly
+     */
+    readonly readonly = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    /**
+     * This property causes the previous and next buttons to navigate by the number of months displayed at once, rather than one month
+     */
+    readonly pagedNavigation = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly propsNextPage = input<(placeholder: DateValue) => DateValue>();
+
+    readonly propsPrevPage = input<(placeholder: DateValue) => DateValue>();
+
+    /**
+     * A function that returns whether a date is disabled
+     */
+    readonly isDateDisabled = input<DateMatcher>();
+
+    /**
+     * A function that returns whether a date is unavailable
+     */
+    readonly isDateUnavailable = input<DateMatcher>();
+
+    readonly initialFocus = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+    readonly months = model<Month<DateValue>[]>();
+
+    /**
+     * The days of the week
+     */
+    readonly weekDays = model<string[]>();
+
+    protected readonly _fixedWeeks = linkedSignal(this.fixedWeeks);
+
+    protected readonly _disabled = linkedSignal(this.disabled);
+
+    protected readonly _pagedNavigation = linkedSignal(this.pagedNavigation);
+
+    /**
+     * @ignore
+     */
+    readonly headingValue = signal<string>('');
+
+    /**
+     * @ignore
+     */
+    readonly fullCalendarLabel = signal<string>('');
+
+    /**
+     * @ignore
+     */
+    nextPage: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+
+    /**
+     * @ignore
+     */
+    prevPage: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+
+    /**
+     * @ignore
+     */
+    isNextButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    isPrevButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    isDateSelected: DateMatcher;
+
+    /**
+     * @ignore
+     */
+    isInvalid: boolean;
+
+    /**
+     * @ignore
+     */
+    isOutsideVisibleView: (date: DateValue) => boolean;
+
+    /**
+     * @ignore
+     */
+    formatter: Formatter;
+
+    /**
+     * @ignore
+     */
+    currentElement!: HTMLElement;
+
+    private readonly calendar = calendar({
+        locale: this.locale,
+        placeholder: this.placeholder,
+        weekStartsOn: this.weekStartsOn,
+        fixedWeeks: this._fixedWeeks,
+        numberOfMonths: this.numberOfMonths,
+        minValue: this.minValue,
+        maxValue: this.maxValue,
+        disabled: this._disabled,
+        weekdayFormat: this.weekdayFormat,
+        pagedNavigation: this._pagedNavigation,
+        isDateDisabled: this.isDateDisabled,
+        isDateUnavailable: this.isDateUnavailable,
+        calendarLabel: this.calendarLabel,
+        nextPage: this.propsNextPage,
+        prevPage: this.propsPrevPage
+    });
+
+    constructor() {
+        this.nextPage = this.calendar.nextPage;
+        this.prevPage = this.calendar.prevPage;
+        this.isOutsideVisibleView = this.calendar.isOutsideVisibleView;
+        this.isNextButtonDisabled = this.calendar.isNextButtonDisabled;
+        this.isPrevButtonDisabled = this.calendar.isPrevButtonDisabled;
+        this.formatter = this.calendar.formatter;
+
+        effect(() => {
+            this.months.set(this.calendar.month());
+
+            this.weekDays.set(this.calendar.weekdays());
+
+            this.fullCalendarLabel.set(this.calendar.fullCalendarLabel());
+
+            this.headingValue.set(this.calendar.headingValue());
+
+            const { isInvalid, isDateSelected } = calendarState({
+                date: this.value,
+                isDateDisabled: this.isDateDisabled(),
+                isDateUnavailable: this.isDateUnavailable()
+            });
+
+            this.isDateSelected = isDateSelected;
+            this.isInvalid = isInvalid();
+        });
+
+        watch([this.value], (_modelValue) => {
+            if (Array.isArray(_modelValue) && _modelValue.length) {
+                const lastValue = _modelValue[_modelValue.length - 1];
+                if (lastValue && !isEqualDay(this.placeholder(), <DateValue>lastValue)) {
+                    this.onPlaceholderChange(<DateValue>lastValue);
+                }
+            } else if (!Array.isArray(_modelValue) && _modelValue && !isEqualDay(this.placeholder(), _modelValue)) {
+                this.onPlaceholderChange(_modelValue);
+            }
+        });
+    }
+
+    ngAfterViewInit() {
+        this.currentElement = this.elementRef.nativeElement;
+    }
+
+    /**
+     * @ignore
+     */
+    onPlaceholderChange(value: DateValue) {
+        this.placeholder.set(value.copy());
+    }
+
+    /**
+     * @ignore
+     */
+    onDateChange(date: DateValue) {
+        const currentValue = this.value();
+
+        if (!this.multiple()) {
+            // for single selection
+            if (!this.value()) {
+                this.value.set(date.copy());
+                return;
+            }
+
+            if (!this.preventDeselect() && isEqualDay(this.value() as DateValue, date)) {
+                this.placeholder.set(date.copy());
+                this.value.set(undefined);
+            } else {
+                this.value.set(date.copy());
+            }
+        } else if (!this.value()) {
+            // for multiple selection
+            this.value.set([date.copy()]);
+        } else if (Array.isArray(currentValue)) {
+            const index = currentValue.findIndex((d: DateValue) => isSameDay(d, date));
+            if (index === -1) {
+                this.value.set([...currentValue, date.copy()]);
+            } else if (!this.preventDeselect()) {
+                const next = currentValue.filter((d: DateValue) => !isSameDay(d, date));
+                if (next.length === 0) {
+                    this.placeholder.set(date.copy());
+                    this.value.set(undefined);
+                    return;
+                }
+                this.value.set(next.map((d) => d.copy()));
+            }
+        }
+    }
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/calendar.ts
+```typescript
+import { computed, InputSignal, ModelSignal, signal, WritableSignal } from '@angular/core';
+import { DateFields, DateValue, isEqualMonth, isSameDay } from '@internationalized/date';
+import {
+    createFormatter,
+    createMonths,
+    DateFormatterOptions,
+    DateMatcher,
+    getDaysInMonth,
+    isAfter,
+    isBefore,
+    Month,
+    toDate,
+    watch
+} from '@radix-ng/primitives/core';
+
+export type CalendarProps = {
+    locale: InputSignal<string>;
+    placeholder: WritableSignal<DateValue>;
+    weekStartsOn: InputSignal<0 | 1 | 2 | 3 | 4 | 5 | 6>;
+    fixedWeeks: WritableSignal<boolean>;
+    numberOfMonths: InputSignal<number>;
+    minValue: InputSignal<DateValue | undefined>;
+    maxValue: InputSignal<DateValue | undefined>;
+    disabled: WritableSignal<boolean>;
+    weekdayFormat: InputSignal<Intl.DateTimeFormatOptions['weekday']>;
+    pagedNavigation: WritableSignal<boolean>;
+    isDateDisabled?: InputSignal<DateMatcher | undefined>;
+    isDateUnavailable?: InputSignal<DateMatcher | undefined>;
+    calendarLabel: InputSignal<string | undefined>;
+    nextPage: InputSignal<((placeholder: DateValue) => DateValue) | undefined>;
+    prevPage: InputSignal<((placeholder: DateValue) => DateValue) | undefined>;
+};
+
+export type CalendarStateProps = {
+    date: ModelSignal<DateValue | DateValue[] | undefined>;
+    isDateDisabled?: DateMatcher;
+    isDateUnavailable?: DateMatcher;
+};
+
+export function calendarState(props: CalendarStateProps) {
+    function isDateSelected(dateObj: DateValue): boolean {
+        const currentValue = props.date(); // signal read
+
+        if (Array.isArray(currentValue)) {
+            return currentValue.some((d) => isSameDay(d, dateObj));
+        } else if (!currentValue) {
+            return false;
+        } else {
+            return isSameDay(currentValue, dateObj);
+        }
+    }
+
+    const isInvalid = computed(() => {
+        const currentValue = props.date();
+
+        if (Array.isArray(currentValue)) {
+            if (!currentValue.length) {
+                return false;
+            }
+            for (const dateObj of currentValue) {
+                if (props.isDateDisabled?.(dateObj)) return true;
+                if (props.isDateUnavailable?.(dateObj)) return true;
+            }
+        } else {
+            if (!currentValue) {
+                return false;
+            }
+            if (props.isDateDisabled?.(currentValue)) return true;
+            if (props.isDateUnavailable?.(currentValue)) return true;
+        }
+        return false;
+    });
+
+    return {
+        isDateSelected,
+        isInvalid
+    };
+}
+
+function handleNextDisabled(lastPeriodInView: DateValue, nextPageFunc: (date: DateValue) => DateValue): DateValue {
+    const firstPeriodOfNextPage = nextPageFunc(lastPeriodInView);
+    const diff = firstPeriodOfNextPage.compare(lastPeriodInView);
+    const duration: DateFields = {};
+    if (diff >= 7) duration.day = 1;
+    if (diff >= getDaysInMonth(lastPeriodInView)) duration.month = 1;
+    return firstPeriodOfNextPage.set({ ...duration });
+}
+
+function handlePrevDisabled(firstPeriodInView: DateValue, prevPageFunc: (date: DateValue) => DateValue): DateValue {
+    const lastPeriodOfPrevPage = prevPageFunc(firstPeriodInView);
+    const diff = firstPeriodInView.compare(lastPeriodOfPrevPage);
+    const duration: DateFields = {};
+    if (diff >= 7) duration.day = 35;
+    if (diff >= getDaysInMonth(firstPeriodInView)) duration.month = 13;
+    return lastPeriodOfPrevPage.set({ ...duration });
+}
+
+function handleNextPage(date: DateValue, nextPageFunc: (date: DateValue) => DateValue): DateValue {
+    return nextPageFunc(date);
+}
+
+function handlePrevPage(date: DateValue, prevPageFunc: (date: DateValue) => DateValue): DateValue {
+    return prevPageFunc(date);
+}
+
+export function calendar(props: CalendarProps) {
+    const formatter = createFormatter(props.locale());
+
+    const headingFormatOptions = computed(() => {
+        const options: DateFormatterOptions = {
+            calendar: props.placeholder().calendar.identifier
+        };
+
+        if (props.placeholder().calendar.identifier === 'gregory' && props.placeholder().era === 'BC') {
+            options.era = 'short';
+        }
+
+        return options;
+    });
+
+    const month = signal<Month<DateValue>[]>(
+        createMonths({
+            dateObj: props.placeholder(),
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        })
+    );
+
+    const visibleView = computed(() => {
+        return month().map((month) => month.value);
+    });
+
+    function isOutsideVisibleView(date: DateValue) {
+        return !visibleView().some((month) => isEqualMonth(date, month));
+    }
+
+    const isNextButtonDisabled = (nextPageFunc?: (date: DateValue) => DateValue) => {
+        if (!props.maxValue() || !month().length) return false;
+        if (props.disabled()) return true;
+
+        const lastPeriodInView = month()[month().length - 1].value;
+
+        if (!nextPageFunc && !props.nextPage()) {
+            const firstPeriodOfNextPage = lastPeriodInView.add({ months: 1 }).set({ day: 1 });
+            return isAfter(firstPeriodOfNextPage, <DateValue>props.maxValue());
+        }
+
+        const firstPeriodOfNextPage = handleNextDisabled(lastPeriodInView, nextPageFunc || props.nextPage()!);
+        return isAfter(firstPeriodOfNextPage, <DateValue>props.maxValue());
+    };
+
+    const isPrevButtonDisabled = (prevPageFunc?: (date: DateValue) => DateValue) => {
+        if (!props.minValue() || !month().length) return false;
+        if (props.disabled()) return true;
+        const firstPeriodInView = month()[0].value;
+
+        if (!prevPageFunc && !props.prevPage()) {
+            const lastPeriodOfPrevPage = firstPeriodInView.subtract({ months: 1 }).set({ day: 35 });
+            return isBefore(lastPeriodOfPrevPage, <DateValue>props.minValue());
+        }
+
+        const lastPeriodOfPrevPage = handlePrevDisabled(firstPeriodInView, prevPageFunc || props.prevPage()!);
+        return isBefore(lastPeriodOfPrevPage, <DateValue>props.minValue());
+    };
+
+    const nextPage = (nextPageFunc?: (date: DateValue) => DateValue) => {
+        const firstDate = month()[0].value;
+
+        if (!nextPageFunc && !props.nextPage()) {
+            const newDate = firstDate.add({ months: props.pagedNavigation() ? props.numberOfMonths() : 1 });
+
+            const newMonth = createMonths({
+                dateObj: newDate,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            });
+
+            month.set(newMonth);
+            props.placeholder.set(newMonth[0].value.set({ day: 1 }));
+
+            return;
+        }
+
+        const newDate = handleNextPage(firstDate, nextPageFunc || props.nextPage()!);
+        const newMonth = createMonths({
+            dateObj: newDate,
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        });
+
+        month.set(newMonth);
+
+        const duration: DateFields = {};
+
+        if (!nextPageFunc) {
+            const diff = newMonth[0].value.compare(firstDate);
+            if (diff >= getDaysInMonth(firstDate)) {
+                duration.day = 1;
+            }
+
+            if (diff >= 365) {
+                duration.month = 1;
+            }
+        }
+
+        props.placeholder.set(newMonth[0].value.set({ ...duration }));
+    };
+
+    const prevPage = (prevPageFunc?: (date: DateValue) => DateValue) => {
+        const firstDate = month()[0].value;
+
+        if (!prevPageFunc && !props.prevPage()) {
+            const newDate = firstDate.subtract({ months: props.pagedNavigation() ? props.numberOfMonths() : 1 });
+
+            const newMonth = createMonths({
+                dateObj: newDate,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            });
+
+            month.set(newMonth);
+
+            props.placeholder.set(newMonth[0].value.set({ day: 1 }));
+            return;
+        }
+
+        const newDate = handlePrevPage(firstDate, prevPageFunc || props.prevPage()!);
+        const newMonth = createMonths({
+            dateObj: newDate,
+            weekStartsOn: props.weekStartsOn(),
+            locale: props.locale(),
+            fixedWeeks: props.fixedWeeks(),
+            numberOfMonths: props.numberOfMonths()
+        });
+
+        month.set(newMonth);
+
+        const duration: DateFields = {};
+
+        // Do not adjust the placeholder if the prevPageFunc is defined (overwrite)
+        if (!prevPageFunc) {
+            const diff = firstDate.compare(newMonth[0].value);
+            if (diff >= getDaysInMonth(firstDate)) duration.day = 1;
+
+            if (diff >= 365) duration.month = 1;
+        }
+
+        props.placeholder.set(newMonth[0].value.set({ ...duration }));
+    };
+
+    function isDateDisabled(dateObj: DateValue) {
+        if (props.isDateDisabled?.()?.(dateObj) || props.disabled()) return true;
+        if (props.maxValue() && isAfter(dateObj, <DateValue>props.maxValue())) return true;
+        if (props.minValue() && isBefore(dateObj, <DateValue>props.minValue())) return true;
+        return false;
+    }
+
+    const isDateUnavailable = (date: DateValue) => {
+        return !!props.isDateUnavailable?.()?.(date);
+    };
+
+    const weekdays = computed(() => {
+        if (!month().length) return [];
+        return month()[0].weeks[0].map((date) => {
+            return formatter.dayOfWeek(toDate(date), props.weekdayFormat());
+        });
+    });
+
+    watch([props.placeholder], ([placeholder]) => {
+        if (visibleView().some((month) => isEqualMonth(month, placeholder))) {
+            return;
+        }
+
+        month.set(
+            createMonths({
+                dateObj: placeholder,
+                weekStartsOn: props.weekStartsOn(),
+                locale: props.locale(),
+                fixedWeeks: props.fixedWeeks(),
+                numberOfMonths: props.numberOfMonths()
+            })
+        );
+    });
+
+    watch(
+        [props.locale, props.weekStartsOn, props.fixedWeeks, props.numberOfMonths],
+        ([locale, weekStartsOn, fixedWeeks, numberOfMonths]) => {
+            month.set(
+                createMonths({
+                    dateObj: props.placeholder(),
+                    weekStartsOn: weekStartsOn,
+                    locale: locale,
+                    fixedWeeks: fixedWeeks,
+                    numberOfMonths: numberOfMonths
+                })
+            );
+        }
+    );
+
+    const headingValue = computed(() => {
+        if (!month().length) {
+            return '';
+        }
+
+        if (props.locale() !== formatter.getLocale()) formatter.setLocale(props.locale());
+
+        if (month().length === 1) {
+            const _month = month()[0].value;
+            return `${formatter.fullMonthAndYear(toDate(_month), headingFormatOptions())}`;
+        }
+
+        const startMonth = toDate(month()[0].value);
+        const endMonth = toDate(month()[month().length - 1].value);
+
+        const startMonthName = formatter.fullMonth(startMonth, headingFormatOptions());
+        const endMonthName = formatter.fullMonth(endMonth, headingFormatOptions());
+        const startMonthYear = formatter.fullYear(startMonth, headingFormatOptions());
+        const endMonthYear = formatter.fullYear(endMonth, headingFormatOptions());
+
+        return startMonthYear === endMonthYear
+            ? `${startMonthName} - ${endMonthName} ${endMonthYear}`
+            : `${startMonthName} ${startMonthYear} - ${endMonthName} ${endMonthYear}`;
+    });
+
+    const fullCalendarLabel = computed(() => `${props.calendarLabel() ?? 'Event Date'}, ${headingValue()}`);
+
+    return {
+        isDateDisabled,
+        isDateUnavailable,
+        isNextButtonDisabled,
+        isPrevButtonDisabled,
+        month,
+        weekdays,
+        visibleView,
+        isOutsideVisibleView,
+        formatter,
+        nextPage,
+        prevPage,
+        headingValue,
+        fullCalendarLabel
+    };
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/src/сalendar-сontext.token.ts
+```typescript
+import { inject, InjectionToken, InputSignal, ModelSignal, WritableSignal } from '@angular/core';
+import { DateValue } from '@internationalized/date';
+import { DateMatcher, Formatter } from '@radix-ng/primitives/core';
+
+export interface CalendarRootContextToken {
+    nextPage?: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+    prevPage?: (nextPageFunc?: (date: DateValue) => DateValue) => void;
+    isNextButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+    isPrevButtonDisabled: (nextPageFunc?: (date: DateValue) => DateValue) => boolean;
+    headingValue: WritableSignal<string>;
+    dir: InputSignal<'ltr' | 'rtl'>;
+    readonly: boolean;
+    numberOfMonths: InputSignal<number>;
+    placeholder: ModelSignal<DateValue>;
+    pagedNavigation: boolean;
+    disabled: InputSignal<boolean>;
+    isDateSelected?: DateMatcher;
+    isDateDisabled?: DateMatcher;
+    isDateUnavailable: DateMatcher;
+    formatter: Formatter;
+    onDateChange: (date: DateValue) => void;
+    currentElement: HTMLElement;
+}
+
+export const CALENDAR_ROOT_CONTEXT = new InjectionToken<CalendarRootContextToken>('CalendarRootContext');
+
+export function injectCalendarRootContext(): CalendarRootContextToken {
+    return inject(CALENDAR_ROOT_CONTEXT);
+}
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/radio/README.md
 ```
 # @radix-ng/primitives/radio
@@ -6500,6 +8550,7 @@ import {
     OnInit,
     signal
 } from '@angular/core';
+import { provideToken } from '@radix-ng/primitives/core';
 import { RdxRovingFocusItemDirective } from '@radix-ng/primitives/roving-focus';
 import { RDX_RADIO_GROUP } from './radio-tokens';
 
@@ -6512,7 +8563,7 @@ export function injectRadioItem(): RdxRadioItemDirective {
 @Directive({
     selector: '[rdxRadioItem]',
     exportAs: 'rdxRadioItem',
-    providers: [{ provide: RdxRadioItemToken, useExisting: RdxRadioItemDirective }],
+    providers: [provideToken(RdxRadioItemToken, RdxRadioItemDirective)],
     hostDirectives: [
         { directive: RdxRovingFocusItemDirective, inputs: ['tabStopId: id', 'focusable', 'active', 'allowShiftKey'] }],
 
@@ -6595,7 +8646,8 @@ export class RdxRadioItemDirective implements OnInit {
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
 import { booleanAttribute, computed, Directive, input, Input, model, output, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 import { Orientation, RdxRovingFocusGroupDirective } from '@radix-ng/primitives/roving-focus';
 import { RadioGroupDirective, RadioGroupProps, RDX_RADIO_GROUP } from './radio-tokens';
 
@@ -6603,9 +8655,8 @@ import { RadioGroupDirective, RadioGroupProps, RDX_RADIO_GROUP } from './radio-t
     selector: '[rdxRadioRoot]',
     exportAs: 'rdxRadioRoot',
     providers: [
-        { provide: RDX_RADIO_GROUP, useExisting: RdxRadioGroupDirective },
-        { provide: NG_VALUE_ACCESSOR, useExisting: RdxRadioGroupDirective, multi: true }
-    ],
+        provideValueAccessor(RdxRadioGroupDirective),
+        { provide: RDX_RADIO_GROUP, useExisting: RdxRadioGroupDirective }],
     hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
     host: {
         role: 'radiogroup',
@@ -6734,11 +8785,14 @@ export * from './src/is-inside-form';
 export * from './src/is-nullish';
 export * from './src/is-number';
 export * from './src/kbd-constants';
+export * from './src/provide-token';
 export * from './src/window';
 
+export * from './src/date-time';
 export * from './src/positioning/constants';
 export * from './src/positioning/types';
 export * from './src/positioning/utils';
+export * from './src/watch';
 
 ```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/ng-package.json
@@ -6835,6 +8889,27 @@ function getRequestAnimationFrame(): typeof requestAnimationFrame {
 const reqAnimationFrame = getRequestAnimationFrame();
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/chunk.ts
+````typescript
+/**
+ * Splits an array into chunks of a given size.
+ * @param arr The array to split.
+ * @param size The size of each chunk.
+ * @returns An array of arrays, where each sub-array has `size` elements from the original array.
+ * @example ```ts
+ * const arr = [1, 2, 3, 4, 5, 6, 7, 8];
+ * const chunks = chunk(arr, 3);
+ * // chunks = [[1, 2, 3], [4, 5, 6], [7, 8]]
+ * ```
+ */
+export function chunk<T>(arr: T[], size: number): T[][] {
+    const result = [];
+    for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+
+    return result;
+}
+
+````
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/document.ts
 ```typescript
 import { DOCUMENT } from '@angular/common';
@@ -7015,6 +9090,7 @@ export const p = 'p';
 export const n = 'n';
 export const j = 'j';
 export const k = 'k';
+export const SPACE_CODE = 'Space';
 
 ```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/mount.ts
@@ -7048,6 +9124,38 @@ export class OnMountDirective implements AfterViewInit {
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/provide-token.ts
+```typescript
+import { forwardRef, InjectionToken, Provider, Type } from '@angular/core';
+
+/**
+ * Creates an Angular provider that binds the given token to the existing instance
+ * of the specified class. This is especially useful when you want multiple
+ * tokens (or interfaces) to resolve to the same directive/component instance.
+ *
+ * @template T - The type associated with the injection token.
+ * @param token - The InjectionToken or abstract type you want to provide.
+ * @param type  - The class type whose existing instance will be used for this token.
+ * @returns A Provider configuration object for Angular's DI system.
+ *
+ * @example
+ *
+ * @Directive({
+ *   providers: [
+ *     provideToken(RdxToggleGroupToken, RdxToggleGroupDirective),
+ *     provideValueAccessor(RdxToggleGroupDirective)
+ *   ]
+ * })
+ * export class RdxToggleGroupDirective {}
+ */
+export function provideToken<T>(token: InjectionToken<T>, type: Type<unknown>): Provider {
+    return {
+        provide: token,
+        useExisting: forwardRef(() => type)
+    };
+}
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/types.ts
 ````typescript
 /**
@@ -7076,6 +9184,70 @@ export type Nullable<Type> = null | Type | undefined;
 export type SafeFunction = (...args: unknown[]) => unknown;
 
 ````
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/watch.ts
+````typescript
+// https://ngxtension.netlify.app/utilities/signals/explicit-effect/
+
+import { CreateEffectOptions, EffectCleanupRegisterFn, EffectRef, effect, untracked } from '@angular/core';
+
+/**
+ * We want to have the Tuple in order to use the types in the function signature
+ */
+type ExplicitEffectValues<T> = {
+    [K in keyof T]: () => T[K];
+};
+
+/**
+ * Extend the regular set of effect options
+ */
+declare interface CreateExplicitEffectOptions extends CreateEffectOptions {
+    /**
+     * Option that allows the computation not to execute immediately, but only run on first change.
+     */
+    defer?: boolean;
+}
+
+/**
+ * This explicit effect function will take the dependencies and the function to run when the dependencies change.
+ *
+ * @example
+ * ```typescript
+ * import { watch } from 'radix-ng/primitives/core';
+ *
+ * const count = signal(0);
+ * const state = signal('idle');
+ *
+ * watch([count, state], ([count, state], cleanup) => {
+ *   console.log('count updated', count, state);
+ *
+ *   cleanup(() => {
+ *     console.log('cleanup');
+ *   });
+ * });
+ * ```
+ *
+ * @param deps - The dependencies that the effect will run on
+ * @param fn - The function to run when the dependencies change
+ * @param options - The options for the effect with the addition of defer (it allows the computation to run on first change, not immediately)
+ */
+export function watch<Input extends readonly unknown[], Params = Input>(
+    deps: readonly [...ExplicitEffectValues<Input>],
+    fn: (deps: Params, onCleanup: EffectCleanupRegisterFn) => void,
+    options?: CreateExplicitEffectOptions | undefined
+): EffectRef {
+    let defer = options && options.defer;
+    return effect((onCleanup) => {
+        const depValues = deps.map((s) => s());
+        untracked(() => {
+            if (!defer) {
+                fn(depValues as any, onCleanup);
+            }
+            defer = false;
+        });
+    }, options);
+}
+
+````
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/window.ts
 ```typescript
 import { inject, InjectionToken } from '@angular/core';
@@ -7096,9 +9268,710 @@ export function injectWindow(): Window & typeof globalThis {
 }
 
 ```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/calendar.ts
+```typescript
+import { DateValue, endOfMonth, startOfMonth } from '@internationalized/date';
+import { chunk } from '../chunk';
+import { getDaysInMonth, getLastFirstDayOfWeek, getNextLastDayOfWeek } from './comparators';
+import { Month } from './types';
+
+export type CreateMonthProps = {
+    /**
+     * The date object representing the month's date (usually the first day of the month).
+     */
+    dateObj: DateValue;
+
+    /**
+     * The day of the week to start the calendar on (0 for Sunday, 1 for Monday, etc.).
+     */
+    weekStartsOn: number;
+
+    /**
+     * Whether to always render 6 weeks in the calendar, even if the month doesn't
+     * span 6 weeks.
+     */
+    fixedWeeks: boolean;
+
+    /**
+     * The locale to use when creating the calendar month.
+     */
+    locale: string;
+};
+
+/**
+ * Retrieves an array of date values representing the days between
+ * the provided start and end dates.
+ */
+export function getDaysBetween(start: DateValue, end: DateValue) {
+    const days: DateValue[] = [];
+    let dCurrent = start.add({ days: 1 });
+    const dEnd = end;
+    while (dCurrent.compare(dEnd) < 0) {
+        days.push(dCurrent);
+        dCurrent = dCurrent.add({ days: 1 });
+    }
+    return days;
+}
+
+export function createMonth(props: CreateMonthProps): Month<DateValue> {
+    const { dateObj, weekStartsOn, fixedWeeks, locale } = props;
+    const daysInMonth = getDaysInMonth(dateObj);
+
+    const datesArray = Array.from({ length: daysInMonth }, (_, i) => dateObj.set({ day: i + 1 }));
+
+    const firstDayOfMonth = startOfMonth(dateObj);
+    const lastDayOfMonth = endOfMonth(dateObj);
+
+    const lastSunday = getLastFirstDayOfWeek(firstDayOfMonth, weekStartsOn, locale);
+    const nextSaturday = getNextLastDayOfWeek(lastDayOfMonth, weekStartsOn, locale);
+
+    const lastMonthDays = getDaysBetween(lastSunday.subtract({ days: 1 }), firstDayOfMonth);
+    const nextMonthDays = getDaysBetween(lastDayOfMonth, nextSaturday.add({ days: 1 }));
+
+    const totalDays = lastMonthDays.length + datesArray.length + nextMonthDays.length;
+
+    if (fixedWeeks && totalDays < 42) {
+        const extraDays = 42 - totalDays;
+
+        let startFrom = nextMonthDays[nextMonthDays.length - 1];
+
+        if (!startFrom) startFrom = endOfMonth(dateObj);
+
+        const extraDaysArray = Array.from({ length: extraDays }, (_, i) => {
+            const incr = i + 1;
+            return startFrom.add({ days: incr });
+        });
+        nextMonthDays.push(...extraDaysArray);
+    }
+
+    const allDays = lastMonthDays.concat(datesArray, nextMonthDays);
+
+    const weeks = chunk(allDays, 7);
+
+    return {
+        value: dateObj,
+        dates: allDays,
+        weeks: weeks
+    };
+}
+
+type SetMonthProps = CreateMonthProps & {
+    numberOfMonths: number | undefined;
+    currentMonths?: Month<DateValue>[];
+};
+
+export function createMonths(props: SetMonthProps) {
+    const { numberOfMonths, dateObj, ...monthProps } = props;
+
+    const months: Month<DateValue>[] = [];
+
+    if (!numberOfMonths || numberOfMonths === 1) {
+        months.push(
+            createMonth({
+                ...monthProps,
+                dateObj
+            })
+        );
+        return months;
+    }
+
+    months.push(
+        createMonth({
+            ...monthProps,
+            dateObj
+        })
+    );
+
+    // Create all the months, starting with the current month
+    for (let i = 1; i < numberOfMonths; i++) {
+        const nextMonth = dateObj.add({ months: i });
+        months.push(
+            createMonth({
+                ...monthProps,
+                dateObj: nextMonth
+            })
+        );
+    }
+
+    return months;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/comparators.ts
+```typescript
+import {
+    CalendarDate,
+    CalendarDateTime,
+    createCalendar,
+    DateFormatter,
+    type DateValue,
+    getDayOfWeek,
+    getLocalTimeZone,
+    toCalendar,
+    ZonedDateTime
+} from '@internationalized/date';
+import type { DateMatcher } from './types';
+
+/**
+ * Given a `DateValue` object, convert it to a native `Date` object.
+ * If a timezone is provided, the date will be converted to that timezone.
+ * If no timezone is provided, the date will be converted to the local timezone.
+ */
+export function toDate(dateValue: DateValue, tz: string = getLocalTimeZone()) {
+    if (isZonedDateTime(dateValue)) return dateValue.toDate();
+    else return dateValue.toDate(tz);
+}
+
+export function isCalendarDateTime(dateValue: DateValue): dateValue is CalendarDateTime {
+    return dateValue instanceof CalendarDateTime;
+}
+
+export function isZonedDateTime(dateValue: DateValue): dateValue is ZonedDateTime {
+    return dateValue instanceof ZonedDateTime;
+}
+
+export function hasTime(dateValue: DateValue) {
+    return isCalendarDateTime(dateValue) || isZonedDateTime(dateValue);
+}
+
+/**
+ * Given a date, return the number of days in the month.
+ */
+export function getDaysInMonth(date: Date | DateValue) {
+    if (date instanceof Date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        /**
+         * By using zero as the day, we get the
+         * last day of the previous month, which
+         * is the month we originally passed in.
+         */
+        return new Date(year, month, 0).getDate();
+    } else {
+        return date.set({ day: 100 }).day;
+    }
+}
+
+/**
+ * Determine if a date is before the reference date.
+ * @param dateToCompare - is this date before the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` before this date
+ *
+ * @see {@link isBeforeOrSame} for inclusive
+ */
+export function isBefore(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) < 0;
+}
+
+/**
+ * Determine if a date is after the reference date.
+ * @param dateToCompare - is this date after the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` after this date
+ *
+ * @see {@link isAfterOrSame} for inclusive
+ */
+export function isAfter(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) > 0;
+}
+
+/**
+ * Determine if a date is before or the same as the reference date.
+ *
+ * @param dateToCompare - the date to compare
+ * @param referenceDate - the reference date to make the comparison against
+ *
+ * @see {@link isBefore} for non-inclusive
+ */
+export function isBeforeOrSame(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) <= 0;
+}
+
+/**
+ * Determine if a date is after or the same as the reference date.
+ *
+ * @param dateToCompare - is this date after or the same as the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` after or the same as this date
+ *
+ * @see {@link isAfter} for non-inclusive
+ */
+export function isAfterOrSame(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) >= 0;
+}
+
+/**
+ * Determine if a date is inclusively between a start and end reference date.
+ *
+ * @param date - is this date inclusively between the `start` and `end` dates
+ * @param start - the start reference date to make the comparison against
+ * @param end - the end reference date to make the comparison against
+ *
+ * @see {@link isBetween} for non-inclusive
+ */
+export function isBetweenInclusive(date: DateValue, start: DateValue, end: DateValue) {
+    return isAfterOrSame(date, start) && isBeforeOrSame(date, end);
+}
+
+/**
+ * Determine if a date is between a start and end reference date.
+ *
+ * @param date - is this date between the `start` and `end` dates
+ * @param start - the start reference date to make the comparison against
+ * @param end - the end reference date to make the comparison against
+ *
+ * @see {@link isBetweenInclusive} for inclusive
+ */
+export function isBetween(date: DateValue, start: DateValue, end: DateValue) {
+    return isAfter(date, start) && isBefore(date, end);
+}
+
+export function getLastFirstDayOfWeek<T extends DateValue = DateValue>(
+    date: T,
+    firstDayOfWeek: number,
+    locale: string
+): T {
+    const day = getDayOfWeek(date, locale);
+
+    if (firstDayOfWeek > day) return date.subtract({ days: day + 7 - firstDayOfWeek }) as T;
+
+    if (firstDayOfWeek === day) return date as T;
+
+    return date.subtract({ days: day - firstDayOfWeek }) as T;
+}
+
+export function getNextLastDayOfWeek<T extends DateValue = DateValue>(
+    date: T,
+    firstDayOfWeek: number,
+    locale: string
+): T {
+    const day = getDayOfWeek(date, locale);
+    const lastDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+    if (day === lastDayOfWeek) return date as T;
+
+    if (day > lastDayOfWeek) return date.add({ days: 7 - day + lastDayOfWeek }) as T;
+
+    return date.add({ days: lastDayOfWeek - day }) as T;
+}
+
+export function areAllDaysBetweenValid(
+    start: DateValue,
+    end: DateValue,
+    isUnavailable: DateMatcher | undefined,
+    isDisabled: DateMatcher | undefined
+) {
+    if (isUnavailable === undefined && isDisabled === undefined) return true;
+
+    let dCurrent = start.add({ days: 1 });
+    if (isDisabled?.(dCurrent) || isUnavailable?.(dCurrent)) return false;
+
+    const dEnd = end;
+    while (dCurrent.compare(dEnd) < 0) {
+        dCurrent = dCurrent.add({ days: 1 });
+        if (isDisabled?.(dCurrent) || isUnavailable?.(dCurrent)) return false;
+    }
+    return true;
+}
+
+export type Granularity = 'day' | 'hour' | 'minute' | 'second';
+export type TimeGranularity = 'hour' | 'minute' | 'second';
+
+type GetDefaultDateProps = {
+    defaultValue?: DateValue | DateValue[] | undefined;
+    defaultPlaceholder?: DateValue | undefined;
+    granularity?: Granularity;
+    locale?: string;
+};
+
+/**
+ * A helper function used throughout the various date builders
+ * to generate a default `DateValue` using the `defaultValue`,
+ * `defaultPlaceholder`, and `granularity` props.
+ *
+ * It's important to match the `DateValue` type being used
+ * elsewhere in the builder, so they behave according to the
+ * behavior the user expects based on the props they've provided.
+ *
+ */
+export function getDefaultDate(props: GetDefaultDateProps): DateValue {
+    const { defaultValue, defaultPlaceholder, granularity = 'day', locale = 'en' } = props;
+
+    if (Array.isArray(defaultValue) && defaultValue.length) return defaultValue[defaultValue.length - 1]!.copy();
+
+    if (defaultValue && !Array.isArray(defaultValue)) return defaultValue.copy();
+
+    if (defaultPlaceholder) return defaultPlaceholder.copy();
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const calendarDateTimeGranularities = ['hour', 'minute', 'second'];
+
+    const defaultFormatter = new DateFormatter(locale);
+    const calendar = createCalendar(defaultFormatter.resolvedOptions().calendar);
+
+    if (calendarDateTimeGranularities.includes(granularity ?? 'day'))
+        return toCalendar(new CalendarDateTime(year, month, day, 0, 0, 0), calendar);
+
+    return toCalendar(new CalendarDate(year, month, day), calendar);
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/formatter.ts
+```typescript
+import { DateFormatter, type DateValue, getLocalTimeZone, today } from '@internationalized/date';
+import { hasTime, isZonedDateTime, toDate } from './comparators';
+import { HourCycle } from './types';
+
+const defaultPartOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+};
+
+export interface DateFormatterOptions extends Intl.DateTimeFormatOptions {
+    calendar?: string;
+}
+
+export type Formatter = {
+    getLocale: () => string;
+    setLocale: (newLocale: string) => void;
+    custom: (date: Date, options: DateFormatterOptions) => string;
+    selectedDate: (date: DateValue, includeTime?: boolean) => string;
+    dayOfWeek: (date: Date, length?: DateFormatterOptions['weekday']) => string;
+    fullMonthAndYear: (date: Date, options?: DateFormatterOptions) => string;
+    fullMonth: (date: Date, options?: DateFormatterOptions) => string;
+    fullYear: (date: Date, options?: DateFormatterOptions) => string;
+    dayPeriod: (date: Date) => string;
+    part: (dateObj: DateValue, type: Intl.DateTimeFormatPartTypes, options?: DateFormatterOptions) => string;
+    toParts: (date: DateValue, options?: DateFormatterOptions) => Intl.DateTimeFormatPart[];
+    getMonths: () => { label: string; value: number }[];
+};
+
+/**
+ * Creates a wrapper around the `DateFormatter`, which is
+ * an improved version of the {@link Intl.DateTimeFormat} API,
+ * that is used internally by the various date builders to
+ * easily format dates in a consistent way.
+ *
+ * @see [DateFormatter](https://react-spectrum.adobe.com/internationalized/date/DateFormatter.html)
+ */
+export function createFormatter(initialLocale: string): Formatter {
+    let locale = initialLocale;
+
+    function setLocale(newLocale: string) {
+        locale = newLocale;
+    }
+
+    function getLocale() {
+        return locale;
+    }
+
+    function custom(date: Date, options: Intl.DateTimeFormatOptions) {
+        return new DateFormatter(locale, options).format(date);
+    }
+
+    function selectedDate(date: DateValue, includeTime = true) {
+        if (hasTime(date) && includeTime) {
+            return custom(toDate(date), {
+                dateStyle: 'long',
+                timeStyle: 'long'
+            });
+        } else {
+            return custom(toDate(date), {
+                dateStyle: 'long'
+            });
+        }
+    }
+
+    function fullMonthAndYear(date: Date) {
+        return new DateFormatter(locale, { month: 'long', year: 'numeric' }).format(date);
+    }
+
+    function fullMonth(date: Date) {
+        return new DateFormatter(locale, { month: 'long' }).format(date);
+    }
+
+    function fullYear(date: Date) {
+        return new DateFormatter(locale, { year: 'numeric' }).format(date);
+    }
+
+    function toParts(date: DateValue, options?: Intl.DateTimeFormatOptions) {
+        if (isZonedDateTime(date)) {
+            return new DateFormatter(locale, {
+                ...options,
+                timeZone: date.timeZone
+            }).formatToParts(toDate(date));
+        } else {
+            return new DateFormatter(locale, options).formatToParts(toDate(date));
+        }
+    }
+
+    function dayOfWeek(date: Date, length: Intl.DateTimeFormatOptions['weekday'] = 'narrow') {
+        return new DateFormatter(locale, { weekday: length }).format(date);
+    }
+
+    function dayPeriod(date: Date, hourCycle: HourCycle | undefined = undefined) {
+        const parts = new DateFormatter(locale, {
+            hour: 'numeric',
+            minute: 'numeric',
+            hourCycle: hourCycle === 24 ? 'h23' : undefined
+        }).formatToParts(date);
+        const value = parts.find((p) => p.type === 'dayPeriod')?.value;
+        if (value === 'PM') {
+            return 'PM';
+        }
+        return 'AM';
+    }
+
+    function part(dateObj: DateValue, type: Intl.DateTimeFormatPartTypes, options: Intl.DateTimeFormatOptions = {}) {
+        const opts = { ...defaultPartOptions, ...options };
+        const parts = toParts(dateObj, opts);
+        const part = parts.find((p) => p.type === type);
+        return part ? part.value : '';
+    }
+
+    function getMonths() {
+        const defaultDate = today(getLocalTimeZone());
+        const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        return months.map((item) => ({ label: fullMonth(toDate(defaultDate.set({ month: item }))), value: item }));
+    }
+
+    return {
+        setLocale,
+        getLocale,
+        fullMonth,
+        fullYear,
+        fullMonthAndYear,
+        toParts,
+        custom,
+        part,
+        dayPeriod,
+        selectedDate,
+        dayOfWeek,
+        getMonths
+    };
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/index.ts
+```typescript
+export * from './calendar';
+export * from './comparators';
+export * from './formatter';
+export * from './placeholders';
+export * from './types';
+export * from './utils';
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/placeholders.ts
+```typescript
+/*
+ * Implementation ported from from from https://github.com/melt-ui/melt-ui/blob/develop/src/lib/internal/helpers/date/placeholders.ts
+ */
+
+// prettier-ignore
+const supportedLocales = [
+    'ach','af','am','an','ar','ast','az','be','bg','bn','br','bs',
+    'ca','cak','ckb','cs','cy','da','de','dsb','el','en','eo','es',
+    'et','eu','fa','ff','fi','fr','fy','ga','gd','gl','he','hr',
+    'hsb','hu','ia','id','it','ja','ka','kk','kn','ko','lb','lo',
+    'lt','lv','meh','ml','ms','nl','nn','no','oc','pl','pt','rm',
+    'ro','ru','sc','scn','sk','sl','sr','sv','szl','tg','th','tr',
+    'uk','zh-CN','zh-TW',
+] as const;
+
+const placeholderFields = ['year', 'month', 'day'] as const;
+
+type SupportedLocale = (typeof supportedLocales)[number];
+type PlaceholderField = (typeof placeholderFields)[number];
+export type PlaceholderMap = Record<SupportedLocale, Record<PlaceholderField, string>>;
+
+const placeholders: PlaceholderMap = {
+    ach: { year: 'mwaka', month: 'dwe', day: 'nino' },
+    af: { year: 'jjjj', month: 'mm', day: 'dd' },
+    am: { year: 'ዓዓዓዓ', month: 'ሚሜ', day: 'ቀቀ' },
+    an: { year: 'aaaa', month: 'mm', day: 'dd' },
+    ar: { year: 'سنة', month: 'شهر', day: 'يوم' },
+    ast: { year: 'aaaa', month: 'mm', day: 'dd' },
+    az: { year: 'iiii', month: 'aa', day: 'gg' },
+    be: { year: 'гггг', month: 'мм', day: 'дд' },
+    bg: { year: 'гггг', month: 'мм', day: 'дд' },
+    bn: { year: 'yyyy', month: 'মিমি', day: 'dd' },
+    br: { year: 'bbbb', month: 'mm', day: 'dd' },
+    bs: { year: 'gggg', month: 'mm', day: 'dd' },
+    ca: { year: 'aaaa', month: 'mm', day: 'dd' },
+    cak: { year: 'jjjj', month: 'ii', day: "q'q'" },
+    ckb: { year: 'ساڵ', month: 'مانگ', day: 'ڕۆژ' },
+    cs: { year: 'rrrr', month: 'mm', day: 'dd' },
+    cy: { year: 'bbbb', month: 'mm', day: 'dd' },
+    da: { year: 'åååå', month: 'mm', day: 'dd' },
+    de: { year: 'jjjj', month: 'mm', day: 'tt' },
+    dsb: { year: 'llll', month: 'mm', day: 'źź' },
+    el: { year: 'εεεε', month: 'μμ', day: 'ηη' },
+    en: { year: 'yyyy', month: 'mm', day: 'dd' },
+    eo: { year: 'jjjj', month: 'mm', day: 'tt' },
+    es: { year: 'aaaa', month: 'mm', day: 'dd' },
+    et: { year: 'aaaa', month: 'kk', day: 'pp' },
+    eu: { year: 'uuuu', month: 'hh', day: 'ee' },
+    fa: { year: 'سال', month: 'ماه', day: 'روز' },
+    ff: { year: 'hhhh', month: 'll', day: 'ññ' },
+    fi: { year: 'vvvv', month: 'kk', day: 'pp' },
+    fr: { year: 'aaaa', month: 'mm', day: 'jj' },
+    fy: { year: 'jjjj', month: 'mm', day: 'dd' },
+    ga: { year: 'bbbb', month: 'mm', day: 'll' },
+    gd: { year: 'bbbb', month: 'mm', day: 'll' },
+    gl: { year: 'aaaa', month: 'mm', day: 'dd' },
+    he: { year: 'שנה', month: 'חודש', day: 'יום' },
+    hr: { year: 'gggg', month: 'mm', day: 'dd' },
+    hsb: { year: 'llll', month: 'mm', day: 'dd' },
+    hu: { year: 'éééé', month: 'hh', day: 'nn' },
+    ia: { year: 'aaaa', month: 'mm', day: 'dd' },
+    id: { year: 'tttt', month: 'bb', day: 'hh' },
+    it: { year: 'aaaa', month: 'mm', day: 'gg' },
+    ja: { year: ' 年 ', month: '月', day: '日' },
+    ka: { year: 'წწწწ', month: 'თთ', day: 'რრ' },
+    kk: { year: 'жжжж', month: 'аа', day: 'кк' },
+    kn: { year: 'ವವವವ', month: 'ಮಿಮೀ', day: 'ದಿದಿ' },
+    ko: { year: '연도', month: '월', day: '일' },
+    lb: { year: 'jjjj', month: 'mm', day: 'dd' },
+    lo: { year: 'ປປປປ', month: 'ດດ', day: 'ວວ' },
+    lt: { year: 'mmmm', month: 'mm', day: 'dd' },
+    lv: { year: 'gggg', month: 'mm', day: 'dd' },
+    meh: { year: 'aaaa', month: 'mm', day: 'dd' },
+    ml: { year: 'വർഷം', month: 'മാസം', day: 'തീയതി' },
+    ms: { year: 'tttt', month: 'mm', day: 'hh' },
+    nl: { year: 'jjjj', month: 'mm', day: 'dd' },
+    nn: { year: 'åååå', month: 'mm', day: 'dd' },
+    no: { year: 'åååå', month: 'mm', day: 'dd' },
+    oc: { year: 'aaaa', month: 'mm', day: 'jj' },
+    pl: { year: 'rrrr', month: 'mm', day: 'dd' },
+    pt: { year: 'aaaa', month: 'mm', day: 'dd' },
+    rm: { year: 'oooo', month: 'mm', day: 'dd' },
+    ro: { year: 'aaaa', month: 'll', day: 'zz' },
+    ru: { year: 'гггг', month: 'мм', day: 'дд' },
+    sc: { year: 'aaaa', month: 'mm', day: 'dd' },
+    scn: { year: 'aaaa', month: 'mm', day: 'jj' },
+    sk: { year: 'rrrr', month: 'mm', day: 'dd' },
+    sl: { year: 'llll', month: 'mm', day: 'dd' },
+    sr: { year: 'гггг', month: 'мм', day: 'дд' },
+    sv: { year: 'åååå', month: 'mm', day: 'dd' },
+    szl: { year: 'rrrr', month: 'mm', day: 'dd' },
+    tg: { year: 'сссс', month: 'мм', day: 'рр' },
+    th: { year: 'ปปปป', month: 'ดด', day: 'วว' },
+    tr: { year: 'yyyy', month: 'aa', day: 'gg' },
+    uk: { year: 'рррр', month: 'мм', day: 'дд' },
+    'zh-CN': { year: '年', month: '月', day: '日' },
+    'zh-TW': { year: '年', month: '月', day: '日' }
+};
+
+function getPlaceholderObj(locale: SupportedLocale | (string & {})) {
+    if (!isSupportedLocale(locale)) {
+        const localeLanguage = getLocaleLanguage(locale);
+        if (!isSupportedLocale(localeLanguage)) {
+            return placeholders.en;
+        } else {
+            return placeholders[localeLanguage];
+        }
+    } else {
+        return placeholders[locale];
+    }
+}
+
+type Field = 'era' | 'year' | 'month' | 'day' | 'hour' | 'minute' | 'second' | 'dayPeriod';
+
+export function getPlaceholder(field: Field, value: string, locale: SupportedLocale | (string & {})) {
+    if (isPlaceholderField(field)) return getPlaceholderObj(locale)[field];
+    if (isDefaultField(field)) return value;
+    if (isTimeField(field)) return '––';
+    return '';
+}
+
+function isSupportedLocale(locale: string): locale is SupportedLocale {
+    return supportedLocales.includes(locale as SupportedLocale);
+}
+
+function isPlaceholderField(field: unknown): field is PlaceholderField {
+    return placeholderFields.includes(field as PlaceholderField);
+}
+
+function isTimeField(field: unknown): field is 'hour' | 'minute' | 'second' {
+    return field === 'hour' || field === 'minute' || field === 'second';
+}
+
+function isDefaultField(field: unknown): field is 'era' | 'dayPeriod' {
+    return field === 'era' || field === 'dayPeriod';
+}
+
+function getLocaleLanguage(locale: string) {
+    if (Intl.Locale) {
+        return new Intl.Locale(locale).language;
+    }
+    return locale.split('-')[0]!;
+}
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/types.ts
+```typescript
+/*
+ * Implementation ported from https://github.com/melt-ui/melt-ui/blob/develop/src/lib/internal/helpers/date/types.ts
+ */
+
+import type { DateValue } from '@internationalized/date';
+
+export type DateMatcher = (date: DateValue) => boolean;
+
+export type HourCycle = 12 | 24;
+
+export type Month<T> = {
+    /**
+     * A `DateValue` used to represent the month. Since days
+     * from the previous and next months may be included in the
+     * calendar grid, we need a source of truth for the value
+     * the grid is representing.
+     */
+    value: DateValue;
+
+    /**
+     * An array of (rows) arrays representing the weeks in the calendar.
+     * Each sub-array represents a week, and contains the dates for each
+     * day in that week. This structure is useful for rendering the calendar
+     * grid using a table, where each row represents a week and each cell
+     * represents a day.
+     */
+    weeks: T[][];
+
+    /**
+     * An array of (cells) all the dates in the current month, including dates from
+     * the previous and next months that are used to fill out the calendar grid.
+     * This array is useful for rendering the calendar grid in a customizable way,
+     * as it provides all the dates that should be displayed in the grid in a flat
+     * array.
+     */
+    dates: T[];
+};
+
+```
+/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/utils.ts
+```typescript
+export function handleCalendarInitialFocus(calendar: HTMLElement) {
+    const selectedDay = calendar.querySelector<HTMLElement>('[data-selected]');
+    if (selectedDay) return selectedDay.focus();
+
+    const today = calendar.querySelector<HTMLElement>('[data-today]');
+    if (today) return today.focus();
+
+    const firstDay = calendar.querySelector<HTMLElement>('[data-rdx-calendar-day]');
+    if (firstDay) return firstDay.focus();
+}
+
+```
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/accessor/provide-value-accessor.ts
 ````typescript
-import { Provider, Type } from '@angular/core';
+import { forwardRef, Provider, Type } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
@@ -7111,10 +9984,10 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
  * export class ExampleDirective{}
  * ```
  */
-export function provideValueAccessor(type: Type<never>): Provider {
+export function provideValueAccessor<T>(type: Type<T>): Provider {
     return {
         provide: NG_VALUE_ACCESSOR,
-        useExisting: type,
+        useExisting: forwardRef(() => type),
         multi: true
     };
 }
@@ -7826,6 +10699,15 @@ export default {
                         width: 100%;
                         animation-duration: 250ms;
                         animation-timing-function: ease;
+                        transition:
+                            opacity 250ms ease,
+                            transform 250ms ease;
+                    }
+                    .NavigationMenuContentWrapper[data-state='closed'] {
+                        opacity: 0;
+                    }
+                    .NavigationMenuContentWrapper[data-state='open'] {
+                        opacity: 1;
                     }
                     .NavigationMenuContentWrapper[data-motion='from-start'] {
                         animation-name: enterFromLeft;
@@ -7887,14 +10769,17 @@ export default {
                             0px 10px 20px -15px rgba(22, 23, 24, 0.2);
                         height: var(--radix-navigation-menu-viewport-height);
                         transition:
-                            width,
-                            height,
-                            300ms ease;
+                            width 300ms ease,
+                            height 300ms ease,
+                            opacity 200ms ease-out;
+                        opacity: 1;
                     }
                     .NavigationMenuViewport[data-state='open'] {
+                        opacity: 1;
                         animation: scaleIn 200ms ease;
                     }
                     .NavigationMenuViewport[data-state='closed'] {
+                        opacity: 0;
                         animation: scaleOut 200ms ease;
                     }
                     @media only screen and (min-width: 600px) {
@@ -9356,33 +12241,40 @@ export class RdxNavigationMenuTriggerDirective extends RdxNavigationMenuFocusabl
 import {
     booleanAttribute,
     computed,
+    DestroyRef,
     Directive,
     effect,
     ElementRef,
     EmbeddedViewRef,
     inject,
     input,
+    NgZone,
     OnDestroy,
     OnInit,
     Renderer2,
     signal,
-    TemplateRef,
     untracked,
     ViewContainerRef
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ARROW_DOWN, ARROW_UP, injectDocument, injectWindow } from '@radix-ng/primitives/core';
+import { TransitionOptions, TransitionStartFn, usePresence } from '@radix-ng/primitives/presence';
+import { Subscription } from 'rxjs';
 import { injectNavigationMenu, isRootNavigationMenu } from './navigation-menu.token';
 import { getOpenStateLabel, getTabbableCandidates } from './utils';
 
 interface ContentNode {
     embeddedView: EmbeddedViewRef<unknown>;
     element: HTMLElement;
+    contentValue: string;
+    state: 'open' | 'closed';
+    transitionSubscription?: Subscription | null;
 }
 
 @Directive({
     selector: '[rdxNavigationMenuViewport]',
     host: {
-        '[attr.data-state]': 'getOpenState()',
+        '[attr.data-state]': 'dataState()',
         '[attr.data-orientation]': 'context.orientation',
         '[style.--radix-navigation-menu-viewport-width.px]': 'viewportSize()?.width',
         '[style.--radix-navigation-menu-viewport-height.px]': 'viewportSize()?.height',
@@ -9395,10 +12287,11 @@ export class RdxNavigationMenuViewportDirective implements OnInit, OnDestroy {
     private readonly context = injectNavigationMenu();
     private readonly document = injectDocument();
     private readonly window = injectWindow();
-
     private readonly elementRef = inject(ElementRef);
     private readonly viewContainerRef = inject(ViewContainerRef);
     private readonly renderer = inject(Renderer2);
+    private readonly zone = inject(NgZone);
+    private readonly destroyRef = inject(DestroyRef);
 
     /**
      * Used to keep the viewport rendered and available in the DOM, even when closed.
@@ -9409,87 +12302,27 @@ export class RdxNavigationMenuViewportDirective implements OnInit, OnDestroy {
 
     private readonly _contentNodes = signal(new Map<string, ContentNode>());
     private readonly _activeContentNode = signal<ContentNode | null>(null);
+    private readonly _leavingContentNode = signal<ContentNode | null>(null);
     private readonly _viewportSize = signal<{ width: number; height: number } | null>(null);
-    private readonly _resizeObserver = new ResizeObserver(() => this.updateSize());
 
-    // compute the active content value - either current value if open, or previous value if closing
     readonly activeContentValue = computed(() => {
-        return this.open ? this.context.value() : this.context.previousValue();
+        if (!isRootNavigationMenu(this.context)) return null;
+        return this.context.value() || this.context.previousValue();
     });
-
-    // size for viewport CSS variables
+    readonly isOpen = computed(() => {
+        if (!isRootNavigationMenu(this.context)) return false;
+        return Boolean(this.context.value() || this.forceMount());
+    });
+    readonly dataState = computed(() => getOpenStateLabel(this.isOpen()));
     readonly viewportSize = computed(() => this._viewportSize());
 
-    get open(): boolean {
-        return Boolean(this.context.value() || this.forceMount());
-    }
-
-    onKeydown(event: KeyboardEvent): void {
-        // only handle if viewport is open
-        if (!this.open) return;
-
-        // get all tabbable elements in the viewport
-        const tabbableElements = getTabbableCandidates(this.elementRef.nativeElement);
-        if (!tabbableElements.length) return;
-
-        // find the currently focused element
-        const activeElement = this.document.activeElement as HTMLElement | null;
-        const currentIndex = tabbableElements.findIndex((el) => el === activeElement);
-
-        if (event.key === ARROW_DOWN) {
-            event.preventDefault();
-
-            if (currentIndex >= 0 && currentIndex < tabbableElements.length - 1) {
-                // focus the next element
-                tabbableElements[currentIndex + 1].focus();
-            } else if (currentIndex === -1 || currentIndex === tabbableElements.length - 1) {
-                // if no element is focused or we're at the end, focus the first element
-                tabbableElements[0].focus();
-            }
-        } else if (event.key === ARROW_UP) {
-            event.preventDefault();
-
-            if (currentIndex > 0) {
-                // focus the previous element
-                tabbableElements[currentIndex - 1].focus();
-            } else if (currentIndex === 0) {
-                // if at the first element, loop to the last element
-                tabbableElements[tabbableElements.length - 1].focus();
-            } else if (currentIndex === -1) {
-                // if no element is focused, focus the last element
-                tabbableElements[tabbableElements.length - 1].focus();
-            }
-        }
-    }
+    private readonly _resizeObserver = new ResizeObserver(() => this.updateSize());
 
     constructor() {
-        // setup effect to manage content
-        effect(() => {
-            const activeValue = this.activeContentValue();
-            const open = this.open;
-
-            untracked(() => {
-                // handle visibility based on open state
-                this.renderer.setStyle(this.elementRef.nativeElement, 'display', open ? 'block' : 'none');
-
-                if (isRootNavigationMenu(this.context) && this.context.viewportContent) {
-                    const viewportContent = this.context.viewportContent();
-
-                    if (viewportContent.has(activeValue)) {
-                        const contentData = viewportContent.get(activeValue);
-
-                        // only render content when we have a templateRef
-                        if (contentData?.templateRef) {
-                            this.renderContent(contentData.templateRef, activeValue);
-                        }
-                    }
-                }
-            });
-        });
+        this.setupViewportEffect();
     }
 
     ngOnInit() {
-        // register viewport with context
         if (isRootNavigationMenu(this.context) && this.context.onViewportChange) {
             this.context.onViewportChange(this.elementRef.nativeElement);
         }
@@ -9497,30 +12330,35 @@ export class RdxNavigationMenuViewportDirective implements OnInit, OnDestroy {
 
     ngOnDestroy() {
         this._resizeObserver.disconnect();
-
-        // clear all views
-        this._contentNodes().forEach((node) => {
-            if (node.embeddedView) {
-                node.embeddedView.destroy();
-            }
-        });
-
-        // unregister viewport
+        // clean up any remaining nodes/views/subscriptions
+        this._contentNodes().forEach((node) => this.cleanupAfterLeave(node));
         if (isRootNavigationMenu(this.context) && this.context.onViewportChange) {
             this.context.onViewportChange(null);
         }
     }
 
-    getOpenState() {
-        return getOpenStateLabel(this.open);
+    onKeydown(event: KeyboardEvent): void {
+        if (!this.isOpen()) return;
+        const tabbableElements = getTabbableCandidates(this.elementRef.nativeElement);
+        if (!tabbableElements.length) return;
+        const activeElement = this.document.activeElement as HTMLElement | null;
+        const currentIndex = tabbableElements.findIndex((el) => el === activeElement);
+
+        if (event.key === ARROW_DOWN) {
+            event.preventDefault();
+            const nextIndex = currentIndex >= 0 && currentIndex < tabbableElements.length - 1 ? currentIndex + 1 : 0;
+            tabbableElements[nextIndex]?.focus();
+        } else if (event.key === ARROW_UP) {
+            event.preventDefault();
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabbableElements.length - 1;
+            tabbableElements[prevIndex]?.focus();
+        }
     }
 
     onPointerEnter(): void {
         if (isRootNavigationMenu(this.context) && this.context.onContentEnter) {
             this.context.onContentEnter();
         }
-
-        // update pointer tracking state
         if (isRootNavigationMenu(this.context) && this.context.setContentPointerState) {
             this.context.setContentPointerState(true);
         }
@@ -9530,123 +12368,278 @@ export class RdxNavigationMenuViewportDirective implements OnInit, OnDestroy {
         if (isRootNavigationMenu(this.context) && this.context.onContentLeave) {
             this.context.onContentLeave();
         }
-
-        // Update pointer tracking state
         if (isRootNavigationMenu(this.context) && this.context.setContentPointerState) {
             this.context.setContentPointerState(false);
         }
     }
 
-    private updateSize() {
-        const activeNode = this._activeContentNode()?.element;
-        if (!activeNode) return;
+    private setupViewportEffect(): void {
+        effect(() => {
+            const currentActiveValue = this.context.value();
+            const previousActiveValue = this.context.previousValue();
+            const forceMount = this.forceMount();
 
-        // force layout recalculation while keeping element in the DOM
-        this.window.getComputedStyle(activeNode).getPropertyValue('width');
+            untracked(() => {
+                // ensure context is root before proceeding
+                if (!isRootNavigationMenu(this.context) || !this.context.viewportContent) {
+                    return;
+                }
+
+                const allContentData = this.context.viewportContent();
+                const currentNodesMap = this._contentNodes();
+                let enteringNode: ContentNode | null = null;
+                let leavingNode = this._leavingContentNode(); // get potentially already leaving node
+
+                // 1. Identify Entering Node
+                if (currentActiveValue && allContentData.has(currentActiveValue)) {
+                    enteringNode = this.getOrCreateContentNode(currentActiveValue);
+                }
+
+                // 2. Identify Leaving Node
+                const nodeThatWasActive = previousActiveValue ? currentNodesMap.get(previousActiveValue) : null;
+                // if there was a previously active node, it's different from the entering one,
+                // and it's not already leaving, mark it for removal.
+                if (nodeThatWasActive && nodeThatWasActive !== enteringNode && nodeThatWasActive !== leavingNode) {
+                    // if another node was already leaving, force complete its transition
+                    if (leavingNode) {
+                        this.forceCompleteLeaveTransition(leavingNode);
+                    }
+                    leavingNode = nodeThatWasActive;
+                    this._leavingContentNode.set(leavingNode);
+                }
+
+                // 3. Handle Entering Node
+                if (enteringNode) {
+                    // cancel any pending leave transition for this node if it was leaving
+                    if (enteringNode === leavingNode) {
+                        this.cancelLeaveTransition(enteringNode);
+                        leavingNode = null;
+                        this._leavingContentNode.set(null);
+                    }
+                    // ensure it's in the DOM and set state to open
+                    this.addNodeToDOM(enteringNode);
+                    this.setNodeState(enteringNode, 'open'); // Triggers enter animation via data-state
+                    this._activeContentNode.set(enteringNode);
+                    this.updateSize(); // Update size based on the entering node
+                } else {
+                    // no node entering, clear active node state
+                    this._activeContentNode.set(null);
+                }
+
+                // 4. Handle Leaving Node
+                if (leavingNode) {
+                    if (forceMount) {
+                        // if forceMount, just mark as closed, don't trigger removal animation
+                        this.setNodeState(leavingNode, 'closed');
+                        this._leavingContentNode.set(null); // No longer considered "leaving"
+                    } else {
+                        // start the leave transition (usePresence handles DOM removal)
+                        this.startLeaveTransition(leavingNode);
+                    }
+                }
+            });
+        });
+    }
+
+    // gets or creates the ContentNode (wrapper + view)
+    private getOrCreateContentNode(contentValue: string): ContentNode | null {
+        const existingNode = this._contentNodes().get(contentValue);
+        if (existingNode && !existingNode.embeddedView.destroyed) {
+            return existingNode;
+        }
+
+        // create if doesn't exist or view was destroyed
+        if (!isRootNavigationMenu(this.context) || !this.context.viewportContent) return null;
+        const allContentData = this.context.viewportContent();
+        const contentData = allContentData.get(contentValue);
+        const templateRef = contentData?.templateRef;
+
+        if (!templateRef) {
+            console.error(`No templateRef found for content value: ${contentValue}`);
+            return null;
+        }
+
+        try {
+            const embeddedView = this.viewContainerRef.createEmbeddedView(templateRef);
+            const container = this.renderer.createElement('div');
+            this.renderer.setAttribute(container, 'class', 'NavigationMenuContentWrapper');
+            this.renderer.setAttribute(container, 'data-content-value', contentValue);
+            embeddedView.rootNodes.forEach((node: Node) => this.renderer.appendChild(container, node));
+
+            const newNode: ContentNode = {
+                embeddedView,
+                element: container,
+                contentValue,
+                state: 'closed'
+            };
+
+            const newMap = new Map(this._contentNodes());
+            newMap.set(contentValue, newNode);
+            this._contentNodes.set(newMap);
+            return newNode;
+        } catch (error) {
+            console.error(`Error creating content node for ${contentValue}:`, error);
+            return null;
+        }
+    }
+
+    // adds node element to viewport DOM if not already present
+    private addNodeToDOM(node: ContentNode): void {
+        if (!this.elementRef.nativeElement.contains(node.element)) {
+            this.renderer.appendChild(this.elementRef.nativeElement, node.element);
+            // observe size only when added to DOM
+            this._resizeObserver.observe(node.element);
+        }
+    }
+
+    // removes node element from viewport DOM
+    private removeNodeFromDOM(node: ContentNode): void {
+        if (this.elementRef.nativeElement.contains(node.element)) {
+            this._resizeObserver.unobserve(node.element); // stop observing before removal
+            this.renderer.removeChild(this.elementRef.nativeElement, node.element);
+        }
+    }
+
+    // updates the data-state and motion attributes
+    private setNodeState(node: ContentNode, state: 'open' | 'closed'): void {
+        if (node.state === state) return; // avoid redundant updates
+
+        node.state = state;
+        this.renderer.setAttribute(node.element, 'data-state', state);
+
+        // apply motion attribute based on context
+        if (isRootNavigationMenu(this.context) && this.context.viewportContent) {
+            const contentData = this.context.viewportContent().get(node.contentValue);
+            if (contentData?.getMotionAttribute) {
+                // get motion based on current state transition
+                const motionAttr = contentData.getMotionAttribute();
+                if (motionAttr) {
+                    this.renderer.setAttribute(node.element, 'data-motion', motionAttr);
+                } else {
+                    this.renderer.removeAttribute(node.element, 'data-motion');
+                }
+            } else {
+                this.renderer.removeAttribute(node.element, 'data-motion');
+            }
+        }
+
+        // apply A11y attributes (might only be needed on open?)
+        if (state === 'open') {
+            this.applyA11yAttributes(node);
+        }
+    }
+
+    // apply A11y attributes to the first child element
+    private applyA11yAttributes(node: ContentNode): void {
+        if (!isRootNavigationMenu(this.context) || !this.context.viewportContent) return;
+        const contentData = this.context.viewportContent().get(node.contentValue);
+        if (contentData?.additionalAttrs && node.embeddedView.rootNodes.length > 0) {
+            const firstRootNode = node.embeddedView.rootNodes[0] as Element;
+            if (firstRootNode) {
+                Object.entries(contentData.additionalAttrs).forEach(([attr, value]) => {
+                    this.renderer.setAttribute(firstRootNode, attr, value as string);
+                });
+            }
+        }
+    }
+
+    private startLeaveTransition(node: ContentNode): void {
+        // ensure node exists and isn't already leaving with an active subscription
+        if (!node || node.transitionSubscription) {
+            node.transitionSubscription?.unsubscribe();
+            return;
+        }
+
+        const startFn: TransitionStartFn<null> = () => {
+            this.setNodeState(node, 'closed');
+            return () => this.cleanupAfterLeave(node);
+        };
+
+        const options: TransitionOptions<null> = {
+            animation: true, // assuming CSS animations/transitions handle the exit
+            state: 'continue' // start the leave process
+        };
+
+        node.transitionSubscription = usePresence(this.zone, node.element, startFn, options)
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                complete: () => {
+                    this.cleanupAfterLeave(node);
+                }
+            });
+    }
+
+    /**
+     * Cleanup function called after leave animation finishes
+     * @param node The node that is leaving
+     */
+    private cleanupAfterLeave(node: ContentNode): void {
+        // check if this node is still marked as the one leaving
+        if (this._leavingContentNode() === node) {
+            this.removeNodeFromDOM(node);
+            if (!this.forceMount() && node.embeddedView && !node.embeddedView.destroyed) {
+                node.embeddedView.destroy();
+                // Remove from cache if destroyed
+                const newMap = new Map(this._contentNodes());
+                newMap.delete(node.contentValue);
+                this._contentNodes.set(newMap);
+            }
+
+            node.transitionSubscription = null;
+            this._leavingContentNode.set(null);
+        } else {
+            // if this node is NOT the one currently marked as leaving, it means
+            // a new transition started before this one finished. Just clean up DOM/Sub.
+            this.removeNodeFromDOM(node);
+            node.transitionSubscription?.unsubscribe();
+            node.transitionSubscription = null;
+        }
+    }
+
+    /**
+     * Cancels an ongoing leave transition (e.g., if user hovers back)
+     * @param node The node that is leaving
+     */
+    private cancelLeaveTransition(node: ContentNode): void {
+        node.transitionSubscription?.unsubscribe();
+        node.transitionSubscription = null;
+    }
+
+    /**
+     * Force completes a leave transition (e.g., if another leave starts)
+     * @param node The node that is leaving
+     */
+    private forceCompleteLeaveTransition(node: ContentNode): void {
+        if (node && node.transitionSubscription) {
+            node.transitionSubscription.unsubscribe();
+
+            // perform cleanup immediately
+            this.cleanupAfterLeave(node);
+        }
+    }
+
+    private updateSize() {
+        const activeNode = this._activeContentNode()?.element; // measure the currently active node
+        if (!activeNode || !activeNode.isConnected) return;
 
         const firstChild = activeNode.firstChild as HTMLElement;
-        const width = Math.ceil(firstChild.offsetWidth);
-        const height = Math.ceil(firstChild.offsetHeight);
+        if (!firstChild) return;
 
-        // update size with valid dimensions (but only if not zero)
-        if (width !== 0 && height !== 0) {
-            this._viewportSize.set({ width, height });
-        }
-    }
+        this.window.requestAnimationFrame(() => {
+            // keep rAF here for measurement stability
+            activeNode.getBoundingClientRect(); // force layout
+            const width = Math.ceil(firstChild.offsetWidth);
+            const height = Math.ceil(firstChild.offsetHeight);
 
-    private renderContent(templateRef: TemplateRef<unknown>, contentValue: string) {
-        // check if we already have a view for this content
-        let contentNode = this._contentNodes().get(contentValue);
-
-        if (!contentNode) {
-            try {
-                // create a new embedded view
-                const embeddedView = this.viewContainerRef.createEmbeddedView(templateRef);
-                embeddedView.detectChanges();
-
-                // create a container for the view
-                const container = this.renderer.createElement('div');
-                this.renderer.setAttribute(container, 'class', 'NavigationMenuContentWrapper');
-                this.renderer.setAttribute(container, 'data-content-value', contentValue);
-                this.renderer.setStyle(container, 'width', '100%');
-
-                const viewportContent = this.context.viewportContent && this.context.viewportContent();
-                if (!viewportContent) return;
-
-                const contentData = viewportContent.get(contentValue);
-
-                // apply motion attribute if available
-                if (contentData?.getMotionAttribute) {
-                    const motionAttr = contentData.getMotionAttribute();
-                    if (motionAttr) {
-                        this.renderer.setAttribute(container, 'data-motion', motionAttr);
-                    }
+            if (width !== 0 || height !== 0) {
+                const currentSize = this._viewportSize();
+                if (!currentSize || currentSize.width !== width || currentSize.height !== height) {
+                    this._viewportSize.set({ width, height });
                 }
-
-                // apply additional a11y attributes to the first root node
-                if (contentData?.additionalAttrs && embeddedView.rootNodes.length > 0) {
-                    const rootNode = embeddedView.rootNodes[0];
-                    // check if rootNode has setAttribute (is an Element)
-                    if (rootNode.setAttribute) {
-                        Object.entries(contentData.additionalAttrs).forEach(([attr, value]) => {
-                            // don't override existing attributes that the user might have set manually
-                            if (!rootNode.hasAttribute(attr) || attr === 'id') {
-                                this.renderer.setAttribute(rootNode, attr, value as string);
-                            }
-                        });
-                    }
-                }
-
-                // add each root node to the container
-                embeddedView.rootNodes.forEach((node: Node) => {
-                    this.renderer.appendChild(container, node);
-                });
-
-                // set styles for proper measurement and display
-                this.renderer.setStyle(container, 'position', 'relative');
-                this.renderer.setStyle(container, 'visibility', 'visible');
-                this.renderer.setStyle(container, 'pointer-events', 'auto');
-                this.renderer.setStyle(container, 'display', 'block');
-
-                // store in cache
-                contentNode = { embeddedView, element: container };
-                const newMap = new Map(this._contentNodes());
-                newMap.set(contentValue, contentNode);
-                this._contentNodes.set(newMap);
-            } catch (error) {
-                console.error('Error in renderContent:', error);
-                return;
+            } else if (this._viewportSize() !== null) {
+                this._viewportSize.set(null);
             }
-        }
-
-        if (contentNode) {
-            this.updateActiveContent(contentNode);
-        }
-    }
-
-    private updateActiveContent(contentNode: ContentNode) {
-        if (contentNode !== this._activeContentNode()) {
-            // clear viewport
-            if (this.elementRef.nativeElement.firstChild) {
-                this.renderer.removeChild(this.elementRef.nativeElement, this.elementRef.nativeElement.firstChild);
-            }
-
-            // add content to viewport
-            this.renderer.appendChild(this.elementRef.nativeElement, contentNode.element);
-
-            // update active content reference
-            this._activeContentNode.set(contentNode);
-
-            // setup resize observation
-            this._resizeObserver.disconnect();
-            this._resizeObserver.observe(contentNode.element);
-
-            // measure after adding to DOM
-            setTimeout(() => this.updateSize(), 0);
-
-            // measure again after a frame to catch any style changes
-            requestAnimationFrame(() => this.updateSize());
-        }
+        });
     }
 }
 
@@ -10038,8 +13031,8 @@ export function makeContentId(baseId: string, value: string): string {
  * Get the motion attribute for animations
  */
 export function getMotionAttribute(
-    currentValue: string,
-    previousValue: string,
+    currentValue: string | null,
+    previousValue: string | null,
     itemValue: string,
     itemValues: string[],
     dir: NavigationMenuDirection
@@ -10047,28 +13040,44 @@ export function getMotionAttribute(
     // reverse values in RTL
     const values = dir === 'rtl' ? [...itemValues].reverse() : itemValues;
 
-    const currentIndex = values.indexOf(currentValue);
-    const prevIndex = values.indexOf(previousValue);
+    const currentIndex = currentValue !== null ? values.indexOf(currentValue) : -1;
+    const prevIndex = previousValue !== null ? values.indexOf(previousValue) : -1;
+
     const isSelected = itemValue === currentValue;
-    const wasSelected = prevIndex === values.indexOf(itemValue);
+    const wasSelected = itemValue === previousValue && previousValue !== null;
 
-    // only update selected and last selected content
-    if (!isSelected && !wasSelected) return null;
+    // Preserve motion attribute for items not directly involved in the transition
+    // (This matches React's behaviour, using a ref/signal might be needed
+    // in the component using this function to fully replicate React's prevMotionAttributeRef)
+    // For now, returning null if not involved, as per the original code's intent here.
+    if (!isSelected && !wasSelected) {
+        return null;
+    }
 
-    // don't provide direction on initial open
+    // handle transitions between items
     if (currentIndex !== -1 && prevIndex !== -1) {
-        // if moving to this item from another
-        if (isSelected && prevIndex !== -1) {
+        // if moving to this item (isSelected)
+        if (isSelected) {
             return currentIndex > prevIndex ? 'from-end' : 'from-start';
         }
-        // if leaving this item for another
-        if (wasSelected && currentIndex !== -1) {
+        // if moving away from this item (wasSelected)
+        if (wasSelected) {
             return currentIndex > prevIndex ? 'to-start' : 'to-end';
         }
     }
 
-    // otherwise entering/leaving the list entirely
-    return isSelected ? 'from-start' : 'from-end';
+    // handle initial open (prevIndex is -1, currentIndex is valid)
+    if (isSelected && prevIndex === -1) {
+        return null;
+    }
+
+    // handle closing entirely (currentIndex is -1, prevIndex is valid)
+    if (wasSelected && currentIndex === -1) {
+        return null;
+    }
+
+    // fallback if none of the above conditions met (should ideally not happen with clear states)
+    return null;
 }
 
 /**
@@ -11244,7 +14253,7 @@ export class RdxProgressIndicatorDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/progress/src/progress-root.directive.ts
 ```typescript
 import { computed, Directive, effect, inject, InjectionToken, input, model } from '@angular/core';
-import { isNullish, isNumber } from '@radix-ng/primitives/core';
+import { isNullish, isNumber, provideToken } from '@radix-ng/primitives/core';
 
 export const RdxProgressToken = new InjectionToken<RdxProgressRootDirective>('RdxProgressDirective');
 
@@ -11283,7 +14292,7 @@ const DEFAULT_MAX = 100;
 @Directive({
     selector: '[rdxProgressRoot]',
     exportAs: 'rdxProgressRoot',
-    providers: [{ provide: RdxProgressToken, useExisting: RdxProgressRootDirective }],
+    providers: [provideToken(RdxProgressToken, RdxProgressRootDirective)],
     host: {
         role: 'progressbar',
         '[attr.aria-valuemax]': 'max()',
@@ -18150,7 +21159,6 @@ export class RdxHoverCardRootDirective {
             .asObservable()
             .pipe(
                 map((action) => {
-                    console.log(action);
                     switch (action) {
                         case RdxHoverCardAction.OPEN:
                             return { action, duration: this.openDelay() };
@@ -19021,7 +22029,8 @@ export class RdxCheckboxInputDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox.directive.ts
 ```typescript
 import { booleanAttribute, Directive, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 import { RdxCheckboxToken } from './checkbox.token';
 
 export type CheckboxState = 'unchecked' | 'checked' | 'indeterminate';
@@ -19031,11 +22040,9 @@ export type CheckboxState = 'unchecked' | 'checked' | 'indeterminate';
  */
 @Directive({
     selector: '[rdxCheckboxRoot]',
-    standalone: true,
     providers: [
         { provide: RdxCheckboxToken, useExisting: RdxCheckboxDirective },
-        { provide: NG_VALUE_ACCESSOR, useExisting: RdxCheckboxDirective, multi: true }
-    ],
+        provideValueAccessor(RdxCheckboxDirective)],
     host: {
         '[disabled]': 'disabled',
         '[attr.data-disabled]': 'disabled ? "" : null',
@@ -23469,7 +26476,6 @@ import { injectToggleGroup } from './toggle-group.token';
 @Directive({
     selector: '[rdxToggleGroupItem]',
     exportAs: 'rdxToggleGroupItem',
-    standalone: true,
     providers: [{ provide: RdxToggleGroupItemToken, useExisting: RdxToggleGroupItemDirective }],
     hostDirectives: [
         {
@@ -23556,7 +26562,8 @@ export function injectToggleGroupItem(): RdxToggleGroupItemDirective {
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
 import { booleanAttribute, Directive, input, model, output, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 import { RdxToggleGroupToken } from './toggle-group.token';
 
 let nextId = 0;
@@ -23564,11 +26571,9 @@ let nextId = 0;
 @Directive({
     selector: '[rdxToggleGroupWithoutFocus]',
     exportAs: 'rdxToggleGroupWithoutFocus',
-    standalone: true,
     providers: [
         { provide: RdxToggleGroupToken, useExisting: RdxToggleGroupWithoutFocusDirective },
-        { provide: NG_VALUE_ACCESSOR, useExisting: RdxToggleGroupWithoutFocusDirective, multi: true }
-    ],
+        provideValueAccessor(RdxToggleGroupWithoutFocusDirective)],
     host: {
         role: 'group',
         '(focusout)': 'onTouched?.()'
@@ -23683,8 +26688,9 @@ export class RdxToggleGroupWithoutFocusDirective implements ControlValueAccessor
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/toggle-group/src/toggle-group.directive.ts
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
-import { booleanAttribute, Directive, forwardRef, input, model, output, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { booleanAttribute, Directive, input, model, output, signal } from '@angular/core';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideToken, provideValueAccessor } from '@radix-ng/primitives/core';
 import { RdxRovingFocusGroupDirective } from '@radix-ng/primitives/roving-focus';
 import { RdxToggleGroupToken } from './toggle-group.token';
 
@@ -23697,9 +26703,8 @@ let nextId = 0;
     selector: '[rdxToggleGroup]',
     exportAs: 'rdxToggleGroup',
     providers: [
-        { provide: RdxToggleGroupToken, useExisting: forwardRef(() => RdxToggleGroupDirective) },
-        { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => RdxToggleGroupDirective), multi: true }
-    ],
+        provideToken(RdxToggleGroupToken, RdxToggleGroupDirective),
+        provideValueAccessor(RdxToggleGroupDirective)],
     hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
     host: {
         role: 'group',
@@ -23818,7 +26823,6 @@ import { inject, InjectionToken } from '@angular/core';
 
 export interface IRdxToggleGroup {
     toggle(value: string): void;
-
     disabled: any;
     value: any;
     type: any;
@@ -25111,7 +28115,6 @@ import { RdxVisuallyHiddenInputDirective } from '@radix-ng/primitives/visually-h
 @Directive({
     selector: 'input[rdxToggleVisuallyHiddenInput]',
     exportAs: 'rdxToggleVisuallyHiddenInput',
-    standalone: true,
     hostDirectives: [
         {
             directive: RdxVisuallyHiddenInputDirective,
@@ -25133,18 +28136,9 @@ export class RdxToggleVisuallyHiddenInputDirective {}
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/toggle/src/toggle.directive.ts
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
-import {
-    booleanAttribute,
-    computed,
-    Directive,
-    forwardRef,
-    input,
-    model,
-    output,
-    OutputEmitterRef,
-    signal
-} from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { booleanAttribute, computed, Directive, input, model, output, OutputEmitterRef, signal } from '@angular/core';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 
 export interface ToggleProps {
     /**
@@ -25173,20 +28167,13 @@ export interface ToggleProps {
 
 export type DataState = 'on' | 'off';
 
-export const TOGGLE_VALUE_ACCESSOR: any = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => RdxToggleDirective),
-    multi: true
-};
-
 /**
  * @group Components
  */
 @Directive({
     selector: '[rdxToggle]',
     exportAs: 'rdxToggle',
-    standalone: true,
-    providers: [TOGGLE_VALUE_ACCESSOR],
+    providers: [provideValueAccessor(RdxToggleDirective)],
     host: {
         '[attr.aria-pressed]': 'pressed()',
         '[attr.data-state]': 'dataState()',
@@ -34739,7 +37726,6 @@ import { injectSwitch } from './switch-root.directive';
 @Directive({
     selector: 'input[rdxSwitchInput]',
     exportAs: 'rdxSwitchInput',
-    standalone: true,
     host: {
         type: 'checkbox',
         role: 'switch',
@@ -34778,7 +37764,6 @@ import {
     computed,
     Directive,
     effect,
-    forwardRef,
     inject,
     InjectionToken,
     input,
@@ -34789,19 +37774,14 @@ import {
     OutputEmitterRef,
     signal
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideToken, provideValueAccessor } from '@radix-ng/primitives/core';
 
 export const RdxSwitchToken = new InjectionToken<RdxSwitchRootDirective>('RdxSwitchToken');
 
 export function injectSwitch(): RdxSwitchRootDirective {
     return inject(RdxSwitchToken);
 }
-
-export const SWITCH_VALUE_ACCESSOR: any = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => RdxSwitchRootDirective),
-    multi: true
-};
 
 export interface SwitchProps {
     checked?: ModelSignal<boolean>;
@@ -34818,11 +37798,9 @@ let idIterator = 0;
 @Directive({
     selector: 'button[rdxSwitchRoot]',
     exportAs: 'rdxSwitchRoot',
-    standalone: true,
     providers: [
-        { provide: RdxSwitchToken, useExisting: RdxSwitchRootDirective },
-        SWITCH_VALUE_ACCESSOR
-    ],
+        provideToken(RdxSwitchToken, RdxSwitchRootDirective),
+        provideValueAccessor(RdxSwitchRootDirective)],
     host: {
         type: 'button',
         '[id]': 'elementId()',
@@ -34976,7 +37954,6 @@ import { injectSwitch } from './switch-root.directive';
 @Directive({
     selector: 'span[rdxSwitchThumb]',
     exportAs: 'rdxSwitchThumb',
-    standalone: true,
     host: {
         '[attr.data-disabled]': 'switchRoot.disabledState() ? "true" : null',
         '[attr.data-state]': 'switchRoot.checkedState() ? "checked" : "unchecked"'

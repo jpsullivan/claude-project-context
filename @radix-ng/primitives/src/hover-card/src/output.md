@@ -1155,7 +1155,6 @@ export class RdxHoverCardRootDirective {
             .asObservable()
             .pipe(
                 map((action) => {
-                    console.log(action);
                     switch (action) {
                         case RdxHoverCardAction.OPEN:
                             return { action, duration: this.openDelay() };

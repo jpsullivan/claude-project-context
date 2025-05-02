@@ -477,6 +477,7 @@ import {
     OnInit,
     signal
 } from '@angular/core';
+import { provideToken } from '@radix-ng/primitives/core';
 import { RdxRovingFocusItemDirective } from '@radix-ng/primitives/roving-focus';
 import { RDX_RADIO_GROUP } from './radio-tokens';
 
@@ -489,7 +490,7 @@ export function injectRadioItem(): RdxRadioItemDirective {
 @Directive({
     selector: '[rdxRadioItem]',
     exportAs: 'rdxRadioItem',
-    providers: [{ provide: RdxRadioItemToken, useExisting: RdxRadioItemDirective }],
+    providers: [provideToken(RdxRadioItemToken, RdxRadioItemDirective)],
     hostDirectives: [
         { directive: RdxRovingFocusItemDirective, inputs: ['tabStopId: id', 'focusable', 'active', 'allowShiftKey'] }],
 
@@ -572,7 +573,8 @@ export class RdxRadioItemDirective implements OnInit {
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
 import { booleanAttribute, computed, Directive, input, Input, model, output, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 import { Orientation, RdxRovingFocusGroupDirective } from '@radix-ng/primitives/roving-focus';
 import { RadioGroupDirective, RadioGroupProps, RDX_RADIO_GROUP } from './radio-tokens';
 
@@ -580,9 +582,8 @@ import { RadioGroupDirective, RadioGroupProps, RDX_RADIO_GROUP } from './radio-t
     selector: '[rdxRadioRoot]',
     exportAs: 'rdxRadioRoot',
     providers: [
-        { provide: RDX_RADIO_GROUP, useExisting: RdxRadioGroupDirective },
-        { provide: NG_VALUE_ACCESSOR, useExisting: RdxRadioGroupDirective, multi: true }
-    ],
+        provideValueAccessor(RdxRadioGroupDirective),
+        { provide: RDX_RADIO_GROUP, useExisting: RdxRadioGroupDirective }],
     hostDirectives: [{ directive: RdxRovingFocusGroupDirective, inputs: ['dir', 'orientation', 'loop'] }],
     host: {
         role: 'radiogroup',

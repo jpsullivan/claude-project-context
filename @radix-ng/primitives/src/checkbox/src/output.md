@@ -95,7 +95,8 @@ export class RdxCheckboxInputDirective {
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/checkbox/src/checkbox.directive.ts
 ```typescript
 import { booleanAttribute, Directive, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 import { RdxCheckboxToken } from './checkbox.token';
 
 export type CheckboxState = 'unchecked' | 'checked' | 'indeterminate';
@@ -105,11 +106,9 @@ export type CheckboxState = 'unchecked' | 'checked' | 'indeterminate';
  */
 @Directive({
     selector: '[rdxCheckboxRoot]',
-    standalone: true,
     providers: [
         { provide: RdxCheckboxToken, useExisting: RdxCheckboxDirective },
-        { provide: NG_VALUE_ACCESSOR, useExisting: RdxCheckboxDirective, multi: true }
-    ],
+        provideValueAccessor(RdxCheckboxDirective)],
     host: {
         '[disabled]': 'disabled',
         '[attr.data-disabled]': 'disabled ? "" : null',

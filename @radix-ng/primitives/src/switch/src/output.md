@@ -9,7 +9,6 @@ import { injectSwitch } from './switch-root.directive';
 @Directive({
     selector: 'input[rdxSwitchInput]',
     exportAs: 'rdxSwitchInput',
-    standalone: true,
     host: {
         type: 'checkbox',
         role: 'switch',
@@ -48,7 +47,6 @@ import {
     computed,
     Directive,
     effect,
-    forwardRef,
     inject,
     InjectionToken,
     input,
@@ -59,19 +57,14 @@ import {
     OutputEmitterRef,
     signal
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideToken, provideValueAccessor } from '@radix-ng/primitives/core';
 
 export const RdxSwitchToken = new InjectionToken<RdxSwitchRootDirective>('RdxSwitchToken');
 
 export function injectSwitch(): RdxSwitchRootDirective {
     return inject(RdxSwitchToken);
 }
-
-export const SWITCH_VALUE_ACCESSOR: any = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => RdxSwitchRootDirective),
-    multi: true
-};
 
 export interface SwitchProps {
     checked?: ModelSignal<boolean>;
@@ -88,11 +81,9 @@ let idIterator = 0;
 @Directive({
     selector: 'button[rdxSwitchRoot]',
     exportAs: 'rdxSwitchRoot',
-    standalone: true,
     providers: [
-        { provide: RdxSwitchToken, useExisting: RdxSwitchRootDirective },
-        SWITCH_VALUE_ACCESSOR
-    ],
+        provideToken(RdxSwitchToken, RdxSwitchRootDirective),
+        provideValueAccessor(RdxSwitchRootDirective)],
     host: {
         type: 'button',
         '[id]': 'elementId()',
@@ -246,7 +237,6 @@ import { injectSwitch } from './switch-root.directive';
 @Directive({
     selector: 'span[rdxSwitchThumb]',
     exportAs: 'rdxSwitchThumb',
-    standalone: true,
     host: {
         '[attr.data-disabled]': 'switchRoot.disabledState() ? "true" : null',
         '[attr.data-state]': 'switchRoot.checkedState() ? "checked" : "unchecked"'

@@ -519,7 +519,6 @@ import { RdxVisuallyHiddenInputDirective } from '@radix-ng/primitives/visually-h
 @Directive({
     selector: 'input[rdxToggleVisuallyHiddenInput]',
     exportAs: 'rdxToggleVisuallyHiddenInput',
-    standalone: true,
     hostDirectives: [
         {
             directive: RdxVisuallyHiddenInputDirective,
@@ -541,18 +540,9 @@ export class RdxToggleVisuallyHiddenInputDirective {}
 /Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/toggle/src/toggle.directive.ts
 ```typescript
 import { BooleanInput } from '@angular/cdk/coercion';
-import {
-    booleanAttribute,
-    computed,
-    Directive,
-    forwardRef,
-    input,
-    model,
-    output,
-    OutputEmitterRef,
-    signal
-} from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { booleanAttribute, computed, Directive, input, model, output, OutputEmitterRef, signal } from '@angular/core';
+import { ControlValueAccessor } from '@angular/forms';
+import { provideValueAccessor } from '@radix-ng/primitives/core';
 
 export interface ToggleProps {
     /**
@@ -581,20 +571,13 @@ export interface ToggleProps {
 
 export type DataState = 'on' | 'off';
 
-export const TOGGLE_VALUE_ACCESSOR: any = {
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => RdxToggleDirective),
-    multi: true
-};
-
 /**
  * @group Components
  */
 @Directive({
     selector: '[rdxToggle]',
     exportAs: 'rdxToggle',
-    standalone: true,
-    providers: [TOGGLE_VALUE_ACCESSOR],
+    providers: [provideValueAccessor(RdxToggleDirective)],
     host: {
         '[attr.aria-pressed]': 'pressed()',
         '[attr.data-state]': 'dataState()',

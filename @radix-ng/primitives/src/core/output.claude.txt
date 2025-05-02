@@ -13,11 +13,14 @@ export * from './src/is-inside-form';
 export * from './src/is-nullish';
 export * from './src/is-number';
 export * from './src/kbd-constants';
+export * from './src/provide-token';
 export * from './src/window';
 
+export * from './src/date-time';
 export * from './src/positioning/constants';
 export * from './src/positioning/types';
 export * from './src/positioning/utils';
+export * from './src/watch';
 
 </document_content>
 </document>
@@ -120,6 +123,29 @@ const reqAnimationFrame = getRequestAnimationFrame();
 </document_content>
 </document>
 <document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/chunk.ts</source>
+<document_content>
+/**
+ * Splits an array into chunks of a given size.
+ * @param arr The array to split.
+ * @param size The size of each chunk.
+ * @returns An array of arrays, where each sub-array has `size` elements from the original array.
+ * @example ```ts
+ * const arr = [1, 2, 3, 4, 5, 6, 7, 8];
+ * const chunks = chunk(arr, 3);
+ * // chunks = [[1, 2, 3], [4, 5, 6], [7, 8]]
+ * ```
+ */
+export function chunk<T>(arr: T[], size: number): T[][] {
+    const result = [];
+    for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+
+    return result;
+}
+
+</document_content>
+</document>
+<document index="5">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/document.ts</source>
 <document_content>
 import { DOCUMENT } from '@angular/common';
@@ -131,7 +157,7 @@ export function injectDocument(): Document {
 
 </document_content>
 </document>
-<document index="5">
+<document index="6">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/focus-initial.directive.ts</source>
 <document_content>
 import { Directive, ElementRef, inject } from '@angular/core';
@@ -151,7 +177,7 @@ export class RdxFocusInitialDirective {
 
 </document_content>
 </document>
-<document index="6">
+<document index="7">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/id-generator.ts</source>
 <document_content>
 /**
@@ -197,7 +223,7 @@ export class _IdGenerator {
 
 </document_content>
 </document>
-<document index="7">
+<document index="8">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/inject-ng-control.ts</source>
 <document_content>
 import { inject } from '@angular/core';
@@ -231,7 +257,7 @@ export function injectNgControl(params?: { optional: true } | { optional: false 
 
 </document_content>
 </document>
-<document index="8">
+<document index="9">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/is-client.ts</source>
 <document_content>
 import { Platform } from '@angular/cdk/platform';
@@ -243,7 +269,7 @@ export function injectIsClient() {
 
 </document_content>
 </document>
-<document index="9">
+<document index="10">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/is-inside-form.ts</source>
 <document_content>
 import { ElementRef } from '@angular/core';
@@ -257,7 +283,7 @@ export function isInsideForm(el: ElementRef<HTMLElement> | null): boolean {
 
 </document_content>
 </document>
-<document index="10">
+<document index="11">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/is-nullish.ts</source>
 <document_content>
 export function isNullish(value: any): value is null | undefined {
@@ -266,14 +292,14 @@ export function isNullish(value: any): value is null | undefined {
 
 </document_content>
 </document>
-<document index="11">
+<document index="12">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/is-number.ts</source>
 <document_content>
 export const isNumber = (v: any): v is number => typeof v === 'number';
 
 </document_content>
 </document>
-<document index="12">
+<document index="13">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/kbd-constants.ts</source>
 <document_content>
 export const ALT = 'Alt';
@@ -316,10 +342,11 @@ export const p = 'p';
 export const n = 'n';
 export const j = 'j';
 export const k = 'k';
+export const SPACE_CODE = 'Space';
 
 </document_content>
 </document>
-<document index="13">
+<document index="14">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/mount.ts</source>
 <document_content>
 import { AfterViewInit, Directive } from '@angular/core';
@@ -352,7 +379,41 @@ export class OnMountDirective implements AfterViewInit {
 
 </document_content>
 </document>
-<document index="14">
+<document index="15">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/provide-token.ts</source>
+<document_content>
+import { forwardRef, InjectionToken, Provider, Type } from '@angular/core';
+
+/**
+ * Creates an Angular provider that binds the given token to the existing instance
+ * of the specified class. This is especially useful when you want multiple
+ * tokens (or interfaces) to resolve to the same directive/component instance.
+ *
+ * @template T - The type associated with the injection token.
+ * @param token - The InjectionToken or abstract type you want to provide.
+ * @param type  - The class type whose existing instance will be used for this token.
+ * @returns A Provider configuration object for Angular's DI system.
+ *
+ * @example
+ *
+ * @Directive({
+ *   providers: [
+ *     provideToken(RdxToggleGroupToken, RdxToggleGroupDirective),
+ *     provideValueAccessor(RdxToggleGroupDirective)
+ *   ]
+ * })
+ * export class RdxToggleGroupDirective {}
+ */
+export function provideToken<T>(token: InjectionToken<T>, type: Type<unknown>): Provider {
+    return {
+        provide: token,
+        useExisting: forwardRef(() => type)
+    };
+}
+
+</document_content>
+</document>
+<document index="16">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/types.ts</source>
 <document_content>
 /**
@@ -382,7 +443,73 @@ export type SafeFunction = (...args: unknown[]) => unknown;
 
 </document_content>
 </document>
-<document index="15">
+<document index="17">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/watch.ts</source>
+<document_content>
+// https://ngxtension.netlify.app/utilities/signals/explicit-effect/
+
+import { CreateEffectOptions, EffectCleanupRegisterFn, EffectRef, effect, untracked } from '@angular/core';
+
+/**
+ * We want to have the Tuple in order to use the types in the function signature
+ */
+type ExplicitEffectValues<T> = {
+    [K in keyof T]: () => T[K];
+};
+
+/**
+ * Extend the regular set of effect options
+ */
+declare interface CreateExplicitEffectOptions extends CreateEffectOptions {
+    /**
+     * Option that allows the computation not to execute immediately, but only run on first change.
+     */
+    defer?: boolean;
+}
+
+/**
+ * This explicit effect function will take the dependencies and the function to run when the dependencies change.
+ *
+ * @example
+ * ```typescript
+ * import { watch } from 'radix-ng/primitives/core';
+ *
+ * const count = signal(0);
+ * const state = signal('idle');
+ *
+ * watch([count, state], ([count, state], cleanup) => {
+ *   console.log('count updated', count, state);
+ *
+ *   cleanup(() => {
+ *     console.log('cleanup');
+ *   });
+ * });
+ * ```
+ *
+ * @param deps - The dependencies that the effect will run on
+ * @param fn - The function to run when the dependencies change
+ * @param options - The options for the effect with the addition of defer (it allows the computation to run on first change, not immediately)
+ */
+export function watch<Input extends readonly unknown[], Params = Input>(
+    deps: readonly [...ExplicitEffectValues<Input>],
+    fn: (deps: Params, onCleanup: EffectCleanupRegisterFn) => void,
+    options?: CreateExplicitEffectOptions | undefined
+): EffectRef {
+    let defer = options && options.defer;
+    return effect((onCleanup) => {
+        const depValues = deps.map((s) => s());
+        untracked(() => {
+            if (!defer) {
+                fn(depValues as any, onCleanup);
+            }
+            defer = false;
+        });
+    }, options);
+}
+
+</document_content>
+</document>
+<document index="18">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/window.ts</source>
 <document_content>
 import { inject, InjectionToken } from '@angular/core';
@@ -404,10 +531,725 @@ export function injectWindow(): Window & typeof globalThis {
 
 </document_content>
 </document>
-<document index="16">
+<document index="19">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/calendar.ts</source>
+<document_content>
+import { DateValue, endOfMonth, startOfMonth } from '@internationalized/date';
+import { chunk } from '../chunk';
+import { getDaysInMonth, getLastFirstDayOfWeek, getNextLastDayOfWeek } from './comparators';
+import { Month } from './types';
+
+export type CreateMonthProps = {
+    /**
+     * The date object representing the month's date (usually the first day of the month).
+     */
+    dateObj: DateValue;
+
+    /**
+     * The day of the week to start the calendar on (0 for Sunday, 1 for Monday, etc.).
+     */
+    weekStartsOn: number;
+
+    /**
+     * Whether to always render 6 weeks in the calendar, even if the month doesn't
+     * span 6 weeks.
+     */
+    fixedWeeks: boolean;
+
+    /**
+     * The locale to use when creating the calendar month.
+     */
+    locale: string;
+};
+
+/**
+ * Retrieves an array of date values representing the days between
+ * the provided start and end dates.
+ */
+export function getDaysBetween(start: DateValue, end: DateValue) {
+    const days: DateValue[] = [];
+    let dCurrent = start.add({ days: 1 });
+    const dEnd = end;
+    while (dCurrent.compare(dEnd) < 0) {
+        days.push(dCurrent);
+        dCurrent = dCurrent.add({ days: 1 });
+    }
+    return days;
+}
+
+export function createMonth(props: CreateMonthProps): Month<DateValue> {
+    const { dateObj, weekStartsOn, fixedWeeks, locale } = props;
+    const daysInMonth = getDaysInMonth(dateObj);
+
+    const datesArray = Array.from({ length: daysInMonth }, (_, i) => dateObj.set({ day: i + 1 }));
+
+    const firstDayOfMonth = startOfMonth(dateObj);
+    const lastDayOfMonth = endOfMonth(dateObj);
+
+    const lastSunday = getLastFirstDayOfWeek(firstDayOfMonth, weekStartsOn, locale);
+    const nextSaturday = getNextLastDayOfWeek(lastDayOfMonth, weekStartsOn, locale);
+
+    const lastMonthDays = getDaysBetween(lastSunday.subtract({ days: 1 }), firstDayOfMonth);
+    const nextMonthDays = getDaysBetween(lastDayOfMonth, nextSaturday.add({ days: 1 }));
+
+    const totalDays = lastMonthDays.length + datesArray.length + nextMonthDays.length;
+
+    if (fixedWeeks && totalDays < 42) {
+        const extraDays = 42 - totalDays;
+
+        let startFrom = nextMonthDays[nextMonthDays.length - 1];
+
+        if (!startFrom) startFrom = endOfMonth(dateObj);
+
+        const extraDaysArray = Array.from({ length: extraDays }, (_, i) => {
+            const incr = i + 1;
+            return startFrom.add({ days: incr });
+        });
+        nextMonthDays.push(...extraDaysArray);
+    }
+
+    const allDays = lastMonthDays.concat(datesArray, nextMonthDays);
+
+    const weeks = chunk(allDays, 7);
+
+    return {
+        value: dateObj,
+        dates: allDays,
+        weeks: weeks
+    };
+}
+
+type SetMonthProps = CreateMonthProps & {
+    numberOfMonths: number | undefined;
+    currentMonths?: Month<DateValue>[];
+};
+
+export function createMonths(props: SetMonthProps) {
+    const { numberOfMonths, dateObj, ...monthProps } = props;
+
+    const months: Month<DateValue>[] = [];
+
+    if (!numberOfMonths || numberOfMonths === 1) {
+        months.push(
+            createMonth({
+                ...monthProps,
+                dateObj
+            })
+        );
+        return months;
+    }
+
+    months.push(
+        createMonth({
+            ...monthProps,
+            dateObj
+        })
+    );
+
+    // Create all the months, starting with the current month
+    for (let i = 1; i < numberOfMonths; i++) {
+        const nextMonth = dateObj.add({ months: i });
+        months.push(
+            createMonth({
+                ...monthProps,
+                dateObj: nextMonth
+            })
+        );
+    }
+
+    return months;
+}
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/comparators.ts</source>
+<document_content>
+import {
+    CalendarDate,
+    CalendarDateTime,
+    createCalendar,
+    DateFormatter,
+    type DateValue,
+    getDayOfWeek,
+    getLocalTimeZone,
+    toCalendar,
+    ZonedDateTime
+} from '@internationalized/date';
+import type { DateMatcher } from './types';
+
+/**
+ * Given a `DateValue` object, convert it to a native `Date` object.
+ * If a timezone is provided, the date will be converted to that timezone.
+ * If no timezone is provided, the date will be converted to the local timezone.
+ */
+export function toDate(dateValue: DateValue, tz: string = getLocalTimeZone()) {
+    if (isZonedDateTime(dateValue)) return dateValue.toDate();
+    else return dateValue.toDate(tz);
+}
+
+export function isCalendarDateTime(dateValue: DateValue): dateValue is CalendarDateTime {
+    return dateValue instanceof CalendarDateTime;
+}
+
+export function isZonedDateTime(dateValue: DateValue): dateValue is ZonedDateTime {
+    return dateValue instanceof ZonedDateTime;
+}
+
+export function hasTime(dateValue: DateValue) {
+    return isCalendarDateTime(dateValue) || isZonedDateTime(dateValue);
+}
+
+/**
+ * Given a date, return the number of days in the month.
+ */
+export function getDaysInMonth(date: Date | DateValue) {
+    if (date instanceof Date) {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        /**
+         * By using zero as the day, we get the
+         * last day of the previous month, which
+         * is the month we originally passed in.
+         */
+        return new Date(year, month, 0).getDate();
+    } else {
+        return date.set({ day: 100 }).day;
+    }
+}
+
+/**
+ * Determine if a date is before the reference date.
+ * @param dateToCompare - is this date before the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` before this date
+ *
+ * @see {@link isBeforeOrSame} for inclusive
+ */
+export function isBefore(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) < 0;
+}
+
+/**
+ * Determine if a date is after the reference date.
+ * @param dateToCompare - is this date after the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` after this date
+ *
+ * @see {@link isAfterOrSame} for inclusive
+ */
+export function isAfter(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) > 0;
+}
+
+/**
+ * Determine if a date is before or the same as the reference date.
+ *
+ * @param dateToCompare - the date to compare
+ * @param referenceDate - the reference date to make the comparison against
+ *
+ * @see {@link isBefore} for non-inclusive
+ */
+export function isBeforeOrSame(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) <= 0;
+}
+
+/**
+ * Determine if a date is after or the same as the reference date.
+ *
+ * @param dateToCompare - is this date after or the same as the `referenceDate`
+ * @param referenceDate - is the `dateToCompare` after or the same as this date
+ *
+ * @see {@link isAfter} for non-inclusive
+ */
+export function isAfterOrSame(dateToCompare: DateValue, referenceDate: DateValue) {
+    return dateToCompare.compare(referenceDate) >= 0;
+}
+
+/**
+ * Determine if a date is inclusively between a start and end reference date.
+ *
+ * @param date - is this date inclusively between the `start` and `end` dates
+ * @param start - the start reference date to make the comparison against
+ * @param end - the end reference date to make the comparison against
+ *
+ * @see {@link isBetween} for non-inclusive
+ */
+export function isBetweenInclusive(date: DateValue, start: DateValue, end: DateValue) {
+    return isAfterOrSame(date, start) && isBeforeOrSame(date, end);
+}
+
+/**
+ * Determine if a date is between a start and end reference date.
+ *
+ * @param date - is this date between the `start` and `end` dates
+ * @param start - the start reference date to make the comparison against
+ * @param end - the end reference date to make the comparison against
+ *
+ * @see {@link isBetweenInclusive} for inclusive
+ */
+export function isBetween(date: DateValue, start: DateValue, end: DateValue) {
+    return isAfter(date, start) && isBefore(date, end);
+}
+
+export function getLastFirstDayOfWeek<T extends DateValue = DateValue>(
+    date: T,
+    firstDayOfWeek: number,
+    locale: string
+): T {
+    const day = getDayOfWeek(date, locale);
+
+    if (firstDayOfWeek > day) return date.subtract({ days: day + 7 - firstDayOfWeek }) as T;
+
+    if (firstDayOfWeek === day) return date as T;
+
+    return date.subtract({ days: day - firstDayOfWeek }) as T;
+}
+
+export function getNextLastDayOfWeek<T extends DateValue = DateValue>(
+    date: T,
+    firstDayOfWeek: number,
+    locale: string
+): T {
+    const day = getDayOfWeek(date, locale);
+    const lastDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+
+    if (day === lastDayOfWeek) return date as T;
+
+    if (day > lastDayOfWeek) return date.add({ days: 7 - day + lastDayOfWeek }) as T;
+
+    return date.add({ days: lastDayOfWeek - day }) as T;
+}
+
+export function areAllDaysBetweenValid(
+    start: DateValue,
+    end: DateValue,
+    isUnavailable: DateMatcher | undefined,
+    isDisabled: DateMatcher | undefined
+) {
+    if (isUnavailable === undefined && isDisabled === undefined) return true;
+
+    let dCurrent = start.add({ days: 1 });
+    if (isDisabled?.(dCurrent) || isUnavailable?.(dCurrent)) return false;
+
+    const dEnd = end;
+    while (dCurrent.compare(dEnd) < 0) {
+        dCurrent = dCurrent.add({ days: 1 });
+        if (isDisabled?.(dCurrent) || isUnavailable?.(dCurrent)) return false;
+    }
+    return true;
+}
+
+export type Granularity = 'day' | 'hour' | 'minute' | 'second';
+export type TimeGranularity = 'hour' | 'minute' | 'second';
+
+type GetDefaultDateProps = {
+    defaultValue?: DateValue | DateValue[] | undefined;
+    defaultPlaceholder?: DateValue | undefined;
+    granularity?: Granularity;
+    locale?: string;
+};
+
+/**
+ * A helper function used throughout the various date builders
+ * to generate a default `DateValue` using the `defaultValue`,
+ * `defaultPlaceholder`, and `granularity` props.
+ *
+ * It's important to match the `DateValue` type being used
+ * elsewhere in the builder, so they behave according to the
+ * behavior the user expects based on the props they've provided.
+ *
+ */
+export function getDefaultDate(props: GetDefaultDateProps): DateValue {
+    const { defaultValue, defaultPlaceholder, granularity = 'day', locale = 'en' } = props;
+
+    if (Array.isArray(defaultValue) && defaultValue.length) return defaultValue[defaultValue.length - 1]!.copy();
+
+    if (defaultValue && !Array.isArray(defaultValue)) return defaultValue.copy();
+
+    if (defaultPlaceholder) return defaultPlaceholder.copy();
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const calendarDateTimeGranularities = ['hour', 'minute', 'second'];
+
+    const defaultFormatter = new DateFormatter(locale);
+    const calendar = createCalendar(defaultFormatter.resolvedOptions().calendar);
+
+    if (calendarDateTimeGranularities.includes(granularity ?? 'day'))
+        return toCalendar(new CalendarDateTime(year, month, day, 0, 0, 0), calendar);
+
+    return toCalendar(new CalendarDate(year, month, day), calendar);
+}
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/formatter.ts</source>
+<document_content>
+import { DateFormatter, type DateValue, getLocalTimeZone, today } from '@internationalized/date';
+import { hasTime, isZonedDateTime, toDate } from './comparators';
+import { HourCycle } from './types';
+
+const defaultPartOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+};
+
+export interface DateFormatterOptions extends Intl.DateTimeFormatOptions {
+    calendar?: string;
+}
+
+export type Formatter = {
+    getLocale: () => string;
+    setLocale: (newLocale: string) => void;
+    custom: (date: Date, options: DateFormatterOptions) => string;
+    selectedDate: (date: DateValue, includeTime?: boolean) => string;
+    dayOfWeek: (date: Date, length?: DateFormatterOptions['weekday']) => string;
+    fullMonthAndYear: (date: Date, options?: DateFormatterOptions) => string;
+    fullMonth: (date: Date, options?: DateFormatterOptions) => string;
+    fullYear: (date: Date, options?: DateFormatterOptions) => string;
+    dayPeriod: (date: Date) => string;
+    part: (dateObj: DateValue, type: Intl.DateTimeFormatPartTypes, options?: DateFormatterOptions) => string;
+    toParts: (date: DateValue, options?: DateFormatterOptions) => Intl.DateTimeFormatPart[];
+    getMonths: () => { label: string; value: number }[];
+};
+
+/**
+ * Creates a wrapper around the `DateFormatter`, which is
+ * an improved version of the {@link Intl.DateTimeFormat} API,
+ * that is used internally by the various date builders to
+ * easily format dates in a consistent way.
+ *
+ * @see [DateFormatter](https://react-spectrum.adobe.com/internationalized/date/DateFormatter.html)
+ */
+export function createFormatter(initialLocale: string): Formatter {
+    let locale = initialLocale;
+
+    function setLocale(newLocale: string) {
+        locale = newLocale;
+    }
+
+    function getLocale() {
+        return locale;
+    }
+
+    function custom(date: Date, options: Intl.DateTimeFormatOptions) {
+        return new DateFormatter(locale, options).format(date);
+    }
+
+    function selectedDate(date: DateValue, includeTime = true) {
+        if (hasTime(date) && includeTime) {
+            return custom(toDate(date), {
+                dateStyle: 'long',
+                timeStyle: 'long'
+            });
+        } else {
+            return custom(toDate(date), {
+                dateStyle: 'long'
+            });
+        }
+    }
+
+    function fullMonthAndYear(date: Date) {
+        return new DateFormatter(locale, { month: 'long', year: 'numeric' }).format(date);
+    }
+
+    function fullMonth(date: Date) {
+        return new DateFormatter(locale, { month: 'long' }).format(date);
+    }
+
+    function fullYear(date: Date) {
+        return new DateFormatter(locale, { year: 'numeric' }).format(date);
+    }
+
+    function toParts(date: DateValue, options?: Intl.DateTimeFormatOptions) {
+        if (isZonedDateTime(date)) {
+            return new DateFormatter(locale, {
+                ...options,
+                timeZone: date.timeZone
+            }).formatToParts(toDate(date));
+        } else {
+            return new DateFormatter(locale, options).formatToParts(toDate(date));
+        }
+    }
+
+    function dayOfWeek(date: Date, length: Intl.DateTimeFormatOptions['weekday'] = 'narrow') {
+        return new DateFormatter(locale, { weekday: length }).format(date);
+    }
+
+    function dayPeriod(date: Date, hourCycle: HourCycle | undefined = undefined) {
+        const parts = new DateFormatter(locale, {
+            hour: 'numeric',
+            minute: 'numeric',
+            hourCycle: hourCycle === 24 ? 'h23' : undefined
+        }).formatToParts(date);
+        const value = parts.find((p) => p.type === 'dayPeriod')?.value;
+        if (value === 'PM') {
+            return 'PM';
+        }
+        return 'AM';
+    }
+
+    function part(dateObj: DateValue, type: Intl.DateTimeFormatPartTypes, options: Intl.DateTimeFormatOptions = {}) {
+        const opts = { ...defaultPartOptions, ...options };
+        const parts = toParts(dateObj, opts);
+        const part = parts.find((p) => p.type === type);
+        return part ? part.value : '';
+    }
+
+    function getMonths() {
+        const defaultDate = today(getLocalTimeZone());
+        const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        return months.map((item) => ({ label: fullMonth(toDate(defaultDate.set({ month: item }))), value: item }));
+    }
+
+    return {
+        setLocale,
+        getLocale,
+        fullMonth,
+        fullYear,
+        fullMonthAndYear,
+        toParts,
+        custom,
+        part,
+        dayPeriod,
+        selectedDate,
+        dayOfWeek,
+        getMonths
+    };
+}
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/index.ts</source>
+<document_content>
+export * from './calendar';
+export * from './comparators';
+export * from './formatter';
+export * from './placeholders';
+export * from './types';
+export * from './utils';
+
+</document_content>
+</document>
+<document index="23">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/placeholders.ts</source>
+<document_content>
+/*
+ * Implementation ported from from from https://github.com/melt-ui/melt-ui/blob/develop/src/lib/internal/helpers/date/placeholders.ts
+ */
+
+// prettier-ignore
+const supportedLocales = [
+    'ach','af','am','an','ar','ast','az','be','bg','bn','br','bs',
+    'ca','cak','ckb','cs','cy','da','de','dsb','el','en','eo','es',
+    'et','eu','fa','ff','fi','fr','fy','ga','gd','gl','he','hr',
+    'hsb','hu','ia','id','it','ja','ka','kk','kn','ko','lb','lo',
+    'lt','lv','meh','ml','ms','nl','nn','no','oc','pl','pt','rm',
+    'ro','ru','sc','scn','sk','sl','sr','sv','szl','tg','th','tr',
+    'uk','zh-CN','zh-TW',
+] as const;
+
+const placeholderFields = ['year', 'month', 'day'] as const;
+
+type SupportedLocale = (typeof supportedLocales)[number];
+type PlaceholderField = (typeof placeholderFields)[number];
+export type PlaceholderMap = Record<SupportedLocale, Record<PlaceholderField, string>>;
+
+const placeholders: PlaceholderMap = {
+    ach: { year: 'mwaka', month: 'dwe', day: 'nino' },
+    af: { year: 'jjjj', month: 'mm', day: 'dd' },
+    am: { year: 'ዓዓዓዓ', month: 'ሚሜ', day: 'ቀቀ' },
+    an: { year: 'aaaa', month: 'mm', day: 'dd' },
+    ar: { year: 'سنة', month: 'شهر', day: 'يوم' },
+    ast: { year: 'aaaa', month: 'mm', day: 'dd' },
+    az: { year: 'iiii', month: 'aa', day: 'gg' },
+    be: { year: 'гггг', month: 'мм', day: 'дд' },
+    bg: { year: 'гггг', month: 'мм', day: 'дд' },
+    bn: { year: 'yyyy', month: 'মিমি', day: 'dd' },
+    br: { year: 'bbbb', month: 'mm', day: 'dd' },
+    bs: { year: 'gggg', month: 'mm', day: 'dd' },
+    ca: { year: 'aaaa', month: 'mm', day: 'dd' },
+    cak: { year: 'jjjj', month: 'ii', day: "q'q'" },
+    ckb: { year: 'ساڵ', month: 'مانگ', day: 'ڕۆژ' },
+    cs: { year: 'rrrr', month: 'mm', day: 'dd' },
+    cy: { year: 'bbbb', month: 'mm', day: 'dd' },
+    da: { year: 'åååå', month: 'mm', day: 'dd' },
+    de: { year: 'jjjj', month: 'mm', day: 'tt' },
+    dsb: { year: 'llll', month: 'mm', day: 'źź' },
+    el: { year: 'εεεε', month: 'μμ', day: 'ηη' },
+    en: { year: 'yyyy', month: 'mm', day: 'dd' },
+    eo: { year: 'jjjj', month: 'mm', day: 'tt' },
+    es: { year: 'aaaa', month: 'mm', day: 'dd' },
+    et: { year: 'aaaa', month: 'kk', day: 'pp' },
+    eu: { year: 'uuuu', month: 'hh', day: 'ee' },
+    fa: { year: 'سال', month: 'ماه', day: 'روز' },
+    ff: { year: 'hhhh', month: 'll', day: 'ññ' },
+    fi: { year: 'vvvv', month: 'kk', day: 'pp' },
+    fr: { year: 'aaaa', month: 'mm', day: 'jj' },
+    fy: { year: 'jjjj', month: 'mm', day: 'dd' },
+    ga: { year: 'bbbb', month: 'mm', day: 'll' },
+    gd: { year: 'bbbb', month: 'mm', day: 'll' },
+    gl: { year: 'aaaa', month: 'mm', day: 'dd' },
+    he: { year: 'שנה', month: 'חודש', day: 'יום' },
+    hr: { year: 'gggg', month: 'mm', day: 'dd' },
+    hsb: { year: 'llll', month: 'mm', day: 'dd' },
+    hu: { year: 'éééé', month: 'hh', day: 'nn' },
+    ia: { year: 'aaaa', month: 'mm', day: 'dd' },
+    id: { year: 'tttt', month: 'bb', day: 'hh' },
+    it: { year: 'aaaa', month: 'mm', day: 'gg' },
+    ja: { year: ' 年 ', month: '月', day: '日' },
+    ka: { year: 'წწწწ', month: 'თთ', day: 'რრ' },
+    kk: { year: 'жжжж', month: 'аа', day: 'кк' },
+    kn: { year: 'ವವವವ', month: 'ಮಿಮೀ', day: 'ದಿದಿ' },
+    ko: { year: '연도', month: '월', day: '일' },
+    lb: { year: 'jjjj', month: 'mm', day: 'dd' },
+    lo: { year: 'ປປປປ', month: 'ດດ', day: 'ວວ' },
+    lt: { year: 'mmmm', month: 'mm', day: 'dd' },
+    lv: { year: 'gggg', month: 'mm', day: 'dd' },
+    meh: { year: 'aaaa', month: 'mm', day: 'dd' },
+    ml: { year: 'വർഷം', month: 'മാസം', day: 'തീയതി' },
+    ms: { year: 'tttt', month: 'mm', day: 'hh' },
+    nl: { year: 'jjjj', month: 'mm', day: 'dd' },
+    nn: { year: 'åååå', month: 'mm', day: 'dd' },
+    no: { year: 'åååå', month: 'mm', day: 'dd' },
+    oc: { year: 'aaaa', month: 'mm', day: 'jj' },
+    pl: { year: 'rrrr', month: 'mm', day: 'dd' },
+    pt: { year: 'aaaa', month: 'mm', day: 'dd' },
+    rm: { year: 'oooo', month: 'mm', day: 'dd' },
+    ro: { year: 'aaaa', month: 'll', day: 'zz' },
+    ru: { year: 'гггг', month: 'мм', day: 'дд' },
+    sc: { year: 'aaaa', month: 'mm', day: 'dd' },
+    scn: { year: 'aaaa', month: 'mm', day: 'jj' },
+    sk: { year: 'rrrr', month: 'mm', day: 'dd' },
+    sl: { year: 'llll', month: 'mm', day: 'dd' },
+    sr: { year: 'гггг', month: 'мм', day: 'дд' },
+    sv: { year: 'åååå', month: 'mm', day: 'dd' },
+    szl: { year: 'rrrr', month: 'mm', day: 'dd' },
+    tg: { year: 'сссс', month: 'мм', day: 'рр' },
+    th: { year: 'ปปปป', month: 'ดด', day: 'วว' },
+    tr: { year: 'yyyy', month: 'aa', day: 'gg' },
+    uk: { year: 'рррр', month: 'мм', day: 'дд' },
+    'zh-CN': { year: '年', month: '月', day: '日' },
+    'zh-TW': { year: '年', month: '月', day: '日' }
+};
+
+function getPlaceholderObj(locale: SupportedLocale | (string & {})) {
+    if (!isSupportedLocale(locale)) {
+        const localeLanguage = getLocaleLanguage(locale);
+        if (!isSupportedLocale(localeLanguage)) {
+            return placeholders.en;
+        } else {
+            return placeholders[localeLanguage];
+        }
+    } else {
+        return placeholders[locale];
+    }
+}
+
+type Field = 'era' | 'year' | 'month' | 'day' | 'hour' | 'minute' | 'second' | 'dayPeriod';
+
+export function getPlaceholder(field: Field, value: string, locale: SupportedLocale | (string & {})) {
+    if (isPlaceholderField(field)) return getPlaceholderObj(locale)[field];
+    if (isDefaultField(field)) return value;
+    if (isTimeField(field)) return '––';
+    return '';
+}
+
+function isSupportedLocale(locale: string): locale is SupportedLocale {
+    return supportedLocales.includes(locale as SupportedLocale);
+}
+
+function isPlaceholderField(field: unknown): field is PlaceholderField {
+    return placeholderFields.includes(field as PlaceholderField);
+}
+
+function isTimeField(field: unknown): field is 'hour' | 'minute' | 'second' {
+    return field === 'hour' || field === 'minute' || field === 'second';
+}
+
+function isDefaultField(field: unknown): field is 'era' | 'dayPeriod' {
+    return field === 'era' || field === 'dayPeriod';
+}
+
+function getLocaleLanguage(locale: string) {
+    if (Intl.Locale) {
+        return new Intl.Locale(locale).language;
+    }
+    return locale.split('-')[0]!;
+}
+
+</document_content>
+</document>
+<document index="24">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/types.ts</source>
+<document_content>
+/*
+ * Implementation ported from https://github.com/melt-ui/melt-ui/blob/develop/src/lib/internal/helpers/date/types.ts
+ */
+
+import type { DateValue } from '@internationalized/date';
+
+export type DateMatcher = (date: DateValue) => boolean;
+
+export type HourCycle = 12 | 24;
+
+export type Month<T> = {
+    /**
+     * A `DateValue` used to represent the month. Since days
+     * from the previous and next months may be included in the
+     * calendar grid, we need a source of truth for the value
+     * the grid is representing.
+     */
+    value: DateValue;
+
+    /**
+     * An array of (rows) arrays representing the weeks in the calendar.
+     * Each sub-array represents a week, and contains the dates for each
+     * day in that week. This structure is useful for rendering the calendar
+     * grid using a table, where each row represents a week and each cell
+     * represents a day.
+     */
+    weeks: T[][];
+
+    /**
+     * An array of (cells) all the dates in the current month, including dates from
+     * the previous and next months that are used to fill out the calendar grid.
+     * This array is useful for rendering the calendar grid in a customizable way,
+     * as it provides all the dates that should be displayed in the grid in a flat
+     * array.
+     */
+    dates: T[];
+};
+
+</document_content>
+</document>
+<document index="25">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/date-time/utils.ts</source>
+<document_content>
+export function handleCalendarInitialFocus(calendar: HTMLElement) {
+    const selectedDay = calendar.querySelector<HTMLElement>('[data-selected]');
+    if (selectedDay) return selectedDay.focus();
+
+    const today = calendar.querySelector<HTMLElement>('[data-today]');
+    if (today) return today.focus();
+
+    const firstDay = calendar.querySelector<HTMLElement>('[data-rdx-calendar-day]');
+    if (firstDay) return firstDay.focus();
+}
+
+</document_content>
+</document>
+<document index="26">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/accessor/provide-value-accessor.ts</source>
 <document_content>
-import { Provider, Type } from '@angular/core';
+import { forwardRef, Provider, Type } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
@@ -420,17 +1262,17 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
  * export class ExampleDirective{}
  * ```
  */
-export function provideValueAccessor(type: Type<never>): Provider {
+export function provideValueAccessor<T>(type: Type<T>): Provider {
     return {
         provide: NG_VALUE_ACCESSOR,
-        useExisting: type,
+        useExisting: forwardRef(() => type),
         multi: true
     };
 }
 
 </document_content>
 </document>
-<document index="17">
+<document index="27">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/positioning/constants.ts</source>
 <document_content>
 import { RdxPositionAlign, RdxPositioningDefaults, RdxPositions, RdxPositionSide } from './types';
@@ -531,7 +1373,7 @@ export const RDX_POSITIONING_DEFAULTS: RdxPositioningDefaults = {
 
 </document_content>
 </document>
-<document index="18">
+<document index="28">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/positioning/types.ts</source>
 <document_content>
 import { ConnectionPositionPair } from '@angular/cdk/overlay';
@@ -582,7 +1424,7 @@ export type RdxArrowPositionParams = {
 
 </document_content>
 </document>
-<document index="19">
+<document index="29">
 <source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/core/src/positioning/utils.ts</source>
 <document_content>
 import { ConnectedPosition, ConnectionPositionPair } from '@angular/cdk/overlay';

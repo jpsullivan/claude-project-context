@@ -1,0 +1,726 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-default.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { CalendarDate, DateValue } from '@internationalized/date';
+import { ChevronLeft, ChevronRight, LucideAngularModule } from 'lucide-angular';
+import { RdxCalendarCellTriggerDirective } from '../src/calendar-cell-trigger.directive';
+import { RdxCalendarCellDirective } from '../src/calendar-cell.directive';
+import { RdxCalendarGridHeadDirective } from '../src/calendar-grid-head.directive';
+import { RdxCalendarGridDirective } from '../src/calendar-grid.directive';
+import { RdxCalendarHeadCellDirective } from '../src/calendar-head-cell.directive';
+import { RdxCalendarHeaderDirective } from '../src/calendar-header.directive';
+import { RdxCalendarHeadingDirective } from '../src/calendar-heading.directive';
+import { RdxCalendarNextDirective } from '../src/calendar-next.directive';
+import { RdxCalendarPrevDirective } from '../src/calendar-prev.directive';
+import { RdxCalendarRootDirective } from '../src/calendar-root.directive';
+
+@Component({
+    selector: 'app-calendar-default',
+    imports: [
+        RdxCalendarRootDirective,
+        RdxCalendarHeaderDirective,
+        RdxCalendarGridDirective,
+        RdxCalendarGridHeadDirective,
+        RdxCalendarCellTriggerDirective,
+        RdxCalendarCellDirective,
+        RdxCalendarHeadingDirective,
+        RdxCalendarNextDirective,
+        RdxCalendarPrevDirective,
+        LucideAngularModule,
+        RdxCalendarHeadCellDirective
+    ],
+    styleUrl: 'calendar-default.style.css',
+    template: `
+        <div class="wrapper">
+            <div
+                class="calendar-root"
+                #root="rdxCalendarRoot"
+                [value]="date"
+                data-testid="calendar"
+                rdxCalendarRoot
+                fixedWeeks
+            >
+                <div class="calendar-header" rdxCalendarHeader>
+                    <button class="icon-button" type="button" rdxCalendarPrev>
+                        <lucide-angular [img]="ChevronLeft" size="16" style="display: flex;" />
+                    </button>
+                    <div class="calendar-heading" #head="rdxCalendarHeading" data-testid="heading" rdxCalendarHeading>
+                        {{ head.headingValue() }}
+                    </div>
+                    <button class="icon-button" type="button" data-testid="next-button" rdxCalendarNext>
+                        <lucide-angular [img]="ChevronRight" size="16" style="display: flex;" />
+                    </button>
+                </div>
+
+                <div class="calendar-container">
+                    <table class="calendar-grid" rdxCalendarGrid>
+                        @for (month of root.months(); track $index) {
+                            <thead rdxCalendarGridHead>
+                                <tr class="calendar-grid-head-row">
+                                    @for (day of root.weekDays(); track $index) {
+                                        <th class="calendar-head-cell" rdxCalendarHeadCell>{{ day }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="calendar-grid-body" rdxCalendarGridBody>
+                                @for (weekDates of month.weeks; track $index) {
+                                    <tr class="calendar-week-row">
+                                        @for (weekDate of weekDates; track $index) {
+                                            <td class="calendar-cell-wrapper" [date]="weekDate" rdxCalendarCell>
+                                                <div
+                                                    class="calendar-day"
+                                                    #cell="rdxCalendarCellTrigger"
+                                                    [day]="weekDate"
+                                                    [month]="month.value"
+                                                    rdxCalendarCellTrigger
+                                                >
+                                                    {{ cell.dayValue() }}
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class CalendarDefaultComponent {
+    date: DateValue = new CalendarDate(2024, 10, 3);
+
+    protected readonly ChevronLeft = ChevronLeft;
+    protected readonly ChevronRight = ChevronRight;
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-default.style.css</source>
+<document_content>
+/* calendar-default.style.css */
+
+/* Общие обёртки */
+.wrapper {
+    max-width: 680px;
+    width: 300px;
+}
+
+.calendar-root {
+    margin-top: 1.5rem;
+    border-radius: 0.75rem;
+    background-color: #ffffff;
+    padding: 1rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+/* Заголовок календаря */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.calendar-heading {
+    font-size: 0.875rem;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Кнопки навигации */
+button {
+    all: unset;
+}
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #000000;
+    background-color: transparent;
+    border-radius: 0.375rem;
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.icon-button:hover {
+    background-color: #f5f5f4;
+}
+
+.icon-button:active {
+    transform: scale(0.98);
+    transition: all 0.1s ease;
+}
+
+.icon-button:focus {
+    box-shadow: 0 0 0 2px black;
+}
+
+/* Контейнер таблицы */
+.calendar-container {
+    display: flex;
+    flex-direction: column;
+    padding-top: 1rem;
+}
+
+/* Сетка календаря */
+.calendar-grid {
+    width: 100%;
+    border-collapse: collapse;
+    user-select: none;
+}
+
+/* Заголовок дней недели */
+.calendar-grid-head-row {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin-bottom: 0.25rem;
+}
+
+.calendar-head-cell {
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    color: #30a46c;
+    text-align: center;
+}
+
+/* Тело календаря */
+.calendar-grid-body {
+    display: grid;
+}
+
+.calendar-week-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell-wrapper {
+    position: relative;
+    text-align: center;
+    font-size: 0.8rem;
+}
+
+/* Клетки дней */
+.calendar-day {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: black;
+    outline: none;
+    cursor: pointer;
+}
+
+.calendar-day:focus {
+    box-shadow: 0 0 0 2px black;
+}
+
+.calendar-day:hover {
+    background-color: #c3e8d1;
+}
+
+.calendar-day[data-selected] {
+    background-color: #30a46c !important;
+    color: white;
+}
+
+.calendar-day[data-outside-view],
+.calendar-day[data-unavailable] {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.calendar-day[data-unavailable] {
+    pointer-events: none;
+    text-decoration: line-through;
+}
+
+.calendar-day::before {
+    content: '';
+    position: absolute;
+    top: 5px;
+    width: 0.25rem;
+    height: 0.25rem;
+    border-radius: 9999px;
+    background-color: white;
+    display: none;
+}
+
+.calendar-day[data-today]::before {
+    display: block;
+    background-color: #298459;
+}
+
+.calendar-day[data-highlighted] {
+    background-color: #c3e8d1;
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar-with-locale.component.ts</source>
+<document_content>
+import { Component, computed, signal } from '@angular/core';
+import { createCalendar, getLocalTimeZone, toCalendar, today } from '@internationalized/date';
+import { ChevronLeft, ChevronRight, LucideAngularModule } from 'lucide-angular';
+import { RdxCalendarCellTriggerDirective } from '../src/calendar-cell-trigger.directive';
+import { RdxCalendarGridHeadDirective } from '../src/calendar-grid-head.directive';
+import { RdxCalendarGridDirective } from '../src/calendar-grid.directive';
+import { RdxCalendarHeaderDirective } from '../src/calendar-header.directive';
+import { RdxCalendarHeadingDirective } from '../src/calendar-heading.directive';
+import { RdxCalendarNextDirective } from '../src/calendar-next.directive';
+import { RdxCalendarPrevDirective } from '../src/calendar-prev.directive';
+import { RdxCalendarRootDirective } from '../src/calendar-root.directive';
+
+@Component({
+    selector: 'app-calendar-with-locale',
+    imports: [
+        RdxCalendarRootDirective,
+        RdxCalendarHeaderDirective,
+        RdxCalendarGridDirective,
+        RdxCalendarGridHeadDirective,
+        RdxCalendarCellTriggerDirective,
+        RdxCalendarHeadingDirective,
+        RdxCalendarNextDirective,
+        RdxCalendarPrevDirective,
+        LucideAngularModule
+    ],
+    styleUrl: 'calendar-default.style.css',
+    template: `
+        <div class="wrapper" style="display: flex; flex-direction: column; gap: 1rem;">
+            <label style="color: white;">Locale</label>
+            <select [value]="locale()" (change)="updateLocale($event)">
+                @for (option of preferences; track $index) {
+                    <option [value]="option.locale">{{ option.label }}</option>
+                }
+            </select>
+
+            <label style="color: white;">Calendar</label>
+            <select [value]="calendar()">
+                @for (option of preferredCalendars(); track $index) {
+                    <option [value]="option!.key">{{ option!.name }}</option>
+                }
+            </select>
+
+            <div
+                class="calendar-root"
+                #root="rdxCalendarRoot"
+                [value]="value()"
+                [locale]="locale()"
+                rdxCalendarRoot
+                fixedWeeks
+            >
+                <div class="calendar-header" rdxCalendarHeader>
+                    <button class="icon-button" type="button" rdxCalendarPrev>
+                        <lucide-angular [img]="ChevronLeft" size="16" style="display: flex;" />
+                    </button>
+                    <div class="calendar-heading" #head="rdxCalendarHeading" rdxCalendarHeading>
+                        {{ head.headingValue() }}
+                    </div>
+                    <button class="icon-button" type="button" rdxCalendarNext>
+                        <lucide-angular [img]="ChevronRight" size="16" style="display: flex;" />
+                    </button>
+                </div>
+
+                <div class="calendar-container">
+                    <table class="calendar-grid" rdxCalendarGrid>
+                        @for (month of root.months(); track $index) {
+                            <thead rdxCalendarGridHead>
+                                <tr class="calendar-grid-head-row">
+                                    @for (day of root.weekDays(); track $index) {
+                                        <th class="calendar-head-cell">{{ day }}</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="calendar-grid-body" rdxCalendarGridBody>
+                                @for (weekDates of month.weeks; track $index) {
+                                    <tr class="calendar-week-row">
+                                        @for (weekDate of weekDates; track $index) {
+                                            <td class="calendar-cell-wrapper">
+                                                <div
+                                                    class="calendar-day"
+                                                    #cell="rdxCalendarCellTrigger"
+                                                    [day]="weekDate"
+                                                    [month]="month.value"
+                                                    rdxCalendarCellTrigger
+                                                >
+                                                    {{ cell.dayValue() }}
+                                                </div>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+    `
+})
+export class CalendarWithLocaleComponent {
+    readonly preferences = [
+        { locale: 'en-US', label: 'Default', ordering: 'gregory' },
+        {
+            label: 'Arabic (Algeria)',
+            locale: 'ar-DZ',
+            territories: 'DJ DZ EH ER IQ JO KM LB LY MA MR OM PS SD SY TD TN YE',
+            ordering: 'gregory islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (United Arab Emirates)',
+            locale: 'ar-AE',
+            territories: 'AE BH KW QA',
+            ordering: 'gregory islamic-umalqura islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (Egypt)',
+            locale: 'AR-EG',
+            territories: 'EG',
+            ordering: 'gregory coptic islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Arabic (Saudi Arabia)',
+            locale: 'ar-SA',
+            territories: 'SA',
+            ordering: 'islamic-umalqura gregory islamic islamic-rgsa'
+        },
+        {
+            label: 'Farsi (Iran)',
+            locale: 'fa-IR',
+            territories: 'IR',
+            ordering: 'persian gregory islamic islamic-civil islamic-tbla'
+        },
+        {
+            label: 'Farsi (Afghanistan)',
+            locale: 'fa-AF',
+            territories: 'AF IR',
+            ordering: 'persian gregory islamic islamic-civil islamic-tbla'
+        },
+        { label: 'Amharic (Ethiopia)', locale: 'am-ET', territories: 'ET', ordering: 'gregory ethiopic ethioaa' },
+        {
+            label: 'Hebrew (Israel)',
+            locale: 'he-IL',
+            territories: 'IL',
+            ordering: 'gregory hebrew islamic islamic-civil islamic-tbla'
+        },
+        { label: 'Hindi (India)', locale: 'hi-IN', territories: 'IN', ordering: 'gregory indian' },
+        { label: 'Japanese (Japan)', locale: 'ja-JP', territories: 'JP', ordering: 'gregory japanese' },
+        { label: 'Thai (Thailand)', locale: 'th-TH', territories: 'TH', ordering: 'buddhist gregory' },
+        { label: 'Chinese (Taiwan)', locale: 'zh-TW', territories: 'TW', ordering: 'gregory roc chinese' }
+    ];
+
+    readonly calendars = [
+        { key: 'gregory', name: 'Gregorian' },
+        { key: 'japanese', name: 'Japanese' },
+        { key: 'buddhist', name: 'Buddhist' },
+        { key: 'roc', name: 'Taiwan' },
+        { key: 'persian', name: 'Persian' },
+        { key: 'indian', name: 'Indian' },
+        { key: 'islamic-umalqura', name: 'Islamic (Umm al-Qura)' },
+        { key: 'islamic-civil', name: 'Islamic Civil' },
+        { key: 'islamic-tbla', name: 'Islamic Tabular' },
+        { key: 'hebrew', name: 'Hebrew' },
+        { key: 'coptic', name: 'Coptic' },
+        { key: 'ethiopic', name: 'Ethiopic' },
+        { key: 'ethioaa', name: 'Ethiopic (Amete Alem)' }
+    ];
+
+    readonly locale = signal(this.preferences[0].locale);
+    readonly calendar = signal(this.calendars[0].key);
+
+    readonly pref = computed(() => this.preferences.find((p) => p.locale === this.locale()));
+
+    readonly preferredCalendars = computed(() => {
+        const currentPref = this.pref();
+        return currentPref
+            ? currentPref.ordering
+                  .split(' ')
+                  .map((p) => this.calendars.find((c) => c.key === p))
+                  .filter(Boolean)
+            : [this.calendars[0]];
+    });
+
+    readonly otherCalendars = computed(() =>
+        this.calendars.filter((c) => !this.preferredCalendars().some((p) => p!.key === c.key))
+    );
+
+    readonly value = computed(() => toCalendar(today(getLocalTimeZone()), createCalendar(this.calendar())));
+
+    updateLocale(event: Event) {
+        const newLocale = (event.target as HTMLSelectElement).value;
+
+        this.locale.set(newLocale);
+        this.calendar.set(this.pref()!.ordering.split(' ')[0]);
+    }
+
+    protected readonly ChevronLeft = ChevronLeft;
+    protected readonly ChevronRight = ChevronRight;
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar.docs.mdx</source>
+<document_content>
+import { ArgTypes, Canvas, Markdown, Meta } from "@storybook/blocks";
+import * as Stories from './calendar.stories';
+import { RdxCalendarRootDirective } from "../src/calendar-root.directive";
+import {RdxCalendarPrevDirective} from "../src/calendar-prev.directive";
+import {RdxCalendarNextDirective} from "../src/calendar-next.directive";
+import {RdxCalendarCellDirective} from "../src/calendar-cell.directive";
+
+<Meta title="Primitives/Calendar" />
+
+# Calendar
+
+####  Displays dates and days of the week, facilitating date-related interactions.
+
+<Canvas sourceState="hidden" of={Stories.Default} />
+
+## Features
+
+- ✅ Full keyboard navigation.
+- ✅ Can be controlled or uncontrolled
+- ✅ Focus is fully managed
+- ✅ Localization support
+- ✅ Highly composable
+
+## Preface
+
+The component depends on the [@internationalized/date package](https://react-spectrum.adobe.com/internationalized/date/index.html),
+which solves a lot of the problems that come with working with dates and times in JavaScript.
+
+We highly recommend reading through the documentation for the package to get a solid feel
+for how it works, and you'll need to install it in your project to use the date-related components.
+
+## Installation
+
+Install the date package.
+
+```bash
+npm install @internationalized/date
+```
+
+Install the component from your command line.
+
+```bash
+npm install @radix-ng/primitives
+```
+
+## Anatomy
+
+Import all parts and piece them together.
+
+```html
+<div
+    rdxCalendarRoot
+    #root="rdxCalendarRoot">
+    <div rdxCalendarHeader>
+        <button type="button" rdxCalendarPrev></button>
+        <div #head="rdxCalendarHeading" rdxCalendarHeading>
+            {{ head.headingValue() }}
+        </div>
+        <button type="button" rdxCalendarNext></button>
+    </div>
+
+    <table rdxCalendarGrid>
+        @for (month of root.months(); track $index) {
+            <thead rdxCalendarGridHead>
+                <tr rdxCalendarGridRow>
+                    @for (day of root.weekDays(); track $index) {
+                        <th rdxCalendarHeadCell>{{ day }}</th>
+                    }
+                </tr>
+            </thead>
+            <tbody rdxCalendarGridBody>
+                @for (weekDates of month.weeks; track $index) {
+                    <tr rdxCalendarGridRow>
+                        @for (weekDate of weekDates; track $index) {
+                            <td rdxCalendarCell>
+                                <div
+                                    #cell="rdxCalendarCellTrigger"
+                                    rdxCalendarCellTrigger
+                                >
+                                    {{ cell.dayValue() }}
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+</div>
+```
+
+## API Reference
+
+### Root
+
+`RdxCalendarRootDirective` Contains all the parts of a calendar
+
+<ArgTypes of={RdxCalendarRootDirective} />
+
+### Header
+
+`RdxCalendarHeaderDirective` Contains the navigation buttons and the heading segments.
+
+### Prev Button
+
+`RdxCalendarPrevDirective` Calendar navigation button. It navigates the calendar one month/year/decade in the past based on the current calendar view.
+
+<ArgTypes of={RdxCalendarPrevDirective} />
+
+### Next Button
+
+`RdxCalendarNextDirective` Calendar navigation button. It navigates the calendar one month/year/decade in the future based on the current calendar view.
+
+<ArgTypes of={RdxCalendarNextDirective} />
+
+### Heading
+
+`RdxCalendarHeadingDirective` Heading for displaying the current month and year.
+
+
+| exportAs       | Description |
+| ------------- | --------- |
+| `headingValue`  | `string` Current month and year |
+
+### Grid
+
+`RdxCalendarGridDirective` Container for wrapping the calendar grid.
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-readonly]`  | Present when readonly |
+| `[data-disabled]`  | Present when disabled |
+
+### Grid Head
+
+`RdxCalendarGridHeadDirective` Container for wrapping the grid head as `thead`.
+
+### Grid Body
+
+`RdxCalendarGridBodyDirective` Container for wrapping the grid body as `tbody`.
+
+### Grid Row
+
+`RdxCalendarGridRowDirective` Container for wrapping the grid row as `tr`.
+
+### Head Cell
+
+`RdxCalendarHeadCellDirective` Container for wrapping the head cell. Used for displaying the week days as `th`.
+
+### Cell
+
+`RdxCalendarCellDirective` Container for wrapping the calendar cells as `td`.
+
+<ArgTypes of={RdxCalendarCellDirective} />
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-disabled]`  | Present when disabled |
+
+### Cell Trigger
+
+`RdxCalendarCellTriggerDirective` Interactable container for displaying the cell dates. Clicking it selects the date.
+
+| Data Attribute     | Value |
+| ------------------ | --------- |
+| `[data-selected]`  | Present when selected |
+| `[data-value]`  | The ISO string value of the date. |
+| `[data-disabled]`  | Present when disabled |
+| `[data-unavailable]`  | Present when unavailable |
+| `[data-today]`  | Present when today |
+| `[data-outside-view]`  | Present when the date is outside the current month it is displayed in. |
+| `[data-outside-visible-view]`  | Present when the date is outside the months that are visible on the calendar. |
+| `[data-focused]`  | Present when focused |
+
+## Examples
+
+### Calendar with Locale and Calendar System Selection
+
+This example showcases some of the available locales and how the calendar systems are displayed.
+
+<Canvas sourceState="hidden" of={Stories.WithLocale} />
+
+
+## Accessibility
+
+### Keyboard Interactions
+| Key     | Description |
+| ------------------ | --------- |
+| `Tab`  | When focus moves onto the calendar, focuses the first navigation button. |
+| `Space`  |  When the focus is on either `CalendarNext` or `CalendarPrev`, it navigates the calendar. Otherwise, it selects the date.  |
+| `Enter`  |  When the focus is on either `CalendarNext` or `CalendarPrev`, it navigates the calendar. Otherwise, it selects the date.  |
+| `ArrowLeft` `ArrowRight` `ArrowUp` `ArrowDown`  |  When the focus is on `CalendarCellTrigger`, it navigates the dates, changing the month/year/decade if necessary.  |
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/radix-ng/primitives/packages/primitives/calendar/stories/calendar.stories.ts</source>
+<document_content>
+import { componentWrapperDecorator, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import { CalendarDefaultComponent } from './calendar-default.component';
+import { CalendarWithLocaleComponent } from './calendar-with-locale.component';
+
+const html = String.raw;
+
+export default {
+    title: 'Primitives/Calendar',
+    decorators: [
+        moduleMetadata({
+            imports: [
+                CalendarDefaultComponent,
+                CalendarWithLocaleComponent
+            ]
+        }),
+        componentWrapperDecorator(
+            (story) => html`
+                <div
+                    class="radix-themes light light-theme radix-themes-default-fonts"
+                    data-accent-color="indigo"
+                    data-radius="medium"
+                    data-scaling="100%"
+                >
+                    ${story}
+                </div>
+            `
+        )
+    ]
+} as Meta;
+
+type Story = StoryObj;
+
+export const Default: Story = {
+    render: () => ({
+        template: html`
+            <app-calendar-default />
+        `
+    })
+};
+
+export const WithLocale: Story = {
+    render: () => ({
+        template: html`
+            <app-calendar-with-locale />
+        `
+    })
+};
+
+</document_content>
+</document>
+</documents>

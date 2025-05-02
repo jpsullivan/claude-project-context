@@ -1,0 +1,893 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/table.stories.ts
+```typescript
+import { TitleCasePipe } from '@angular/common';
+import { Component, type TrackByFunction, computed, effect, signal, untracked } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+import { faker } from '@faker-js/faker';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronDown } from '@ng-icons/lucide';
+import { BrnMenuModule } from '@spartan-ng/brain/menu';
+import { BrnTableModule, type PaginatorState, useBrnColumnManager } from '@spartan-ng/brain/table';
+import { BrnToggleGroupModule } from '@spartan-ng/brain/toggle-group';
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
+import { debounceTime } from 'rxjs';
+import { HlmButtonDirective, HlmButtonModule } from '../button/helm/src';
+import { HlmIconDirective } from '../icon/helm/src';
+import { HlmInputDirective } from '../input/helm/src';
+import { HlmMenuModule } from '../menu/helm/src';
+import { HlmToggleGroupModule } from '../toggle-group/helm/src';
+import { HlmTableComponent, HlmTableModule } from './helm/src';
+
+const createUsers = (numUsers = 5) => {
+	return Array.from({ length: numUsers }, () => ({
+		name: faker.person.fullName(),
+		age: faker.number.int({ min: 10, max: 100 }),
+		height: faker.number.int({ min: 140, max: 210 }),
+	}));
+};
+
+@Component({
+	selector: 'table-story',
+	standalone: true,
+	imports: [
+		FormsModule,
+		BrnTableModule,
+		HlmTableModule,
+		BrnMenuModule,
+		HlmMenuModule,
+		HlmInputDirective,
+		HlmButtonDirective,
+		NgIcon,
+		HlmIconDirective,
+		TitleCasePipe,
+	],
+	providers: [provideIcons({ lucideChevronDown })],
+	template: `
+		<div class="flex justify-between">
+			<input
+				hlmInput
+				placeholder="Filter by name"
+				[ngModel]="_nameFilter()"
+				(ngModelChange)="_rawFilterInput.set($event)"
+			/>
+
+			<button hlmBtn variant="outline" align="end" [brnMenuTriggerFor]="menu">
+				Columns
+				<ng-icon hlm name="lucideChevronDown" class="ml-2" size="sm" />
+			</button>
+			<ng-template #menu>
+				<hlm-menu class="w-40">
+					@for (column of _brnColumnManager.allColumns; track column) {
+						<button
+							hlmMenuItemCheckbox
+							[disabled]="_brnColumnManager.isColumnDisabled(column.name)"
+							[checked]="_brnColumnManager.isColumnVisible(column.name)"
+							(triggered)="_brnColumnManager.toggleVisibility(column.name)"
+						>
+							<hlm-menu-item-check />
+							<span>{{ column.label }}</span>
+						</button>
+					}
+				</hlm-menu>
+			</ng-template>
+		</div>
+
+		<brn-table
+			hlm
+			stickyHeader
+			class="border-border mt-4 block h-[337px] overflow-scroll rounded-md border"
+			[dataSource]="_data()"
+			[displayedColumns]="_brnColumnManager.displayedColumns()"
+			[trackBy]="_trackBy"
+		>
+			<brn-column-def name="name" class="w-40">
+				<hlm-th truncate *brnHeaderDef>Name</hlm-th>
+				<hlm-td truncate *brnCellDef="let element">
+					{{ element.name }}
+				</hlm-td>
+			</brn-column-def>
+			<brn-column-def name="age" class="w-40 justify-end">
+				<hlm-th *brnHeaderDef>Age</hlm-th>
+				<hlm-td class="tabular-nums" *brnCellDef="let element">
+					{{ element.age }}
+				</hlm-td>
+			</brn-column-def>
+			<brn-column-def name="height" class="w-40 justify-end tabular-nums">
+				<hlm-th *brnHeaderDef>Height</hlm-th>
+				<hlm-td *brnCellDef="let element">
+					{{ element.height }}
+				</hlm-td>
+			</brn-column-def>
+		</brn-table>
+		<div
+			class="mt-2 flex items-center justify-between"
+			*brnPaginator="let ctx; totalElements: _totalElements(); pageSize: _pageSize(); onStateChange: _onStateChange"
+		>
+			<span class="text-sm tabular-nums">
+				Showing entries {{ ctx.state().startIndex + 1 }} - {{ ctx.state().endIndex + 1 }} of {{ _totalElements() }}
+			</span>
+			<div class="flex">
+				<select
+					[ngModel]="_pageSize()"
+					(ngModelChange)="_pageSize.set($event)"
+					hlmInput
+					size="sm"
+					class="mr-1 inline-flex pr-8"
+				>
+					@for (size of _availablePageSizes; track size) {
+						<option [value]="size">{{ size === 10000 ? 'All' : size }}</option>
+					}
+				</select>
+
+				<div class="flex space-x-1">
+					<button size="sm" variant="outline" hlmBtn [disabled]="!ctx.decrementable()" (click)="ctx.decrement()">
+						Previous
+					</button>
+					<button size="sm" variant="outline" hlmBtn [disabled]="!ctx.incrementable()" (click)="ctx.increment()">
+						Next
+					</button>
+				</div>
+			</div>
+		</div>
+		<button size="sm" variant="outline" hlmBtn (click)="_loadNewUsers()">Mix it up</button>
+	`,
+})
+class TableStory {
+	private readonly _startEndIndex = signal({ start: 0, end: 0 });
+	protected readonly _availablePageSizes = [10, 20, 50, 100, 10000];
+	protected readonly _pageSize = signal(this._availablePageSizes[0]);
+
+	protected readonly _brnColumnManager = useBrnColumnManager({
+		name: { visible: true, label: 'Name' },
+		age: { visible: false, label: 'Alter' },
+		height: { visible: false, label: 'Größe' },
+	});
+
+	protected readonly _rawFilterInput = signal('');
+	protected readonly _nameFilter = signal('');
+	private readonly _debouncedFilter = toSignal(toObservable(this._rawFilterInput).pipe(debounceTime(300)));
+
+	private readonly _users = signal(createUsers(20));
+	private readonly _filteredUsers = computed(() =>
+		this._users().filter((user) => {
+			const nameFilter = this._nameFilter();
+			return !nameFilter || user.name.toLowerCase().includes(nameFilter.toLowerCase());
+		}),
+	);
+	protected readonly _data = computed(() =>
+		this._filteredUsers().slice(this._startEndIndex().start, this._startEndIndex().end + 1),
+	);
+	protected readonly _trackBy: TrackByFunction<{ name: string }> = (_index: number, user: { name: string }) =>
+		user.name;
+	protected readonly _totalElements = computed(() => this._filteredUsers().length);
+	protected readonly _onStateChange = (state: PaginatorState) => {
+		this._startEndIndex.set({ start: state.startIndex, end: state.endIndex });
+	};
+
+	constructor() {
+		// needed to sync the debounced filter to the name filter, but being able to override the
+		// filter when loading new users without debounce
+		effect(() => {
+			const debouncedFilter = this._debouncedFilter();
+			untracked(() => {
+				this._nameFilter.set(debouncedFilter ?? '');
+			});
+		});
+	}
+
+	protected _loadNewUsers() {
+		this._nameFilter.set('');
+		this._users.set(createUsers(Math.random() * 200));
+	}
+}
+
+@Component({
+	selector: 'table-toggle-story',
+	standalone: true,
+	imports: [FormsModule, BrnTableModule, HlmTableModule, HlmButtonModule, BrnToggleGroupModule, HlmToggleGroupModule],
+	template: `
+		<brn-toggle-group
+			aria-label="Show selected or all "
+			hlm
+			class="mb-2.5 w-full sm:w-fit"
+			[ngModel]="_onlyAbove180()"
+			(ngModelChange)="_setOnlyAbove180($event)"
+		>
+			<button class="w-full sm:w-40" variant="outline" [value]="false" hlm brnToggleGroupItem>All</button>
+			<button class="w-full tabular-nums sm:w-40" variant="outline" [value]="true" hlm brnToggleGroupItem>
+				Above 150
+			</button>
+		</brn-toggle-group>
+		<brn-table
+			hlm
+			stickyHeader
+			class="border-border mt-4 block h-[337px] overflow-scroll rounded-md border"
+			[dataSource]="_data()"
+			[displayedColumns]="_brnColumnManager.displayedColumns()"
+			[trackBy]="_trackBy"
+		>
+			<brn-column-def name="name">
+				<hlm-th truncate class="w-40" *brnHeaderDef>Name</hlm-th>
+				<hlm-td truncate class="w-40" *brnCellDef="let element">
+					{{ element.name }}
+				</hlm-td>
+			</brn-column-def>
+			<brn-column-def name="age">
+				<hlm-th class="w-40 justify-end" *brnHeaderDef>Age</hlm-th>
+				<hlm-td class="w-40 justify-end tabular-nums" *brnCellDef="let element">
+					{{ element.age }}
+				</hlm-td>
+			</brn-column-def>
+			<brn-column-def name="height">
+				<hlm-th class="w-40 justify-end" *brnHeaderDef>Height</hlm-th>
+				<hlm-td class="w-40 justify-end tabular-nums" *brnCellDef="let element">
+					{{ element.height }}
+				</hlm-td>
+			</brn-column-def>
+		</brn-table>
+		<div
+			class="mt-2 flex items-center justify-between"
+			*brnPaginator="let ctx; totalElements: _totalElements(); pageSize: _pageSize(); onStateChange: _onStateChange"
+		>
+			<span class="text-sm tabular-nums">
+				Showing entries {{ ctx.state().startIndex + 1 }} - {{ ctx.state().endIndex + 1 }} of {{ _totalElements() }}
+			</span>
+			<div class="flex">
+				<select
+					[ngModel]="_pageSize()"
+					(ngModelChange)="_pageSize.set($event)"
+					hlmInput
+					size="sm"
+					class="mr-1 inline-flex pr-8"
+				>
+					@for (size of _availablePageSizes; track size) {
+						<option [value]="size">{{ size === 10000 ? 'All' : size }}</option>
+					}
+				</select>
+
+				<div class="flex space-x-1">
+					<button size="sm" variant="outline" hlmBtn [disabled]="!ctx.decrementable()" (click)="ctx.decrement()">
+						Previous
+					</button>
+					<button size="sm" variant="outline" hlmBtn [disabled]="!ctx.incrementable()" (click)="ctx.increment()">
+						Next
+					</button>
+				</div>
+			</div>
+		</div>
+		<button size="sm" variant="outline" hlmBtn (click)="_loadNewUsers()">Mix it up</button>
+	`,
+})
+class TableToggleStory {
+	private readonly _startEndIndex = signal({ start: 0, end: 0 });
+	protected readonly _availablePageSizes = [10, 20, 50, 100, 10000];
+	protected readonly _pageSize = signal(this._availablePageSizes[0]);
+
+	protected readonly _onlyAbove180 = signal<boolean>(false);
+	protected readonly _brnColumnManager = useBrnColumnManager({
+		name: true,
+		age: false,
+		height: true,
+	});
+
+	private readonly _users = signal(createUsers(20));
+	private readonly _filteredUsers = computed(() => {
+		if (this._onlyAbove180()) return this._users().filter((u) => u.height > 180);
+		return this._users();
+	});
+	protected readonly _data = computed(() =>
+		this._filteredUsers().slice(this._startEndIndex().start, this._startEndIndex().end + 1),
+	);
+	protected readonly _trackBy: TrackByFunction<{ name: string }> = (_index: number, user: { name: string }) =>
+		user.name;
+	protected readonly _totalElements = computed(() => this._filteredUsers().length);
+	protected readonly _onStateChange = (state: PaginatorState) => {
+		this._startEndIndex.set({ start: state.startIndex, end: state.endIndex });
+	};
+
+	protected _loadNewUsers() {
+		this._users.set(createUsers(Math.random() * 200));
+	}
+
+	protected _setOnlyAbove180(newVal: boolean) {
+		if (newVal) {
+			this._brnColumnManager.setInvisible('age');
+		} else {
+			this._brnColumnManager.setVisible('age');
+		}
+		this._onlyAbove180.set(newVal);
+	}
+}
+
+@Component({
+	selector: 'table-presentation-only-story',
+	standalone: true,
+	imports: [HlmTableModule],
+	template: `
+		<hlm-table>
+			<hlm-trow>
+				<hlm-th truncate class="w-40">Name</hlm-th>
+				<hlm-th class="w-24 justify-end">Age</hlm-th>
+				<hlm-th class="w-40 justify-center">Height</hlm-th>
+			</hlm-trow>
+			@for (row of _data(); track row) {
+				<hlm-trow>
+					<hlm-td truncate class="w-40">{{ row.name }}</hlm-td>
+					<hlm-td class="w-24 justify-end">{{ row.age }}</hlm-td>
+					<hlm-td class="w-40 justify-center">{{ row.height }}</hlm-td>
+				</hlm-trow>
+			}
+		</hlm-table>
+	`,
+})
+class TablePresentationOnlyStory {
+	protected readonly _data = signal(createUsers(20));
+}
+
+const meta: Meta<HlmTableComponent> = {
+	title: 'Table',
+	component: HlmTableComponent,
+	tags: ['autodocs'],
+	decorators: [
+		moduleMetadata({
+			imports: [TableStory, TableToggleStory],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<HlmTableComponent>;
+
+export const Default: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [TableStory],
+		},
+		template: '<table-story/>',
+	}),
+};
+
+export const PresentationOnly: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [TablePresentationOnlyStory],
+		},
+		template: '<table-presentation-only-story/>',
+	}),
+};
+
+export const Toggle: Story = {
+	render: () => ({
+		template: '<table-toggle-story/>',
+	}),
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/README.md
+```
+# ui-table-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-table-helm` to execute the unit tests.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/eslint.config.js
+```javascript
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/jest.config.ts
+```typescript
+export default {
+	displayName: 'ui-table-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	coverageDirectory: '../../../../coverage/libs/ui/table/helm',
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/ng-package.json
+```json
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/table/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/package.json
+```json
+{
+	"name": "@spartan-ng/ui-table-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/common": ">=19.0.0",
+		"@angular/core": ">=19.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"clsx": "^2.1.1"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/project.json
+```json
+{
+	"name": "ui-table-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/table/helm/src",
+	"prefix": "spartan-ng",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/table/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/table/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/table/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/table/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/tsconfig.lib.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/tsconfig.lib.prod.json
+```json
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/tsconfig.spec.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+
+import { HlmCaptionComponent } from './lib/hlm-caption.component';
+import { HlmTableComponent } from './lib/hlm-table.component';
+import { HlmTableDirective } from './lib/hlm-table.directive';
+import { HlmTdComponent } from './lib/hlm-td.component';
+import { HlmThComponent } from './lib/hlm-th.component';
+import { HlmTrowComponent } from './lib/hlm-trow.component';
+
+export { HlmCaptionComponent } from './lib/hlm-caption.component';
+export { HlmTableComponent } from './lib/hlm-table.component';
+export { HlmTableDirective } from './lib/hlm-table.directive';
+export { HlmTdComponent } from './lib/hlm-td.component';
+export { HlmThComponent } from './lib/hlm-th.component';
+export { HlmTrowComponent } from './lib/hlm-trow.component';
+
+export const HlmTableImports = [
+	HlmTableComponent,
+	HlmTableDirective,
+	HlmCaptionComponent,
+	HlmThComponent,
+	HlmTdComponent,
+	HlmTrowComponent,
+] as const;
+
+@NgModule({
+	imports: [...HlmTableImports],
+	exports: [...HlmTableImports],
+})
+export class HlmTableModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/test-setup.ts
+```typescript
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-caption.component.ts
+```typescript
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ViewEncapsulation,
+	booleanAttribute,
+	computed,
+	effect,
+	inject,
+	input,
+	untracked,
+} from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+import { HlmTableComponent } from './hlm-table.component';
+
+let captionIdSequence = 0;
+
+@Component({
+	selector: 'hlm-caption',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+		'[id]': 'id()',
+	},
+	template: `
+		<ng-content />
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmCaptionComponent {
+	private readonly _table = inject(HlmTableComponent, { optional: true });
+
+	protected readonly id = input<string | null | undefined>(`${captionIdSequence++}`);
+
+	public readonly hidden = input(false, { transform: booleanAttribute });
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'text-center block mt-4 text-sm text-muted-foreground',
+			this.hidden() ? 'sr-only' : 'order-last',
+			this.userClass(),
+		),
+	);
+
+	constructor() {
+		effect(() => {
+			const id = this.id();
+			untracked(() => {
+				if (!this._table) return;
+				this._table.labeledBy.set(id);
+			});
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-table.component.ts
+```typescript
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ViewEncapsulation,
+	computed,
+	effect,
+	input,
+	signal,
+	untracked,
+} from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-table',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+		role: 'table',
+		'[attr.aria-labelledby]': 'labeledBy()',
+	},
+	template: `
+		<ng-content />
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmTableComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex flex-col text-sm [&_hlm-trow:last-child]:border-0', this.userClass()),
+	);
+
+	// we aria-labelledby to be settable from outside but use the input by default.
+	public readonly _labeledByInput = input<string | null | undefined>(undefined, { alias: 'aria-labelledby' });
+	public readonly labeledBy = signal<string | null | undefined>(undefined);
+
+	constructor() {
+		effect(() => {
+			const labeledBy = this._labeledByInput();
+			untracked(() => {
+				this.labeledBy.set(labeledBy);
+			});
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-table.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+import { injectTableClassesSettable } from '@spartan-ng/brain/core';
+
+@Directive({ standalone: true, selector: '[hlmTable],brn-table[hlm]' })
+export class HlmTableDirective {
+	private readonly _tableClassesSettable = injectTableClassesSettable({ host: true, optional: true });
+
+	constructor() {
+		this._tableClassesSettable?.setTableClasses({
+			table: 'flex flex-col text-sm [&_cdk-row:last-child]:border-0',
+			headerRow:
+				'flex min-w-[100%] w-fit border-b border-border [&.cdk-table-sticky]:bg-background ' +
+				'[&.cdk-table-sticky>*]:z-[101] [&.cdk-table-sticky]:before:z-0 [&.cdk-table-sticky]:before:block [&.cdk-table-sticky]:hover:before:bg-muted/50 [&.cdk-table-sticky]:before:absolute [&.cdk-table-sticky]:before:inset-0',
+			bodyRow:
+				'flex min-w-[100%] w-fit border-b border-border transition-[background-color] hover:bg-muted/50 [&:has([role=checkbox][aria-checked=true])]:bg-muted',
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-td.component.ts
+```typescript
+import { NgTemplateOutlet } from '@angular/common';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ViewEncapsulation,
+	booleanAttribute,
+	computed,
+	inject,
+	input,
+} from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnColumnDefComponent } from '@spartan-ng/brain/table';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-td',
+	imports: [NgTemplateOutlet],
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: `
+		<ng-template #content>
+			<ng-content />
+		</ng-template>
+		@if (truncate()) {
+			<span class="flex-1 truncate">
+				<ng-container [ngTemplateOutlet]="content" />
+			</span>
+		} @else {
+			<ng-container [ngTemplateOutlet]="content" />
+		}
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmTdComponent {
+	private readonly _columnDef? = inject(BrnColumnDefComponent, { optional: true });
+	public readonly truncate = input(false, { transform: booleanAttribute });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex flex-none p-4 items-center [&:has([role=checkbox])]:pr-0', this._columnDef?.class(), this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-th.component.ts
+```typescript
+import { NgTemplateOutlet } from '@angular/common';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ViewEncapsulation,
+	booleanAttribute,
+	computed,
+	inject,
+	input,
+} from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnColumnDefComponent } from '@spartan-ng/brain/table';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-th',
+	imports: [NgTemplateOutlet],
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: `
+		<ng-template #content>
+			<ng-content />
+		</ng-template>
+		@if (truncate()) {
+			<span class="flex-1 truncate">
+				<ng-container [ngTemplateOutlet]="content" />
+			</span>
+		} @else {
+			<ng-container [ngTemplateOutlet]="content" />
+		}
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmThComponent {
+	private readonly _columnDef? = inject(BrnColumnDefComponent, { optional: true });
+	public readonly truncate = input(false, { transform: booleanAttribute });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'flex flex-none h-12 px-4 text-sm items-center font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
+			this._columnDef?.class(),
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/table/helm/src/lib/hlm-trow.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-trow',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+		role: 'row',
+	},
+	template: `
+		<ng-content />
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmTrowComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'flex flex border-b border-border transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted',
+			this.userClass(),
+		),
+	);
+}
+
+```

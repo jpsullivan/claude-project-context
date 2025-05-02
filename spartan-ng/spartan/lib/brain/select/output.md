@@ -1,0 +1,2665 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/README.md
+```
+# @spartan-ng/brain/select
+
+Secondary entry point of `@spartan-ng/brain`. It can be used by importing from `@spartan-ng/brain/select`.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/ng-package.json
+```json
+{
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+import {
+	BrnSelectContentComponent,
+	BrnSelectScrollDownDirective,
+	BrnSelectScrollUpDirective,
+} from './lib/brn-select-content.component';
+import { BrnSelectGroupDirective } from './lib/brn-select-group.directive';
+import { BrnSelectLabelDirective } from './lib/brn-select-label.directive';
+import { BrnSelectOptionDirective } from './lib/brn-select-option.directive';
+import { BrnSelectPlaceholderDirective } from './lib/brn-select-placeholder.directive';
+import { BrnSelectTriggerDirective } from './lib/brn-select-trigger.directive';
+import { BrnSelectValueComponent } from './lib/brn-select-value.component';
+import { BrnSelectValueDirective } from './lib/brn-select-value.directive';
+import { BrnSelectComponent } from './lib/brn-select.component';
+export * from './lib/brn-select-content.component';
+export * from './lib/brn-select-group.directive';
+export * from './lib/brn-select-label.directive';
+export * from './lib/brn-select-option.directive';
+export * from './lib/brn-select-placeholder.directive';
+export * from './lib/brn-select-trigger.directive';
+export * from './lib/brn-select-value.component';
+export * from './lib/brn-select-value.directive';
+export * from './lib/brn-select.component';
+
+export const BrnSelectImports = [
+	BrnSelectComponent,
+	BrnSelectContentComponent,
+	BrnSelectTriggerDirective,
+	BrnSelectOptionDirective,
+	BrnSelectValueComponent,
+	BrnSelectScrollDownDirective,
+	BrnSelectScrollUpDirective,
+	BrnSelectGroupDirective,
+	BrnSelectLabelDirective,
+	BrnSelectValueDirective,
+	BrnSelectPlaceholderDirective,
+] as const;
+
+@NgModule({
+	imports: [...BrnSelectImports],
+	exports: [...BrnSelectImports],
+})
+export class BrnSelectModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-content.component.ts
+```typescript
+import { NgTemplateOutlet } from '@angular/common';
+import {
+	AfterContentInit,
+	ChangeDetectionStrategy,
+	Component,
+	DestroyRef,
+	ElementRef,
+	Injector,
+	afterNextRender,
+	contentChild,
+	contentChildren,
+	effect,
+	inject,
+	signal,
+	untracked,
+	viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BrnSelectOptionDirective } from './brn-select-option.directive';
+
+import { ActiveDescendantKeyManager } from '@angular/cdk/a11y';
+import { Directive } from '@angular/core';
+import { Subject, fromEvent, interval } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { provideBrnSelectContent } from './brn-select-content.token';
+import { injectBrnSelect } from './brn-select.token';
+
+const SCROLLBY_PIXELS = 100;
+
+@Directive({
+	selector: '[brnSelectScrollUp], brn-select-scroll-up, hlm-select-scroll-up:not(noHlm)',
+	standalone: true,
+	host: {
+		'aria-hidden': 'true',
+		'(mouseenter)': 'startEmittingEvents()',
+	},
+})
+export class BrnSelectScrollUpDirective {
+	private readonly _el = inject(ElementRef);
+	private readonly _selectContent = inject(BrnSelectContentComponent);
+
+	private readonly _endReached = new Subject<boolean>();
+	private readonly _destroyRef = inject(DestroyRef);
+
+	public startEmittingEvents(): void {
+		const mouseLeave$ = fromEvent(this._el.nativeElement, 'mouseleave');
+
+		interval(100)
+			.pipe(takeUntil(mouseLeave$), takeUntil(this._endReached), takeUntilDestroyed(this._destroyRef))
+			.subscribe(() => this._selectContent.moveFocusUp());
+	}
+
+	public stopEmittingEvents(): void {
+		this._endReached.next(true);
+	}
+}
+
+@Directive({
+	selector: '[brnSelectScrollDown], brn-select-scroll-down, hlm-select-scroll-down:not(noHlm)',
+	standalone: true,
+	host: {
+		'aria-hidden': 'true',
+		'(mouseenter)': 'startEmittingEvents()',
+	},
+})
+export class BrnSelectScrollDownDirective {
+	private readonly _el = inject(ElementRef);
+	private readonly _selectContent = inject(BrnSelectContentComponent);
+
+	private readonly _endReached = new Subject<boolean>();
+	private readonly _destroyRef = inject(DestroyRef);
+
+	public startEmittingEvents(): void {
+		const mouseLeave$ = fromEvent(this._el.nativeElement, 'mouseleave');
+
+		interval(100)
+			.pipe(takeUntil(mouseLeave$), takeUntil(this._endReached), takeUntilDestroyed(this._destroyRef))
+			.subscribe(() => this._selectContent.moveFocusDown());
+	}
+
+	public stopEmittingEvents(): void {
+		this._endReached.next(true);
+	}
+}
+
+@Component({
+	selector: 'brn-select-content, hlm-select-content:not(noHlm)',
+	imports: [NgTemplateOutlet],
+	providers: [provideBrnSelectContent(BrnSelectContentComponent)],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		role: 'listbox',
+		tabindex: '0',
+		'[attr.aria-multiselectable]': '_select.multiple()',
+		'[attr.aria-disabled]': '_select.disabled() || _select._formDisabled()',
+		'aria-orientation': 'vertical',
+		'[attr.aria-activedescendant]': 'keyManager?.activeItem?.id()',
+		'[attr.aria-labelledBy]': '_select.labelId()',
+		'[attr.aria-controlledBy]': "_select.id() +'--trigger'",
+		'[id]': "_select.id() + '--content'",
+		'[attr.dir]': '_select.dir()',
+		'(keydown)': 'keyManager?.onKeydown($event)',
+		'(keydown.enter)': 'selectActiveItem($event)',
+		'(keydown.space)': 'selectActiveItem($event)',
+	},
+	styles: [
+		`
+			:host {
+				display: flex;
+				box-sizing: border-box;
+				flex-direction: column;
+				outline: none;
+				pointer-events: auto;
+			}
+
+			[data-brn-select-viewport] {
+				scrollbar-width: none;
+				-ms-overflow-style: none;
+				-webkit-overflow-scrolling: touch;
+			}
+
+			[data-brn-select-viewport]::-webkit-scrollbar {
+				display: none;
+			}
+		`,
+	],
+	template: `
+		<ng-template #scrollUp>
+			<ng-content select="hlm-select-scroll-up" />
+			<ng-content select="brnSelectScrollUp" />
+		</ng-template>
+		<ng-container *ngTemplateOutlet="canScrollUp() && scrollUpBtn() ? scrollUp : null" />
+		<div
+			data-brn-select-viewport
+			#viewport
+			(scroll)="handleScroll()"
+			style="flex: 1 1 0%;
+			position: relative;
+			width:100%;
+			overflow:auto;
+			min-height: 36px;
+      padding-bottom: 2px;
+      margin-bottom: -2px;"
+		>
+			<ng-content />
+		</div>
+		<ng-template #scrollDown>
+			<ng-content select="brnSelectScrollDown" />
+			<ng-content select="hlm-select-scroll-down" />
+		</ng-template>
+		<ng-container *ngTemplateOutlet="canScrollDown() && scrollDownBtn() ? scrollDown : null" />
+	`,
+})
+export class BrnSelectContentComponent<T> implements AfterContentInit {
+	private readonly _elementRef: ElementRef<HTMLElement> = inject(ElementRef);
+	private readonly _injector = inject(Injector);
+	protected readonly _select = injectBrnSelect<T>();
+	protected readonly canScrollUp = signal(false);
+	protected readonly canScrollDown = signal(false);
+	protected readonly viewport = viewChild.required<ElementRef<HTMLElement>>('viewport');
+	protected readonly scrollUpBtn = contentChild(BrnSelectScrollUpDirective);
+	protected readonly scrollDownBtn = contentChild(BrnSelectScrollDownDirective);
+	private readonly _options = contentChildren(BrnSelectOptionDirective, { descendants: true });
+
+	/** @internal */
+	public keyManager: ActiveDescendantKeyManager<BrnSelectOptionDirective<T>> | null = null;
+
+	constructor() {
+		effect(() => {
+			this._select.open() && afterNextRender(() => this.updateArrowDisplay(), { injector: this._injector });
+		});
+	}
+
+	ngAfterContentInit(): void {
+		this.keyManager = new ActiveDescendantKeyManager(this._options, this._injector)
+			.withHomeAndEnd()
+			.withVerticalOrientation()
+			.withTypeAhead()
+			.withAllowedModifierKeys(['shiftKey'])
+			.withWrap()
+			.skipPredicate((option) => option._disabled());
+
+		effect(
+			() => {
+				// any time the select is opened, we need to focus the first selected option or the first option
+				const open = this._select.open();
+				const options = this._options();
+
+				if (!open || !options.length) {
+					return;
+				}
+
+				untracked(() => {
+					const selectedOption = options.find((option) => option.selected());
+
+					if (selectedOption) {
+						this.keyManager?.setActiveItem(selectedOption);
+					} else {
+						this.keyManager?.setFirstItemActive();
+					}
+				});
+			},
+			{ injector: this._injector },
+		);
+	}
+
+	public updateArrowDisplay(): void {
+		const { scrollTop, scrollHeight, clientHeight } = this.viewport().nativeElement;
+		this.canScrollUp.set(scrollTop > 0);
+		const maxScroll = scrollHeight - clientHeight;
+		this.canScrollDown.set(Math.ceil(scrollTop) < maxScroll);
+	}
+
+	public handleScroll(): void {
+		this.updateArrowDisplay();
+	}
+
+	public focusList(): void {
+		this._elementRef.nativeElement.focus();
+	}
+
+	public moveFocusUp(): void {
+		this.viewport().nativeElement.scrollBy({ top: -SCROLLBY_PIXELS, behavior: 'smooth' });
+		if (this.viewport().nativeElement.scrollTop === 0) {
+			this.scrollUpBtn()?.stopEmittingEvents();
+		}
+	}
+
+	public moveFocusDown(): void {
+		this.viewport().nativeElement.scrollBy({ top: SCROLLBY_PIXELS, behavior: 'smooth' });
+		const viewportSize = this._elementRef.nativeElement.scrollHeight;
+		const viewportScrollPosition = this.viewport().nativeElement.scrollTop;
+		if (
+			viewportSize + viewportScrollPosition + SCROLLBY_PIXELS >
+			this.viewport().nativeElement.scrollHeight + SCROLLBY_PIXELS / 2
+		) {
+			this.scrollDownBtn()?.stopEmittingEvents();
+		}
+	}
+
+	setActiveOption(option: BrnSelectOptionDirective<T>): void {
+		const index = this._options().findIndex((o) => o === option);
+
+		if (index === -1) {
+			return;
+		}
+
+		this.keyManager?.setActiveItem(index);
+	}
+
+	protected selectActiveItem(event: KeyboardEvent): void {
+		event.preventDefault();
+
+		const activeOption = this.keyManager?.activeItem;
+
+		if (activeOption) {
+			this._select.selectOption(activeOption.value()!);
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-content.token.ts
+```typescript
+import { ExistingProvider, inject, InjectionToken, Type } from '@angular/core';
+import type { BrnSelectContentComponent } from './brn-select-content.component';
+
+const BrnSelectContentToken = new InjectionToken<BrnSelectContentComponent<unknown>>('BrnSelectContentToken');
+
+export function injectBrnSelectContent<T>(): BrnSelectContentComponent<T> {
+	return inject(BrnSelectContentToken) as BrnSelectContentComponent<T>;
+}
+
+export function provideBrnSelectContent(select: Type<BrnSelectContentComponent<unknown>>): ExistingProvider {
+	return { provide: BrnSelectContentToken, useExisting: select };
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-group.directive.ts
+```typescript
+import { Directive, signal } from '@angular/core';
+
+@Directive({
+	selector: '[brnSelectGroup]',
+	standalone: true,
+	host: {
+		role: 'group',
+		'[attr.aria-labelledby]': 'labelledBy()',
+	},
+})
+export class BrnSelectGroupDirective {
+	public readonly labelledBy = signal('');
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-label.directive.ts
+```typescript
+import { Directive, inject } from '@angular/core';
+import { BrnLabelDirective } from '@spartan-ng/brain/label';
+import { BrnSelectGroupDirective } from './brn-select-group.directive';
+
+@Directive({
+	selector: '[brnSelectLabel]',
+	hostDirectives: [BrnLabelDirective],
+	standalone: true,
+})
+export class BrnSelectLabelDirective {
+	private readonly _group = inject(BrnSelectGroupDirective, { optional: true });
+	private readonly _label = inject(BrnLabelDirective, { host: true });
+
+	constructor() {
+		this._group?.labelledBy.set(this._label.id());
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-option.directive.ts
+```typescript
+import type { Highlightable } from '@angular/cdk/a11y';
+import { BooleanInput } from '@angular/cdk/coercion';
+import { booleanAttribute, computed, Directive, ElementRef, inject, input, signal } from '@angular/core';
+import { injectBrnSelectContent } from './brn-select-content.token';
+import { injectBrnSelect } from './brn-select.token';
+
+let nextId = 0;
+
+@Directive({
+	selector: '[brnOption]',
+	standalone: true,
+	host: {
+		role: 'option',
+		'[id]': 'id()',
+		'[attr.aria-selected]': 'selected()',
+		'[attr.aria-disabled]': '_disabled()',
+		'(click)': 'select()',
+		'[attr.dir]': '_select.dir()',
+		'[attr.data-active]': "_active() ? '' : undefined",
+		'[attr.data-disabled]': "_disabled() ? '' : undefined",
+		'(mouseenter)': 'activate()',
+	},
+})
+export class BrnSelectOptionDirective<T> implements Highlightable {
+	protected readonly _select = injectBrnSelect();
+	protected readonly _content = injectBrnSelectContent<T>();
+	public readonly elementRef = inject(ElementRef);
+	public readonly id = input(`brn-option-${nextId++}`);
+	public readonly value = input<T>();
+
+	// we use "_disabled" here because disabled is already defined in the Highlightable interface
+	public readonly _disabled = input<boolean, BooleanInput>(false, {
+		alias: 'disabled',
+		transform: booleanAttribute,
+	});
+
+	public get disabled(): boolean {
+		return this._disabled();
+	}
+
+	public readonly selected = computed(() => this.value() !== undefined && this._select.isSelected(this.value()));
+	protected readonly _active = signal(false);
+	public readonly checkedState = computed(() => (this.selected() ? 'checked' : 'unchecked'));
+	public readonly dir = this._select.dir;
+
+	public select(): void {
+		if (this._disabled()) {
+			return;
+		}
+
+		if (this._select.multiple()) {
+			this._select.toggleSelect(this.value());
+			return;
+		}
+
+		this._select.selectOption(this.value());
+	}
+
+	/** Get the label for this element which is required by the FocusableOption interface. */
+	getLabel(): string {
+		return this.elementRef.nativeElement.textContent?.trim() ?? '';
+	}
+
+	setActiveStyles(): void {
+		this._active.set(true);
+
+		// scroll the option into view if it is not visible
+		this.elementRef.nativeElement.scrollIntoView({ block: 'nearest' });
+	}
+
+	setInactiveStyles(): void {
+		this._active.set(false);
+	}
+
+	protected activate(): void {
+		if (this._disabled()) {
+			return;
+		}
+		this._content.setActiveOption(this);
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-placeholder.directive.ts
+```typescript
+import { Directive, inject, TemplateRef } from '@angular/core';
+
+@Directive({
+	standalone: true,
+	selector: '[brnSelectPlaceholder], [hlmSelectPlaceholder]',
+})
+export class BrnSelectPlaceholderDirective {
+	/** @internale */
+	public readonly templateRef = inject<TemplateRef<void>>(TemplateRef);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-trigger.directive.ts
+```typescript
+import { isPlatformBrowser } from '@angular/common';
+import { type AfterViewInit, Directive, ElementRef, OnDestroy, PLATFORM_ID, computed, inject } from '@angular/core';
+import { NgControl } from '@angular/forms';
+import { injectBrnSelect } from './brn-select.token';
+
+@Directive({
+	selector: '[brnSelectTrigger]',
+	standalone: true,
+	host: {
+		type: 'button',
+		role: 'combobox',
+		'[attr.id]': '_triggerId()',
+		'[disabled]': '_disabled()',
+		'[attr.aria-expanded]': '_select.open()',
+		'[attr.aria-controls]': '_contentId()',
+		'[attr.aria-labelledBy]': '_labelledBy()',
+		'aria-autocomplete': 'none',
+		'[attr.dir]': '_select.dir()',
+		'[class.ng-invalid]': '_ngControl?.invalid || null',
+		'[class.ng-dirty]': '_ngControl?.dirty || null',
+		'[class.ng-valid]': '_ngControl?.valid || null',
+		'[class.ng-touched]': '_ngControl?.touched || null',
+		'[class.ng-untouched]': '_ngControl?.untouched || null',
+		'[class.ng-pristine]': '_ngControl?.pristine || null',
+		'(keydown.ArrowDown)': '_select.show()',
+	},
+})
+export class BrnSelectTriggerDirective<T> implements AfterViewInit, OnDestroy {
+	private readonly _elementRef = inject(ElementRef);
+	protected readonly _select = injectBrnSelect<T>();
+	protected readonly _ngControl = inject(NgControl, { optional: true });
+	private readonly _platform = inject(PLATFORM_ID);
+	protected readonly _triggerId = computed(() => `${this._select.id()}--trigger`);
+	protected readonly _contentId = computed(() => `${this._select.id()}--content`);
+	protected readonly _disabled = computed(() => this._select.disabled() || this._select._formDisabled());
+	protected readonly _labelledBy = computed(() => {
+		const value = this._select.value();
+
+		if (Array.isArray(value) && value.length > 0) {
+			return `${this._select.labelId()} ${this._select.id()}--value`;
+		}
+		return this._select.labelId();
+	});
+
+	private _resizeObserver?: ResizeObserver;
+
+	constructor() {
+		this._select.trigger.set(this);
+	}
+
+	ngAfterViewInit() {
+		this._select.triggerWidth.set(this._elementRef.nativeElement.offsetWidth);
+
+		// if we are on the client, listen for element resize events
+		if (isPlatformBrowser(this._platform)) {
+			this._resizeObserver = new ResizeObserver(() =>
+				this._select.triggerWidth.set(this._elementRef.nativeElement.offsetWidth),
+			);
+
+			this._resizeObserver.observe(this._elementRef.nativeElement);
+		}
+	}
+
+	ngOnDestroy(): void {
+		this._resizeObserver?.disconnect();
+	}
+
+	focus(): void {
+		this._elementRef.nativeElement.focus();
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-value.component.ts
+```typescript
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, contentChild, input } from '@angular/core';
+import { BrnSelectPlaceholderDirective } from './brn-select-placeholder.directive';
+import { BrnSelectValueDirective } from './brn-select-value.directive';
+import { injectBrnSelect } from './brn-select.token';
+
+@Component({
+	selector: 'brn-select-value, hlm-select-value',
+	imports: [NgTemplateOutlet],
+	template: `
+		@if (_showPlaceholder()) {
+			<ng-container [ngTemplateOutlet]="customPlaceholderTemplate()?.templateRef ?? defaultPlaceholderTemplate" />
+		} @else {
+			<ng-container
+				[ngTemplateOutlet]="customValueTemplate()?.templateRef ?? defaultValueTemplate"
+				[ngTemplateOutletContext]="{ $implicit: _select.value() }"
+			/>
+		}
+
+		<ng-template #defaultValueTemplate>{{ value() }}</ng-template>
+		<ng-template #defaultPlaceholderTemplate>{{ placeholder() }}</ng-template>
+	`,
+	host: {
+		'[id]': 'id()',
+		'[attr.data-placeholder]': '_showPlaceholder() ? "" : null',
+	},
+	styles: [
+		`
+			:host {
+				display: -webkit-box;
+				-webkit-box-orient: vertical;
+				-webkit-line-clamp: 1;
+				white-space: nowrap;
+				pointer-events: none;
+			}
+		`,
+	],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class BrnSelectValueComponent<T> {
+	protected readonly _select = injectBrnSelect<T>();
+	public readonly id = computed(() => `${this._select.id()}--value`);
+	public readonly placeholder = computed(() => this._select.placeholder());
+
+	protected readonly _showPlaceholder = computed(
+		() => this.value() === null || this.value() === undefined || this.value() === '',
+	);
+
+	/** Allow a custom value template */
+	protected readonly customValueTemplate = contentChild(BrnSelectValueDirective, { descendants: true });
+	protected readonly customPlaceholderTemplate = contentChild(BrnSelectPlaceholderDirective, { descendants: true });
+
+	protected readonly value = computed(() => {
+		const value = this._values();
+
+		if (value.length === 0) {
+			return null;
+		}
+
+		// remove any selected values that are not in the options list
+		const existingOptions = value.filter((val) =>
+			this._select.options().some((option) => this._select.compareWith()(option.value(), val)),
+		);
+		const selectedOption = existingOptions.map((val) =>
+			this._select.options().find((option) => this._select.compareWith()(option.value(), val)),
+		);
+
+		if (selectedOption.length === 0) {
+			return null;
+		}
+
+		const selectedLabels = selectedOption.map((option) => option?.getLabel());
+
+		if (this._select.dir() === 'rtl') {
+			selectedLabels.reverse();
+		}
+		return this.transformFn()(selectedLabels);
+	});
+
+	/** Normalize the values as an array */
+	protected readonly _values = computed(() =>
+		Array.isArray(this._select.value()) ? (this._select.value() as T[]) : ([this._select.value()] as T[]),
+	);
+
+	public readonly transformFn = input<(values: (string | undefined)[]) => any>((values) => (values ?? []).join(', '));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select-value.directive.ts
+```typescript
+import { Directive, inject, TemplateRef } from '@angular/core';
+
+@Directive({
+	standalone: true,
+	selector: '[brnSelectValue], [hlmSelectValue]',
+})
+export class BrnSelectValueDirective<T> {
+	/** @internale */
+	public readonly templateRef = inject<TemplateRef<BrnSelectValueContext<T>>>(TemplateRef);
+}
+
+export interface BrnSelectValueContext<T> {
+	$implicit: T | T[];
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select.component.ts
+```typescript
+import { BooleanInput, NumberInput } from '@angular/cdk/coercion';
+import { CdkListboxModule } from '@angular/cdk/listbox';
+import {
+	CdkConnectedOverlay,
+	type ConnectedOverlayPositionChange,
+	type ConnectedPosition,
+	OverlayModule,
+} from '@angular/cdk/overlay';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	type DoCheck,
+	Injector,
+	type Signal,
+	afterNextRender,
+	booleanAttribute,
+	computed,
+	contentChild,
+	contentChildren,
+	inject,
+	input,
+	model,
+	numberAttribute,
+	signal,
+	viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { type ControlValueAccessor, FormGroupDirective, NgControl, NgForm } from '@angular/forms';
+import {
+	type ExposesSide,
+	type ExposesState,
+	provideExposedSideProviderExisting,
+	provideExposesStateProviderExisting,
+} from '@spartan-ng/brain/core';
+import { BrnFormFieldControl } from '@spartan-ng/brain/form-field';
+import { ChangeFn, ErrorStateMatcher, ErrorStateTracker, TouchFn } from '@spartan-ng/brain/forms';
+import { BrnLabelDirective } from '@spartan-ng/brain/label';
+import { Subject, of } from 'rxjs';
+import { delay, map, switchMap } from 'rxjs/operators';
+import { BrnSelectContentComponent } from './brn-select-content.component';
+import { BrnSelectOptionDirective } from './brn-select-option.directive';
+import { BrnSelectTriggerDirective } from './brn-select-trigger.directive';
+import { provideBrnSelect } from './brn-select.token';
+
+export type BrnReadDirection = 'ltr' | 'rtl';
+
+let nextId = 0;
+
+@Component({
+	selector: 'brn-select, hlm-select',
+	imports: [OverlayModule, CdkListboxModule],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	providers: [
+		provideExposedSideProviderExisting(() => BrnSelectComponent),
+		provideExposesStateProviderExisting(() => BrnSelectComponent),
+		provideBrnSelect(BrnSelectComponent),
+		{
+			provide: BrnFormFieldControl,
+			useExisting: BrnSelectComponent,
+		},
+	],
+	template: `
+		@if (!selectLabel() && placeholder()) {
+			<label class="hidden" [attr.id]="labelId()">{{ placeholder() }}</label>
+		} @else {
+			<ng-content select="label[hlmLabel],label[brnLabel]" />
+		}
+
+		<div cdk-overlay-origin (click)="toggle()" #trigger="cdkOverlayOrigin">
+			<ng-content select="hlm-select-trigger,[brnSelectTrigger]" />
+		</div>
+
+		<ng-template
+			cdk-connected-overlay
+			cdkConnectedOverlayLockPosition
+			cdkConnectedOverlayHasBackdrop
+			cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+			[cdkConnectedOverlayOrigin]="trigger"
+			[cdkConnectedOverlayOpen]="_delayedExpanded()"
+			[cdkConnectedOverlayPositions]="_positions"
+			[cdkConnectedOverlayWidth]="triggerWidth() > 0 ? triggerWidth() : 'auto'"
+			(backdropClick)="hide()"
+			(detach)="hide()"
+			(positionChange)="_positionChanges$.next($event)"
+		>
+			<ng-content />
+		</ng-template>
+	`,
+})
+export class BrnSelectComponent<T = unknown>
+	implements ControlValueAccessor, DoCheck, ExposesSide, ExposesState, BrnFormFieldControl
+{
+	private readonly _defaultErrorStateMatcher = inject(ErrorStateMatcher);
+	private readonly _parentForm = inject(NgForm, { optional: true });
+	private readonly _injector = inject(Injector);
+	private readonly _parentFormGroup = inject(FormGroupDirective, { optional: true });
+	public readonly ngControl = inject(NgControl, { optional: true, self: true });
+
+	public readonly id = input<string>(`brn-select-${nextId++}`);
+	public readonly multiple = input<boolean, BooleanInput>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly placeholder = input<string>('');
+	public readonly disabled = input<boolean, BooleanInput>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly dir = input<BrnReadDirection>('ltr');
+	public readonly closeDelay = input<number, NumberInput>(100, {
+		transform: numberAttribute,
+	});
+
+	public readonly open = model<boolean>(false);
+	public readonly value = model<T | T[]>();
+	public readonly compareWith = input<(o1: T, o2: T) => boolean>((o1, o2) => o1 === o2);
+	public readonly _formDisabled = signal(false);
+
+	/** Label provided by the consumer. */
+	protected readonly selectLabel = contentChild(BrnLabelDirective, { descendants: false });
+
+	/** Overlay pane containing the options. */
+	protected readonly selectContent = contentChild.required(BrnSelectContentComponent);
+
+	/** @internal */
+	public readonly options = contentChildren(BrnSelectOptionDirective, { descendants: true });
+
+	/** @internal Derive the selected options to filter out the unselected options */
+	public readonly selectedOptions = computed(() => this.options().filter((option) => option.selected()));
+
+	/** Overlay pane containing the options. */
+	protected readonly _overlayDir = viewChild.required(CdkConnectedOverlay);
+	public readonly trigger = signal<BrnSelectTriggerDirective<T> | null>(null);
+	public readonly triggerWidth = signal<number>(0);
+
+	protected readonly _delayedExpanded = toSignal(
+		toObservable(this.open).pipe(
+			switchMap((expanded) => (!expanded ? of(expanded).pipe(delay(this.closeDelay())) : of(expanded))),
+			takeUntilDestroyed(),
+		),
+		{ initialValue: false },
+	);
+
+	public readonly state = computed(() => (this.open() ? 'open' : 'closed'));
+
+	protected readonly _positionChanges$ = new Subject<ConnectedOverlayPositionChange>();
+
+	public readonly side: Signal<'top' | 'bottom' | 'left' | 'right'> = toSignal(
+		this._positionChanges$.pipe(
+			map<ConnectedOverlayPositionChange, 'top' | 'bottom' | 'left' | 'right'>((change) =>
+				// todo: better translation or adjusting hlm to take that into account
+				change.connectionPair.originY === 'center'
+					? change.connectionPair.originX === 'start'
+						? 'left'
+						: 'right'
+					: change.connectionPair.originY,
+			),
+		),
+		{ initialValue: 'bottom' },
+	);
+
+	public readonly labelId = computed(() => this.selectLabel()?.id ?? `${this.id()}--label`);
+
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	private _onChange: ChangeFn<T | T[]> = () => {};
+	// eslint-disable-next-line @typescript-eslint/no-empty-function
+	private _onTouched: TouchFn = () => {};
+
+	/*
+	 * This position config ensures that the top "start" corner of the overlay
+	 * is aligned with with the top "start" of the origin by default (overlapping
+	 * the trigger completely). If the panel cannot fit below the trigger, it
+	 * will fall back to a position above the trigger.
+	 */
+	protected _positions: ConnectedPosition[] = [
+		{
+			originX: 'start',
+			originY: 'bottom',
+			overlayX: 'start',
+			overlayY: 'top',
+		},
+		{
+			originX: 'end',
+			originY: 'bottom',
+			overlayX: 'end',
+			overlayY: 'top',
+		},
+		{
+			originX: 'start',
+			originY: 'top',
+			overlayX: 'start',
+			overlayY: 'bottom',
+		},
+		{
+			originX: 'end',
+			originY: 'top',
+			overlayX: 'end',
+			overlayY: 'bottom',
+		},
+	];
+
+	public errorStateTracker: ErrorStateTracker;
+
+	public readonly errorState = computed(() => this.errorStateTracker.errorState());
+
+	constructor() {
+		if (this.ngControl !== null) {
+			this.ngControl.valueAccessor = this;
+		}
+
+		this.errorStateTracker = new ErrorStateTracker(
+			this._defaultErrorStateMatcher,
+			this.ngControl,
+			this._parentFormGroup,
+			this._parentForm,
+		);
+	}
+
+	ngDoCheck() {
+		this.errorStateTracker.updateErrorState();
+	}
+
+	public toggle(): void {
+		if (this.open()) {
+			this.hide();
+		} else {
+			this.show();
+		}
+	}
+
+	public show(): void {
+		if (this.open() || this.disabled() || this._formDisabled() || this.options()?.length == 0) {
+			return;
+		}
+
+		this.open.set(true);
+		afterNextRender(() => this.selectContent().focusList(), { injector: this._injector });
+	}
+
+	public hide(): void {
+		if (!this.open()) return;
+
+		this.open.set(false);
+		this._onTouched();
+
+		// restore focus to the trigger
+		this.trigger()?.focus();
+	}
+
+	public writeValue(value: T): void {
+		this.value.set(value);
+	}
+
+	public registerOnChange(fn: ChangeFn<T | T[]>): void {
+		this._onChange = fn;
+	}
+
+	public registerOnTouched(fn: TouchFn): void {
+		this._onTouched = fn;
+	}
+
+	public setDisabledState(isDisabled: boolean) {
+		this._formDisabled.set(isDisabled);
+	}
+
+	selectOption(value: T): void {
+		// if this is a multiple select we need to add the value to the array
+		if (this.multiple()) {
+			const currentValue = this.value() as T[];
+			const newValue = currentValue ? [...currentValue, value] : [value];
+			this.value.set(newValue);
+		} else {
+			this.value.set(value);
+		}
+
+		this._onChange?.(this.value() as T | T[]);
+
+		// if this is single select close the dropdown
+		if (!this.multiple()) {
+			this.hide();
+		}
+	}
+
+	deselectOption(value: T): void {
+		if (this.multiple()) {
+			const currentValue = this.value() as T[];
+			this.value.set(currentValue.filter((val) => !this.compareWith()(val, value)));
+		} else {
+			this.value.set(null as T);
+		}
+
+		this._onChange?.(this.value() as T | T[]);
+	}
+
+	toggleSelect(value: T): void {
+		if (this.isSelected(value)) {
+			this.deselectOption(value);
+		} else {
+			this.selectOption(value);
+		}
+	}
+
+	isSelected(value: T): boolean {
+		const selection = this.value();
+
+		if (Array.isArray(selection)) {
+			return selection.some((val) => this.compareWith()(val, value));
+		} else if (value !== undefined) {
+			return this.compareWith()(selection as T, value);
+		}
+
+		return false;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/brn-select.token.ts
+```typescript
+import { ExistingProvider, inject, InjectionToken, Type } from '@angular/core';
+import type { BrnSelectComponent } from './brn-select.component';
+
+const BrnSelectToken = new InjectionToken<BrnSelectComponent>('BrnSelectToken');
+
+export function injectBrnSelect<T>(): BrnSelectComponent<T> {
+	return inject(BrnSelectToken) as BrnSelectComponent<T>;
+}
+
+export function provideBrnSelect(select: Type<BrnSelectComponent>): ExistingProvider {
+	return { provide: BrnSelectToken, useExisting: select };
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/brn-select.component.numbers.spec.ts
+```typescript
+import { signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { BrnSelectImports } from '../../index';
+
+describe('BrnSelectComponent NumberValues', () => {
+	beforeAll(() => {
+		global.ResizeObserver = jest.fn().mockImplementation(() => ({
+			observe: jest.fn(),
+			unobserve: jest.fn(),
+			disconnect: jest.fn(),
+		}));
+		window.HTMLElement.prototype.scrollIntoView = jest.fn();
+	});
+
+	const setup = async () => {
+		const selectedValue = signal(15);
+		const container = await render(
+			`
+			 <brn-select class="inline-block" [(ngModel)]="selectedValue" [multiple]="multiple">
+			   <button brnSelectTrigger class='w-56' data-testid="brn-select-trigger">
+			     <brn-select-value data-testid="brn-select-value" />
+			   </button>
+			   <brn-select-content class="w-56" data-testid="brn-select-content">
+			     <label brnSelectLabel>Numbers</label>
+			     <div brnOption [value]="0">0</div>
+			     <div brnOption [value]="5">5</div>
+			     <div brnOption [value]="10">10</div>
+			     <div brnOption [value]="15">15</div>
+			     <div brnOption [value]="20">20</div>
+			   </brn-select-content>
+			 </brn-select>
+      `,
+			{
+				imports: [...BrnSelectImports, FormsModule],
+				componentProperties: {
+					selectedValue,
+					multiple: false,
+				},
+			},
+		);
+		return {
+			user: userEvent.setup(),
+			container,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			selectedValue,
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	it('should display the correct value after render', async () => {
+		const { container, user, trigger, value, selectedValue } = await setup();
+		// without rerenderung
+		container.detectChanges();
+		expect(value.textContent?.trim()).toBe('15');
+
+		await user.click(trigger);
+		const options = await screen.getAllByRole('option');
+
+		await user.click(options[0]);
+		expect(trigger.textContent?.trim()).toBe('0');
+		expect(selectedValue()).toBe(0);
+
+		await user.click(options[1]);
+		expect(selectedValue()).toBe(5);
+		expect(trigger.textContent?.trim()).toBe('5');
+
+		await user.click(options[2]);
+		expect(trigger.textContent?.trim()).toBe('10');
+		expect(selectedValue()).toBe(10);
+	});
+
+	it('should display the correct value after render when multiple is true', async () => {
+		const { container, user, trigger, value } = await setup();
+		const selectedValue = signal([15]);
+		await container.rerender({
+			componentProperties: {
+				multiple: true,
+				selectedValue,
+			},
+		});
+		container.detectChanges();
+		expect(value.textContent?.trim()).toBe('15');
+		expect(selectedValue()).toEqual([15]);
+
+		await user.click(trigger);
+		const options = await screen.getAllByRole('option');
+
+		await user.click(options[1]);
+		expect(selectedValue()).toEqual([15, 5]);
+		expect(trigger.textContent?.trim()).toBe('15, 5');
+
+		await user.click(options[2]);
+		expect(trigger.textContent?.trim()).toBe('15, 5, 10');
+		expect(selectedValue()).toEqual([15, 5, 10]);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/brn-select.component.spec.ts
+```typescript
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { BrnSelectImports } from '../../index';
+
+describe('BrnSelectComponent', () => {
+	beforeAll(() => {
+		global.ResizeObserver = jest.fn().mockImplementation(() => ({
+			observe: jest.fn(),
+			unobserve: jest.fn(),
+			disconnect: jest.fn(),
+		}));
+		window.HTMLElement.prototype.scrollIntoView = jest.fn();
+	});
+
+	const setup = async () => {
+		const openChangeSpy = jest.fn();
+		const valueChangeSpy = jest.fn();
+		const container = await render(
+			`
+            <brn-select class="inline-block" [multiple]="multiple" (openChange)="openChange($event)" (valueChange)="valueChange($event)">
+			<button brnSelectTrigger class='w-56' data-testid="brn-select-trigger">
+				<brn-select-value />
+			</button>
+			<brn-select-content class="w-56" data-testid="brn-select-content">
+				<label brnSelectLabel>Fruits</label>
+				<div brnOption value="apple">Apple</div>
+				<div brnOption value="banana">Banana</div>
+				<div brnOption value="blueberry">Blueberry</div>
+				<div brnOption value="grapes">Grapes</div>
+				<div brnOption value="pineapple">Pineapple</div>
+				<div brnOption value="disabled" [disabled]="true">Disabled Option</div>
+		  </brn-select-content>
+		</brn-select>
+    `,
+			{
+				imports: [...BrnSelectImports],
+				componentProperties: {
+					multiple: true,
+					openChange: openChangeSpy,
+					valueChange: valueChangeSpy,
+				},
+			},
+		);
+		return {
+			user: userEvent.setup(),
+			container,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			openChangeSpy,
+			valueChangeSpy,
+		};
+	};
+
+	describe('default', () => {
+		it('openChanged should emit event on open and close', async () => {
+			const { user, trigger, openChangeSpy } = await setup();
+			await user.click(trigger);
+			expect(openChangeSpy).toHaveBeenCalledTimes(1);
+			await user.click(trigger);
+			expect(openChangeSpy).toHaveBeenCalledTimes(2);
+		});
+		it('should add data-disabled to a disabled option', async () => {
+			const { user, trigger } = await setup();
+			await user.click(trigger);
+			const disabledOption = await screen.getByText('Disabled Option');
+
+			expect(disabledOption).toHaveAttribute('data-disabled');
+			await user.click(disabledOption);
+			expect(trigger.textContent).not.toContain('Disabled Option');
+		});
+
+		it('should add data-placeholder to the value when no value is selected', async () => {
+			const { container, user, trigger } = await setup();
+			const value = container.container.querySelector('brn-select-value');
+			expect(value).toHaveAttribute('data-placeholder');
+
+			await user.click(trigger);
+			const options = await screen.getAllByRole('option');
+			await userEvent.click(options[0]);
+			expect(value).not.toHaveAttribute('data-placeholder');
+		});
+
+		it('single mode: valueChange should emit event on selection', async () => {
+			const { user, trigger, container, openChangeSpy, valueChangeSpy } = await setup();
+			container.rerender({
+				componentProperties: {
+					multiple: false,
+					openChange: openChangeSpy,
+					valueChange: valueChangeSpy,
+				},
+			});
+			await user.click(trigger);
+			const options = await screen.getAllByRole('option');
+			await user.click(options[0]);
+			expect(valueChangeSpy).toHaveBeenCalledWith('apple');
+		});
+
+		it('multi mode: valueChange should emit event on selection', async () => {
+			const { user, trigger, valueChangeSpy } = await setup();
+			await user.click(trigger);
+			const options = await screen.getAllByRole('option');
+			await user.click(options[0]);
+			expect(valueChangeSpy).toHaveBeenCalledWith(['apple']);
+			await user.click(options[1]);
+			expect(valueChangeSpy).toHaveBeenCalledWith(['apple', 'banana']);
+		});
+	});
+
+	describe('multiple option select', () => {
+		it('when multiple true -> false with multiple selected values, should reset', async () => {
+			const { user, trigger, container } = await setup();
+			await user.click(trigger);
+			const options = await screen.getAllByRole('option');
+			await user.click(options[0]);
+			await user.click(options[1]);
+			expect(trigger.textContent).toContain(`${options[0].textContent}, ${options[1].textContent}`);
+			container.rerender({
+				componentProperties: {
+					multiple: false,
+				},
+			});
+			expect(trigger.textContent).toContain('');
+		});
+
+		it('when multiple true -> false with single value, should retain value', async () => {
+			const { user, trigger, container } = await setup();
+			await user.click(trigger);
+			const options = await screen.getAllByRole('option');
+			await user.click(options[0]);
+			expect(trigger.textContent).toContain(`${options[0].textContent}`);
+			container.rerender({
+				componentProperties: {
+					multiple: false,
+				},
+			});
+			expect(trigger.textContent).toContain(`${options[0].textContent}`);
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/select-multi-mode.spec.ts
+```typescript
+import { Validators } from '@angular/forms';
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import {
+	SelectMultiValueTestComponent,
+	SelectMultiValueWithInitialValueTestComponent,
+	SelectMultiValueWithInitialValueWithForLoopTestComponent,
+} from './select-reactive-form';
+import { getFormControlStatus, getFormValidationClasses } from './utils';
+
+describe('Brn Select Component in multi-mode', () => {
+	beforeAll(() => {
+		global.ResizeObserver = jest.fn().mockImplementation(() => ({
+			observe: jest.fn(),
+			unobserve: jest.fn(),
+			disconnect: jest.fn(),
+		}));
+		window.HTMLElement.prototype.scrollIntoView = jest.fn();
+	});
+
+	const DEFAULT_LABEL = 'Select a Fruit';
+
+	const setupWithFormValidationMulti = async () => {
+		const { fixture } = await render(SelectMultiValueTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	const setupWithFormValidationMultiWithInitialValue = async () => {
+		const { fixture } = await render(SelectMultiValueWithInitialValueTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	const setupWithFormValidationMultiWithInitialValueWithForLoop = async () => {
+		const { fixture } = await render(SelectMultiValueWithInitialValueWithForLoopTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+			updateOptionsBtn: screen.getByTestId('update-options-btn'),
+			updatePartialOptionsBtn: screen.getByTestId('partial-options-btn'),
+			updateDiffOptionsBtn: screen.getByTestId('diff-options-btn'),
+		};
+	};
+
+	describe('form validation - multi mode', () => {
+		it('should become dirty only after an actual user option selection', async () => {
+			const { user, fixture, trigger } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			// open
+			await user.click(trigger);
+			// close
+			await user.click(trigger);
+
+			// Patch Value
+			expect(cmpInstance.form?.get('fruit')?.patchValue(['apple', 'banana', 'blueberry']));
+
+			// validate patch value
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'banana', 'blueberry']);
+			fixture.detectChanges();
+
+			const afterValuePatchExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterValuePatchExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterValuePatchExpected);
+		});
+
+		// should have correct status when initialized with no value and as optional
+		it('should reflect correct form control status with no initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance as SelectMultiValueTestComponent;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(DEFAULT_LABEL);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+		});
+
+		it('should reflect correct form control status with initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationMultiWithInitialValue();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe('Apple, Blueberry');
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'blueberry']);
+		});
+
+		it('should reflect correct form control status and value after first user selection with no initial value', async () => {
+			const { fixture, trigger, user } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			// open select
+			await user.click(trigger);
+
+			// Make 1st selection
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			// status prior to closing select
+			const afterFirstSelectionExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterFirstSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterFirstSelectionExpected);
+
+			// close select
+			await user.click(trigger);
+
+			// validate status and value
+			const afterClose = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterClose);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterClose);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['banana']);
+		});
+
+		it('should reflect correct form control status and value after patching value with no initial value', async () => {
+			const { fixture, trigger } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			expect(cmpInstance.form?.get('fruit')?.patchValue(['apple', 'banana', 'blueberry']));
+
+			// validate patch value
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'banana', 'blueberry']);
+
+			const afterValuePatchExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterValuePatchExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterValuePatchExpected);
+		});
+
+		it('should reflect correct form control status and value after first user selection with initial value', async () => {
+			const { fixture, trigger, user } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			// open select
+			await user.click(trigger);
+
+			// Make 1st selection
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			// status prior to closing select
+			const afterFirstSelectionExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterFirstSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterFirstSelectionExpected);
+
+			// close select
+			await user.click(trigger);
+
+			// validate status and value
+			const afterCloseExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterCloseExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterCloseExpected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['banana']);
+		});
+
+		it('should reflect correct form control status and value after patching value with initial value', async () => {
+			const { fixture, trigger } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			expect(cmpInstance.form?.get('fruit')?.patchValue(['apple', 'banana', 'blueberry']));
+
+			// validate patch value
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'banana', 'blueberry']);
+
+			const afterValuePatchExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterValuePatchExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterValuePatchExpected);
+		});
+
+		/**
+		 * Update Options
+		 */
+		it('should reset display but not value if options change and are completely different', async () => {
+			const { fixture, trigger, updateDiffOptionsBtn, user } =
+				await setupWithFormValidationMultiWithInitialValueWithForLoop();
+			const cmpInstance = fixture.componentInstance;
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+
+			// update with
+			await user.click(updateDiffOptionsBtn);
+
+			//display should be updated
+			expect(trigger).toHaveTextContent('Select a Fruit');
+
+			// value should remain same
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+		});
+
+		it('should update display but not value if options updated and only some options are same', async () => {
+			const { fixture, trigger, updatePartialOptionsBtn, user } =
+				await setupWithFormValidationMultiWithInitialValueWithForLoop();
+			const cmpInstance = fixture.componentInstance;
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+
+			// actionBtn.
+			await user.click(updatePartialOptionsBtn);
+
+			//display should be updated
+			expect(trigger).toHaveTextContent('Apple');
+
+			// expect value to remain same
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+		});
+
+		it('should maintain exact display and value if options updated but exactly same', async () => {
+			const { fixture, trigger, updateOptionsBtn, user } =
+				await setupWithFormValidationMultiWithInitialValueWithForLoop();
+			const cmpInstance = fixture.componentInstance;
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+
+			// actionBtn.
+			user.click(updateOptionsBtn);
+
+			// open select
+			await user.click(trigger);
+
+			// display should be same
+			expect(trigger).toHaveTextContent('Apple, Pineapple');
+
+			// value should be same
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+		});
+	});
+
+	describe('form validation - multi mode and required', () => {
+		/**
+		 * No Initial Value
+		 */
+		it('should reflect correct form control status with no initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: false,
+				invalid: true,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(DEFAULT_LABEL);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+		});
+
+		/**
+		 * Initial Value
+		 */
+		// should initialize with correct status and initial value when required
+		it('should reflect correct form control status with initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationMultiWithInitialValue();
+			const cmpInstance = fixture.componentInstance;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe('Apple, Blueberry');
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'blueberry']);
+		});
+
+		/**
+		 * User Selection with no initial value
+		 */
+		it('should reflect correct form control status and value after first user selection with no initial value', async () => {
+			const { fixture, trigger, user } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: false,
+				invalid: true,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			// open select
+			await user.click(trigger);
+
+			// Make 1st selection
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			// status prior to closing select
+			const afterFirstSelectioneExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterFirstSelectioneExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterFirstSelectioneExpected);
+
+			// close select
+			await user.click(trigger);
+
+			// validate status and value
+			const afterCloseExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterCloseExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterCloseExpected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['banana']);
+		});
+
+		/**
+		 * User Selection with initial value
+		 */
+		it('should reflect correct form control status and value after first user selection with initial value', async () => {
+			const { fixture, trigger, user } = await setupWithFormValidationMultiWithInitialValue();
+			const cmpInstance = fixture.componentInstance;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'blueberry']);
+
+			// open select
+			await user.click(trigger);
+
+			// Make 1st selection
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			// status prior to closing select
+			const afterFirstSelectionExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterFirstSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterFirstSelectionExpected);
+
+			// close select
+			await user.click(trigger);
+
+			// validate status and value
+			const afterCloseExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterCloseExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterCloseExpected);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'blueberry', 'banana']);
+		});
+
+		/**
+		 * User Selection with initial value when options are dynamically added with a for-loop
+		 */
+		it('should reflect correct form control status and value after first user selection with initial value with dynamic options', async () => {
+			const { fixture, trigger, value, user } = await setupWithFormValidationMultiWithInitialValueWithForLoop();
+			const cmpInstance = fixture.componentInstance as SelectMultiValueWithInitialValueWithForLoopTestComponent;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			fixture.detectChanges();
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple']);
+
+			expect(value.textContent?.trim()).toBe('Apple, Pineapple');
+
+			// open select
+			await user.click(trigger);
+
+			// Make 1st selection
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			// status prior to closing select
+			const afterFirstSelectionExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterFirstSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterFirstSelectionExpected);
+
+			// close select
+			await user.click(trigger);
+
+			// validate status and value
+			const afterCloseExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterCloseExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterCloseExpected);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'pineapple', 'banana']);
+		});
+
+		/**
+		 * Patch value with no initial value
+		 */
+		it('should reflect correct form control status and value after patching value with no initial value', async () => {
+			const { fixture, trigger } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance;
+
+			// Setting to be required
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: false,
+				invalid: true,
+				pristine: true,
+				dirty: false,
+			};
+
+			// Some issue
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			expect(cmpInstance.form?.get('fruit')?.patchValue(['apple', 'banana', 'blueberry']));
+
+			// validate patch value
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'banana', 'blueberry']);
+			fixture.detectChanges();
+
+			const afterValuePatchExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterValuePatchExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterValuePatchExpected);
+		});
+
+		/**
+		 * Patch value with initial value
+		 */
+		it('should reflect correct form control status and value after patching value with initial value', async () => {
+			const { fixture, trigger } = await setupWithFormValidationMultiWithInitialValue();
+			const cmpInstance = fixture.componentInstance;
+
+			// Setting to be required
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'blueberry']);
+
+			expect(cmpInstance.form?.get('fruit')?.patchValue(['apple', 'banana', 'blueberry']));
+
+			// validate patch value
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['apple', 'banana', 'blueberry']);
+
+			const afterValuePatchExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterValuePatchExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterValuePatchExpected);
+		});
+	});
+
+	describe('deselect option - multi mode', () => {
+		it('should reflect correct form control status with no initial value', async () => {
+			const { fixture, trigger, user } = await setupWithFormValidationMulti();
+			const cmpInstance = fixture.componentInstance as SelectMultiValueTestComponent;
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+
+			// open select
+			await user.click(trigger);
+
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(['banana']);
+			expect(screen.getByTestId('brn-select-value').textContent?.trim()).toBe('Banana');
+
+			await user.click(options[1]);
+
+			expect(trigger).toHaveTextContent('Select a Fruit');
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual([]);
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/select-ng-model-form.ts
+```typescript
+import { Component, signal } from '@angular/core';
+
+@Component({
+	selector: 'select-ngmodel-form',
+	template: `
+		<form ngForm>
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruit() | json }}</pre>
+			</div>
+			<hlm-select class="w-56" ${argsToTemplate(args, { exclude: ['initialValue'] })} [(ngModel)]="fruit" name="fruit">
+				<label hlmLabel>Select a Fruit</label>
+				<hlm-select-trigger>
+					<brn-select-value hlm />
+				</hlm-select-trigger>
+				<hlm-select-content>
+					<hlm-select-label>Fruits</hlm-select-label>
+					<hlm-option value="apple">Apple</hlm-option>
+					<hlm-option value="banana">Banana</hlm-option>
+					<hlm-option value="blueberry">Blueberry</hlm-option>
+					<hlm-option value="grapes">Grapes</hlm-option>
+					<hlm-option value="pineapple">Pineapple</hlm-option>
+				</hlm-select-content>
+			</hlm-select>
+		</form>
+	`,
+	// eslint-disable-next-line @angular-eslint/prefer-standalone
+	standalone: false,
+})
+export class SelectNgModelComponent {
+	public fruit = signal('');
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/select-reactive-form.ts
+```typescript
+import { ChangeDetectionStrategy, Component, OnInit, signal, viewChild } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { BrnSelectComponent, BrnSelectImports } from '../../';
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="fruitGroup">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (fruitGroup.controls.fruit.invalid && fruitGroup.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectReactiveFieldComponent {
+	public fruitGroup = new FormGroup({ fruit: new FormControl() });
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectSingleValueTestComponent {
+	public form = new FormGroup({ fruit: new FormControl(null) });
+
+	public brnSelectComponent = viewChild(BrnSelectComponent);
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectSingleValueWithInitialValueTestComponent {
+	public form = new FormGroup({ fruit: new FormControl('apple') });
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectSingleValueWithInitialValueWithAsyncUpdateTestComponent {
+	public form = new FormGroup({ fruit: new FormControl('apple') });
+
+	constructor() {
+		// queueMicrotask(() => {
+		// 	this.form.patchValue({ fruit: 'apple' });
+		// });
+		setTimeout(() => {
+			this.form.patchValue({ fruit: 'apple' });
+		});
+	}
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit" [multiple]="true">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectMultiValueTestComponent {
+	public form = new FormGroup({ fruit: new FormControl<string[]>([]) });
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit" [multiple]="true">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					<div brnOption value="apple">Apple</div>
+					<div brnOption value="banana">Banana</div>
+					<div brnOption value="blueberry">Blueberry</div>
+					<div brnOption value="grapes">Grapes</div>
+					<div brnOption value="pineapple">Pineapple</div>
+					<div>Clear</div>
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+	`,
+})
+export class SelectMultiValueWithInitialValueTestComponent {
+	public form = new FormGroup({ fruit: new FormControl(['apple', 'blueberry']) });
+}
+
+@Component({
+	imports: [FormsModule, ReactiveFormsModule, BrnSelectImports],
+	selector: 'select-reactive-field-fixture',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	template: `
+		<form [formGroup]="form">
+			<brn-select class="w-56" formControlName="fruit" placeholder="Select a Fruit" [multiple]="true">
+				<button brnSelectTrigger data-testid="brn-select-trigger">
+					<brn-select-value data-testid="brn-select-value" />
+				</button>
+				<brn-select-content class="w-56" data-testid="brn-select-content">
+					<label brnSelectLabel>Fruits</label>
+					@for (selectOption of options(); track selectOption.value) {
+						<div brnOption [value]="selectOption.value">{{ selectOption.label }}</div>
+					}
+				</brn-select-content>
+			</brn-select>
+			@if (form.controls.fruit.invalid && form.controls.fruit.touched) {
+				<span class="text-destructive">Required</span>
+			}
+		</form>
+
+		<button (click)="updateOptions()" data-testid="update-options-btn">Update Options</button>
+		<button (click)="updatePartialOptions()" data-testid="partial-options-btn">Partial Options</button>
+		<button (click)="updateDiffOptions()" data-testid="diff-options-btn">Diff Options</button>
+	`,
+})
+export class SelectMultiValueWithInitialValueWithForLoopTestComponent implements OnInit {
+	public options = signal<{ value: string; label: string }[]>([]);
+	public form = new FormGroup({ fruit: new FormControl(['apple', 'pineapple']) });
+
+	ngOnInit(): void {
+		this.options.set([
+			{ label: 'Apple', value: 'apple' },
+			{ label: 'Banana', value: 'banana' },
+			{ label: 'Blueberry', value: 'blueberry' },
+			{ label: 'Grapes', value: 'grapes' },
+			{ label: 'Pineapple', value: 'pineapple' },
+		]);
+	}
+
+	public updateOptions() {
+		// Reset same options
+		this.options.set([
+			{ label: 'Apple', value: 'apple' },
+			{ label: 'Banana', value: 'banana' },
+			{ label: 'Blueberry', value: 'blueberry' },
+			{ label: 'Grapes', value: 'grapes' },
+			{ label: 'Pineapple', value: 'pineapple' },
+		]);
+	}
+
+	public updateDiffOptions() {
+		// Reset with different option values
+		this.options.set([
+			{ label: 'Coconut', value: 'coconut' },
+			{ label: 'Grapefruit', value: 'grapefruit' },
+			{ label: 'Kiwi', value: 'kiwi' },
+			{ label: 'Pomegranate', value: 'pomegranate' },
+			{ label: 'Watermelon', value: 'watermelon' },
+		]);
+	}
+
+	public updatePartialOptions() {
+		// Reset with different option values
+		this.options.set([
+			{ label: 'Apple', value: 'apple' },
+			{ label: 'Banana', value: 'banana' },
+			{ label: 'Blueberry', value: 'blueberry' },
+			{ label: 'Pomegranate', value: 'pomegranate' },
+			{ label: 'Watermelon', value: 'watermelon' },
+		]);
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/select-single-mode.spec.ts
+```typescript
+import { Validators } from '@angular/forms';
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import {
+	SelectSingleValueTestComponent,
+	SelectSingleValueWithInitialValueTestComponent,
+	SelectSingleValueWithInitialValueWithAsyncUpdateTestComponent,
+} from './select-reactive-form';
+import { getFormControlStatus, getFormValidationClasses } from './utils';
+
+describe('Brn Select Component in single-mode', () => {
+	const DEFAULT_LABEL = 'Select a Fruit';
+	const INITIAL_VALUE_TEXT = 'Apple';
+	const INITIAL_VALUE = 'apple';
+
+	beforeAll(() => {
+		global.ResizeObserver = jest.fn().mockImplementation(() => ({
+			observe: jest.fn(),
+			unobserve: jest.fn(),
+			disconnect: jest.fn(),
+		}));
+
+		window.HTMLElement.prototype.scrollIntoView = jest.fn();
+	});
+
+	const setupWithFormValidation = async () => {
+		const { fixture } = await render(SelectSingleValueTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	const setupWithFormValidationAndInitialValue = async () => {
+		const { fixture } = await render(SelectSingleValueWithInitialValueTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	const setupWithFormValidationAndInitialValueAndAsyncUpdate = async () => {
+		const { fixture } = await render(SelectSingleValueWithInitialValueWithAsyncUpdateTestComponent);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			trigger: screen.getByTestId('brn-select-trigger'),
+			value: screen.getByTestId('brn-select-value'),
+		};
+	};
+
+	describe('form validation - single mode', () => {
+		it('should reflect correct formcontrol status and value with no initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidation();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueTestComponent;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(DEFAULT_LABEL);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(null);
+		});
+
+		it('should reflect correct formcontrol status and value with initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationAndInitialValue();
+			const cmpInstance = fixture.componentInstance;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(INITIAL_VALUE_TEXT);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(INITIAL_VALUE);
+		});
+
+		it('should reflect correct formcontrol status after first user selection with no initial value', async () => {
+			const { user, trigger, fixture, value } = await setupWithFormValidation();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueTestComponent;
+
+			expect(value.textContent?.trim()).toBe(DEFAULT_LABEL);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(null);
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			// Open Select
+			await user.click(trigger);
+
+			const afterOpenExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterOpenExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterOpenExpected);
+
+			// Select option
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			const afterSelectionExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterSelectionExpected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual('banana');
+		});
+
+		it('should reflect correct formcontrol status after first user selection with initial value', async () => {
+			const { user, trigger, fixture, value } = await setupWithFormValidationAndInitialValue();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueWithInitialValueTestComponent;
+
+			expect(value.textContent?.trim()).toBe(INITIAL_VALUE_TEXT);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(INITIAL_VALUE);
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			// Open Select
+			await user.click(trigger);
+
+			const afterOpenExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterOpenExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterOpenExpected);
+
+			// Select option
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			const afterSelectionExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterSelectionExpected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual('banana');
+			expect(screen.getByTestId('brn-select-value').textContent?.trim()).toBe('Banana');
+		});
+
+		it('should reflect correct formcontrol status after first user selection with initial value and async update', async () => {
+			const { user, trigger, fixture, value } = await setupWithFormValidationAndInitialValueAndAsyncUpdate();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueWithInitialValueTestComponent;
+
+			expect(value.textContent?.trim()).toBe(INITIAL_VALUE_TEXT);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(INITIAL_VALUE);
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			// Open Select
+			await user.click(trigger);
+
+			const afterOpenExpected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterOpenExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterOpenExpected);
+
+			// Select option
+			const options = await screen.getAllByRole('option');
+			await user.click(options[1]);
+
+			const afterSelectionExpected = {
+				untouched: false,
+				touched: true,
+				valid: true,
+				invalid: false,
+				pristine: false,
+				dirty: true,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(afterSelectionExpected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(afterSelectionExpected);
+
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual('banana');
+			expect(value.textContent?.trim()).toBe('Banana');
+		});
+	});
+
+	describe('form validation - single mode and required', () => {
+		it('should reflect correct formcontrol status with no initial value', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidation();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueTestComponent;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: false,
+				invalid: true,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(DEFAULT_LABEL);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(null);
+		});
+
+		it('should have the errorState in true when the select has been triggered and no option has been selected', async () => {
+			const { user, fixture, trigger } = await setupWithFormValidation();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueTestComponent;
+
+			cmpInstance.form?.get('fruit')?.addValidators(Validators.required);
+			cmpInstance.form?.get('fruit')?.updateValueAndValidity();
+			fixture.detectChanges();
+
+			// open
+			await user.click(trigger);
+			// close
+			await user.click(trigger);
+
+			expect(cmpInstance.brnSelectComponent()?.errorState()).toBeTruthy();
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(null);
+		});
+
+		it('should reflect initial single value set on formcontrol', async () => {
+			const { fixture, trigger, value } = await setupWithFormValidationAndInitialValue();
+			const cmpInstance = fixture.componentInstance as SelectSingleValueTestComponent;
+
+			const expected = {
+				untouched: true,
+				touched: false,
+				valid: true,
+				invalid: false,
+				pristine: true,
+				dirty: false,
+			};
+
+			expect(getFormControlStatus(cmpInstance.form?.get('fruit'))).toStrictEqual(expected);
+			expect(getFormValidationClasses(trigger)).toStrictEqual(expected);
+
+			expect(value.textContent?.trim()).toBe(INITIAL_VALUE_TEXT);
+			expect(cmpInstance.form?.get('fruit')?.value).toEqual(INITIAL_VALUE);
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/select/src/lib/tests/utils.ts
+```typescript
+import type { AbstractControl } from '@angular/forms';
+
+export interface ExpectedFormStatus {
+	[key: string]: boolean | string | null;
+	untouched: boolean | string | null;
+	valid: boolean | string | null;
+	pristine: boolean | string | null;
+	touched: boolean | string | null;
+	invalid: boolean | string | null;
+	dirty: boolean | string | null;
+}
+
+export const getFormControlStatus = (
+	formControl: AbstractControl<string | string[] | null, string | string[] | null> | null,
+) => {
+	const actualValues: ExpectedFormStatus = {
+		untouched: null,
+		valid: null,
+		pristine: null,
+		touched: null,
+		invalid: null,
+		dirty: null,
+	};
+	for (const status in actualValues) {
+		actualValues[status] = formControl?.[status as keyof typeof formControl] as boolean;
+	}
+	return actualValues;
+};
+
+export const getFormValidationClasses = (el: HTMLElement): ExpectedFormStatus => {
+	const actualValues: ExpectedFormStatus = {
+		untouched: null,
+		valid: null,
+		pristine: null,
+		touched: null,
+		invalid: null,
+		dirty: null,
+	};
+	for (const status in actualValues) {
+		actualValues[status] = el.classList.contains(`ng-${status}`);
+	}
+	return actualValues;
+};
+
+```

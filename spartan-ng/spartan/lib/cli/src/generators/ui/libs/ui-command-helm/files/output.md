@@ -1,0 +1,432 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/index.ts.template
+```
+import { NgModule } from '@angular/core';
+
+import { HlmCommandDialogCloseButtonDirective } from './lib/hlm-command-dialog-close-button.directive';
+import { HlmCommandDialogDirective } from './lib/hlm-command-dialog.directive';
+import { HlmCommandEmptyDirective } from './lib/hlm-command-empty.directive';
+import { HlmCommandGroupLabelComponent } from './lib/hlm-command-group-label.component';
+import { HlmCommandGroupComponent } from './lib/hlm-command-group.component';
+import { HlmCommandIconDirective } from './lib/hlm-command-icon.directive';
+import { HlmCommandItemComponent } from './lib/hlm-command-item.component';
+import { HlmCommandListComponent } from './lib/hlm-command-list.component';
+import { HlmCommandSearchInputComponent } from './lib/hlm-command-search-input.component';
+import { HlmCommandSearchComponent } from './lib/hlm-command-search.component';
+import { HlmCommandSeparatorComponent } from './lib/hlm-command-separator.component';
+import { HlmCommandShortcutComponent } from './lib/hlm-command-shortcut.component';
+import { HlmCommandComponent } from './lib/hlm-command.component';
+
+export * from './lib/hlm-command-dialog-close-button.directive';
+export * from './lib/hlm-command-dialog.directive';
+export * from './lib/hlm-command-empty.directive';
+export * from './lib/hlm-command-group-label.component';
+export * from './lib/hlm-command-group.component';
+export * from './lib/hlm-command-icon.directive';
+export * from './lib/hlm-command-item.component';
+export * from './lib/hlm-command-list.component';
+export * from './lib/hlm-command-search-input.component';
+export * from './lib/hlm-command-search.component';
+export * from './lib/hlm-command-separator.component';
+export * from './lib/hlm-command-shortcut.component';
+export * from './lib/hlm-command.component';
+
+export const HlmCommandImports = [
+	HlmCommandComponent,
+	HlmCommandItemComponent,
+	HlmCommandSeparatorComponent,
+	HlmCommandGroupComponent,
+	HlmCommandListComponent,
+	HlmCommandShortcutComponent,
+	HlmCommandIconDirective,
+	HlmCommandDialogCloseButtonDirective,
+	HlmCommandDialogDirective,
+	HlmCommandSearchInputComponent,
+	HlmCommandSearchComponent,
+	HlmCommandGroupLabelComponent,
+	HlmCommandEmptyDirective,
+] as const;
+
+@NgModule({
+	imports: [...HlmCommandImports],
+	exports: [...HlmCommandImports],
+})
+export class HlmCommandModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-dialog-close-button.directive.ts.template
+```
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnDialogCloseDirective } from '@spartan-ng/brain/dialog';
+import { HlmButtonDirective, provideBrnButtonConfig } from '@spartan-ng/ui-button-helm';
+import { provideHlmIconConfig } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmCommandDialogCloseBtn]',
+	standalone: true,
+	hostDirectives: [HlmButtonDirective, BrnDialogCloseDirective],
+	providers: [provideBrnButtonConfig({ variant: 'ghost' }), provideHlmIconConfig({ size: 'xs' })],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandDialogCloseButtonDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'absolute top-3 right-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-ring font-medium h-10 hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center px-4 py-2 ring-offset-background rounded-md text-sm transition-colors !h-5 !p-1 !w-5',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-dialog.directive.ts.template
+```
+import { Directive, ElementRef, Renderer2, computed, contentChild, effect, inject, input, signal } from '@angular/core';
+import { BrnCommandSearchInputToken } from '@spartan-ng/brain/command';
+import { hlm, injectExposesStateProvider } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmCommandDialog]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandDialogDirective {
+	private readonly _stateProvider = injectExposesStateProvider({ host: true });
+	public readonly state = this._stateProvider.state ?? signal('closed').asReadonly();
+	private readonly _renderer = inject(Renderer2);
+	private readonly _element = inject(ElementRef);
+
+	/** Access the search field */
+	private readonly _searchInput = contentChild(BrnCommandSearchInputToken, { read: ElementRef });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%]  data-[state=open]:slide-in-from-top-[2%]',
+			this.userClass(),
+		),
+	);
+
+	constructor() {
+		effect(() => {
+			this._renderer.setAttribute(this._element.nativeElement, 'data-state', this.state());
+
+			const searchInput = this._searchInput();
+
+			if (this.state() === 'open' && searchInput) {
+				searchInput.nativeElement.focus();
+			}
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-empty.directive.ts.template
+```
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmCommandEmpty]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandEmptyDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm('py-6 text-center text-sm', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-group-label.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-group-label',
+	template: '<ng-content />',
+	host: {
+		role: 'presentation',
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandGroupLabelComponent {
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm('font-medium px-2 py-1.5 text-muted-foreground text-xs', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-group.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { BrnCommandGroupDirective } from '@spartan-ng/brain/command';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-group',
+	template: '<ng-content />',
+	hostDirectives: [
+		{
+			directive: BrnCommandGroupDirective,
+			inputs: ['id'],
+		},
+	],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandGroupComponent {
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm('flex flex-col overflow-hidden p-1 text-foreground data-[hidden]:hidden', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-icon.directive.ts.template
+```
+import { Directive } from '@angular/core';
+import { provideHlmIconConfig } from '@spartan-ng/ui-icon-helm';
+
+@Directive({
+	standalone: true,
+	selector: '[hlmCommandIcon]',
+	host: {
+		class: 'inline-flex mr-2 w-4 h-4',
+	},
+	providers: [provideHlmIconConfig({ size: 'sm' })],
+})
+export class HlmCommandIconDirective {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-item.component.ts.template
+```
+import { BooleanInput } from '@angular/cdk/coercion';
+import { booleanAttribute, Component, computed, input, output } from '@angular/core';
+import { BrnCommandItemDirective } from '@spartan-ng/brain/command';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'button[hlm-command-item]',
+	template: `
+		<ng-content />
+	`,
+	hostDirectives: [
+		{
+			directive: BrnCommandItemDirective,
+			inputs: ['value', 'disabled', 'id'],
+			outputs: ['selected'],
+		},
+	],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandItemComponent {
+	/** The value this item represents. */
+	public readonly value = input<string>();
+
+	/** Whether the item is disabled. */
+	public readonly disabled = input<boolean, BooleanInput>(false, {
+		transform: booleanAttribute,
+	});
+
+	/** Emits when the item is selected. */
+	public readonly selected = output<void>();
+
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'text-start aria-selected:bg-accent aria-selected:text-accent-foreground cursor-default disabled:opacity-50 disabled:pointer-events-none hover:bg-accent/50 items-center outline-none px-2 py-1.5 relative flex rounded-sm select-none text-sm data-[hidden]:hidden',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-list.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { BrnCommandListDirective } from '@spartan-ng/brain/command';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-list',
+	template: '<ng-content />',
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [
+		{
+			directive: BrnCommandListDirective,
+			inputs: ['id'],
+		},
+	],
+})
+export class HlmCommandListComponent {
+	/** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm('max-h-[300px] overflow-x-hidden overflow-y-auto', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-search-input.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { BrnCommandSearchInputDirective } from '@spartan-ng/brain/command';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'input[hlm-command-search-input]',
+	template: '',
+	hostDirectives: [{ directive: BrnCommandSearchInputDirective, inputs: ['value'] }],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandSearchInputComponent {
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'bg-transparent disabled:cursor-not-allowed disabled:opacity-50 h-11 outline-none placeholder:text-muted-foreground py-3 text-sm w-full',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-search.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { provideHlmIconConfig } from '@spartan-ng/ui-icon-helm';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-search',
+	template: `
+		<ng-content />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	providers: [provideHlmIconConfig({ size: 'sm' })],
+})
+export class HlmCommandSearchComponent {
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm('relative [&_ng-icon]:flex-none border-b border-border flex items-center px-3 space-x-2', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-separator.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-separator',
+	template: '',
+	host: {
+		role: 'separator',
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandSeparatorComponent {
+	/*** The user defined class  */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() => hlm('h-px block w-full border-b border-border', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command-shortcut.component.ts.template
+```
+import { Component } from '@angular/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command-shortcut',
+	template: '<ng-content />',
+	host: {
+		class: 'font-light ml-auto opacity-60 text-xs tracking-widest',
+	},
+})
+export class HlmCommandShortcutComponent {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-command-helm/files/lib/hlm-command.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { BrnCommandDirective } from '@spartan-ng/brain/command';
+import { hlm } from '@spartan-ng/brain/core';
+
+@Component({
+	standalone: true,
+	selector: 'hlm-command',
+	template: `
+		<ng-content />
+	`,
+	hostDirectives: [
+		{
+			directive: BrnCommandDirective,
+			inputs: ['id', 'filter'],
+			outputs: ['valueChange'],
+		},
+	],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCommandComponent {
+	/*** The user defined class */
+	public readonly userClass = input<string>('', { alias: 'class' });
+
+	/*** The styles to apply  */
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'w-96 bg-popover border border-border flex flex-col h-full overflow-hidden rounded-md text-popover-foreground',
+			this.userClass(),
+		),
+	);
+}
+
+```

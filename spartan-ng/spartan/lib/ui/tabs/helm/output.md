@@ -1,0 +1,495 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/README.md
+```
+# ui-tabs-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-tabs-helm` to execute the unit tests.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/eslint.config.js
+```javascript
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {
+			'@angular-eslint/template/interactive-supports-focus': 'off',
+		},
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/jest.config.ts
+```typescript
+export default {
+	displayName: 'ui-tabs-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/ng-package.json
+```json
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/tabs/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/package.json
+```json
+{
+	"name": "@spartan-ng/ui-tabs-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/cdk": ">=19.0.0",
+		"@angular/core": ">=19.0.0",
+		"@ng-icons/core": ">=29.0.0",
+		"@ng-icons/lucide": ">=29.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"@spartan-ng/ui-button-helm": "0.0.1-alpha.381",
+		"@spartan-ng/ui-icon-helm": "0.0.1-alpha.381",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/project.json
+```json
+{
+	"name": "ui-tabs-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/tabs/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/tabs/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/tabs/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/tabs/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/tabs/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-tabs-helm"
+			}
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.lib.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.lib.prod.json
+```json
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.spec.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+
+import { HlmTabsContentDirective } from './lib/hlm-tabs-content.directive';
+import { HlmTabsListComponent } from './lib/hlm-tabs-list.component';
+import { HlmTabsPaginatedListComponent } from './lib/hlm-tabs-paginated-list.component';
+import { HlmTabsTriggerDirective } from './lib/hlm-tabs-trigger.directive';
+import { HlmTabsComponent } from './lib/hlm-tabs.component';
+
+export * from './lib/hlm-tabs-content.directive';
+export * from './lib/hlm-tabs-list.component';
+export * from './lib/hlm-tabs-paginated-list.component';
+export * from './lib/hlm-tabs-trigger.directive';
+export * from './lib/hlm-tabs.component';
+
+export const HlmTabsImports = [
+	HlmTabsComponent,
+	HlmTabsListComponent,
+	HlmTabsTriggerDirective,
+	HlmTabsContentDirective,
+	HlmTabsPaginatedListComponent,
+] as const;
+
+@NgModule({
+	imports: [...HlmTabsImports],
+	exports: [...HlmTabsImports],
+})
+export class HlmTabsModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/test-setup.ts
+```typescript
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-content.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsContentDirective } from '@spartan-ng/brain/tabs';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmTabsContent]',
+	standalone: true,
+	hostDirectives: [{ directive: BrnTabsContentDirective, inputs: ['brnTabsContent: hlmTabsContent'] }],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsContentDirective {
+	public readonly contentFor = input.required<string>({ alias: 'hlmTabsContent' });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-list.component.ts
+```typescript
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsListDirective } from '@spartan-ng/brain/tabs';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const listVariants = cva(
+	'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+	{
+		variants: {
+			orientation: {
+				horizontal: 'h-10 space-x-1',
+				vertical: 'mt-2 flex-col h-fit space-y-1',
+			},
+		},
+		defaultVariants: {
+			orientation: 'horizontal',
+		},
+	},
+);
+type ListVariants = VariantProps<typeof listVariants>;
+
+@Component({
+	selector: 'hlm-tabs-list',
+	standalone: true,
+	hostDirectives: [BrnTabsListDirective],
+	template: '<ng-content/>',
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsListComponent {
+	public readonly orientation = input<ListVariants['orientation']>('horizontal');
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(listVariants({ orientation: this.orientation() }), this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-paginated-list.component.ts
+```typescript
+import { CdkObserveContent } from '@angular/cdk/observers';
+import { Component, type ElementRef, computed, contentChildren, input, viewChild } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronLeft, lucideChevronRight } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsPaginatedListDirective, BrnTabsTriggerDirective } from '@spartan-ng/brain/tabs';
+import { buttonVariants } from '@spartan-ng/ui-button-helm';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+import { listVariants } from './hlm-tabs-list.component';
+
+@Component({
+	selector: 'hlm-paginated-tabs-list',
+	imports: [CdkObserveContent, NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronRight, lucideChevronLeft })],
+	template: `
+		<button
+			#previousPaginator
+			data-pagination="previous"
+			type="button"
+			aria-hidden="true"
+			tabindex="-1"
+			[class.flex]="_showPaginationControls()"
+			[class.hidden]="!_showPaginationControls()"
+			[class]="_paginationButtonClass()"
+			[disabled]="_disableScrollBefore || null"
+			(click)="_handlePaginatorClick('before')"
+			(mousedown)="_handlePaginatorPress('before', $event)"
+			(touchend)="_stopInterval()"
+		>
+			<ng-icon hlm size="base" name="lucideChevronLeft" />
+		</button>
+
+		<div #tabListContainer class="z-[1] flex grow overflow-hidden" (keydown)="_handleKeydown($event)">
+			<div class="relative grow transition-transform" #tabList role="tablist" (cdkObserveContent)="_onContentChanges()">
+				<div #tabListInner [class]="_tabListClass()">
+					<ng-content></ng-content>
+				</div>
+			</div>
+		</div>
+
+		<button
+			#nextPaginator
+			data-pagination="next"
+			type="button"
+			aria-hidden="true"
+			tabindex="-1"
+			[class.flex]="_showPaginationControls()"
+			[class.hidden]="!_showPaginationControls()"
+			[class]="_paginationButtonClass()"
+			[disabled]="_disableScrollAfter || null"
+			(click)="_handlePaginatorClick('after')"
+			(mousedown)="_handlePaginatorPress('after', $event)"
+			(touchend)="_stopInterval()"
+		>
+			<ng-icon hlm size="base" name="lucideChevronRight" />
+		</button>
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsPaginatedListComponent extends BrnTabsPaginatedListDirective {
+	public readonly _items = contentChildren(BrnTabsTriggerDirective, { descendants: false });
+	public readonly _itemsChanges = toObservable(this._items);
+
+	public readonly _tabListContainer = viewChild.required<ElementRef<HTMLElement>>('tabListContainer');
+	public readonly _tabList = viewChild.required<ElementRef<HTMLElement>>('tabList');
+	public readonly _tabListInner = viewChild.required<ElementRef<HTMLElement>>('tabListInner');
+	public readonly _nextPaginator = viewChild.required<ElementRef<HTMLElement>>('nextPaginator');
+	public readonly _previousPaginator = viewChild.required<ElementRef<HTMLElement>>('previousPaginator');
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex overflow-hidden relative gap-1 flex-shrink-0', this.userClass()),
+	);
+
+	public readonly tabLisClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _tabListClass = computed(() => hlm(listVariants(), this.tabLisClass()));
+
+	public readonly paginationButtonClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _paginationButtonClass = computed(() =>
+		hlm(
+			'relative z-[2] select-none disabled:cursor-default',
+			buttonVariants({ variant: 'ghost', size: 'icon' }),
+			this.paginationButtonClass(),
+		),
+	);
+
+	protected _itemSelected(event: KeyboardEvent) {
+		event.preventDefault();
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-trigger.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsTriggerDirective } from '@spartan-ng/brain/tabs';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmTabsTrigger]',
+	standalone: true,
+	hostDirectives: [{ directive: BrnTabsTriggerDirective, inputs: ['brnTabsTrigger: hlmTabsTrigger', 'disabled'] }],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsTriggerDirective {
+	public readonly triggerFor = input.required<string>({ alias: 'hlmTabsTrigger' });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs.component.ts
+```typescript
+import { Component, input } from '@angular/core';
+import { BrnTabsDirective } from '@spartan-ng/brain/tabs';
+
+@Component({
+	selector: 'hlm-tabs',
+	standalone: true,
+	hostDirectives: [
+		{
+			directive: BrnTabsDirective,
+			inputs: ['orientation', 'direction', 'activationMode', 'brnTabs: tab'],
+			outputs: ['tabActivated'],
+		},
+	],
+	template: '<ng-content/>',
+})
+export class HlmTabsComponent {
+	public readonly tab = input.required<string>();
+}
+
+```

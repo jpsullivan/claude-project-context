@@ -1,0 +1,24 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/src/index.ts</source>
+<document_content>
+// this file can't be empty, otherwise the build will fail
+export default true;
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/src/test-setup.ts</source>
+<document_content>
+import '@testing-library/jest-dom';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+
+setupZoneTestEnv();
+
+import { toHaveNoViolations } from 'jest-axe';
+
+expect.extend(toHaveNoViolations);
+
+</document_content>
+</document>
+</documents>

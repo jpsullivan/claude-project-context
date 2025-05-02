@@ -1,0 +1,479 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/compat.ts
+```typescript
+import { convertNxGenerator } from '@nx/devkit';
+import { migrateBrainImportsGenerator } from './generator';
+
+export default convertNxGenerator(migrateBrainImportsGenerator);
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/generator.ts
+```typescript
+import { formatFiles, Tree, visitNotIgnoredFiles } from '@nx/devkit';
+import { getPackageManagerCommand, logger, readJson, updateJson } from 'nx/src/devkit-exports';
+import type { PackageJson } from 'nx/src/utils/package-json';
+import { basename } from 'path';
+import imports from './import-map';
+import { MigrateBrainImportsGeneratorSchema } from './schema';
+import { isBinaryPath } from './utils/binary-extensions';
+
+export async function migrateBrainImportsGenerator(tree: Tree, options: MigrateBrainImportsGeneratorSchema) {
+	if (!options.skipInstall) {
+		ensureBrainPackageIsInstalled(tree);
+	}
+
+	for (const [from, to] of Object.entries(imports)) {
+		replaceBrainPackageWithSecondaryEntrypoint(tree, options, from, to as string);
+	}
+
+	if (!options.skipFormat) {
+		await formatFiles(tree);
+	}
+}
+
+function ensureBrainPackageIsInstalled(tree: Tree) {
+	// read the root package.json
+	const packageJson = readJson<PackageJson>(tree, 'package.json');
+
+	// merge all dependencies so we easily search for the cli package
+	const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+
+	// check if the brain package is installed
+	if (deps['@spartan-ng/brain']) {
+		return;
+	}
+
+	// the brain package version should be the same as the cli package
+	updateJson<PackageJson>(tree, 'package.json', (packageJson) => {
+		packageJson.dependencies['@spartan-ng/brain'] = deps['@spartan-ng/cli'];
+		return packageJson;
+	});
+
+	const { install } = getPackageManagerCommand();
+
+	logger.warn(
+		`The @spartan-ng/brain package has been added to your dependencies. Please run '${install}' to install the package.`,
+	);
+}
+
+export function replaceBrainPackageWithSecondaryEntrypoint(
+	tree: Tree,
+	options: MigrateBrainImportsGeneratorSchema,
+	oldImport: string,
+	newImport: string,
+): void {
+	if (!options.skipInstall) {
+		removePackageInDependencies(tree, oldImport);
+	}
+
+	replaceUsages(tree, oldImport, newImport);
+}
+
+function removePackageInDependencies(tree: Tree, oldPackageName: string) {
+	visitNotIgnoredFiles(tree, '.', (path) => {
+		if (basename(path) !== 'package.json') {
+			return;
+		}
+
+		try {
+			updateJson<PackageJson>(tree, path, (packageJson) => {
+				for (const deps of [
+					packageJson.dependencies ?? {},
+					packageJson.devDependencies ?? {},
+					packageJson.peerDependencies ?? {},
+					packageJson.optionalDependencies ?? {},
+				]) {
+					if (oldPackageName in deps) {
+						delete deps[oldPackageName];
+					}
+				}
+				return packageJson;
+			});
+		} catch (e) {
+			console.warn(`Could not remove ${oldPackageName} in ${path}.`);
+		}
+	});
+}
+
+// based on https://github.com/nrwl/nx/blob/master/packages/devkit/src/utils/replace-package.ts
+function replaceUsages(tree: Tree, oldPackageName: string, newPackageName: string) {
+	visitNotIgnoredFiles(tree, '.', (path) => {
+		if (isBinaryPath(path)) {
+			return;
+		}
+
+		const ignoredFiles = [
+			'yarn.lock',
+			'package-lock.json',
+			'pnpm-lock.yaml',
+			'bun.lockb',
+			'CHANGELOG.md',
+			// this is relevant for this repo only - and this file is auto-generated
+			'supported-ui-libraries.json',
+			// we don't want to replace usages in the import map as these are used to detect the usages
+			'import-map.ts',
+		];
+		if (ignoredFiles.includes(basename(path))) {
+			return;
+		}
+
+		try {
+			const contents = tree.read(path).toString();
+
+			if (!contents.includes(oldPackageName)) {
+				return;
+			}
+
+			tree.write(path, contents.replace(new RegExp(oldPackageName, 'g'), newPackageName));
+		} catch {
+			logger.warn(`Could not replace ${oldPackageName} with ${newPackageName} in ${path}.`);
+		}
+	});
+}
+
+export default migrateBrainImportsGenerator;
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/import-map.ts
+```typescript
+export default {
+	'@spartan-ng/ui-checkbox-brain': '@spartan-ng/brain/checkbox',
+	'@spartan-ng/ui-avatar-brain': '@spartan-ng/brain/avatar',
+	'@spartan-ng/ui-accordion-brain': '@spartan-ng/brain/accordion',
+	'@spartan-ng/ui-label-brain': '@spartan-ng/brain/label',
+	'@spartan-ng/ui-slider-brain': '@spartan-ng/brain/slider',
+	'@spartan-ng/ui-alert-dialog-brain': '@spartan-ng/brain/alert-dialog',
+	'@spartan-ng/ui-calendar-brain': '@spartan-ng/brain/calendar',
+	'@spartan-ng/ui-collapsible-brain': '@spartan-ng/brain/collapsible',
+	'@spartan-ng/ui-command-brain': '@spartan-ng/brain/command',
+	'@spartan-ng/ui-dialog-brain': '@spartan-ng/brain/dialog',
+	'@spartan-ng/ui-form-field-brain': '@spartan-ng/brain/form-field',
+	'@spartan-ng/ui-forms-brain': '@spartan-ng/brain/forms',
+	'@spartan-ng/ui-hover-card-brain': '@spartan-ng/brain/hover-card',
+	'@spartan-ng/ui-menu-brain': '@spartan-ng/brain/menu',
+	'@spartan-ng/ui-popover-brain': '@spartan-ng/brain/popover',
+	'@spartan-ng/ui-progress-brain': '@spartan-ng/brain/progress',
+	'@spartan-ng/ui-radio-group-brain': '@spartan-ng/brain/radio-group',
+	'@spartan-ng/ui-select-brain': '@spartan-ng/brain/select',
+	'@spartan-ng/ui-separator-brain': '@spartan-ng/brain/separator',
+	'@spartan-ng/ui-sheet-brain': '@spartan-ng/brain/sheet',
+	'@spartan-ng/ui-switch-brain': '@spartan-ng/brain/switch',
+	'@spartan-ng/ui-table-brain': '@spartan-ng/brain/table',
+	'@spartan-ng/ui-tabs-brain': '@spartan-ng/brain/tabs',
+	'@spartan-ng/ui-toggle-brain': '@spartan-ng/brain/toggle',
+	'@spartan-ng/ui-toggle-group-brain': '@spartan-ng/brain/toggle-group',
+	'@spartan-ng/ui-tooltip-brain': '@spartan-ng/brain/tooltip',
+	'@spartan-ng/ui-date-time-brain': '@spartan-ng/brain/date-time',
+	'@spartan-ng/ui-date-time-luxon-brain': '@spartan-ng/brain/date-time-luxon',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/schema.d.ts
+```typescript
+export interface MigrateBrainImportsGeneratorSchema {
+	skipInstall?: boolean;
+	skipFormat?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/schema.json
+```json
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"$id": "MigrateBrainImports",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"skipFormat": {
+			"type": "boolean",
+			"description": "Skip formatting the code after migration."
+		},
+		"skipInstall": {
+			"type": "boolean",
+			"description": "Whether to verify the brain package is installed."
+		}
+	},
+	"required": []
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/migrate-brain-imports/utils/binary-extensions.ts
+```typescript
+import { extname } from 'path';
+
+// based on https://github.com/nrwl/nx/blob/master/packages/devkit/src/utils/binary-extensions.ts
+const binaryExtensions = new Set([
+	'.3dm',
+	'.3ds',
+	'.3g2',
+	'.3gp',
+	'.7z',
+	'.a',
+	'.aac',
+	'.adp',
+	'.ai',
+	'.aif',
+	'.aiff',
+	'.als',
+	'.alz',
+	'.ape',
+	'.apk',
+	'.appimage',
+	'.ar',
+	'.arj',
+	'.asf',
+	'.au',
+	'.avi',
+	'.bak',
+	'.baml',
+	'.bh',
+	'.bin',
+	'.bk',
+	'.bmp',
+	'.btif',
+	'.bz2',
+	'.bzip2',
+	'.cab',
+	'.caf',
+	'.cgm',
+	'.class',
+	'.cmx',
+	'.cpio',
+	'.cr2',
+	'.cur',
+	'.dat',
+	'.dcm',
+	'.deb',
+	'.dex',
+	'.djvu',
+	'.dll',
+	'.dmg',
+	'.dng',
+	'.doc',
+	'.docm',
+	'.docx',
+	'.dot',
+	'.dotm',
+	'.dra',
+	'.DS_Store',
+	'.dsk',
+	'.dts',
+	'.dtshd',
+	'.dvb',
+	'.dwg',
+	'.dxf',
+	'.ecelp4800',
+	'.ecelp7470',
+	'.ecelp9600',
+	'.egg',
+	'.eol',
+	'.eot',
+	'.epub',
+	'.exe',
+	'.f4v',
+	'.fbs',
+	'.fh',
+	'.fla',
+	'.flac',
+	'.flatpak',
+	'.fli',
+	'.flv',
+	'.fpx',
+	'.fst',
+	'.fvt',
+	'.g3',
+	'.gh',
+	'.gif',
+	'.glb',
+	'.graffle',
+	'.gz',
+	'.gzip',
+	'.h261',
+	'.h263',
+	'.h264',
+	'.icns',
+	'.ico',
+	'.ief',
+	'.img',
+	'.ipa',
+	'.iso',
+	'.jar',
+	'.jpeg',
+	'.jpg',
+	'.jpgv',
+	'.jpm',
+	'.jxr',
+	'.key',
+	'.keystore',
+	'.ktx',
+	'.lha',
+	'.lib',
+	'.lvp',
+	'.lz',
+	'.lzh',
+	'.lzma',
+	'.lzo',
+	'.m3u',
+	'.m4a',
+	'.m4v',
+	'.mar',
+	'.mdi',
+	'.mht',
+	'.mid',
+	'.midi',
+	'.mj2',
+	'.mka',
+	'.mkv',
+	'.mmr',
+	'.mng',
+	'.mobi',
+	'.mov',
+	'.movie',
+	'.mp3',
+	'.mp4',
+	'.mp4a',
+	'.mpeg',
+	'.mpg',
+	'.mpga',
+	'.msi',
+	'.mxu',
+	'.nef',
+	'.npx',
+	'.npy',
+	'.numbers',
+	'.nupkg',
+	'.o',
+	'.odp',
+	'.ods',
+	'.odt',
+	'.oga',
+	'.ogg',
+	'.ogv',
+	'.otf',
+	'.ott',
+	'.pages',
+	'.pbm',
+	'.pbf',
+	'.pcx',
+	'.pdb',
+	'.pdf',
+	'.pea',
+	'.pgm',
+	'.pic',
+	'.pkg',
+	'.plist',
+	'.png',
+	'.pnm',
+	'.pot',
+	'.potm',
+	'.potx',
+	'.ppa',
+	'.ppam',
+	'.ppm',
+	'.pps',
+	'.ppsm',
+	'.ppsx',
+	'.ppt',
+	'.pptm',
+	'.pptx',
+	'.psd',
+	'.pxd',
+	'.pxz',
+	'.pya',
+	'.pyc',
+	'.pyo',
+	'.pyv',
+	'.qt',
+	'.rar',
+	'.ras',
+	'.raw',
+	'.resources',
+	'.rgb',
+	'.rip',
+	'.rlc',
+	'.rmf',
+	'.rmvb',
+	'.rpm',
+	'.rtf',
+	'.rz',
+	'.s3m',
+	'.s7z',
+	'.scpt',
+	'.sgi',
+	'.shar',
+	'.snap',
+	'.sil',
+	'.sketch',
+	'.slk',
+	'.smv',
+	'.snk',
+	'.so',
+	'.stl',
+	'.suo',
+	'.sub',
+	'.swf',
+	'.tar',
+	'.tbz',
+	'.tbz2',
+	'.tga',
+	'.tgz',
+	'.thmx',
+	'.tif',
+	'.tiff',
+	'.tlz',
+	'.ttc',
+	'.ttf',
+	'.txz',
+	'.udf',
+	'.uvh',
+	'.uvi',
+	'.uvm',
+	'.uvp',
+	'.uvs',
+	'.uvu',
+	'.viv',
+	'.vob',
+	'.war',
+	'.wav',
+	'.wax',
+	'.wbmp',
+	'.wdp',
+	'.weba',
+	'.webm',
+	'.webp',
+	'.whl',
+	'.wim',
+	'.wm',
+	'.wma',
+	'.wmv',
+	'.wmx',
+	'.woff',
+	'.woff2',
+	'.wrm',
+	'.wvx',
+	'.xbm',
+	'.xif',
+	'.xla',
+	'.xlam',
+	'.xls',
+	'.xlsb',
+	'.xlsm',
+	'.xlsx',
+	'.xlt',
+	'.xltm',
+	'.xltx',
+	'.xm',
+	'.xmind',
+	'.xpi',
+	'.xpm',
+	'.xwd',
+	'.xz',
+	'.z',
+	'.zip',
+	'.zipx',
+]);
+
+export function isBinaryPath(path: string): boolean {
+	return binaryExtensions.has(extname(path).toLowerCase());
+}
+
+```

@@ -1,0 +1,184 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-switch-helm/files/index.ts.template
+```
+import { NgModule } from '@angular/core';
+
+import { HlmSwitchThumbDirective } from './lib/hlm-switch-thumb.directive';
+import { HlmSwitchComponent } from './lib/hlm-switch.component';
+
+export * from './lib/hlm-switch-thumb.directive';
+export * from './lib/hlm-switch.component';
+
+export const HlmSwitchImports = [HlmSwitchComponent, HlmSwitchThumbDirective] as const;
+@NgModule({
+	imports: [...HlmSwitchImports],
+	exports: [...HlmSwitchImports],
+})
+export class HlmSwitchModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-switch-helm/files/lib/hlm-switch-ng-model.component.ignore.spec.ts.template
+```
+import { Component, Input } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HlmSwitchComponent } from './hlm-switch.component';
+@Component({
+	selector: 'hlm-switch-ng-model',
+	template: `
+		<!-- eslint-disable-next-line @angular-eslint/template/label-has-associated-control -->
+		<label class="flex items-center" hlmLabel>
+			test switch
+			<hlm-switch [(ngModel)]="switchValue" id="testSwitchForm" (changed)="handleChange($event)" />
+		</label>
+
+		<p data-testid="switchValue">{{ switchValue }}</p>
+		<p data-testid="changedValue">{{ changedValueTo }}</p>
+	`,
+	imports: [HlmSwitchComponent, FormsModule],
+})
+export class SwitchFormComponent {
+	@Input()
+	public switchValue = false;
+
+	protected changedValueTo: boolean | undefined;
+
+	handleChange(value: boolean) {
+		this.changedValueTo = value;
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-switch-helm/files/lib/hlm-switch-thumb.directive.ts.template
+```
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: 'brn-switch-thumb[hlm],[hlmSwitchThumb]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSwitchThumbDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform group-data-[state=checked]:translate-x-5 group-data-[state=unchecked]:translate-x-0',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-switch-helm/files/lib/hlm-switch.component.ts.template
+```
+import { BooleanInput } from '@angular/cdk/coercion';
+import { Component, booleanAttribute, computed, forwardRef, input, model, output, signal } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { hlm } from '@spartan-ng/brain/core';
+import { ChangeFn, TouchFn } from '@spartan-ng/brain/forms';
+import { BrnSwitchComponent, BrnSwitchThumbComponent } from '@spartan-ng/brain/switch';
+import type { ClassValue } from 'clsx';
+import { HlmSwitchThumbDirective } from './hlm-switch-thumb.directive';
+export const HLM_SWITCH_VALUE_ACCESSOR = {
+	provide: NG_VALUE_ACCESSOR,
+	useExisting: forwardRef(() => HlmSwitchComponent),
+	multi: true,
+};
+
+@Component({
+	selector: 'hlm-switch',
+	imports: [BrnSwitchThumbComponent, BrnSwitchComponent, HlmSwitchThumbDirective],
+	host: {
+		class: 'contents',
+		'[attr.id]': 'null',
+		'[attr.aria-label]': 'null',
+		'[attr.aria-labelledby]': 'null',
+		'[attr.aria-describedby]': 'null',
+	},
+	template: `
+		<brn-switch
+			[class]="_computedClass()"
+			[checked]="checked()"
+			(changed)="handleChange($event)"
+			(touched)="_onTouched?.()"
+			[disabled]="disabled()"
+			[id]="id()"
+			[aria-label]="ariaLabel()"
+			[aria-labelledby]="ariaLabelledby()"
+			[aria-describedby]="ariaDescribedby()"
+		>
+			<brn-switch-thumb hlm />
+		</brn-switch>
+	`,
+	providers: [HLM_SWITCH_VALUE_ACCESSOR],
+})
+export class HlmSwitchComponent implements ControlValueAccessor {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'group inline-flex h-[24px] w-[44px] shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input',
+			this.disabled() ? 'cursor-not-allowed opacity-50' : '',
+			this.userClass(),
+		),
+	);
+
+	/** The checked state of the switch. */
+	public readonly checked = model<boolean>(false);
+
+	/** The disabled state of the switch. */
+	public readonly disabledInput = input<boolean, BooleanInput>(false, {
+		transform: booleanAttribute,
+		alias: 'disabled',
+	});
+
+	/** Used to set the id on the underlying brn element. */
+	public readonly id = input<string | null>(null);
+
+	/** Used to set the aria-label attribute on the underlying brn element. */
+	public readonly ariaLabel = input<string | null>(null, { alias: 'aria-label' });
+
+	/** Used to set the aria-labelledby attribute on the underlying brn element. */
+	public readonly ariaLabelledby = input<string | null>(null, { alias: 'aria-labelledby' });
+
+	/** Used to set the aria-describedby attribute on the underlying brn element. */
+	public readonly ariaDescribedby = input<string | null>(null, { alias: 'aria-describedby' });
+
+	/** Emits when the checked state of the switch changes. */
+	public readonly changed = output<boolean>();
+
+	private readonly _writableDisabled = computed(() => signal(this.disabledInput()));
+
+	public readonly disabled = computed(() => this._writableDisabled()());
+
+	protected _onChange?: ChangeFn<boolean>;
+	protected _onTouched?: TouchFn;
+
+	protected handleChange(value: boolean): void {
+		this.checked.set(value);
+		this._onChange?.(value);
+		this.changed.emit(value);
+	}
+
+	/** CONROL VALUE ACCESSOR */
+
+	writeValue(value: boolean): void {
+		this.checked.set(Boolean(value));
+	}
+
+	registerOnChange(fn: ChangeFn<boolean>): void {
+		this._onChange = fn;
+	}
+
+	registerOnTouched(fn: TouchFn): void {
+		this._onTouched = fn;
+	}
+
+	setDisabledState(isDisabled: boolean): void {
+		this._writableDisabled().set(isDisabled);
+	}
+}
+
+```

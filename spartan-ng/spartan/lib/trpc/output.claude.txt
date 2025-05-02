@@ -1,0 +1,1032 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/README.md</source>
+<document_content>
+# tRPC
+
+Spartan tRPC integration
+
+Learn more at [spartan.ng](https://spartan.ng)
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/eslint.config.cjs</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	{
+		files: ['**/*.json'],
+		rules: {
+			'@nx/dependency-checks': [
+				'error',
+				{
+					ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs}'],
+					ignoredDependencies: [
+						'@angular/common',
+						'@angular/core',
+						'@trpc/client',
+						'@trpc/server',
+						'isomorphic-fetch',
+						'superjson',
+					],
+				},
+			],
+		},
+		languageOptions: {
+			parser: require('jsonc-eslint-parser'),
+		},
+	},
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'spartan-ng',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'spartan-ng',
+					style: 'kebab-case',
+				},
+			],
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../dist/libs/trpc",
+	"assets": ["*.md", "migrations/migration.json"],
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/trpc",
+	"version": "0.2.29",
+	"description": "Angular/Nitro-based tRPC integration",
+	"keywords": [
+		"angular",
+		"trpc",
+		"remote-procedure-call",
+		"meta-framework"
+	],
+	"homepage": "https://spartan.ng",
+	"bugs": {
+		"url": "https://github.com/goetzrobin/spartan/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/goetzrobin/spartan.git"
+	},
+	"license": "MIT",
+	"author": "Robin Goetz",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@analogjs/vite-plugin-angular": ">=1.9.4",
+		"@angular/common": ">=19.0.0",
+		"@angular/compiler": ">=19.0.0",
+		"@angular/core": ">=19.0.0",
+		"@angular/platform-browser-dynamic": ">=19.0.0",
+		"@trpc/client": "^10.45.2",
+		"@trpc/server": "^10.45.2",
+		"h3": "^1.12.0",
+		"isomorphic-fetch": "^3.0.0",
+		"rxjs": "~7.8.1",
+		"superjson": "^2.2.1",
+		"ufo": "1.5.4",
+		"vite": "6.2.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"ng-update": {
+		"packageGroup": [],
+		"migrations": "./migrations/migration.json"
+	}
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/project.json</source>
+<document_content>
+{
+	"name": "trpc",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/trpc/src",
+	"prefix": "spartan-ng",
+	"projectType": "library",
+	"tags": ["trpc"],
+	"targets": {
+		"build": {
+			"executor": "@angular/build:ng-packagr",
+			"outputs": ["{workspaceRoot}/dist/libs/trpc"],
+			"options": {
+				"project": "libs/trpc/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/trpc/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/trpc/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "trpc"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		}
+	],
+	"extends": "../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": ["node"]
+	},
+	"exclude": ["src/**/*.spec.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/vite.config.ts</source>
+<document_content>
+/// <reference types="vitest" />
+
+import { defineConfig } from 'vite';
+
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => {
+	return {
+		root: 'src',
+		test: {
+			passWithNoTests: true,
+			globals: true,
+			environment: 'jsdom',
+			setupFiles: ['src/test-setup.ts'],
+			include: ['**/*.spec.ts'],
+			cache: {
+				dir: '../../node_modules/.vitest',
+			},
+		},
+		define: {
+			'import.meta.vitest': mode !== 'production',
+		},
+	};
+});
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/migrations/migration.json</source>
+<document_content>
+{
+	"$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+	"schematics": {},
+	"packageJsonUpdates": {
+		"0.2.30": {
+			"version": "0.2.29",
+			"description": "Updates the superjson dependency from 1.x to 2.x",
+			"packages": {
+				"superjson": {
+					"version": "^2.2.1",
+					"alwaysAddToPackageJson": true
+				}
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/index.ts</source>
+<document_content>
+export * from './lib/client/client';
+export * from './lib/server/server';
+export * from './lib/utils/wait-for';
+
+export { CreateTrpcProxyClient } from './lib/client/trpc-rxjs-proxy';
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/test-setup.ts</source>
+<document_content>
+import '@analogjs/vite-plugin-angular/setup-vitest';
+import '@angular/compiler';
+
+/**
+ * Initialize TestBed for all tests inside of router
+ */
+import { TestBed } from '@angular/core/testing';
+import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+
+TestBed.initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/server/server.ts</source>
+<document_content>
+/**
+ * ALl credit goes to the awesome trpc-nuxt plugin https://github.com/wobsoriano/trpc-nuxt
+ * Since Analog currently uses Nitro as the underlying server we can
+ * simply reuse the hard work done by Robert Soriano and friends
+ * **/
+
+import type { AnyRouter, ProcedureType, inferRouterContext, inferRouterError } from '@trpc/server';
+import { TRPCError } from '@trpc/server';
+import type { ResponseMeta } from '@trpc/server/http';
+import { resolveHTTPResponse } from '@trpc/server/http';
+import type { TRPCResponse } from '@trpc/server/rpc';
+import type { H3Event } from 'h3';
+import { createError, defineEventHandler, isMethod, readBody } from 'h3';
+import { createURL } from 'ufo';
+
+type MaybePromise<T> = T | Promise<T>;
+
+export type CreateContextFn<TRouter extends AnyRouter> = (event: H3Event) => MaybePromise<inferRouterContext<TRouter>>;
+
+export interface ResponseMetaFnPayload<TRouter extends AnyRouter> {
+	data: TRPCResponse<unknown, inferRouterError<TRouter>>[];
+	ctx?: inferRouterContext<TRouter>;
+	paths?: string[];
+	type: ProcedureType | 'unknown';
+	errors: TRPCError[];
+}
+
+export type ResponseMetaFn<TRouter extends AnyRouter> = (opts: ResponseMetaFnPayload<TRouter>) => ResponseMeta;
+
+export interface OnErrorPayload<TRouter extends AnyRouter> {
+	error: TRPCError;
+	type: ProcedureType | 'unknown';
+	path: string | undefined;
+	req: H3Event['node']['req'];
+	input: unknown;
+	ctx: undefined | inferRouterContext<TRouter>;
+}
+
+export type OnErrorFn<TRouter extends AnyRouter> = (opts: OnErrorPayload<TRouter>) => void;
+
+export interface ResolveHTTPRequestOptions<TRouter extends AnyRouter> {
+	router: TRouter;
+	createContext?: CreateContextFn<TRouter>;
+	responseMeta?: ResponseMetaFn<TRouter>;
+	onError?: OnErrorFn<TRouter>;
+	batching?: {
+		enabled: boolean;
+	};
+}
+
+function getPath(event: H3Event): string | null {
+	const { params } = event.context;
+
+	if (typeof params?.['trpc'] === 'string') {
+		return params['trpc'];
+	}
+
+	if (params?.['trpc'] && Array.isArray(params['trpc'])) {
+		return (params['trpc'] as string[]).join('/');
+	}
+
+	return null;
+}
+
+export function createTrpcNitroHandler<TRouter extends AnyRouter>({
+	router,
+	createContext,
+	responseMeta,
+	onError,
+	batching,
+}: ResolveHTTPRequestOptions<TRouter>) {
+	return defineEventHandler(async (event) => {
+		const { req, res } = event.node;
+
+		const $url = createURL(req.url!);
+
+		const path = getPath(event);
+
+		if (path === null) {
+			const error = router.getErrorShape({
+				error: new TRPCError({
+					message: 'Param "trpc" not found - is the file named `[trpc]`.ts or `[...trpc].ts`?',
+					code: 'INTERNAL_SERVER_ERROR',
+				}),
+				type: 'unknown',
+				ctx: undefined,
+				path: undefined,
+				input: undefined,
+			});
+
+			throw createError({
+				statusCode: 500,
+				statusMessage: JSON.stringify(error),
+			});
+		}
+
+		const httpResponse = await resolveHTTPResponse({
+			batching,
+			router,
+			req: {
+				method: req.method!,
+				headers: req.headers,
+				body: isMethod(event, 'GET') ? null : await readBody(event),
+				query: $url.searchParams,
+			},
+			path,
+			createContext: async () => await createContext?.(event),
+			responseMeta,
+			onError: (o) => {
+				onError?.({
+					...o,
+					req,
+				});
+			},
+		});
+
+		const { status, headers, body } = httpResponse;
+
+		res.statusCode = status;
+
+		headers &&
+			Object.keys(headers).forEach((key) => {
+				res.setHeader(key, headers[key]!);
+			});
+
+		return body;
+	});
+}
+
+export default createTrpcNitroHandler;
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/utils/wait-for.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/no-empty-function */
+import { type Observable, firstValueFrom, isObservable } from 'rxjs';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Zone: any;
+
+export async function waitFor<T>(prom: Promise<T> | Observable<T>): Promise<T> {
+	if (isObservable(prom)) {
+		prom = firstValueFrom(prom);
+	}
+	const macroTask = Zone.current.scheduleMacroTask(
+		`AnalogContentResolve-${Math.random()}`,
+		() => {},
+		{},
+		() => {},
+	);
+	return prom.then((p: T) => {
+		macroTask.invoke();
+		return p;
+	});
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/client/cache-state.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/naming-convention */
+import { APP_BOOTSTRAP_LISTENER, ApplicationRef, InjectionToken, inject } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { first } from 'rxjs/operators';
+
+export const tRPC_CACHE_STATE = new InjectionToken<{
+	isCacheActive: BehaviorSubject<boolean>;
+}>('TRPC_HTTP_TRANSFER_STATE_CACHE_STATE');
+
+export const provideTrpcCacheState = () => ({
+	provide: tRPC_CACHE_STATE,
+	useValue: { isCacheActive: new BehaviorSubject(true) },
+});
+
+export const provideTrpcCacheStateStatusManager = () => ({
+	provide: APP_BOOTSTRAP_LISTENER,
+	multi: true,
+	useFactory: () => {
+		const appRef = inject(ApplicationRef);
+		const cacheState = inject(tRPC_CACHE_STATE);
+
+		return () =>
+			appRef.isStable.pipe(first((isStable) => isStable)).subscribe(() => cacheState.isCacheActive.next(false));
+	},
+	deps: [ApplicationRef, tRPC_CACHE_STATE],
+});
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/client/client.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { InjectionToken, type Provider, TransferState, signal } from '@angular/core';
+import { type CreateTRPCClientOptions, type HTTPHeaders, type HttpBatchLinkOptions, httpBatchLink } from '@trpc/client';
+import type { FetchEsque } from '@trpc/client/dist/internals/types';
+import type { AnyRouter } from '@trpc/server';
+import 'isomorphic-fetch';
+import { provideTrpcCacheState, provideTrpcCacheStateStatusManager, tRPC_CACHE_STATE } from './cache-state';
+import { transferStateLink } from './links/transfer-state-link';
+import { createTRPCRxJSProxyClient } from './trpc-rxjs-proxy';
+
+export type TrpcOptions<T extends AnyRouter> = {
+	url: string;
+	options?: Partial<CreateTRPCClientOptions<T>>;
+	batchLinkOptions?: Omit<HttpBatchLinkOptions, 'url' | 'headers'>;
+};
+
+export type TrpcClient<AppRouter extends AnyRouter> = ReturnType<typeof createTRPCRxJSProxyClient<AppRouter>>;
+const tRPC_INJECTION_TOKEN = new InjectionToken<unknown>('@spartan-ng/trpc proxy client');
+
+function customFetch(input: RequestInfo | URL, init?: RequestInit & { method: 'GET' }) {
+	if ((globalThis as any).$fetch) {
+		return (globalThis as any).$fetch
+			.raw(input.toString(), init)
+			.catch((e: any) => {
+				throw e;
+			})
+			.then((response: any) => ({
+				...response,
+				headers: response.headers,
+				json: () => Promise.resolve(response._data),
+			}));
+	}
+
+	// dev server trpc for analog & nitro
+	if (typeof window === 'undefined') {
+		const host = process.env['NITRO_HOST'] ?? process.env['ANALOG_HOST'] ?? 'localhost';
+		const port = process.env['NITRO_PORT'] ?? process.env['ANALOG_PORT'] ?? 4205;
+		const base = `http://${host}:${port}`;
+		if (input instanceof Request) {
+			input = new Request(base, input);
+		} else {
+			input = new URL(input, base);
+		}
+	}
+
+	return fetch(input, init);
+}
+
+export const createTrpcClient = <AppRouter extends AnyRouter>({
+	url,
+	options,
+	batchLinkOptions,
+}: TrpcOptions<AppRouter>) => {
+	const TrpcHeaders = signal<HTTPHeaders>({});
+	const provideTrpcClient = (): Provider[] => [
+		provideTrpcCacheState(),
+		provideTrpcCacheStateStatusManager(),
+		{
+			provide: tRPC_INJECTION_TOKEN,
+			useFactory: () => {
+				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+				// @ts-ignore TODO: figure out why TS is complaining
+				return createTRPCRxJSProxyClient<AppRouter>({
+					transformer: options?.transformer,
+					links: [
+						...(options?.links ?? []),
+						transferStateLink(),
+						httpBatchLink({
+							...(batchLinkOptions ?? {}),
+							headers() {
+								return TrpcHeaders();
+							},
+							fetch: customFetch as FetchEsque,
+							url: url ?? '',
+						}),
+					],
+				});
+			},
+			deps: [tRPC_CACHE_STATE, TransferState],
+		},
+	];
+	const TrpcClient = tRPC_INJECTION_TOKEN as InjectionToken<TrpcClient<AppRouter>>;
+	return {
+		TrpcClient,
+		provideTrpcClient,
+		TrpcHeaders,
+		/** @deprecated use TrpcClient instead */
+		tRPCClient: TrpcClient,
+		/** @deprecated use provideTrpcClient instead */
+		provideTRPCClient: provideTrpcClient,
+		/** @deprecated use TrpcHeaders instead */
+		tRPCHeaders: TrpcHeaders,
+	};
+};
+
+export default createTrpcClient;
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/client/shared-internal.ts</source>
+<document_content>
+import type { Operation, OperationContext, OperationLink, OperationResultObservable, TRPCLink } from '@trpc/client';
+import type {
+	AnyRouter,
+	ClientDataTransformerOptions,
+	CombinedDataTransformer,
+	DataTransformerOptions,
+	DefaultDataTransformer,
+} from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+
+// Removed subscription
+export type TRPCType = 'query' | 'mutation';
+
+// Removed subscription and requestAsPromise
+export type UntypedClientProperties = 'links' | 'runtime' | 'requestId' | '$request' | 'query' | 'mutation';
+
+/*
+ * One to one copy of the trpc client internal code
+ * Nothing was changed, but we can not import these methods because
+ * they are not exported
+ */
+export type IntersectionError<TKey extends string> =
+	`The property '${TKey}' in your router collides with a built-in method, rename this router or procedure on your backend.`;
+
+export interface TRPCRequestOptions {
+	/**
+	 * Pass additional context to links
+	 */
+	context?: OperationContext;
+}
+
+export function createChain<TRouter extends AnyRouter, TInput = unknown, TOutput = unknown>(opts: {
+	links: OperationLink<TRouter, TInput, TOutput>[];
+	op: Operation<TInput>;
+}): OperationResultObservable<TRouter, TOutput> {
+	return observable((observer) => {
+		function execute(index = 0, op = opts.op) {
+			const next = opts.links[index];
+			if (!next) {
+				throw new Error('No more links to execute - did you forget to add an ending link?');
+			}
+			const subscription = next({
+				op,
+				next(nextOp) {
+					const nextObserver = execute(index + 1, nextOp);
+
+					return nextObserver;
+				},
+			});
+			return subscription;
+		}
+
+		const obs$ = execute();
+		return obs$.subscribe(observer);
+	});
+}
+
+export type CreateTRPCClientOptions<TRouter extends AnyRouter> = CreateTRPCClientBaseOptions<TRouter> & {
+	links: TRPCLink<TRouter>[];
+};
+
+export type CreateTRPCClientBaseOptions<TRouter extends AnyRouter> =
+	TRouter['_def']['_config']['transformer'] extends DefaultDataTransformer
+		? {
+				/**
+				 * Data transformer
+				 *
+				 * You must use the same transformer on the backend and frontend
+				 * @link https://trpc.io/docs/data-transformers
+				 **/
+				transformer?: 'You must set a transformer on the backend router';
+			}
+		: TRouter['_def']['_config']['transformer'] extends DataTransformerOptions
+			? {
+					/**
+					 * Data transformer
+					 *
+					 * You must use the same transformer on the backend and frontend
+					 * @link https://trpc.io/docs/data-transformers
+					 **/
+					transformer: TRouter['_def']['_config']['transformer'] extends CombinedDataTransformer
+						? DataTransformerOptions
+						: TRouter['_def']['_config']['transformer'];
+				}
+			: {
+					/**
+					 * Data transformer
+					 *
+					 * You must use the same transformer on the backend and frontend
+					 * @link https://trpc.io/docs/data-transformers
+					 **/
+					transformer?: /** @deprecated **/ ClientDataTransformerOptions | CombinedDataTransformer;
+				};
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/client/trpc-rxjs-proxy.ts</source>
+<document_content>
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { type OperationContext, type OperationLink, TRPCClientError, type TRPCClientRuntime } from '@trpc/client';
+import type {
+	AnyMutationProcedure,
+	AnyProcedure,
+	AnyQueryProcedure,
+	AnyRouter,
+	CombinedDataTransformer,
+	DataTransformerOptions,
+	IntersectionError,
+	ProcedureArgs,
+	ProcedureRouterRecord,
+	ProcedureType,
+	inferProcedureInput,
+	inferProcedureOutput,
+} from '@trpc/server';
+import { type Observable as TrpcObservable, type inferObservableValue, share } from '@trpc/server/observable';
+import { createFlatProxy, createRecursiveProxy, type inferTransformedProcedureOutput } from '@trpc/server/shared';
+import { Observable as RxJSObservable } from 'rxjs';
+import { type CreateTRPCClientOptions, type TRPCRequestOptions, type TRPCType, createChain } from './shared-internal';
+
+// Changed to rxjs observable
+type Resolver<TProcedure extends AnyProcedure> = (
+	...args: ProcedureArgs<TProcedure['_def']>
+) => RxJSObservable<inferTransformedProcedureOutput<TProcedure>>;
+
+// Removed subscription and using new type
+type DecorateProcedure<
+	TProcedure extends AnyProcedure,
+	_TRouter extends AnyRouter,
+> = TProcedure extends AnyQueryProcedure
+	? {
+			query: Resolver<TProcedure>;
+		}
+	: TProcedure extends AnyMutationProcedure
+		? {
+				mutate: Resolver<TProcedure>;
+			}
+		: never;
+
+// Removed subscription and using new type
+type DecoratedProcedureRecord<TProcedures extends ProcedureRouterRecord, TRouter extends AnyRouter> = {
+	[TKey in keyof TProcedures]: TProcedures[TKey] extends AnyRouter
+		? DecoratedProcedureRecord<TProcedures[TKey]['_def']['record'], TProcedures[TKey]>
+		: TProcedures[TKey] extends AnyProcedure
+			? DecorateProcedure<TProcedures[TKey], TRouter>
+			: never;
+};
+
+// Removed subscription and using new type
+const clientCallTypeMap: Record<keyof DecorateProcedure<any, any>, ProcedureType> = {
+	query: 'query',
+	mutate: 'mutation',
+};
+
+// Removed subscription and requestAsPromise
+type UntypedClientProperties = 'links' | 'runtime' | 'requestId' | '$request' | 'query' | 'mutation';
+
+// Nothing changed, only using new types
+// prettier-ignore
+export type CreateTrpcProxyClient<TRouter extends AnyRouter> = DecoratedProcedureRecord<
+	TRouter['_def']['record'],
+	TRouter
+> extends infer TProcedureRecord
+	? UntypedClientProperties & keyof TProcedureRecord extends never
+		? TProcedureRecord
+		: IntersectionError<UntypedClientProperties & keyof TProcedureRecord>
+	: never;
+
+// Nothing changed, only using new types
+function createTRPCRxJSClientProxy<TRouter extends AnyRouter>(client: TRPCClient<TRouter>) {
+	return createFlatProxy<CreateTrpcProxyClient<TRouter>>((key) => {
+		// eslint-disable-next-line no-prototype-builtins
+		if (client.hasOwnProperty(key)) {
+			return (client as any)[key as any];
+		}
+		return createRecursiveProxy(({ path, args }) => {
+			const pathCopy = [key, ...path];
+
+			const clientCallType = pathCopy.pop()! as keyof DecorateProcedure<any, any>;
+
+			const procedureType = clientCallTypeMap[clientCallType];
+
+			const fullPath = pathCopy.join('.');
+
+			return (client as any)[procedureType](fullPath, ...args);
+		});
+	});
+}
+
+export function createTRPCRxJSProxyClient<TRouter extends AnyRouter>(opts: CreateTRPCClientOptions<TRouter>) {
+	const client = new TRPCClient<TRouter>(opts);
+	const proxy = createTRPCRxJSClientProxy(client as TRPCClient<TRouter>);
+	return proxy;
+}
+
+/**
+ * Removed subscription method;
+ * Remove converting trpc observables to promises and therefore also the AbortController
+ * Add converting to rxjs observable
+ */
+class TRPCClient<TRouter extends AnyRouter> {
+	private readonly _links: OperationLink<TRouter>[];
+	public readonly runtime: TRPCClientRuntime;
+	private _requestId: number;
+
+	constructor(opts: CreateTRPCClientOptions<TRouter>) {
+		this._requestId = 0;
+
+		const combinedTransformer: CombinedDataTransformer = (() => {
+			const transformer = opts.transformer as DataTransformerOptions | undefined;
+
+			if (!transformer) {
+				return {
+					input: {
+						serialize: (data) => data,
+						deserialize: (data) => data,
+					},
+					output: {
+						serialize: (data) => data,
+						deserialize: (data) => data,
+					},
+				};
+			}
+			if ('input' in transformer) {
+				return opts.transformer as CombinedDataTransformer;
+			}
+			return {
+				input: transformer,
+				output: transformer,
+			};
+		})();
+
+		this.runtime = {
+			transformer: {
+				serialize: (data) => combinedTransformer.input.serialize(data),
+				deserialize: (data) => combinedTransformer.output.deserialize(data),
+			},
+			combinedTransformer,
+		};
+
+		// Initialize the links
+		this._links = opts.links.map((link) => link(this.runtime));
+	}
+
+	private $request<TInput = unknown, TOutput = unknown>({
+		type,
+		input,
+		path,
+		context = {},
+	}: {
+		type: TRPCType;
+		input: TInput;
+		path: string;
+		context?: OperationContext;
+	}) {
+		const chain$ = createChain<AnyRouter, TInput, TOutput>({
+			links: this._links as OperationLink<any, any, any>[],
+			op: {
+				id: ++this._requestId,
+				type,
+				path,
+				input,
+				context,
+			},
+		});
+		type TValue = inferObservableValue<typeof chain$>;
+		return trpcObservableToRxJsObservable<TValue>(chain$.pipe(share()));
+	}
+
+	public query<
+		TQueries extends TRouter['_def']['queries'],
+		TPath extends string & keyof TQueries,
+		TInput extends inferProcedureInput<TQueries[TPath]>,
+	>(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
+		type TOutput = inferProcedureOutput<TQueries[TPath]>;
+		return this.$request<TInput, TOutput>({
+			type: 'query',
+			path,
+			input: input as TInput,
+			context: opts?.context,
+		});
+	}
+
+	public mutation<
+		TMutations extends TRouter['_def']['mutations'],
+		TPath extends string & keyof TMutations,
+		TInput extends inferProcedureInput<TMutations[TPath]>,
+	>(path: TPath, input?: TInput, opts?: TRPCRequestOptions) {
+		type TOutput = inferTransformedProcedureOutput<TMutations[TPath]>;
+		return this.$request<TInput, TOutput>({
+			type: 'mutation',
+			path,
+			input: input as TInput,
+			context: opts?.context,
+		});
+	}
+}
+
+function trpcObservableToRxJsObservable<TValue>(observable: TrpcObservable<TValue, unknown>) {
+	return new RxJSObservable<TValue>((subscriber) => {
+		const sub = observable.subscribe({
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			next: (value) => subscriber.next((value.result as any).data),
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			error: (err) => subscriber.error(TRPCClientError.from(err)),
+			complete: () => subscriber.complete(),
+		});
+		return () => {
+			sub.unsubscribe();
+		};
+	});
+}
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/trpc/src/lib/client/links/transfer-state-link.ts</source>
+<document_content>
+import { type StateKey, TransferState, inject, makeStateKey } from '@angular/core';
+import type { Operation, TRPCLink } from '@trpc/client';
+import type { AnyRouter } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import superjson from 'superjson';
+import { tRPC_CACHE_STATE } from '../cache-state';
+
+function makeCacheKey(request: Operation<unknown>): StateKey<string> {
+	const { type, path, input } = request;
+	const encodedParams = Object.entries(input ?? {}).reduce(
+		(prev, [key, value]) => `${prev}${key}=${JSON.stringify(value)}`,
+		'',
+	);
+	const key = `${type}.${path}?${encodedParams}`;
+	const hash = generateHash(key);
+	return makeStateKey(hash);
+}
+
+/**
+ * A method that returns a hash representation of a string using a variant of DJB2 hash
+ * algorithm.
+ *
+ * This is the same hashing logic that is used to generate component ids.
+ */
+function generateHash(value: string): string {
+	let hash = 0;
+
+	for (const char of value) {
+		hash = (Math.imul(31, hash) + char.charCodeAt(0)) << 0;
+	}
+
+	// Force positive number hash.
+	// 2147483647 = equivalent of Integer.MAX_VALUE.
+	hash += 2147483647 + 1;
+
+	return hash.toString();
+}
+
+export const transferStateLink =
+	<AppRouter extends AnyRouter>(): TRPCLink<AppRouter> =>
+	() => {
+		const { isCacheActive } = inject(tRPC_CACHE_STATE);
+		const transferState = inject(TransferState);
+		const isBrowser = typeof window === 'object';
+		// here we just got initialized in the app - this happens once per app
+		// useful for storing cache for instance
+		return ({ next, op }) => {
+			const shouldUseCache =
+				(op.type === 'query' && !isBrowser) || // always fetch new values on the server
+				isCacheActive.getValue(); // or when initializing the client app --> same behavior as HttpClient
+
+			if (!shouldUseCache) {
+				return next(op);
+			}
+
+			const storeKey = makeCacheKey(op);
+			const storeValue = transferState.get(storeKey, null);
+
+			if (storeValue && isBrowser) {
+				// on the server we don't care about the value we will always fetch a new one
+				// use superjson to parse our superjson string and retrieve our
+				// data return it instead of calling next trpc link
+				return observable((observer) => observer.next(superjson.parse(storeValue)));
+			}
+
+			return observable((observer) => {
+				return next(op).subscribe({
+					next(value) {
+						// store returned value from trpc call stringified with superjson in TransferState
+						transferState.set(storeKey, superjson.stringify(value));
+						observer.next(value);
+					},
+					error(err) {
+						transferState.remove(storeKey);
+						observer.error(err);
+					},
+					complete() {
+						observer.complete();
+					},
+				});
+			});
+		};
+	};
+
+</document_content>
+</document>
+</documents>

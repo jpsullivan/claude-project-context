@@ -1,0 +1,290 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-context-menu-trigger.directive.ts</source>
+<document_content>
+import { CdkContextMenuTrigger } from '@angular/cdk/menu';
+import { Directive, effect, inject, input, type TemplateRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BrnMenuAlign, getBrnMenuAlign } from './brn-menu-align';
+
+@Directive({
+	selector: '[brnCtxMenuTriggerFor]',
+	standalone: true,
+	hostDirectives: [CdkContextMenuTrigger],
+})
+export class BrnContextMenuTriggerDirective {
+	private readonly _cdkTrigger = inject(CdkContextMenuTrigger, { host: true });
+	public brnCtxMenuTriggerFor = input<TemplateRef<unknown> | null>(null);
+	public brnCtxMenuTriggerData = input<unknown>(undefined);
+	public readonly align = input<BrnMenuAlign>(undefined);
+
+	constructor() {
+		// once the trigger opens we wait until the next tick and then grab the last position
+		// used to position the menu. we store this in our trigger which the brnMenu directive has
+		// access to through DI
+		this._cdkTrigger.opened.pipe(takeUntilDestroyed()).subscribe(() =>
+			setTimeout(
+				() =>
+					// eslint-disable-next-line
+					((this._cdkTrigger as any)._spartanLastPosition = // eslint-disable-next-line
+						(this._cdkTrigger as any).overlayRef._positionStrategy._lastPosition),
+			),
+		);
+
+		effect(() => (this._cdkTrigger.menuTemplateRef = this.brnCtxMenuTriggerFor()));
+		effect(() => (this._cdkTrigger.menuData = this.brnCtxMenuTriggerData()));
+		effect(() => {
+			const align = this.align();
+			if (!align) return;
+			this._cdkTrigger.menuPosition = getBrnMenuAlign(align);
+		});
+	}
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-align.ts</source>
+<document_content>
+import { ConnectedPosition } from '@angular/cdk/overlay';
+
+export type BrnMenuAlign = 'start' | 'center' | 'end' | undefined;
+export const getBrnMenuAlign = (align: Exclude<BrnMenuAlign, undefined>): ConnectedPosition[] => [
+	{
+		originX: align,
+		originY: 'bottom',
+		overlayX: align,
+		overlayY: 'top',
+	},
+	{
+		originX: align,
+		originY: 'top',
+		overlayX: align,
+		overlayY: 'bottom',
+	},
+];
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-bar.directive.ts</source>
+<document_content>
+import { CdkMenuBar } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+	selector: '[brnMenuBar]',
+	standalone: true,
+	hostDirectives: [CdkMenuBar],
+})
+export class BrnMenuBarDirective {}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-group.directive.ts</source>
+<document_content>
+import { CdkMenuGroup } from '@angular/cdk/menu';
+import { Directive } from '@angular/core';
+
+@Directive({
+	selector: '[brnMenuGroup]',
+	standalone: true,
+	hostDirectives: [CdkMenuGroup],
+})
+export class BrnMenuGroupDirective {}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-item-checkbox.directive.ts</source>
+<document_content>
+import { CdkMenuItemCheckbox } from '@angular/cdk/menu';
+import { booleanAttribute, Directive, effect, inject, input } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+
+@Directive({
+	selector: '[brnMenuItemCheckbox]',
+	standalone: true,
+	hostDirectives: [CdkMenuItemCheckbox],
+	host: {
+		'[class.checked]': 'checked()',
+		'[disabled]': 'disabled()',
+	},
+})
+export class BrnMenuItemCheckboxDirective {
+	private readonly _cdkMenuItem = inject(CdkMenuItemCheckbox);
+	public readonly checked = input(this._cdkMenuItem.checked, { transform: booleanAttribute });
+	public readonly disabled = input(this._cdkMenuItem.disabled, { transform: booleanAttribute });
+	public readonly triggered = outputFromObservable(this._cdkMenuItem.triggered);
+
+	constructor() {
+		effect(() => (this._cdkMenuItem.disabled = this.disabled()));
+		effect(() => (this._cdkMenuItem.checked = this.checked()));
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-item-radio.directive.ts</source>
+<document_content>
+import { CdkMenuItemRadio } from '@angular/cdk/menu';
+import { booleanAttribute, Directive, effect, inject, input } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+
+@Directive({
+	selector: '[brnMenuItemRadio]',
+	standalone: true,
+	hostDirectives: [CdkMenuItemRadio],
+	host: {
+		'[class.checked]': 'checked()',
+		'[disabled]': 'disabled()',
+	},
+})
+export class BrnMenuItemRadioDirective {
+	private readonly _cdkMenuItem = inject(CdkMenuItemRadio);
+	public readonly checked = input(this._cdkMenuItem.checked, { transform: booleanAttribute });
+	public readonly disabled = input(this._cdkMenuItem.disabled, { transform: booleanAttribute });
+	public readonly triggered = outputFromObservable(this._cdkMenuItem.triggered);
+
+	constructor() {
+		effect(() => (this._cdkMenuItem.disabled = this.disabled()));
+		effect(() => (this._cdkMenuItem.checked = this.checked()));
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-item.directive.ts</source>
+<document_content>
+import { CdkMenuItem } from '@angular/cdk/menu';
+import { booleanAttribute, Directive, effect, inject, input } from '@angular/core';
+import { outputFromObservable } from '@angular/core/rxjs-interop';
+
+@Directive({
+	selector: '[brnMenuItem]',
+	standalone: true,
+	hostDirectives: [CdkMenuItem],
+	host: {
+		'[disabled]': 'disabled()',
+	},
+})
+export class BrnMenuItemDirective {
+	private readonly _cdkMenuItem = inject(CdkMenuItem);
+	public readonly disabled = input(this._cdkMenuItem.disabled, { transform: booleanAttribute });
+	public readonly triggered = outputFromObservable(this._cdkMenuItem.triggered);
+
+	constructor() {
+		effect(() => (this._cdkMenuItem.disabled = this.disabled()));
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu-trigger.directive.ts</source>
+<document_content>
+import { CdkMenuTrigger } from '@angular/cdk/menu';
+import { Directive, effect, inject, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { BrnMenuAlign, getBrnMenuAlign } from './brn-menu-align';
+
+@Directive({
+	selector: '[brnMenuTriggerFor]',
+	standalone: true,
+	hostDirectives: [
+		{
+			directive: CdkMenuTrigger,
+			inputs: ['cdkMenuTriggerFor: brnMenuTriggerFor', 'cdkMenuTriggerData: brnMenuTriggerData'],
+			outputs: ['cdkMenuOpened: brnMenuOpened', 'cdkMenuClosed: brnMenuClosed'],
+		},
+	],
+})
+export class BrnMenuTriggerDirective {
+	private readonly _cdkTrigger = inject(CdkMenuTrigger, { host: true });
+	public readonly align = input<BrnMenuAlign>(undefined);
+
+	constructor() {
+		// once the trigger opens we wait until the next tick and then grab the last position
+		// used to position the menu. we store this in our trigger which the brnMenu directive has
+		// access to through DI
+		this._cdkTrigger.opened.pipe(takeUntilDestroyed()).subscribe(() =>
+			setTimeout(
+				() =>
+					// eslint-disable-next-line
+					((this._cdkTrigger as any)._spartanLastPosition = // eslint-disable-next-line
+						(this._cdkTrigger as any).overlayRef._positionStrategy._lastPosition),
+			),
+		);
+
+		effect(() => {
+			const align = this.align();
+			if (!align) return;
+			this._cdkTrigger.menuPosition = getBrnMenuAlign(align);
+		});
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/menu/src/lib/brn-menu.directive.ts</source>
+<document_content>
+import { CdkMenu } from '@angular/cdk/menu';
+import { Directive, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+@Directive({
+	selector: '[brnMenu],[brnSubMenu]',
+	standalone: true,
+	host: {
+		'[attr.data-state]': '_state()',
+		'[attr.data-side]': '_side()',
+	},
+	hostDirectives: [CdkMenu],
+})
+export class BrnMenuDirective {
+	private readonly _host = inject(CdkMenu);
+
+	protected readonly _state = signal('open');
+	protected readonly _side = signal('top');
+
+	constructor() {
+		this.setSideWithDarkMagic();
+		// this is a best effort, but does not seem to work currently
+		// TODO: figure out a way for us to know the host is about to be closed. might not be possible with CDK
+		this._host.closed.pipe(takeUntilDestroyed()).subscribe(() => this._state.set('closed'));
+	}
+
+	private setSideWithDarkMagic() {
+		/**
+		 * This is an ugly workaround to at least figure out the correct side of where a submenu
+		 * will appear and set the attribute to the host accordingly
+		 *
+		 * First of all we take advantage of the menu stack not being aware of the root
+		 * object immediately after it is added. This code executes before the root element is added,
+		 * which means the stack is still empty and the peek method returns undefined.
+		 */
+		const isRoot = this._host.menuStack.peek() === undefined;
+		setTimeout(() => {
+			// our menu trigger directive leaves the last position used for use immediately after opening
+			// we can access it here and determine the correct side.
+			// eslint-disable-next-line
+			const ps = (this._host as any)._parentTrigger._spartanLastPosition;
+			if (!ps) {
+				// if we have no last position we default to the most likely option
+				// I hate that we have to do this and hope we can revisit soon and improve
+				this._side.set(isRoot ? 'top' : 'left');
+				return;
+			}
+			const side = isRoot ? ps.originY : ps.originX === 'end' ? 'right' : 'left';
+			this._side.set(side);
+		});
+	}
+}
+
+</document_content>
+</document>
+</documents>

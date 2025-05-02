@@ -1,0 +1,122 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/input-otp/helm/src/lib/hlm-input-otp-fake-caret.component.ts
+```typescript
+import { Component } from '@angular/core';
+
+@Component({
+	selector: 'hlm-input-otp-fake-caret',
+	standalone: true,
+	template: `
+		<div class="pointer-events-none absolute inset-0 flex items-center justify-center">
+			<div class="animate-caret-blink bg-foreground h-4 w-px duration-1000"></div>
+		</div>
+	`,
+})
+export class HlmInputOtpFakeCaretComponent {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/input-otp/helm/src/lib/hlm-input-otp-group.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmInputOtpGroup]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmInputOtpGroupDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	protected readonly _computedClass = computed(() => hlm('flex items-center', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/input-otp/helm/src/lib/hlm-input-otp-separator.component.ts
+```typescript
+import { Component, computed, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideDot } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import { type ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-input-otp-separator',
+	imports: [HlmIconDirective, NgIcon],
+	providers: [provideIcons({ lucideDot })],
+	template: `
+		<ng-icon hlm name="lucideDot" />
+	`,
+	host: {
+		role: 'separator',
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmInputOtpSeparatorComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	protected readonly _computedClass = computed(() => hlm(this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/input-otp/helm/src/lib/hlm-input-otp-slot.component.ts
+```typescript
+import { NumberInput } from '@angular/cdk/coercion';
+import { Component, computed, input, numberAttribute } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnInputOtpSlotComponent } from '@spartan-ng/brain/input-otp';
+import { type ClassValue } from 'clsx';
+import { HlmInputOtpFakeCaretComponent } from './hlm-input-otp-fake-caret.component';
+
+@Component({
+	selector: 'hlm-input-otp-slot',
+	imports: [BrnInputOtpSlotComponent, HlmInputOtpFakeCaretComponent],
+	template: `
+		<brn-input-otp-slot [index]="index()">
+			<hlm-input-otp-fake-caret />
+		</brn-input-otp-slot>
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmInputOtpSlotComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	public readonly index = input.required<number, NumberInput>({ transform: numberAttribute });
+
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'relative flex h-10 w-10 items-center justify-center border-y border-r border-input text-sm transition-all first:rounded-l-md first:border-l last:rounded-r-md',
+			'has-[brn-input-otp-slot[data-active="true"]]:z-10 has-[brn-input-otp-slot[data-active="true"]]:ring-2 has-[brn-input-otp-slot[data-active="true"]]:ring-ring has-[brn-input-otp-slot[data-active="true"]]:ring-offset-background',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/input-otp/helm/src/lib/hlm-input-otp.directive.ts
+```typescript
+import { computed, Directive, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type ClassValue } from 'clsx';
+
+@Directive({
+	selector: 'brn-input-otp [hlm]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmInputOtpDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	protected readonly _computedClass = computed(() =>
+		hlm('flex items-center gap-2 has-[:disabled]:opacity-50', this.userClass()),
+	);
+}
+
+```

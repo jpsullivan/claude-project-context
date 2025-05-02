@@ -1,0 +1,767 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/compat.ts
+```typescript
+import { convertNxGenerator } from '@nx/devkit';
+import { healthcheckGenerator } from './generator';
+import { HealthcheckGeneratorSchema } from './schema';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default convertNxGenerator((tree: any, schema: HealthcheckGeneratorSchema & { angularCli?: boolean }) =>
+	healthcheckGenerator(tree, { ...schema, angularCli: true }),
+);
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/generator.spec.ts
+```typescript
+import { readJson, Tree, writeJson } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+import { healthcheckGenerator } from './generator';
+
+describe('healthcheck generator', () => {
+	let tree: Tree;
+
+	beforeEach(async () => {
+		tree = createTreeWithEmptyWorkspace();
+
+		writeJson(tree, 'package.json', {
+			dependencies: {
+				'@spartan-ng/brain': '0.0.1-alpha.300',
+				'@spartan-ng/ui-checkbox-brain': '0.0.1-alpha.300',
+			},
+			devDependencies: {
+				'@spartan-ng/cli': '0.0.1-alpha.300',
+			},
+		});
+
+		// add a file with legacy imports
+		tree.write(
+			'libs/my-lib/src/index.ts',
+			`
+			import { BrnCheckbox } from '@spartan-ng/ui-checkbox-brain';
+			import { hlm } from '@spartan-ng/ui-core';
+		`,
+		);
+
+		// add a file with a helm icon
+		tree.write(
+			'libs/my-lib/src/app.component.html',
+			`
+			<hlm-icon />
+			<hlm-scroll-area />
+		`,
+		);
+
+		await healthcheckGenerator(tree, { skipFormat: true, autoFix: true });
+	});
+
+	it('should update to latest dependencies', () => {
+		const packageJson = readJson(tree, 'package.json');
+
+		expect(packageJson.dependencies['@spartan-ng/brain']).not.toEqual('0.0.1-alpha.300');
+		expect(packageJson.devDependencies['@spartan-ng/cli']).not.toEqual('0.0.1-alpha.300');
+	});
+
+	it('should update brain imports', () => {
+		const contents = tree.read('libs/my-lib/src/index.ts', 'utf-8');
+
+		expect(contents).not.toContain('@spartan-ng/ui-checkbox-brain');
+		expect(contents).toContain('@spartan-ng/brain/checkbox');
+
+		// check if package.json was updated
+		const packageJson = readJson(tree, 'package.json');
+		expect(packageJson.dependencies['@spartan-ng/ui-checkbox-brain']).toBeUndefined();
+	});
+
+	it('should update core imports', () => {
+		const contents = tree.read('libs/my-lib/src/index.ts', 'utf-8');
+
+		expect(contents).not.toContain('@spartan-ng/ui-core');
+		expect(contents).toContain('@spartan-ng/brain/core');
+	});
+
+	it('should update helm icons', () => {
+		const contents = tree.read('libs/my-lib/src/app.component.html', 'utf-8');
+
+		expect(contents).not.toContain('<hlm-icon');
+		expect(contents).toContain('<ng-icon hlm');
+	});
+
+	it('should update helm scroll areas', () => {
+		const contents = tree.read('libs/my-lib/src/app.component.html', 'utf-8');
+
+		expect(contents).not.toContain('<hlm-scroll-area');
+		expect(contents).toContain('<ng-scrollbar hlm');
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/generator.ts
+```typescript
+import { formatFiles, logger, Tree } from '@nx/devkit';
+import { Healthcheck, HealthcheckReport, HealthcheckStatus, isHealthcheckFixable } from './healthchecks';
+import { brainImportsHealthcheck } from './healthchecks/brain-imports';
+import { brainRadioHealthcheck } from './healthchecks/brn-radio';
+import { brainToggleHealthcheck } from './healthchecks/brn-toggle-group';
+import { coreImportsHealthcheck } from './healthchecks/core-imports';
+import { helmIconHealthcheck } from './healthchecks/hlm-icon';
+import { scrollAreaHealthcheck } from './healthchecks/hlm-scroll-area';
+import { selectHealthcheck } from './healthchecks/hlm-select';
+import { versionHealthcheck } from './healthchecks/version';
+import { HealthcheckGeneratorSchema } from './schema';
+import { promptUser } from './utils/prompt';
+import { printReport } from './utils/reporter';
+import { runHealthcheck } from './utils/runner';
+
+export async function healthcheckGenerator(tree: Tree, options: HealthcheckGeneratorSchema & { angularCli?: boolean }) {
+	logger.info('Running healthchecks...');
+
+	const healthchecks: Healthcheck[] = [
+		versionHealthcheck,
+		brainImportsHealthcheck,
+		coreImportsHealthcheck,
+		helmIconHealthcheck,
+		scrollAreaHealthcheck,
+		brainRadioHealthcheck,
+		selectHealthcheck,
+		brainToggleHealthcheck,
+	];
+
+	const failedReports: HealthcheckReport[] = [];
+
+	for (const healthcheck of healthchecks) {
+		const report = await runHealthcheck(tree, healthcheck);
+		printReport(report);
+
+		if (report.status === HealthcheckStatus.Failure) {
+			failedReports.push(report);
+		}
+	}
+
+	for (const report of failedReports) {
+		if (report.fixable && isHealthcheckFixable(report.healthcheck)) {
+			const fix = options.autoFix || (await promptUser(report.healthcheck.prompt));
+
+			if (fix) {
+				await report.healthcheck.fix(tree, { angularCli: options.angularCli });
+			}
+		}
+	}
+
+	if (!options.skipFormat) {
+		await formatFiles(tree);
+	}
+}
+
+export default healthcheckGenerator;
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks.ts
+```typescript
+import { Tree } from '@nx/devkit';
+
+export type Healthcheck = StandardHealthcheck | FixableHealthcheck;
+
+interface StandardHealthcheck {
+	/**
+	 * The name of the healthcheck.
+	 */
+	name: string;
+
+	/**
+	 * Determine whether or not anything in the project needs to be fixed.
+	 */
+	detect(tree: Tree, failure: HealthcheckFailureFn, skip: HealthcheckSkippedFn): void | Promise<void>;
+}
+
+interface FixableHealthcheck extends StandardHealthcheck {
+	/**
+	 * Fix any issues found by the check method. Return true if the issue was fixed, false if it was not.
+	 */
+	fix(tree: Tree, context: HealthcheckContext): boolean | Promise<boolean>;
+	/**
+	 * The auto fix prompt message.
+	 */
+	prompt: string;
+}
+
+export enum HealthcheckStatus {
+	Success,
+	Failure,
+	Skipped,
+}
+
+export enum HealthcheckSeverity {
+	Error,
+	Warning,
+}
+
+export type HealthcheckFailureFn = (issue: string, severity: HealthcheckSeverity, fixable: boolean) => void;
+export type HealthcheckSkippedFn = (reason: string) => void;
+
+/**
+ * Determine if a healthcheck is fixable.
+ */
+export function isHealthcheckFixable(healthcheck: Healthcheck): healthcheck is FixableHealthcheck {
+	return 'fix' in healthcheck;
+}
+
+export interface HealthcheckReport {
+	/**
+	 * The name of the healthcheck.
+	 */
+	name: string;
+
+	/**
+	 * The healthcheck.
+	 */
+	healthcheck: Healthcheck;
+
+	/**
+	 * The status of the healthcheck.
+	 */
+	status: HealthcheckStatus;
+
+	/**
+	 * The list of issues that were found by the healthcheck.
+	 */
+	issues?: HealthcheckIssue[];
+
+	/**
+	 * If the healthcheck was skipped, this message will be displayed to the user.
+	 */
+	reason?: string;
+
+	/**
+	 * Whether or not the healthcheck can be fixed.
+	 */
+	fixable: boolean;
+}
+
+export interface HealthcheckIssue {
+	/**
+	 * The details of the issue that was found by the healthcheck.
+	 */
+	details: string;
+
+	/**
+	 * The severity of the issue.
+	 */
+	severity: HealthcheckSeverity;
+}
+
+interface HealthcheckContext {
+	angularCli?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/schema.d.ts
+```typescript
+export interface HealthcheckGeneratorSchema {
+	autoFix?: boolean;
+	skipFormat?: boolean;
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/schema.json
+```json
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"$id": "Healthcheck",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"autoFix": {
+			"type": "boolean",
+			"default": false,
+			"description": "Automatically fix any issues"
+		},
+		"skipFormat": {
+			"type": "boolean",
+			"default": false,
+			"description": "Skip formatting files"
+		}
+	},
+	"required": []
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/brain-imports.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateBrainImportsGenerator } from '../../migrate-brain-imports/generator';
+import importMap from '../../migrate-brain-imports/import-map';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const brainImportsHealthcheck: Healthcheck = {
+	name: 'Brain imports',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .json file, check for brain imports/packages
+			if (!file.endsWith('.ts') || file.endsWith('.json')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			for (const [importPath, brainPackage] of Object.entries(importMap)) {
+				if (contents.includes(importPath)) {
+					failure(
+						`The import ${importPath} is deprecated. Please use the ${brainPackage} package instead.`,
+						HealthcheckSeverity.Error,
+						true,
+					);
+				}
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateBrainImportsGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate brain imports?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/brn-radio.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateRadioGenerator } from '../../migrate-radio/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const brainRadioHealthcheck: Healthcheck = {
+	name: 'Brain Radio',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .htlm file, check for brain radio
+			if (!file.endsWith('.ts') && !file.endsWith('.html')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			if (contents.includes('<brn-radio')) {
+				failure(
+					`The <brn-radio> component is deprecated. Please use the <hlm-radio> instead.`,
+					HealthcheckSeverity.Error,
+					true,
+				);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateRadioGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate brain radio?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/brn-toggle-group.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateToggleGroupGenerator } from '../../migrate-toggle-group/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const brainToggleHealthcheck: Healthcheck = {
+	name: 'Brain Toggle Group',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .htlm file, check for helm icons
+			if (!file.endsWith('.ts') && !file.endsWith('.html')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			if (
+				contents.includes("BrnToggleGroupModule } from '@spartan-ng/brain/toggle'") ||
+				contents.includes("import { BrnToggleGroupModule } from '@spartan-ng/brain/toggle'") ||
+				(contents.includes('BrnToggleGroupModule') && contents.includes('@spartan-ng/brain/toggle')) ||
+				contents.includes("HlmToggleGroupModule } from '@spartan-ng/ui-toggle-helm'") ||
+				(contents.includes('HlmToggleGroupModule') && contents.includes('@spartan-ng/ui-toggle-helm'))
+			) {
+				failure(
+					'The <brn-toggle-group> component from the toggle brain package is deprecated. Please use the <brn-toggle-group> from the toggle-group package instead.',
+					HealthcheckSeverity.Error,
+					true,
+				);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateToggleGroupGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate toggle-group?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/core-imports.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateCoreGenerator } from '../../migrate-core/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const coreImportsHealthcheck: Healthcheck = {
+	name: 'Core imports',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts file, check for core imports
+			if (!file.endsWith('.ts')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			if (contents.includes('@spartan-ng/ui-core')) {
+				failure(
+					`The import @spartan-ng/ui-core is deprecated. Please use the @spartan-ng/brain/core package instead.`,
+					HealthcheckSeverity.Error,
+					true,
+				);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateCoreGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate core imports?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/hlm-icon.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateIconGenerator } from '../../migrate-icon/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const helmIconHealthcheck: Healthcheck = {
+	name: 'Helm Icons',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .htlm file, check for helm icons
+			if (!file.endsWith('.ts') && !file.endsWith('.html')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			if (contents.includes('<hlm-icon')) {
+				failure(
+					`The <hlm-icon> component is deprecated. Please use the <ng-icon hlm> instead.`,
+					HealthcheckSeverity.Error,
+					true,
+				);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateIconGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate helm icons?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/hlm-scroll-area.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { migrateScrollAreaGenerator } from '../../migrate-scroll-area/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const scrollAreaHealthcheck: Healthcheck = {
+	name: 'Helm Scroll Area',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .htlm file, check for helm icons
+			if (!file.endsWith('.ts') && !file.endsWith('.html')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			if (contents.includes('<hlm-scroll-area')) {
+				failure(
+					`The <hlm-scroll-area> component is deprecated. Please use the <ng-scrollbar hlm> instead.`,
+					HealthcheckSeverity.Error,
+					true,
+				);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateScrollAreaGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate helm scroll areas?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/hlm-select.ts
+```typescript
+import { visitNotIgnoredFiles } from '@nx/devkit';
+import { hasHelmClasses } from '../../../utils/hlm-class';
+import migrateSelectGenerator from '../../migrate-select/generator';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const selectHealthcheck: Healthcheck = {
+	name: 'Helm Select',
+	async detect(tree, failure) {
+		visitNotIgnoredFiles(tree, '/', (file) => {
+			// if the file is a .ts or .htlm file, check for helm icons
+			if (!file.endsWith('.ts') && !file.endsWith('.html')) {
+				return;
+			}
+
+			const contents = tree.read(file, 'utf-8');
+
+			if (!contents) {
+				return;
+			}
+
+			// check if the legacy openedChange event is being used
+			if (/<(brn-select|hlm-select)[^>]*\(\s*openedChange\s*\)=/g.test(contents)) {
+				failure('Select is using the renamed openedChange event.', HealthcheckSeverity.Error, true);
+			}
+
+			// check if the legacy focus classes are being used
+			if (
+				hasHelmClasses(tree, file, {
+					component: 'HlmSelectOptionComponent',
+					classes: ['focus:bg-accent', 'focus:text-accent-foreground'],
+				})
+			) {
+				failure('Select option is using the legacy focus classes.', HealthcheckSeverity.Error, true);
+			}
+		});
+	},
+	fix: async (tree) => {
+		await migrateSelectGenerator(tree, { skipFormat: true });
+		return true;
+	},
+	prompt: 'Would you like to migrate selects?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/healthchecks/version.ts
+```typescript
+import { readJson } from '@nx/devkit';
+import { PackageJson } from 'nx/src/utils/package-json';
+import * as semver from 'semver';
+import { Healthcheck, HealthcheckSeverity } from '../healthchecks';
+
+export const versionHealthcheck: Healthcheck = {
+	name: 'Spartan - Dependency Check',
+	async detect(tree, failure, skip) {
+		// If there is no package.json, skip this healthcheck
+		if (!tree.exists('package.json')) {
+			skip('No package.json found.');
+			return;
+		}
+
+		// read the package.json
+		const packageJson = readJson(tree, 'package.json');
+
+		// merge the dependencies and devDependencies
+		const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+
+		const dependenciesToCheck = ['@spartan-ng/brain', '@spartan-ng/cli'];
+
+		for (const dep of dependenciesToCheck) {
+			if (!dependencies[dep]) {
+				failure(`The dependency ${dep} is not installed.`, HealthcheckSeverity.Error, true);
+				continue;
+			}
+
+			const installedVersion = dependencies[dep];
+
+			// check if the installed version is the latest version
+			const request = await fetch(`https://registry.npmjs.org/${dep}/latest`);
+
+			if (!request.ok) {
+				failure(`Failed to fetch metadata for ${dep}.`, HealthcheckSeverity.Error, false);
+				continue;
+			}
+
+			const metadata = (await request.json()) as PackageJson;
+
+			if (!semver.satisfies(metadata.version, installedVersion)) {
+				failure(
+					`The installed version of ${dep} is not the latest version. The latest version is ${metadata.version}.`,
+					HealthcheckSeverity.Warning,
+					true,
+				);
+				continue;
+			}
+		}
+	},
+	fix: async (tree) => {
+		const packageJson = readJson(tree, 'package.json');
+		const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+		const dependenciesToCheck = ['@spartan-ng/brain', '@spartan-ng/cli'];
+
+		for (const dep of dependenciesToCheck) {
+			if (!dependencies[dep]) {
+				return false;
+			}
+
+			const request = await fetch(`https://registry.npmjs.org/${dep}/latest`);
+
+			if (!request.ok) {
+				return false;
+			}
+
+			const metadata = (await request.json()) as PackageJson;
+
+			// update the dependency to the latest version in the respective section
+			if (packageJson.dependencies[dep]) {
+				packageJson.dependencies[dep] = `^${metadata.version}`;
+			} else {
+				packageJson.devDependencies[dep] = `^${metadata.version}`;
+			}
+		}
+
+		tree.write('package.json', JSON.stringify(packageJson, null, 2));
+
+		return true;
+	},
+	prompt: 'Would you like to update to the latest versions of the dependencies?',
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/utils/prompt.ts
+```typescript
+export function promptUser(question: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		process.stdout.write(`${question} (y/n): `);
+
+		process.stdin.setEncoding('utf8');
+		process.stdin.once('data', (data) => {
+			const answer = data.toString().trim().toLowerCase();
+			if (['yes', 'y'].includes(answer)) {
+				resolve(true);
+			} else if (['no', 'n'].includes(answer)) {
+				resolve(false);
+			} else {
+				console.log('Invalid response. Please answer with "yes" or "no".');
+				resolve(promptUser(question));
+			}
+		});
+	});
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/utils/reporter.ts
+```typescript
+import { logger } from '@nx/devkit';
+import pc from 'picocolors';
+import { HealthcheckReport, HealthcheckSeverity, HealthcheckStatus } from '../healthchecks';
+
+export function printReport(report: HealthcheckReport): void {
+	logger.log(`${getStatus(report.status)} ${report.name}`);
+
+	// if this was a failure log the instructions
+	if (report.status === HealthcheckStatus.Failure) {
+		for (const issue of report.issues) {
+			logger.log(`\t\t ${getSeverity(issue.severity)} ${issue.details}`);
+		}
+	}
+
+	// if the healthcheck was skipped, log the reason
+	if (report.status === HealthcheckStatus.Skipped) {
+		logger.log(`\t\t ${pc.yellow(report.reason)}`);
+	}
+}
+
+function getStatus(result: HealthcheckStatus) {
+	switch (result) {
+		case HealthcheckStatus.Success:
+			return pc.green('[ ✔ ]');
+		case HealthcheckStatus.Failure:
+			return pc.red('[ ✖ ]');
+		case HealthcheckStatus.Skipped:
+			return pc.yellow('[ ! ]');
+	}
+}
+
+function getSeverity(severity: HealthcheckSeverity) {
+	switch (severity) {
+		case HealthcheckSeverity.Error:
+			return pc.red('✖');
+		case HealthcheckSeverity.Warning:
+			return pc.yellow('!');
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/healthcheck/utils/runner.ts
+```typescript
+import { Tree } from '@nx/devkit';
+import {
+	Healthcheck,
+	HealthcheckFailureFn,
+	HealthcheckReport,
+	HealthcheckSeverity,
+	HealthcheckStatus,
+	isHealthcheckFixable,
+} from '../healthchecks';
+
+export async function runHealthcheck(tree: Tree, healthcheck: Healthcheck): Promise<HealthcheckReport> {
+	const report: HealthcheckReport = {
+		name: healthcheck.name,
+		status: HealthcheckStatus.Success,
+		fixable: false,
+		healthcheck,
+	};
+
+	const failure: HealthcheckFailureFn = (details: string, severity: HealthcheckSeverity, fixable: boolean) => {
+		// check if this issue already exists
+		if (report.issues?.some((issue) => issue.details === details)) {
+			return;
+		}
+
+		report.status = HealthcheckStatus.Failure;
+		report.issues ??= [];
+		report.issues.push({ details, severity });
+		report.fixable = report.fixable || (fixable && isHealthcheckFixable(healthcheck));
+	};
+
+	const skip = (reason: string) => {
+		report.status = HealthcheckStatus.Skipped;
+		report.reason = reason;
+	};
+
+	await coercePromise(healthcheck.detect(tree, failure, skip));
+
+	return report;
+}
+
+function coercePromise<T>(value: T | Promise<T>): Promise<T> {
+	return value instanceof Promise ? value : Promise.resolve(value);
+}
+
+```

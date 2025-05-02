@@ -1,0 +1,8 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/core/package.json</source>
+<document_content>
+
+</document_content>
+</document>
+</documents>

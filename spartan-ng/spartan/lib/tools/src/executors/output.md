@@ -1,0 +1,207 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/executor.spec.ts
+```typescript
+import { ExecutorContext } from '@nx/devkit';
+import * as child_process from 'node:child_process';
+import * as process from 'node:process';
+import * as projectHelpers from '../helpers/projects.helpers';
+import executor from './executor';
+
+// Mock the entire child_process module
+jest.mock('node:child_process', () => ({
+	execSync: jest.fn(), // Mock execSync function
+}));
+
+describe('NpmPublish Executor', () => {
+	it('should execSync with a default libPath if no libPath was provided', async () => {
+		const mockRoot = 'libs/my-domain/foo';
+		const context = {} as unknown as ExecutorContext;
+
+		// Mock the getRoot helper
+		jest.spyOn(projectHelpers, 'getRoot').mockReturnValue(mockRoot);
+
+		// Set the environment variable for TAG
+		process.env.TAG = 'next';
+
+		// Expected command that should be executed
+		const expectedCommand = `cd ./dist/${mockRoot} && npm publish --tag next`;
+
+		// Call the executor
+		const output = await executor({}, context);
+
+		// Check if execSync was called with the expected command
+		expect(child_process.execSync).toHaveBeenCalledWith(expectedCommand);
+		expect(output.success).toBe(true);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/executor.ts
+```typescript
+import type { ExecutorContext } from '@nx/devkit';
+import { execSync } from 'node:child_process';
+
+import { getRoot } from '../helpers/projects.helpers';
+
+import * as process from 'node:process';
+import type { NpmPublishExecutorSchema } from './schema';
+
+export default async function runExecutor(_options: NpmPublishExecutorSchema, context: ExecutorContext) {
+	const tag = process.env.TAG;
+
+	if (!tag) {
+		console.log('no process.env.TAG available. returning early');
+		return {
+			success: false,
+		};
+	}
+
+	const sourceRoot = `./dist/${getRoot(context)}`;
+
+	console.log('running npm publish at ' + sourceRoot);
+
+	execSync(`cd ${sourceRoot} && npm publish${tag ? ` --tag ${tag}` : ''}`);
+	return {
+		success: true,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/schema.d.ts
+```typescript
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type NpmPublishExecutorSchema = {};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/schema.json
+```json
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"version": 2,
+	"title": "NPM publish executor",
+	"description": "",
+	"type": "object",
+	"properties": {}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/executor.spec.ts
+```typescript
+import * as childProcess from 'node:child_process';
+import * as projectHelper from '../helpers/projects.helpers';
+import * as npmPublish from '../npm-publish/executor';
+import executor from './executor';
+
+// Mock the entire child_process module
+jest.mock('node:child_process', () => ({
+	execSync: jest.fn(), // Mock execSync function
+}));
+
+describe('BuildUpdatePublish Executor', () => {
+	it('should call update-version executor and npm publish executor with the options and context', async () => {
+		const libName = 'foo';
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const mockContext = { bar: 'bar' } as any;
+
+		// Mock the project helper, npmPublish, and execSync
+		jest.spyOn(projectHelper, 'getProjectName').mockReturnValue(libName);
+
+		// Mock npmPublish to return { success: true }
+		jest.spyOn(npmPublish, 'default').mockImplementation(async () => Promise.resolve({ success: true }));
+
+		// execSync is already mocked globally by jest.mock
+		const expectedCommand = `nx build --project ${libName}`;
+		const execSyncMock = childProcess.execSync as jest.Mock;
+
+		const output = await executor({}, mockContext);
+
+		// Verify that all functions are called as expected
+		expect(npmPublish.default).toHaveBeenCalledWith({}, mockContext);
+		expect(execSyncMock).toHaveBeenCalledWith(expectedCommand);
+		expect(output.success).toBe(true);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/executor.ts
+```typescript
+import type { ExecutorContext } from '@nx/devkit';
+import { execSync } from 'node:child_process';
+
+import { getProjectName } from '../helpers/projects.helpers';
+import npmPublish from '../npm-publish/executor';
+
+import type { BuildUpdatePublishExecutorSchema } from './schema';
+
+export default async function runExecutor(_options: BuildUpdatePublishExecutorSchema, context: ExecutorContext) {
+	execSync(`nx build --project ${getProjectName(context)}`);
+
+	await npmPublish({}, context);
+
+	return {
+		success: true,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/schema.d.ts
+```typescript
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type BuildUpdatePublishExecutorSchema = {};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/schema.json
+```json
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"version": 2,
+	"title": "BuildUpdatePublish executor",
+	"description": "",
+	"type": "object",
+	"properties": {}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/helpers/projects.helpers.spec.ts
+```typescript
+import { ExecutorContext } from '@nx/devkit';
+import { getProjectName, getRoot } from './projects.helpers';
+
+describe('executor project helper', () => {
+	it('should return the project name', () => {
+		const projectName = 'foo';
+		expect(getProjectName({ projectName } as unknown as ExecutorContext)).toBe(projectName);
+	});
+
+	it('should get the root of the project', () => {
+		const expectedRoot = 'libs/foo';
+		const context = {
+			projectName: 'foo',
+			projectsConfigurations: {
+				projects: {
+					foo: {
+						root: expectedRoot,
+					},
+				},
+			},
+		} as unknown as ExecutorContext;
+
+		expect(getRoot(context)).toBe(expectedRoot);
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/helpers/projects.helpers.ts
+```typescript
+import type { ExecutorContext } from '@nx/devkit';
+
+export function getProjectName(context: ExecutorContext): string {
+	return context.projectName;
+}
+
+export function getRoot(context: ExecutorContext): string {
+	const projectsConfiguration = context.projectsConfigurations.projects;
+	const projectName = getProjectName(context);
+	return projectsConfiguration[projectName].root;
+}
+
+```

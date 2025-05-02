@@ -1,0 +1,1820 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/README.md</source>
+<document_content>
+# tools
+
+This library was generated with [Nx](https://nx.dev).
+
+## Building
+
+Run `nx build tools` to build the library.
+
+## Running unit tests
+
+Run `nx test tools` to execute the unit tests via [Jest](https://jestjs.io).
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/eslint.config.cjs</source>
+<document_content>
+const baseConfig = require('../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	{
+		files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
+		rules: {},
+	},
+	{
+		files: ['**/*.ts', '**/*.tsx'],
+		rules: {
+			'@angular-eslint/prefer-output-readonly': 'off',
+		},
+	},
+	{
+		files: ['**/*.js', '**/*.jsx'],
+		rules: {},
+	},
+	{
+		files: ['**/*.json'],
+		rules: {
+			'@nx/nx-plugin-checks': 'error',
+			'@nx/dependency-checks': 'off',
+		},
+		languageOptions: {
+			parser: require('jsonc-eslint-parser'),
+		},
+	},
+];
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/executors.json</source>
+<document_content>
+{
+	"executors": {
+		"npm-publish": {
+			"implementation": "./src/executors/release/npm-publish/executor",
+			"schema": "./src/executors/release/npm-publish/schema.json",
+			"description": "npm-publish executor"
+		},
+		"build-update-publish": {
+			"implementation": "./src/executors/release/build-update-publish/executor",
+			"schema": "./src/executors/release/build-update-publish/schema.json",
+			"description": "build-update-publish executor"
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/generators.json</source>
+<document_content>
+{
+	"generators": {
+		"replace-cli-version": {
+			"factory": "./src/generators/replace-cli-version/generator",
+			"schema": "./src/generators/replace-cli-version/schema.json",
+			"description": "Updates the CLI's version"
+		},
+		"replace-ui-version": {
+			"factory": "./src/generators/replace-ui-version/generator",
+			"schema": "./src/generators/replace-ui-version/schema.json",
+			"description": "Replaces version for all UI libs and their references in the CLI"
+		},
+		"auto-increment-version": {
+			"factory": "./src/generators/auto-increment-version/generator",
+			"schema": "./src/generators/auto-increment-version/schema.json",
+			"description": "During alpha we are using this to automatically increment the version number for nightly releases"
+		},
+		"hlm-to-cli-generator": {
+			"factory": "./src/generators/hlm-to-cli-generator/generator",
+			"schema": "./src/generators/hlm-to-cli-generator/schema.json",
+			"description": "hlm-to-cli-generator generator"
+		},
+		"brain-secondary-entrypoint": {
+			"factory": "./src/generators/brain-secondary-entrypoint/generator",
+			"schema": "./src/generators/brain-secondary-entrypoint/schema.json",
+			"description": "Add a secondary entrypoint to the Brain library"
+		},
+		"helm-library": {
+			"factory": "./src/generators/helm-library/generator",
+			"schema": "./src/generators/helm-library/schema.json",
+			"description": "Create a new Helm library."
+		},
+		"helm-story": {
+			"factory": "./src/generators/helm-story/generator",
+			"schema": "./src/generators/helm-story/schema.json",
+			"description": "Generate a story for a helm component."
+		},
+		"helm-component": {
+			"factory": "./src/generators/helm-component/generator",
+			"schema": "./src/generators/helm-component/schema.json",
+			"description": "Generate a helm component."
+		},
+		"helm-directive": {
+			"factory": "./src/generators/helm-directive/generator",
+			"schema": "./src/generators/helm-directive/schema.json",
+			"description": "Generate a helm directive."
+		},
+		"helm-documentation": {
+			"factory": "./src/generators/helm-documentation/generator",
+			"schema": "./src/generators/helm-documentation/schema.json",
+			"description": "Generate a documentation page for a Helm component."
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'tools',
+	preset: '../../jest.preset.cjs',
+	transform: {
+		'^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }],
+	},
+	moduleFileExtensions: ['ts', 'js', 'html'],
+	coverageDirectory: '../../coverage/libs/tools',
+};
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/tools",
+	"version": "0.0.1-alpha.380",
+	"private": true,
+	"type": "commonjs",
+	"executors": "./executors.json",
+	"generators": "./generators.json"
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/project.json</source>
+<document_content>
+{
+	"name": "tools",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/tools/src",
+	"projectType": "library",
+	"tags": [],
+	"targets": {
+		"build": {
+			"executor": "@nx/js:tsc",
+			"outputs": ["{options.outputPath}"],
+			"options": {
+				"outputPath": "dist/libs/tools",
+				"main": "libs/tools/src/index.ts",
+				"tsConfig": "libs/tools/tsconfig.lib.json",
+				"assets": [
+					"libs/tools/*.md",
+					{
+						"input": "./libs/tools/src",
+						"glob": "**/!(*.ts)",
+						"output": "./src"
+					},
+					{
+						"input": "./libs/tools/src",
+						"glob": "**/*.d.ts",
+						"output": "./src"
+					},
+					{
+						"input": "./libs/tools",
+						"glob": "generators.json",
+						"output": "."
+					},
+					{
+						"input": "./libs/tools",
+						"glob": "executors.json",
+						"output": "."
+					}
+				]
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/tools/jest.config.ts"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/tsconfig.json</source>
+<document_content>
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"module": "commonjs"
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	]
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../dist/out-tsc",
+		"declaration": true,
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../dist/out-tsc",
+		"module": "commonjs",
+		"types": ["jest", "node"]
+	},
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/index.ts</source>
+<document_content>
+console.log('I should not be blank.');
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/executor.spec.ts</source>
+<document_content>
+import { ExecutorContext } from '@nx/devkit';
+import * as child_process from 'node:child_process';
+import * as process from 'node:process';
+import * as projectHelpers from '../helpers/projects.helpers';
+import executor from './executor';
+
+// Mock the entire child_process module
+jest.mock('node:child_process', () => ({
+	execSync: jest.fn(), // Mock execSync function
+}));
+
+describe('NpmPublish Executor', () => {
+	it('should execSync with a default libPath if no libPath was provided', async () => {
+		const mockRoot = 'libs/my-domain/foo';
+		const context = {} as unknown as ExecutorContext;
+
+		// Mock the getRoot helper
+		jest.spyOn(projectHelpers, 'getRoot').mockReturnValue(mockRoot);
+
+		// Set the environment variable for TAG
+		process.env.TAG = 'next';
+
+		// Expected command that should be executed
+		const expectedCommand = `cd ./dist/${mockRoot} && npm publish --tag next`;
+
+		// Call the executor
+		const output = await executor({}, context);
+
+		// Check if execSync was called with the expected command
+		expect(child_process.execSync).toHaveBeenCalledWith(expectedCommand);
+		expect(output.success).toBe(true);
+	});
+});
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/executor.ts</source>
+<document_content>
+import type { ExecutorContext } from '@nx/devkit';
+import { execSync } from 'node:child_process';
+
+import { getRoot } from '../helpers/projects.helpers';
+
+import * as process from 'node:process';
+import type { NpmPublishExecutorSchema } from './schema';
+
+export default async function runExecutor(_options: NpmPublishExecutorSchema, context: ExecutorContext) {
+	const tag = process.env.TAG;
+
+	if (!tag) {
+		console.log('no process.env.TAG available. returning early');
+		return {
+			success: false,
+		};
+	}
+
+	const sourceRoot = `./dist/${getRoot(context)}`;
+
+	console.log('running npm publish at ' + sourceRoot);
+
+	execSync(`cd ${sourceRoot} && npm publish${tag ? ` --tag ${tag}` : ''}`);
+	return {
+		success: true,
+	};
+}
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/schema.d.ts</source>
+<document_content>
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type NpmPublishExecutorSchema = {};
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/npm-publish/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"version": 2,
+	"title": "NPM publish executor",
+	"description": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/executor.spec.ts</source>
+<document_content>
+import * as childProcess from 'node:child_process';
+import * as projectHelper from '../helpers/projects.helpers';
+import * as npmPublish from '../npm-publish/executor';
+import executor from './executor';
+
+// Mock the entire child_process module
+jest.mock('node:child_process', () => ({
+	execSync: jest.fn(), // Mock execSync function
+}));
+
+describe('BuildUpdatePublish Executor', () => {
+	it('should call update-version executor and npm publish executor with the options and context', async () => {
+		const libName = 'foo';
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const mockContext = { bar: 'bar' } as any;
+
+		// Mock the project helper, npmPublish, and execSync
+		jest.spyOn(projectHelper, 'getProjectName').mockReturnValue(libName);
+
+		// Mock npmPublish to return { success: true }
+		jest.spyOn(npmPublish, 'default').mockImplementation(async () => Promise.resolve({ success: true }));
+
+		// execSync is already mocked globally by jest.mock
+		const expectedCommand = `nx build --project ${libName}`;
+		const execSyncMock = childProcess.execSync as jest.Mock;
+
+		const output = await executor({}, mockContext);
+
+		// Verify that all functions are called as expected
+		expect(npmPublish.default).toHaveBeenCalledWith({}, mockContext);
+		expect(execSyncMock).toHaveBeenCalledWith(expectedCommand);
+		expect(output.success).toBe(true);
+	});
+});
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/executor.ts</source>
+<document_content>
+import type { ExecutorContext } from '@nx/devkit';
+import { execSync } from 'node:child_process';
+
+import { getProjectName } from '../helpers/projects.helpers';
+import npmPublish from '../npm-publish/executor';
+
+import type { BuildUpdatePublishExecutorSchema } from './schema';
+
+export default async function runExecutor(_options: BuildUpdatePublishExecutorSchema, context: ExecutorContext) {
+	execSync(`nx build --project ${getProjectName(context)}`);
+
+	await npmPublish({}, context);
+
+	return {
+		success: true,
+	};
+}
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/schema.d.ts</source>
+<document_content>
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export type BuildUpdatePublishExecutorSchema = {};
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/build-update-publish/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"version": 2,
+	"title": "BuildUpdatePublish executor",
+	"description": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/helpers/projects.helpers.spec.ts</source>
+<document_content>
+import { ExecutorContext } from '@nx/devkit';
+import { getProjectName, getRoot } from './projects.helpers';
+
+describe('executor project helper', () => {
+	it('should return the project name', () => {
+		const projectName = 'foo';
+		expect(getProjectName({ projectName } as unknown as ExecutorContext)).toBe(projectName);
+	});
+
+	it('should get the root of the project', () => {
+		const expectedRoot = 'libs/foo';
+		const context = {
+			projectName: 'foo',
+			projectsConfigurations: {
+				projects: {
+					foo: {
+						root: expectedRoot,
+					},
+				},
+			},
+		} as unknown as ExecutorContext;
+
+		expect(getRoot(context)).toBe(expectedRoot);
+	});
+});
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/executors/release/helpers/projects.helpers.ts</source>
+<document_content>
+import type { ExecutorContext } from '@nx/devkit';
+
+export function getProjectName(context: ExecutorContext): string {
+	return context.projectName;
+}
+
+export function getRoot(context: ExecutorContext): string {
+	const projectsConfiguration = context.projectsConfigurations.projects;
+	const projectName = getProjectName(context);
+	return projectsConfiguration[projectName].root;
+}
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/generator.ts</source>
+<document_content>
+import { librarySecondaryEntryPointGenerator } from '@nx/angular/generators';
+import { formatFiles, Tree } from '@nx/devkit';
+import { BrainSecondaryEntrypointGeneratorSchema } from './schema';
+
+export async function brainSecondaryEntrypointGenerator(tree: Tree, options: BrainSecondaryEntrypointGeneratorSchema) {
+	await librarySecondaryEntryPointGenerator(tree, {
+		name: options.name,
+		library: 'brain',
+		skipFormat: true,
+		skipModule: true,
+	});
+
+	await formatFiles(tree);
+}
+
+export default brainSecondaryEntrypointGenerator;
+
+</document_content>
+</document>
+<document index="23">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/schema.d.ts</source>
+<document_content>
+export interface BrainSecondaryEntrypointGeneratorSchema {
+	name: string;
+}
+
+</document_content>
+</document>
+<document index="24">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "BrainSecondaryEntrypoint",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "The name of the secondary entrypoint to create.",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-prompt": "What name would you like to use?"
+		}
+	},
+	"required": ["name"]
+}
+
+</document_content>
+</document>
+<document index="25">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-directive/generator.ts</source>
+<document_content>
+import { formatFiles, generateFiles, joinPathFragments, names, readProjectConfiguration, Tree } from '@nx/devkit';
+import * as path from 'path';
+import { addExportStatement, addImportStatement, addToExportConstArray } from '../utils/ast';
+import { HelmDirectiveGeneratorSchema } from './schema';
+
+export async function helmDirectiveGenerator(tree: Tree, options: HelmDirectiveGeneratorSchema) {
+	const { root } = readProjectConfiguration(tree, options.project);
+	const { fileName, className } = names(options.directiveName);
+	const directivePath = joinPathFragments(root, 'src', 'lib');
+
+	generateFiles(tree, path.join(__dirname, 'files'), directivePath, {
+		fileName,
+		directiveName: `Hlm${className}Directive`,
+		selector: `hlm${className}`,
+	});
+
+	// the path to the index.ts file
+	const indexPath = joinPathFragments(root, 'src', 'index.ts');
+	let sourceCode = tree.read(indexPath, 'utf-8');
+
+	sourceCode = addImportStatement(
+		sourceCode,
+		`import { Hlm${className}Directive } from './lib/hlm-${fileName}.directive';`,
+	);
+	sourceCode = addExportStatement(sourceCode, `export * from './lib/hlm-${fileName}.directive';`);
+	sourceCode = addToExportConstArray(sourceCode, `Hlm${className}Directive`);
+
+	tree.write(indexPath, sourceCode);
+
+	await formatFiles(tree);
+}
+
+export default helmDirectiveGenerator;
+
+</document_content>
+</document>
+<document index="26">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-directive/schema.d.ts</source>
+<document_content>
+export interface HelmDirectiveGeneratorSchema {
+	project: string;
+	directiveName: string;
+}
+
+</document_content>
+</document>
+<document index="27">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-directive/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "HelmComponent",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"project": {
+			"type": "string",
+			"description": "The name of the project to add the directive to.",
+			"alias": "p",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-dropdown": "projects",
+			"x-prompt": "What project would you like to add the directive to?",
+			"x-priority": "important"
+		},
+		"directiveName": {
+			"type": "string",
+			"description": "The name of the directive.",
+			"x-prompt": "The name of the directive?"
+		}
+	},
+	"required": ["project", "directiveName"]
+}
+
+</document_content>
+</document>
+<document index="28">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-directive/files/hlm-__fileName__.directive.ts.template</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[<%= selector %>]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class <%= directiveName %> {
+	/** The user defined classes */
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	/** The classes to apply merged with the user defined classes */
+	protected readonly _computedClass = computed(() => hlm('', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="29">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/replace-cli-version/generator.ts</source>
+<document_content>
+import { formatFiles, type Tree, updateJson } from '@nx/devkit';
+import process from 'node:process';
+
+export default async function replaceCliVersionGenerator(tree: Tree, options?: { newVersion: string }): Promise<void> {
+	const packageJsonPath = 'libs/cli/package.json';
+	const newVersion = options?.newVersion ?? process.env.VERSION;
+
+	if (!newVersion) {
+		console.error('Must define a VERSION environment variable to use with this script.');
+		return;
+	}
+
+	updateJson(tree, packageJsonPath, (pkgJson) => {
+		pkgJson.version = newVersion;
+		return pkgJson;
+	});
+
+	await formatFiles(tree);
+
+	console.log(`updated CLI version to ${newVersion}`);
+}
+
+</document_content>
+</document>
+<document index="30">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/replace-cli-version/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/schema",
+	"$id": "ReplaceCliVersionGenerator",
+	"title": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="31">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-documentation/generator.ts</source>
+<document_content>
+import { formatFiles, generateFiles, joinPathFragments, names, Tree } from '@nx/devkit';
+import * as path from 'path';
+import { HelmDocumentationGeneratorSchema } from './schema';
+
+export async function helmDocumentationGenerator(tree: Tree, options: HelmDocumentationGeneratorSchema) {
+	const documentationPath = joinPathFragments('apps', 'app', 'src', 'app', 'pages', '(components)', 'components');
+
+	generateFiles(tree, path.join(__dirname, 'files'), documentationPath, {
+		name: options.name,
+		description: options.description,
+		...names(options.name),
+		previewComponentName: `${names(options.name).className}PreviewComponent`,
+		pageComponentName: `${names(options.name).className}PageComponent`,
+	});
+	await formatFiles(tree);
+}
+
+export default helmDocumentationGenerator;
+
+</document_content>
+</document>
+<document index="32">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-documentation/schema.d.ts</source>
+<document_content>
+export interface HelmDocumentationGeneratorSchema {
+	name: string;
+	description: string;
+}
+
+</document_content>
+</document>
+<document index="33">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-documentation/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "HelmDocumentation",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-prompt": "What name would you like to use?"
+		},
+		"description": {
+			"type": "string",
+			"description": "The description of the library."
+		}
+	},
+	"required": ["name"]
+}
+
+</document_content>
+</document>
+<document index="34">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-documentation/files/(__fileName__)/__fileName__.page.ts.template</source>
+<document_content>
+import type { RouteMeta } from '@analogjs/router';
+import { Component } from '@angular/core';
+import { hlmCode, hlmH4 } from '@spartan-ng/ui-typography-helm';
+import { CodePreviewDirective } from '../../../../shared/code/code-preview.directive';
+import { CodeComponent } from '../../../../shared/code/code.component';
+import { MainSectionDirective } from '../../../../shared/layout/main-section.directive';
+import { PageBottomNavPlaceholderComponent } from '../../../../shared/layout/page-bottom-nav-placeholder.component';
+import { PageBottomNavLinkComponent } from '../../../../shared/layout/page-bottom-nav/page-bottom-nav-link.component';
+import { PageBottomNavComponent } from '../../../../shared/layout/page-bottom-nav/page-bottom-nav.component';
+import { PageNavComponent } from '../../../../shared/layout/page-nav/page-nav.component';
+import { SectionIntroComponent } from '../../../../shared/layout/section-intro.component';
+import { SectionSubHeadingComponent } from '../../../../shared/layout/section-sub-heading.component';
+import { TabsCliComponent } from '../../../../shared/layout/tabs-cli.component';
+import { TabsComponent } from '../../../../shared/layout/tabs.component';
+import { metaWith } from '../../../../shared/meta/meta.util';
+import { <%= previewComponentName %>, codeImports, codeSkeleton, codeString } from './<%= fileName %>.preview';
+
+export const routeMeta: RouteMeta = {
+	data: { breadcrumb: '<%= name %>' },
+	meta: metaWith(
+		'spartan/ui - <%= name %>',
+		'<%= description %>',
+	),
+	title: 'spartan/ui - <%= name %>',
+};
+
+@Component({
+	selector: 'spartan-<%= fileName %>',
+	standalone: true,
+	imports: [
+		MainSectionDirective,
+		CodeComponent,
+		SectionIntroComponent,
+		SectionSubHeadingComponent,
+		TabsComponent,
+		TabsCliComponent,
+		<%= previewComponentName %>,
+		CodePreviewDirective,
+		PageNavComponent,
+		PageBottomNavComponent,
+		PageBottomNavLinkComponent,
+		PageBottomNavPlaceholderComponent,
+	],
+	template: `
+		<section spartanMainSection>
+			<spartan-section-intro
+				name="<%= name %>"
+				lead="<%= description %>"
+			/>
+
+			<spartan-tabs firstTab="Preview" secondTab="Code">
+				<div spartanCodePreview firstTab>
+					<spartan-<%= fileName %>-preview />
+				</div>
+				<spartan-code secondTab [code]="code" />
+			</spartan-tabs>
+
+			<spartan-section-sub-heading id="installation">Installation</spartan-section-sub-heading>
+			<spartan-cli-tabs
+				class="mt-4"
+				nxCode="npx nx g @spartan-ng/cli:ui <%= name %>"
+				ngCode="ng g @spartan-ng/cli:ui <%= name %>"
+			/>
+
+			<spartan-section-sub-heading id="usage">Usage</spartan-section-sub-heading>
+			<div class="space-y-4">
+				<spartan-code [code]="imports" />
+				<spartan-code [code]="codeSkeleton" />
+			</div>
+
+			<spartan-page-bottom-nav>
+				<spartan-page-bottom-nav-link href="alert" label="Alert" />
+				<spartan-page-bottom-nav-placeholder />
+			</spartan-page-bottom-nav>
+		</section>
+		<spartan-page-nav />
+	`,
+})
+export default class <%= pageComponentName %> {
+	public readonly code = codeString;
+	public readonly imports = codeImports;
+	public readonly skeleton = codeSkeleton;
+	protected readonly readonly codeSkeleton = codeSkeleton;
+}
+
+</document_content>
+</document>
+<document index="35">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-documentation/files/(__fileName__)/__fileName__.preview.ts.template</source>
+<document_content>
+import { Component } from '@angular/core';
+
+@Component({
+	selector: 'spartan-<%= fileName %>-preview',
+	standalone: true,
+	imports: [
+
+	],
+	template: `
+
+	`,
+})
+export class <%= previewComponentName %> {}
+
+export const codeImports = `
+import {
+
+} from '@spartan-ng/ui-<%= fileName %>-helm';
+`;
+
+export const codeString = `import { Component } from '@angular/core';${codeImports}
+
+@Component({
+	selector: 'spartan-<%= fileName %>-preview',
+	standalone: true,
+	imports: [
+
+	],
+	template: \`
+
+	\`,
+})
+export class <%= previewComponentName %> {}`;
+
+export const codeSkeleton = `
+
+`;
+
+</document_content>
+</document>
+<document index="36">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/utils/ast.ts</source>
+<document_content>
+import { tsquery } from '@phenomnomnominal/tsquery';
+import * as ts from 'typescript';
+
+export function addToExportConstArray(sourceCode: string, newEntry: string): string {
+	const ast = tsquery.ast(sourceCode);
+	const query =
+		'VariableStatement:has(ExportKeyword) > VariableDeclarationList VariableDeclaration ArrayLiteralExpression';
+	const nodes = tsquery(ast, query) as ts.ArrayLiteralExpression[];
+
+	if (nodes.length === 0) {
+		throw new Error('No matching export const array found.');
+	}
+
+	const arrayNode = nodes[0];
+	const elements = [...arrayNode.elements.map((el) => el.getText()), newEntry];
+
+	return sourceCode.slice(0, arrayNode.getStart()) + `[${elements.join(', ')}]` + sourceCode.slice(arrayNode.getEnd());
+}
+
+export function addExportStatement(sourceCode: string, exportStatement: string): string {
+	const ast = tsquery.ast(sourceCode);
+	const importQuery = 'ImportDeclaration';
+	const exportQuery = 'ExportDeclaration';
+
+	const importNodes = tsquery(ast, importQuery) as ts.ImportDeclaration[];
+	const exportNodes = tsquery(ast, exportQuery) as ts.ExportDeclaration[];
+
+	let insertPosition = 0;
+	if (importNodes.length > 0) {
+		// Place after the last import
+		insertPosition = importNodes[importNodes.length - 1].getEnd();
+	}
+	if (exportNodes.length > 0) {
+		// If exports exist, place after the last export
+		insertPosition = exportNodes[exportNodes.length - 1].getEnd();
+	}
+
+	return sourceCode.slice(0, insertPosition) + `\n${exportStatement}` + sourceCode.slice(insertPosition);
+}
+
+export function addImportStatement(sourceCode: string, importStatement: string): string {
+	const ast = tsquery.ast(sourceCode);
+	const query = 'ImportDeclaration';
+	const importNodes = tsquery(ast, query) as ts.ImportDeclaration[];
+
+	if (importNodes.length === 0) {
+		// No existing imports, insert at the beginning
+		return `${importStatement}\n\n${sourceCode}`;
+	}
+
+	const lastImport = importNodes[importNodes.length - 1];
+
+	return sourceCode.slice(0, lastImport.getEnd()) + `\n${importStatement}` + sourceCode.slice(lastImport.getEnd());
+}
+
+</document_content>
+</document>
+<document index="37">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/generator.spec.ts</source>
+<document_content>
+import { type Tree, readProjectConfiguration } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+
+import { hlmCliNxGeneratorGenerator } from './generator';
+import type { HlmToCliGeneratorGeneratorSchema } from './schema';
+
+describe('hlm-to-nx-generator generator', () => {
+	let tree: Tree;
+	const options: HlmToCliGeneratorGeneratorSchema = {};
+
+	beforeEach(() => {
+		tree = createTreeWithEmptyWorkspace();
+	});
+
+	it.skip('should run successfully', async () => {
+		await hlmCliNxGeneratorGenerator(tree, options);
+		const config = readProjectConfiguration(tree, 'test');
+		expect(config).toBeDefined();
+	});
+});
+
+</document_content>
+</document>
+<document index="38">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/generator.ts</source>
+<document_content>
+import { type ProjectConfiguration, type Tree, formatFiles, names, readJson, workspaceRoot } from '@nx/devkit';
+import * as path from 'node:path';
+import { addPrimitiveToSupportedUILibraries } from './lib/add-primitive-to-supported-ui-libraries';
+import { copyFilesFromHlmLibToGenerator, createSharedGeneratorFiles, recursivelyDelete } from './lib/file-management';
+import { getProjectsAndNames } from './lib/get-project-names';
+import type { HlmToCliGeneratorGeneratorSchema } from './schema';
+
+const BASE_PATH = path.join('libs', 'cli', 'src', 'generators', 'ui');
+
+async function createGeneratorFromHlmLibrary(
+	projects: Map<string, ProjectConfiguration>,
+	generatorName: string,
+	internalName: string,
+	tree: Tree,
+	options: HlmToCliGeneratorGeneratorSchema,
+) {
+	const srcPath = path.join(workspaceRoot, projects.get(internalName).sourceRoot);
+	const projectRoot = path.join(BASE_PATH, 'libs', internalName);
+	const supportedUILibsJsonPath = path.join(BASE_PATH, 'supported-ui-libraries.json');
+	const filesPath = path.join(projectRoot, 'files');
+	const peerDependencies = readJson(tree, path.join(projects.get(internalName).root, 'package.json')).peerDependencies;
+	recursivelyDelete(tree, filesPath);
+	addPrimitiveToSupportedUILibraries(tree, supportedUILibsJsonPath, generatorName, internalName, peerDependencies);
+	copyFilesFromHlmLibToGenerator(tree, srcPath, filesPath, options);
+	createSharedGeneratorFiles(tree, projectRoot, options);
+}
+
+export async function hlmCliNxGeneratorGenerator(tree: Tree, options: HlmToCliGeneratorGeneratorSchema) {
+	const { projects, projectNames } = getProjectsAndNames(tree);
+	const projectNamesIgnoringCoreLibs = projectNames.filter((name) => !name.includes('core'));
+
+	for (const internalName of projectNamesIgnoringCoreLibs) {
+		const primitiveName = internalName.replace('ui-', '').replace('-helm', '').replace('-', '');
+		const cleanNames = names(primitiveName);
+		const mergedOptions = { ...options, ...cleanNames };
+		mergedOptions['internalName'] = internalName;
+		mergedOptions['publicName'] = `ui-${primitiveName}-helm`;
+		mergedOptions['primitiveName'] = primitiveName;
+
+		createGeneratorFromHlmLibrary(projects, primitiveName, internalName, tree, mergedOptions);
+	}
+
+	await formatFiles(tree);
+}
+
+export default hlmCliNxGeneratorGenerator;
+
+</document_content>
+</document>
+<document index="39">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/schema.d.ts</source>
+<document_content>
+export interface HlmToCliGeneratorGeneratorSchema {
+	additionalDependencies?: string;
+}
+
+</document_content>
+</document>
+<document index="40">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"$id": "HlmToCliGenerator",
+	"title": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="41">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/add-primitive-to-supported-ui-libraries.ts</source>
+<document_content>
+import type { Tree } from '@nx/devkit';
+import { updateJson } from 'nx/src/generators/utils/json';
+
+export const addPrimitiveToSupportedUILibraries = (
+	tree: Tree,
+	supportedJsonPath: string,
+	generatorName: string,
+	internalName: string,
+	peerDependencies: Record<string, string>,
+) => {
+	updateJson(tree, supportedJsonPath, (old) => ({
+		...old,
+		[generatorName]: {
+			internalName,
+			peerDependencies,
+		},
+	}));
+};
+
+</document_content>
+</document>
+<document index="42">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/file-management.ts</source>
+<document_content>
+import { type Tree, generateFiles } from '@nx/devkit';
+import * as path from 'node:path';
+import type { HlmToCliGeneratorGeneratorSchema } from '../schema';
+
+export const copyFilesFromHlmLibToGenerator = (
+	tree: Tree,
+	srcPath: string,
+	filesPath: string,
+	options: HlmToCliGeneratorGeneratorSchema,
+) => {
+	generateFiles(tree, srcPath, filesPath, options);
+	tree.delete(path.join(filesPath, 'test-setup.ts'));
+	recursivelyRenameToTemplate(tree, filesPath);
+};
+
+export const createSharedGeneratorFiles = (
+	tree: Tree,
+	projectRoot: string,
+	options: HlmToCliGeneratorGeneratorSchema,
+) => {
+	generateFiles(tree, path.join(__dirname, '..', 'files'), projectRoot, options);
+};
+
+export const recursivelyRenameToTemplate = (tree: Tree, filePath: string) => {
+	tree.children(filePath).forEach((child) => {
+		const childPath = path.join(filePath, child);
+		if (tree.isFile(childPath)) {
+			tree.rename(childPath, `${childPath}.template`);
+		} else {
+			recursivelyRenameToTemplate(tree, childPath);
+		}
+	});
+};
+
+export const recursivelyDelete = (tree: Tree, filePath: string) => {
+	tree.children(filePath).forEach((child) => {
+		const childPath = path.join(filePath, child);
+		if (tree.isFile(childPath)) {
+			tree.delete(childPath);
+		} else {
+			recursivelyDelete(tree, childPath);
+		}
+	});
+};
+
+</document_content>
+</document>
+<document index="43">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/get-project-names.ts</source>
+<document_content>
+import { type Tree, getProjects } from '@nx/devkit';
+
+export const getProjectsAndNames = (tree: Tree) => {
+	const projectNames: string[] = [];
+	const projects = getProjects(tree);
+
+	projects.forEach((projectConfiguration, projectName) => {
+		if (projectConfiguration.projectType === 'library' && projectName.includes('helm')) {
+			projectNames.push(projectName);
+		}
+	});
+	return { projects, projectNames };
+};
+
+</document_content>
+</document>
+<document index="44">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/files/generator.ts.template</source>
+<document_content>
+import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+  return await hlmBaseGenerator(tree, {...options, primitiveName: '<%= primitiveName %>', internalName: '<%= internalName %>', publicName: '<%= publicName %>'});
+}
+
+</document_content>
+</document>
+<document index="45">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/auto-increment-version/generator.spec.ts</source>
+<document_content>
+import { type Tree, readProjectConfiguration } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+
+import autoIncrementVersion from './generator';
+
+describe('replace-cli-version generator', () => {
+	let tree: Tree;
+
+	beforeEach(() => {
+		tree = createTreeWithEmptyWorkspace();
+	});
+
+	it.skip('should run successfully', async () => {
+		await autoIncrementVersion(tree);
+		const config = readProjectConfiguration(tree, 'test');
+		expect(config).toBeDefined();
+	});
+});
+
+</document_content>
+</document>
+<document index="46">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/auto-increment-version/generator.ts</source>
+<document_content>
+import { type Tree, formatFiles, readJsonFile } from '@nx/devkit';
+import replaceCliVersionGenerator from '../replace-cli-version/generator';
+import replaceUiVersionGenerator from '../replace-ui-version/generator';
+
+export default async function autoIncrementVersion(tree: Tree): Promise<void> {
+	const oldVersion = readJsonFile('libs/brain/package.json').version as string;
+	const [prefix, branchAndNumber] = oldVersion.split('-');
+	const [branch, versionNumber] = branchAndNumber.split('.');
+	const newVersionNumber = +versionNumber + 1;
+
+	const newVersion = `${prefix}-${branch}.${newVersionNumber}`;
+
+	console.log(
+		`preparing release with auto-incremented version ${newVersion} which should be 1 more than ${oldVersion}`,
+	);
+
+	await replaceUiVersionGenerator(tree, { newVersion });
+	await replaceCliVersionGenerator(tree, { newVersion });
+
+	await formatFiles(tree);
+}
+
+</document_content>
+</document>
+<document index="47">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/auto-increment-version/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/schema",
+	"$id": "AutoIncrementVersionGenerator",
+	"title": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="48">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-library/generator.ts</source>
+<document_content>
+import { VERSION } from '@angular/core';
+import { libraryGenerator, UnitTestRunner } from '@nx/angular/generators';
+import {
+	formatFiles,
+	joinPathFragments,
+	names,
+	readProjectConfiguration,
+	Tree,
+	updateJson,
+	updateProjectConfiguration,
+} from '@nx/devkit';
+import helmComponentGenerator from '../helm-component/generator';
+import helmDirectiveGenerator from '../helm-directive/generator';
+import helmDocumentationGenerator from '../helm-documentation/generator';
+import { helmStoryGenerator } from '../helm-story/generator';
+import { HelmLibraryGeneratorSchema } from './schema';
+
+export async function helmLibraryGenerator(tree: Tree, options: HelmLibraryGeneratorSchema) {
+	const { fileName: normalizedName, className } = names(options.name);
+	const projectName = `ui-${normalizedName}-helm`;
+
+	await libraryGenerator(tree, {
+		name: projectName,
+		directory: joinPathFragments('libs', 'ui', normalizedName, 'helm'),
+		importPath: `@spartan-ng/ui-${normalizedName}-helm`,
+		prefix: 'hlm',
+		linter: 'eslint',
+		standalone: true,
+		strict: true,
+		inlineStyle: true,
+		inlineTemplate: true,
+		unitTestRunner: UnitTestRunner.Jest,
+		publishable: false,
+		buildable: true,
+		skipModule: true,
+		tags: 'scope:helm',
+	});
+
+	// add the release target to the project.json
+	const configuration = readProjectConfiguration(tree, projectName);
+
+	// add the release target to the project.json
+	updateProjectConfiguration(tree, projectName, {
+		...configuration,
+		targets: {
+			...configuration.targets,
+			release: {
+				executor: '@spartan-ng/tools:build-update-publish',
+				options: {
+					libName: projectName,
+				},
+			},
+		},
+	});
+
+	// remove the default component
+	tree.delete(
+		joinPathFragments('libs', 'ui', normalizedName, 'helm', 'src', 'lib', projectName, `${projectName}.component.ts`),
+	);
+	tree.delete(
+		joinPathFragments(
+			'libs',
+			'ui',
+			normalizedName,
+			'helm',
+			'src',
+			'lib',
+			projectName,
+			`${projectName}.component.spec.ts`,
+		),
+	);
+
+	// empty the index.ts file
+	tree.write(
+		joinPathFragments('libs', 'ui', normalizedName, 'helm', 'src', 'index.ts'),
+		`import { NgModule } from '@angular/core';
+
+export const Hlm${className}Imports = [] as const;
+
+@NgModule({
+	imports: [...Hlm${className}Imports],
+	exports: [...Hlm${className}Imports],
+})
+export class Hlm${className}Module {}`,
+	);
+
+	// update the supported libraries json
+	const supportedLibrariesPath = joinPathFragments(
+		'libs',
+		'cli',
+		'src',
+		'generators',
+		'ui',
+		'supported-ui-libraries.json',
+	);
+
+	updateJson(tree, supportedLibrariesPath, (json) => {
+		json[normalizedName.replaceAll('-', '')] = {
+			internalName: projectName,
+			peerDependencies: {
+				'@angular/core': `>=${VERSION.major}.0.0`,
+				'class-variance-authority': '^0.7.0',
+				clsx: '^2.1.1',
+			},
+		};
+		return json;
+	});
+
+	// create the generator files
+	const generatorPath = joinPathFragments(
+		'libs',
+		'cli',
+		'src',
+		'generators',
+		'ui',
+		'libs',
+		projectName,
+		'generator.ts',
+	);
+
+	tree.write(
+		generatorPath,
+		`import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+	return await hlmBaseGenerator(tree, {
+		...options,
+		primitiveName: '${normalizedName}',
+		internalName: '${projectName}',
+		publicName: '${projectName}',
+	});
+}`,
+	);
+
+	if (options.story) {
+		await helmStoryGenerator(tree, {
+			project: projectName,
+			componentName: `Hlm${className}Component`,
+		});
+	}
+
+	if (options.generate === 'component') {
+		await helmComponentGenerator(tree, {
+			project: projectName,
+			componentName: normalizedName,
+		});
+	} else if (options.generate === 'directive') {
+		await helmDirectiveGenerator(tree, {
+			project: projectName,
+			directiveName: normalizedName,
+		});
+	}
+
+	if (options.documentation) {
+		await helmDocumentationGenerator(tree, {
+			name: options.name,
+			description: options.description ?? 'TODO: Add a description',
+		});
+	}
+
+	await formatFiles(tree);
+}
+
+export default helmLibraryGenerator;
+
+</document_content>
+</document>
+<document index="49">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-library/schema.d.ts</source>
+<document_content>
+export interface HelmLibraryGeneratorSchema {
+	name: string;
+	story?: boolean;
+	documentation?: boolean;
+	generate?: 'component' | 'directive' | 'none';
+	description?: string;
+}
+
+</document_content>
+</document>
+<document index="50">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-library/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "HelmLibrary",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "The name of the library.",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-prompt": "What name would you like to use?"
+		},
+		"story": {
+			"type": "boolean",
+			"description": "Generate a story for the library.",
+			"default": true
+		},
+		"generate": {
+			"type": "string",
+			"description": "Whether to generate a directive or a component when creating the library.",
+			"enum": ["directive", "component", "none"],
+			"default": "none"
+		},
+		"documentation": {
+			"type": "boolean",
+			"description": "Whether to generate a documentation page",
+			"default": true
+		},
+		"description": {
+			"type": "string",
+			"description": "Provide a description for the documentation page."
+		}
+	},
+	"required": ["name"]
+}
+
+</document_content>
+</document>
+<document index="51">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-story/generator.ts</source>
+<document_content>
+import { formatFiles, generateFiles, names, readJson, readProjectConfiguration, Tree } from '@nx/devkit';
+import * as path from 'path';
+import { HelmStoryGeneratorSchema } from './schema';
+
+export async function helmStoryGenerator(tree: Tree, options: HelmStoryGeneratorSchema) {
+	const { root, name } = readProjectConfiguration(tree, options.project);
+
+	if (!name) {
+		throw new Error(`Could not find project name in workspace: ${options.project}`);
+	}
+
+	// names are in the format ui-checkbox-helm, we want to discard ui- and -helm
+	const normalizedName = name.replace(/^ui-/, '').replace(/-helm$/, '');
+
+	// derive the story name from the normalizedName - e.g. radio-button => Radio Button
+	const storyName = normalizedName
+		.split('-')
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join(' ');
+
+	// derive the imports name from the normalizedName - e.g. radio-button => HlmRadioButtonImports
+	const componentImports = `Hlm${normalizedName
+		.split('-')
+		.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+		.join('')}Imports`;
+
+	const { name: importPath } = readJson(tree, path.join(root, 'package.json'));
+
+	const projectRoot = path.join(root, '..');
+
+	generateFiles(tree, path.join(__dirname, 'files'), projectRoot, {
+		fileName: names(options.componentName).fileName,
+		componentName: options.componentName,
+		componentImports,
+		importPath,
+		storyName,
+	});
+
+	await formatFiles(tree);
+}
+
+export default helmStoryGenerator;
+
+</document_content>
+</document>
+<document index="52">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-story/schema.d.ts</source>
+<document_content>
+export interface HelmStoryGeneratorSchema {
+	project: string;
+	componentName: string;
+}
+
+</document_content>
+</document>
+<document index="53">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-story/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "HelmStory",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"project": {
+			"type": "string",
+			"description": "The name of the project to add the story to.",
+			"alias": "p",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-dropdown": "projects",
+			"x-prompt": "What project would you like to add the story to?",
+			"x-priority": "important"
+		},
+		"componentName": {
+			"type": "string",
+			"description": "The name of the component.",
+			"x-prompt": "The name of the component?"
+		}
+	},
+	"required": ["project", "componentName"]
+}
+
+</document_content>
+</document>
+<document index="54">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-story/files/__fileName__.stories.ts.template</source>
+<document_content>
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+import { <%= componentName %>, <%= componentImports %>} from '<%= importPath %>';
+
+export default {
+	title: '<%= storyName %>',
+	component: <%= componentName %>,
+	tags: ['autodocs'],
+	decorators: [
+		moduleMetadata({
+			imports: [<%= componentImports %>],
+		}),
+	],
+} as Meta<<%= componentName %>>
+
+type Story = StoryObj<<%= componentName %>>;
+
+export const Default: Story = {
+	render: () => ({
+		template: `
+
+		`,
+	}),
+};
+
+</document_content>
+</document>
+<document index="55">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-component/generator.ts</source>
+<document_content>
+import { formatFiles, generateFiles, joinPathFragments, names, readProjectConfiguration, Tree } from '@nx/devkit';
+import * as path from 'path';
+import { addExportStatement, addImportStatement, addToExportConstArray } from '../utils/ast';
+import { HelmComponentGeneratorSchema } from './schema';
+
+export async function helmComponentGenerator(tree: Tree, options: HelmComponentGeneratorSchema) {
+	const { root } = readProjectConfiguration(tree, options.project);
+	const { fileName, className } = names(options.componentName);
+	const componentPath = joinPathFragments(root, 'src', 'lib');
+
+	generateFiles(tree, path.join(__dirname, 'files'), componentPath, {
+		fileName,
+		componentName: `Hlm${className}Component`,
+		selector: `hlm-${fileName}`,
+	});
+
+	// the path to the index.ts file
+	const indexPath = joinPathFragments(root, 'src', 'index.ts');
+	let sourceCode = tree.read(indexPath, 'utf-8');
+
+	sourceCode = addImportStatement(
+		sourceCode,
+		`import { Hlm${className}Component } from './lib/hlm-${fileName}.component';`,
+	);
+	sourceCode = addExportStatement(sourceCode, `export * from './lib/hlm-${fileName}.component';`);
+	sourceCode = addToExportConstArray(sourceCode, `Hlm${className}Component`);
+
+	tree.write(indexPath, sourceCode);
+
+	await formatFiles(tree);
+}
+
+export default helmComponentGenerator;
+
+</document_content>
+</document>
+<document index="56">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-component/schema.d.ts</source>
+<document_content>
+export interface HelmComponentGeneratorSchema {
+	project: string;
+	componentName: string;
+}
+
+</document_content>
+</document>
+<document index="57">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-component/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "HelmComponent",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"project": {
+			"type": "string",
+			"description": "The name of the project to add the component to.",
+			"alias": "p",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-dropdown": "projects",
+			"x-prompt": "What project would you like to add the component to?",
+			"x-priority": "important"
+		},
+		"componentName": {
+			"type": "string",
+			"description": "The name of the component.",
+			"x-prompt": "The name of the component?"
+		}
+	},
+	"required": ["project", "componentName"]
+}
+
+</document_content>
+</document>
+<document index="58">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-component/files/hlm-__fileName__.component.ts.template</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: '<%= selector %>',
+	standalone: true,
+	template: ``,
+})
+export class <%= componentName %> {
+	/** The user defined classes */
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	/** The classes to apply to the component merged with the user defined classes */
+	protected readonly _computedClass = computed(() => hlm('', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="59">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/replace-ui-version/generator.spec.ts</source>
+<document_content>
+import { replaceSpartanVersion } from './generator';
+
+describe('replaceSpartanVersions', () => {
+	it('should replace only SPARTAN-prefixed versions that match oldVersion', () => {
+		const input = `
+      export const FALLBACK_ANGULAR_VERSION = '^18.0.0';
+      export const SPARTAN_VERSION = '3.0.2';
+      export const SPARTAN_ALERT_DIALOG_BRAIN_VERSION = '3.0.2';
+      export const TAILWINDCSS_VERSION = '3.0.2';
+    `;
+
+		const oldVersion = '3.0.2';
+		const newVersion = '3.0.3';
+
+		const expectedOutput = `
+      export const FALLBACK_ANGULAR_VERSION = '^18.0.0';
+      export const SPARTAN_VERSION = '3.0.3';
+      export const SPARTAN_ALERT_DIALOG_BRAIN_VERSION = '3.0.2';
+      export const TAILWINDCSS_VERSION = '3.0.2';
+    `;
+
+		const result = replaceSpartanVersion(input, oldVersion, newVersion);
+		expect(result).toBe(expectedOutput);
+	});
+
+	it('should not replace versions without the SPARTAN_ prefix', () => {
+		const input = `
+      export const FALLBACK_ANGULAR_VERSION = '3.0.2';
+      export const TAILWINDCSS_VERSION = '3.0.2';
+    `;
+
+		const oldVersion = '3.0.2';
+		const newVersion = '3.0.3';
+
+		const result = replaceSpartanVersion(input, oldVersion, newVersion);
+		expect(result).toBe(input); // No changes expected
+	});
+});
+
+</document_content>
+</document>
+<document index="60">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/replace-ui-version/generator.ts</source>
+<document_content>
+import { type Tree, formatFiles, readJsonFile, updateJson } from '@nx/devkit';
+import process from 'node:process';
+
+const getSpartanDependencyKeys = (dependencies?: Record<string, string>): string[] =>
+	Object.keys(dependencies ?? {}).filter((key) => key.startsWith('@spartan-ng'));
+
+export const replaceSpartanVersion = (content: string, oldVersion: string, newVersion: string): string => {
+	/**
+	 * Regular expression to match SPARTAN_VERSION constant:
+	 * - `(SPARTAN_VERSION\\s*=\\s*['"])`:
+	 *   1. `SPARTAN_VERSION`: Ensures the constant is named `SPARTAN_VERSION`.
+	 *   4. `\\s*`: Matches zero or more spaces around the `=` sign.
+	 *   5. `['"]`: Captures the opening quote (single or double).
+	 *   6. Encloses the entire match before the version in group 1 (`$1`).
+	 * - `${oldVersion}`: Matches the exact old version string.
+	 * - `(['"])`: Captures the closing quote in group 2 (`$2`).
+	 * - `g` flag: Ensures the regex replaces all matches globally, not just the first occurrence.
+	 */
+	const spartanVersionRegex = new RegExp(`(SPARTAN_VERSION\\s*=\\s*['"])${oldVersion}(['"])`, 'g');
+	return content.replace(spartanVersionRegex, `$1${newVersion}$2`);
+};
+
+const replaceUiVersionInCliVersionsFile = (tree: Tree, oldVersion: string, newVersion: string) => {
+	const filePath = `libs/cli/src/generators/base/versions.ts`;
+	let contents = tree.read(filePath).toString();
+	contents = replaceSpartanVersion(contents, oldVersion, newVersion);
+	tree.write(filePath, contents);
+};
+
+const replaceUiVersionGenerator = async (tree: Tree, options?: { newVersion: string }): Promise<void> => {
+	const brainPackageJsonPath = 'libs/brain/package.json';
+	const oldVersion = readJsonFile(brainPackageJsonPath).version;
+	const newVersion = options?.newVersion ?? process.env.VERSION;
+
+	if (!oldVersion) {
+		console.error(
+			"Unable to find old version in our accordion's package.json, which we use as source of truth because its good enough.",
+		);
+		return;
+	}
+
+	if (!newVersion) {
+		console.error('Must define a VERSION environment variable to use with this script.');
+		return;
+	}
+
+	if (oldVersion === newVersion) {
+		console.error('Old version cannot be the same as new version');
+		return;
+	}
+
+	console.log(`Updating UI libs version from ${oldVersion} to ${newVersion}`);
+
+	updateJson(tree, brainPackageJsonPath, (pkgJson) => {
+		const peerDependencyKeysToUpdate = getSpartanDependencyKeys(pkgJson.peerDependencies);
+		pkgJson.version = newVersion;
+
+		for (const key of peerDependencyKeysToUpdate) {
+			pkgJson.peerDependencies[key] = newVersion;
+		}
+
+		return pkgJson;
+	});
+
+	console.log(`Reflecting those changes in versions.ts file of the CLI`);
+	replaceUiVersionInCliVersionsFile(tree, oldVersion, newVersion);
+
+	await formatFiles(tree);
+};
+
+export default replaceUiVersionGenerator;
+
+</document_content>
+</document>
+<document index="61">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/replace-ui-version/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"version": 2,
+	"title": "Update version executor",
+	"description": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,20 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-component/files/hlm-__fileName__.component.ts.template
+```
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: '<%= selector %>',
+	standalone: true,
+	template: ``,
+})
+export class <%= componentName %> {
+	/** The user defined classes */
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	/** The classes to apply to the component merged with the user defined classes */
+	protected readonly _computedClass = computed(() => hlm('', this.userClass()));
+}
+
+```

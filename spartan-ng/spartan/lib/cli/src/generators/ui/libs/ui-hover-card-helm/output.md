@@ -1,0 +1,73 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-hover-card-helm/generator.ts
+```typescript
+import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+	return await hlmBaseGenerator(tree, {
+		...options,
+		primitiveName: 'hovercard',
+		internalName: 'ui-hover-card-helm',
+		publicName: 'ui-hovercard-helm',
+	});
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-hover-card-helm/files/index.ts.template
+```
+import { NgModule } from '@angular/core';
+import { HlmHoverCardContentComponent } from './lib/hlm-hover-card-content.component';
+
+export { HlmHoverCardContentComponent } from './lib/hlm-hover-card-content.component';
+
+export const HlmHoverCardImports = [HlmHoverCardContentComponent] as const;
+
+@NgModule({
+	imports: [...HlmHoverCardImports],
+	exports: [...HlmHoverCardImports],
+})
+export class HlmHoverCardModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-hover-card-helm/files/lib/hlm-hover-card-content.component.ts.template
+```
+import { Component, ElementRef, Renderer2, computed, effect, inject, input, signal } from '@angular/core';
+import { hlm, injectExposedSideProvider, injectExposesStateProvider } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-hover-card-content',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: `
+		<ng-content />
+	`,
+})
+export class HlmHoverCardContentComponent {
+	private readonly _renderer = inject(Renderer2);
+	private readonly _element = inject(ElementRef);
+
+	public readonly state = injectExposesStateProvider({ host: true }).state ?? signal('closed').asReadonly();
+	public readonly side = injectExposedSideProvider({ host: true }).side ?? signal('bottom').asReadonly();
+
+	constructor() {
+		effect(() => {
+			this._renderer.setAttribute(this._element.nativeElement, 'data-state', this.state());
+			this._renderer.setAttribute(this._element.nativeElement, 'data-side', this.side());
+		});
+	}
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'z-50 w-64 rounded-md border border-border bg-popover p-4 text-popover-foreground shadow-md outline-none',
+			'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+			this.userClass(),
+		),
+	);
+}
+
+```

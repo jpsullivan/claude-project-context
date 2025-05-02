@@ -1,0 +1,22 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/helm-directive/files/hlm-__fileName__.directive.ts.template
+```
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[<%= selector %>]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class <%= directiveName %> {
+	/** The user defined classes */
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	/** The classes to apply merged with the user defined classes */
+	protected readonly _computedClass = computed(() => hlm('', this.userClass()));
+}
+
+```

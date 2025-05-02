@@ -1,0 +1,57 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/generator.ts</source>
+<document_content>
+import { librarySecondaryEntryPointGenerator } from '@nx/angular/generators';
+import { formatFiles, Tree } from '@nx/devkit';
+import { BrainSecondaryEntrypointGeneratorSchema } from './schema';
+
+export async function brainSecondaryEntrypointGenerator(tree: Tree, options: BrainSecondaryEntrypointGeneratorSchema) {
+	await librarySecondaryEntryPointGenerator(tree, {
+		name: options.name,
+		library: 'brain',
+		skipFormat: true,
+		skipModule: true,
+	});
+
+	await formatFiles(tree);
+}
+
+export default brainSecondaryEntrypointGenerator;
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/schema.d.ts</source>
+<document_content>
+export interface BrainSecondaryEntrypointGeneratorSchema {
+	name: string;
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/brain-secondary-entrypoint/schema.json</source>
+<document_content>
+{
+	"$schema": "https://json-schema.org/schema",
+	"$id": "BrainSecondaryEntrypoint",
+	"title": "",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "The name of the secondary entrypoint to create.",
+			"$default": {
+				"$source": "argv",
+				"index": 0
+			},
+			"x-prompt": "What name would you like to use?"
+		}
+	},
+	"required": ["name"]
+}
+
+</document_content>
+</document>
+</documents>

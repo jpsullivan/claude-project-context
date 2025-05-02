@@ -1,0 +1,214 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/hex-color-for.spec.ts</source>
+<document_content>
+import { faker } from '@faker-js/faker';
+import { hexColorFor } from './hex-color-for';
+
+describe('hexColorFor', () => {
+	it('should return a text color of white and a pink-ish background for John Doe', () => {
+		const generated = hexColorFor('John Doe');
+		expect(generated).toBe('#a55c80');
+	});
+
+	it('should return a text color of white and a blue-ish background for Jane Doe', () => {
+		const generated = hexColorFor('Jane Doe');
+		expect(generated).toBe('#485fa7');
+	});
+
+	it('should return different colors for different names', () => {
+		expect(hexColorFor(faker.person.fullName())).not.toBe(hexColorFor(faker.person.fullName()));
+	});
+
+	it('should return the same style when given the same name', () => {
+		const name = faker.person.fullName();
+		expect(hexColorFor(name)).toBe(hexColorFor(name));
+	});
+});
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/hex-color-for.ts</source>
+<document_content>
+function hashString(str: string) {
+	let h;
+	for (let i = 0; i < str.length; i++) h = (Math.imul(31, h || 0) + str.charCodeAt(i)) | 0;
+
+	return h || 0;
+}
+
+function hashManyTimes(times: number, str: string) {
+	let h = hashString(str);
+
+	for (let i = 0; i < times; i++) h = hashString(String(h));
+
+	return h;
+}
+
+export function hexColorFor(str: string) {
+	const hash = str.length <= 2 ? hashManyTimes(5, str) : hashString(str);
+
+	let color = '#';
+
+	for (let i = 0; i < 3; i += 1) {
+		const value = (hash >> (i * 8)) & 0xff;
+		color += `00${value.toString(16)}`.slice(-2);
+	}
+
+	return color;
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/index.ts</source>
+<document_content>
+export * from './hex-color-for';
+export * from './initials.pipe';
+export * from './is-bright';
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/initials.pipe.spec.ts</source>
+<document_content>
+import { faker } from '@faker-js/faker';
+import { InitialsPipe } from './initials.pipe';
+
+describe('InitialsPipe', () => {
+	const pipe = new InitialsPipe();
+
+	it('should compile', () => {
+		expect(pipe).toBeTruthy();
+	});
+
+	it('should return an empty string, when an empty string is provided', () => {
+		expect(pipe.transform('')).toBe('');
+		expect(pipe.transform(' ')).toBe('');
+	});
+
+	it.skip('should return the uppercased initials of a provided name', () => {
+		const name = 'John Doe';
+		const otherName = 'Mary Ann Smith';
+		const randomName = faker.person.fullName();
+
+		expect(pipe.transform(name)).toBe('JD');
+		expect(pipe.transform(otherName)).toBe('MS');
+		expect(pipe.transform(randomName)).toBe(
+			`${randomName.charAt(0).toLocaleUpperCase()}${randomName.charAt(randomName.indexOf(' ') + 1).toLocaleUpperCase()}`,
+		);
+	});
+
+	it('should not capitalize the initials, when the capitalize flag is set to false', () => {
+		const name = 'john Doe';
+		const otherName = 'mary ann smith';
+		const randomName = `${faker.person.firstName()} ${faker.person.lastName()}`;
+
+		expect(pipe.transform(name, false)).toBe('jD');
+		expect(pipe.transform(otherName, false)).toBe('ms');
+		expect(pipe.transform(randomName, false)).toBe(
+			`${randomName.charAt(0)}${randomName.charAt(randomName.lastIndexOf(' ') + 1)}`,
+		);
+	});
+
+	it('should return all initials when the firstAndLastOnly flag is set to false', () => {
+		const name = 'Mary Ann       Smith';
+
+		expect(pipe.transform(name, true, false)).toBe('MAS');
+	});
+
+	it('should split the name by the provided delimiter', () => {
+		const name = 'Mary:Ann:Smith: ';
+
+		expect(pipe.transform(name, true, true, ':')).toBe('MS');
+	});
+});
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/initials.pipe.ts</source>
+<document_content>
+import { Pipe, type PipeTransform } from '@angular/core';
+
+const toInitial =
+	(capitalize = true) =>
+	(word: string) => {
+		const initial = word.charAt(0);
+		return capitalize ? initial.toLocaleUpperCase() : initial;
+	};
+
+const firstAndLast = (initials: string[]) => `${initials[0]}${initials[initials.length - 1]}`;
+
+@Pipe({
+	name: 'initials',
+	standalone: true,
+})
+export class InitialsPipe implements PipeTransform {
+	transform(name: string, capitalize = true, firstAndLastOnly = true, delimiter = ' '): string {
+		if (!name) return '';
+
+		const initials = name.trim().split(delimiter).filter(Boolean).map(toInitial(capitalize));
+
+		if (firstAndLastOnly && initials.length > 1) return firstAndLast(initials);
+
+		return initials.join('');
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/is-bright.spec.ts</source>
+<document_content>
+import { isBright } from './is-bright';
+
+describe('isBright', () => {
+	it('should return true for white hex code', () => {
+		expect(isBright('#ffffff')).toBe(true);
+	});
+
+	it('should return false for black hex code', () => {
+		expect(isBright('#000000')).toBe(false);
+	});
+
+	it('should return true for a light hex code', () => {
+		expect(isBright('#e394bb')).toBe(true);
+	});
+
+	it('should return false for a dark hex code', () => {
+		expect(isBright('#485fa7')).toBe(false);
+	});
+
+	it('should support hex color shorthand, with our without hash & ignore capitalization', () => {
+		expect(isBright('ffffff')).toBe(true);
+		expect(isBright('#fff')).toBe(true);
+		expect(isBright('fff')).toBe(true);
+		expect(isBright('#FFF')).toBe(true);
+	});
+});
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/avatar/src/lib/util/is-bright.ts</source>
+<document_content>
+const isShortHand = (hex: string) => hex.length === 3;
+
+const cleanup = (hex: string) => {
+	const noHash = hex.replace('#', '').trim().toLowerCase();
+
+	if (!isShortHand(noHash)) return noHash;
+
+	return noHash
+		.split('')
+		.map((char) => char + char)
+		.join('');
+};
+
+export const isBright = (hex: string) => Number.parseInt(cleanup(hex), 16) > 0xffffff / 1.25;
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,378 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/separator.stories.ts</source>
+<document_content>
+import { BrnSeparatorComponent } from '@spartan-ng/brain/separator';
+import { type Meta, type StoryObj, argsToTemplate, moduleMetadata } from '@storybook/angular';
+import { HlmSeparatorDirective } from './helm/src';
+
+const meta: Meta<BrnSeparatorComponent> = {
+	title: 'Separator',
+	component: BrnSeparatorComponent,
+	tags: ['autodocs'],
+	args: {
+		orientation: 'horizontal',
+		decorative: false,
+	},
+	argTypes: {
+		orientation: {
+			options: ['horizontal', 'vertical'],
+			control: {
+				type: 'select',
+			},
+			table: {
+				defaultValue: { summary: 'horizontal' },
+			},
+		},
+		decorative: {
+			control: {
+				type: 'boolean',
+			},
+			table: {
+				defaultValue: { summary: 'false' },
+			},
+		},
+	},
+	decorators: [
+		moduleMetadata({
+			imports: [BrnSeparatorComponent, HlmSeparatorDirective],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<BrnSeparatorComponent>;
+
+export const Default: Story = {
+	render: ({ ...args }) => ({
+		props: args,
+		template: `
+    <div>
+      <div class='space-y-1'>
+        <h4 class='text-sm font-medium leading-none'>Radix Primitives</h4>
+        <p class='text-sm text-muted-foreground'>
+          An open-source UI component library.
+        </p>
+      </div>
+      <brn-separator hlmSeparator ${argsToTemplate(args)} class='my-4' />
+      <div class='flex items-center h-5 text-sm space-x-4'>
+        <div>Blog</div>
+        <brn-separator decorative hlmSeparator orientation='vertical' />
+        <div>Docs</div>
+        <brn-separator decorative hlmSeparator orientation='vertical' />
+        <div>Source</div>
+      </div>
+    </div>
+       `,
+	}),
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/README.md</source>
+<document_content>
+# ui-separator-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-separator-helm` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/eslint.config.js</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'ui-separator-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/separator/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/ui-separator-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"clsx": "^2.1.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/project.json</source>
+<document_content>
+{
+	"name": "ui-separator-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/separator/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/separator/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/separator/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/separator/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/separator/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-separator-helm"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { HlmSeparatorDirective } from './lib/hlm-separator.directive';
+
+export * from './lib/hlm-separator.directive';
+
+@NgModule({
+	imports: [HlmSeparatorDirective],
+	exports: [HlmSeparatorDirective],
+})
+export class HlmSeparatorModule {}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/separator/helm/src/lib/hlm-separator.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+export type HlmSeparatorOrientation = 'horizontal' | 'vertical';
+@Directive({
+	selector: '[hlmSeparator],brn-separator[hlm]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSeparatorDirective {
+	public readonly orientation = input<HlmSeparatorOrientation>('horizontal');
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'inline-flex shrink-0 border-0 bg-border',
+			this.orientation() === 'horizontal' ? 'h-[1px] w-full' : 'h-full w-[1px]',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+</documents>

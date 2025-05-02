@@ -1,0 +1,392 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/slider/src/lib/tests/brn-slider-reactive-form.spec.ts
+```typescript
+import { render } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { ReactiveFormSliderComponent } from './brn-slider-states.component';
+
+async function setupSlider() {
+	const { getByRole, getByTestId, fixture } = await render(ReactiveFormSliderComponent);
+
+	return {
+		fixture,
+		thumb: getByRole('slider'),
+		changeValueBtn: getByTestId('change-value-btn'),
+		valueIndicatorPre: getByTestId('value-indicator-pre'),
+	};
+}
+
+describe('Reactive Form Slider State', () => {
+	it('should reflect the correct value indicator and the related aria attributes when selecting a value between min and max', async () => {
+		const { thumb, valueIndicatorPre, fixture } = await setupSlider();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 46');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('46');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+		fixture.componentInstance.changeValue(25);
+		fixture.detectChanges();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 25');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('25');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+	});
+
+	it('Should reflect the correct value indicator and the related aria attributes when selecting a value below min', async () => {
+		const { thumb, valueIndicatorPre, fixture } = await setupSlider();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 46');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('46');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+		fixture.componentInstance.changeValue(-25);
+		fixture.detectChanges();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+	});
+
+	it('Should reflect the correct value indicator and the related aria attributes when selecting a value after max', async () => {
+		const { fixture, thumb, valueIndicatorPre } = await setupSlider();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 46');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('46');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+		//simulate slider dragging/selecting a value
+		fixture.componentInstance.changeValue(225);
+		fixture.detectChanges();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+	});
+
+	it('Should reflect the correct value indicator and the related aria attributes when changing the slider value', async () => {
+		const { thumb, fixture, changeValueBtn, valueIndicatorPre } = await setupSlider();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 46');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('46');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+		//simulate slider dragging/selecting a value
+		fixture.componentInstance.changeValue(225);
+		fixture.detectChanges();
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+		//change slider value using a button
+		await userEvent.click(changeValueBtn);
+
+		expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 24');
+		expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('24');
+		expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+		expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/slider/src/lib/tests/brn-slider-states.component.ts
+```typescript
+import { Component, model } from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+	BrnSliderDirective,
+	BrnSliderRangeDirective,
+	BrnSliderThumbDirective,
+	BrnSliderTrackDirective,
+} from '../../index';
+
+@Component({
+	template: `
+		<div>
+			<pre data-testid="value-indicator-pre">Temperature: {{ temperature() }}</pre>
+		</div>
+		<form ngForm>
+			<div brnSlider aria-label="fallback-label" [min]="0" [(ngModel)]="temperature" name="temperature">
+				<div brnSliderTrack>
+					<div brnSliderRange></div>
+				</div>
+
+				<span brnSliderThumb></span>
+			</div>
+		</form>
+		<button data-testid="change-value-btn" (click)="changeValue(24)">Change temperature value</button>
+	`,
+	imports: [FormsModule, BrnSliderDirective, BrnSliderThumbDirective, BrnSliderTrackDirective, BrnSliderRangeDirective],
+})
+export class TemplateDrivenFormSliderComponent {
+	public readonly temperature = model<number>(0);
+
+	changeValue(value: number) {
+		this.temperature.set(value);
+	}
+}
+
+@Component({
+	template: `
+		<div>
+			<pre data-testid="value-indicator-pre">
+				Temperature: {{ temperatureGroup.controls.temperature.getRawValue() }}
+			</pre
+			>
+		</div>
+		<form [formGroup]="temperatureGroup">
+			<div brnSlider aria-label="fallback-label" [min]="0" formControlName="temperature">
+				<div brnSliderTrack>
+					<div brnSliderRange></div>
+				</div>
+
+				<span brnSliderThumb></span>
+			</div>
+		</form>
+		<button data-testid="change-value-btn" (click)="changeValue(24)">Change temperature value</button>
+	`,
+	imports: [
+		ReactiveFormsModule,
+		BrnSliderDirective,
+		BrnSliderThumbDirective,
+		BrnSliderTrackDirective,
+		BrnSliderRangeDirective,
+	],
+})
+export class ReactiveFormSliderComponent {
+	public readonly temperature = model<number>(46);
+
+	protected readonly temperatureGroup = new FormGroup({
+		temperature: new FormControl<number>(this.temperature()),
+	});
+
+	changeValue(value: number) {
+		this.temperatureGroup.controls.temperature.patchValue(value);
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/slider/src/lib/tests/brn-slider-template-driven-form.spec.ts
+```typescript
+import { render } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { TemplateDrivenFormSliderComponent } from './brn-slider-states.component';
+
+async function setupSlider() {
+	const { fixture, getByRole, getByTestId } = await render(TemplateDrivenFormSliderComponent);
+
+	return {
+		fixture,
+		thumb: getByRole('slider'),
+		changeValueBtn: getByTestId('change-value-btn'),
+		valueIndicatorPre: getByTestId('value-indicator-pre'),
+	};
+}
+
+async function setupSliderWithInitialValue(initialValue: number) {
+	const { getByRole, getByTestId, fixture } = await render(TemplateDrivenFormSliderComponent, {
+		componentInputs: { temperature: initialValue },
+	});
+
+	return {
+		fixture,
+		thumb: getByRole('slider'),
+		changeValueBtn: getByTestId('change-value-btn'),
+		valueIndicatorPre: getByTestId('value-indicator-pre'),
+	};
+}
+
+describe('Template Driven Form Slider State', () => {
+	describe('Default Initial Value', () => {
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value between min and max', async () => {
+			const { thumb, fixture, valueIndicatorPre } = await setupSlider();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(25);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 25');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('25');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value below min', async () => {
+			const { thumb, valueIndicatorPre, fixture } = await setupSlider();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(-25);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value after max', async () => {
+			const { thumb, valueIndicatorPre, fixture } = await setupSlider();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(225);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when changing the slider value', async () => {
+			const { fixture, thumb, changeValueBtn, valueIndicatorPre } = await setupSlider();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(225);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//change slider value using a button
+			await userEvent.click(changeValueBtn);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 24');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('24');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+	});
+
+	describe('With Initial Value', () => {
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value between min and max', async () => {
+			const { fixture, thumb, valueIndicatorPre } = await setupSliderWithInitialValue(12);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 12');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('12');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(25);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 25');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('25');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value below min', async () => {
+			const { fixture, thumb, valueIndicatorPre } = await setupSliderWithInitialValue(67);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 67');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('67');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(-25);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 0');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when selecting a value after max', async () => {
+			const { fixture, thumb, valueIndicatorPre } = await setupSliderWithInitialValue(34);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 34');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('34');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(225);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+
+		it('Should reflect the correct value indicator and the related aria attributes when changing the slider value', async () => {
+			const { fixture, thumb, changeValueBtn, valueIndicatorPre } = await setupSliderWithInitialValue(88);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 88');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('88');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//simulate slider dragging/selecting a value
+			fixture.componentInstance.changeValue(225);
+			fixture.detectChanges();
+			await fixture.whenStable();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 100');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('100');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+
+			//change slider value using a button
+			await userEvent.click(changeValueBtn);
+
+			fixture.detectChanges();
+
+			expect(valueIndicatorPre.textContent?.trim()).toBe('Temperature: 24');
+			expect(thumb.getAttribute('aria-valuenow')?.trim()).toBe('24');
+			expect(thumb.getAttribute('aria-valuemin')?.trim()).toBe('0');
+			expect(thumb.getAttribute('aria-valuemax')?.trim()).toBe('100');
+		});
+	});
+});
+
+```

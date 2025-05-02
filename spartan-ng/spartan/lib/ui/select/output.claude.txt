@@ -1,0 +1,1437 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/select.stories.ts</source>
+<document_content>
+import { CommonModule } from '@angular/common';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	OnInit,
+	ViewEncapsulation,
+	computed,
+	contentChild,
+	input,
+	signal,
+} from '@angular/core';
+import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronDown } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnSelectImports, BrnSelectTriggerDirective } from '@spartan-ng/brain/select';
+import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
+import { HlmLabelDirective } from '@spartan-ng/ui-label-helm';
+import { type Meta, type StoryObj, argsToTemplate, moduleMetadata } from '@storybook/angular';
+import type { ClassValue } from 'clsx';
+import { HlmIconDirective } from '../icon/helm/src';
+import { HlmSelectImports } from './helm/src';
+
+interface BrnSelectStoryArgs {
+	initialValue: string | string[];
+	disabled: boolean;
+	placeholder: string;
+	multiple: boolean;
+	dir: 'ltr' | 'rtl';
+	selectValueTransformFn: (values: (string | undefined)[]) => string;
+}
+
+const meta: Meta<BrnSelectStoryArgs> = {
+	title: 'Select',
+	args: {
+		disabled: false,
+		placeholder: 'Select an option',
+		multiple: false,
+		initialValue: '',
+		dir: 'ltr',
+	},
+	argTypes: {
+		dir: { control: 'radio', options: ['ltr', 'rtl'] },
+		selectValueTransformFn: { type: 'function', control: false },
+	},
+	decorators: [
+		moduleMetadata({
+			imports: [CommonModule, FormsModule, ReactiveFormsModule, BrnSelectImports, HlmSelectImports, HlmLabelDirective],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<BrnSelectStoryArgs>;
+
+export const Default: Story = {
+	render: (args) => ({
+		props: { ...args },
+		template: /* HTML */ `
+			<hlm-select class="inline-block" ${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}>
+				<hlm-select-trigger class="w-56">
+					<hlm-select-value />
+				</hlm-select-trigger>
+				<hlm-select-content>
+					<hlm-select-label>Fruits</hlm-select-label>
+					<hlm-option value="apple">Apple</hlm-option>
+					<hlm-option value="banana">Banana</hlm-option>
+					<hlm-option value="blueberry">Blueberry</hlm-option>
+					<hlm-option value="grapes">Grapes</hlm-option>
+					<hlm-option value="pineapple">Pineapple</hlm-option>
+				</hlm-select-content>
+			</hlm-select>
+		`,
+	}),
+};
+
+export const ReactiveFormControl: Story = {
+	render: (args) => ({
+		props: { ...args, fruitGroup: new FormGroup({ fruit: new FormControl(args.initialValue) }) },
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.value | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<brn-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+					formControlName="fruit"
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+						<hlm-option>Clear</hlm-option>
+					</hlm-select-content>
+				</brn-select>
+			</form>
+		`,
+	}),
+};
+
+export const DisabledOption: Story = {
+	render: (args) => ({
+		props: { ...args, fruitGroup: new FormGroup({ fruit: new FormControl(args.initialValue) }) },
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.value | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<brn-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+					formControlName="fruit"
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option data-testid="banana-option" value="banana" disabled>Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+						<hlm-option>Clear</hlm-option>
+					</hlm-select-content>
+				</brn-select>
+			</form>
+		`,
+	}),
+};
+
+export const SelectValueTransformFn: Story = {
+	render: (args) => ({
+		props: {
+			...args,
+			fruitGroup: new FormGroup({ fruit: new FormControl(args.initialValue) }),
+			selectValueTransformFn: (values: (string | undefined)[]) => {
+				return values.join(' | ');
+			},
+			multiple: true,
+		},
+		template: /* HTML */ `
+			<div class="mb-3" (onClick)="console.log('CLICKED')">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.value | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<brn-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+					formControlName="fruit"
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm [transformFn]="selectValueTransformFn" />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option data-testid="banana-option" value="banana" disabled>Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+						<hlm-option>Clear</hlm-option>
+					</hlm-select-content>
+				</brn-select>
+			</form>
+		`,
+	}),
+};
+
+export const ReactiveFormControlWithForAndInitialValue: Story = {
+	args: {
+		initialValue: 'apple',
+	},
+	render: (args) => ({
+		props: {
+			...args,
+			fruitGroup: new FormGroup({
+				fruit: new FormControl(args.initialValue || null, { validators: Validators.required }),
+			}),
+			options: [
+				{ value: 'apple', label: 'Apple' },
+				{ value: 'banana', label: 'Banana' },
+				{ value: 'blueberry', label: 'Blueberry' },
+				{ value: 'grapes', label: 'Grapes' },
+				{ value: 'pineapple', label: 'Pineapple' },
+			],
+		},
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.value | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<brn-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+					formControlName="fruit"
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						@for(option of options; track option.value){
+						<hlm-option [value]="option.value">{{option.label}}</hlm-option>
+						}
+					</hlm-select-content>
+				</brn-select>
+				@if (fruitGroup.controls.fruit.invalid && fruitGroup.controls.fruit.touched){
+				<span class="text-destructive">Required</span>
+				}
+			</form>
+		`,
+	}),
+};
+
+const appleAndBlueberry = new FormGroup({
+	fruit: new FormControl(['apple', 'blueberry'], { validators: Validators.required }),
+});
+export const ReactiveFormControlWithForAndInitialValueAndMultiple: StoryObj<
+	BrnSelectStoryArgs & { options: { value: string; label: string }[]; initialFormValue: FormGroup }
+> = {
+	args: {
+		placeholder: 'Select multiple options',
+		initialFormValue: appleAndBlueberry,
+		options: [
+			{ value: 'apple', label: 'Apple' },
+			{ value: 'banana', label: 'Banana' },
+			{ value: 'blueberry', label: 'Blueberry' },
+			{ value: 'grapes', label: 'Grapes' },
+			{ value: 'pineapple', label: 'Pineapple' },
+		],
+		multiple: true,
+	},
+	argTypes: {
+		initialFormValue: {
+			options: ['Apple', 'Apple & Blueberry', 'All'],
+			mapping: {
+				Apple: new FormGroup({
+					fruit: new FormControl(['apple'], { validators: Validators.required }),
+				}),
+				'Apple & Blueberry': new FormGroup({
+					fruit: new FormControl(['apple', 'blueberry'], {
+						validators: Validators.required,
+					}),
+				}),
+				All: new FormGroup({
+					fruit: new FormControl(['apple', 'banana', 'blueberry', 'grapes', 'pineapple'], {
+						validators: Validators.required,
+					}),
+				}),
+			},
+		},
+		options: {
+			control: 'inline-check',
+			options: ['Apple', 'Banana', 'Blueberry', 'Grapes', 'Pineapple'],
+			mapping: {
+				Apple: { value: 'apple', label: 'Apple' },
+				Banana: { value: 'banana', label: 'Banana' },
+				Blueberry: { value: 'blueberry', label: 'Blueberry' },
+				Grapes: { value: 'grapes', label: 'Grapes' },
+				Pineapple: { value: 'pineapple', label: 'Pineapple' },
+			},
+		},
+	},
+	render: (args) => ({
+		props: {
+			...args,
+		},
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ initialFormValue?.controls.fruit.value | json }}</pre>
+			</div>
+			<form [formGroup]="initialFormValue">
+				<brn-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'options'] })}
+					formControlName="fruit"
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						@for(option of options; track option.value){
+						<hlm-option [value]="option.value">{{option.label}}</hlm-option>
+						}
+					</hlm-select-content>
+				</brn-select>
+				@if (fruitGroup?.controls.fruit.invalid && fruitGroup.controls.fruit.touched){
+				<span class="text-destructive">Required</span>
+				}
+			</form>
+		`,
+	}),
+};
+
+export const ReactiveFormControlWithValidation: Story = {
+	render: (args) => ({
+		props: {
+			...args,
+			fruitGroup: new FormGroup({
+				fruit: new FormControl(args.initialValue || null, { validators: Validators.required }),
+			}),
+		},
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.valueChanges | async | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<brn-select
+					class="w-56"
+					formControlName="fruit"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+				>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+						<hlm-option>Clear</hlm-option>
+					</hlm-select-content>
+				</brn-select>
+				@if (fruitGroup.controls.fruit.invalid && fruitGroup.controls.fruit.touched){
+				<span class="text-destructive">Required</span>
+				}
+			</form>
+		`,
+	}),
+};
+
+export const ReactiveFormControlWithValidationWithLabel: Story = {
+	render: (args) => ({
+		props: {
+			...args,
+			fruitGroup: new FormGroup({
+				fruit: new FormControl(args.initialValue || null, { validators: Validators.required }),
+			}),
+		},
+		template: /* HTML */ `
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruitGroup.controls.fruit.valueChanges | async | json }}</pre>
+			</div>
+			<form [formGroup]="fruitGroup">
+				<hlm-select
+					class="w-56"
+					formControlName="fruit"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+				>
+					<label hlmLabel>Select a Fruit</label>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+						<hlm-option>Clear</hlm-option>
+					</hlm-select-content>
+				</hlm-select>
+				@if (fruitGroup.controls.fruit.invalid && fruitGroup.controls.fruit.touched){
+				<span class="text-destructive">Required</span>
+				}
+			</form>
+		`,
+	}),
+};
+
+export const NgModelFormControl: Story = {
+	render: (args) => ({
+		props: {
+			...args,
+			fruit: signal(args.initialValue),
+		},
+		template: /* HTML */ `
+			<form ngForm>
+				<div class="mb-3">
+					<pre>Form Control Value: {{fruit() | json }}</pre>
+				</div>
+				<hlm-select
+					class="w-56"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+					[(ngModel)]="fruit"
+					name="fruit"
+				>
+					<label hlmLabel>Select a Fruit</label>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+					</hlm-select-content>
+				</hlm-select>
+			</form>
+		`,
+	}),
+};
+
+export const NgModelFormControlInitialValue: Story = {
+	args: {
+		disabled: false,
+		placeholder: 'Select an option',
+		multiple: false,
+		initialValue: 'apple',
+		dir: 'ltr',
+	},
+
+	render: (args) => ({
+		props: {
+			...args,
+			fruit: signal(args.initialValue),
+		},
+
+		template: `
+            <form ngForm>
+                <div class="mb-3">
+                    <pre>Form Control Value: {{fruit() | json }}</pre>
+                </div>
+                <hlm-select
+                    class="w-56"
+                    ${argsToTemplate(args, {
+											exclude: ['initialValue', 'selectValueTransformFn'],
+										})}
+                    [(ngModel)]="fruit"
+                    name="fruit"
+                >
+                    <label hlmLabel>Select a Fruit</label>
+                    <hlm-select-trigger>
+                        <brn-select-value hlm />
+                    </hlm-select-trigger>
+                    <hlm-select-content>
+                        <hlm-select-label>Fruits</hlm-select-label>
+                        <hlm-option value="apple">Apple</hlm-option>
+                        <hlm-option value="banana">Banana</hlm-option>
+                        <hlm-option value="blueberry">Blueberry</hlm-option>
+                        <hlm-option value="grapes">Grapes</hlm-option>
+                        <hlm-option value="pineapple">Pineapple</hlm-option>
+                    </hlm-select-content>
+                </hlm-select>
+            </form>
+        `,
+	}),
+};
+
+export const SelectWithLabel: Story = {
+	render: (args) => ({
+		props: { ...args, fruitGroup: new FormGroup({ fruit: new FormControl() }) },
+		template: /* HTML */ `
+			<form [formGroup]="fruitGroup">
+				<hlm-select
+					formControlName="fruit"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+				>
+					<label hlmLabel>Select a Fruit</label>
+					<hlm-select-trigger class="w-56">
+						<brn-select-value />
+					</hlm-select-trigger>
+					<hlm-select-content class="w-56">
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+					</hlm-select-content>
+				</hlm-select>
+			</form>
+		`,
+	}),
+};
+
+export const Scrollable: Story = {
+	render: (args) => ({
+		props: { ...args, myform: new FormGroup({ timezone: new FormControl() }) },
+		template: /* HTML */ `
+			<form [formGroup]="myform">
+				<hlm-select
+					formControlName="timezone"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+				>
+					<hlm-select-trigger class="w-[280px]">
+						<hlm-select-value />
+					</hlm-select-trigger>
+					<hlm-select-content class="min-w-content max-h-96">
+						<hlm-select-scroll-up />
+
+						<hlm-select-group>
+							<hlm-select-label>North America</hlm-select-label>
+							<hlm-option value="est">Eastern Standard Time (EST)</hlm-option>
+							<hlm-option value="cst">Central Standard Time (CST)</hlm-option>
+							<hlm-option value="mst">Mountain Standard Time (MST)</hlm-option>
+							<hlm-option value="pst">Pacific Standard Time (PST)</hlm-option>
+							<hlm-option value="akst">Alaska Standard Time (AKST)</hlm-option>
+							<hlm-option value="hst">Hawaii Standard Time (HST)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Europe & Africa</hlm-select-label>
+							<hlm-option value="gmt">Greenwich Mean Time (GMT)</hlm-option>
+							<hlm-option value="cet">Central European Time (CET)</hlm-option>
+							<hlm-option value="eet">Eastern European Time (EET)</hlm-option>
+							<hlm-option value="west">Western European Summer Time (WEST)</hlm-option>
+							<hlm-option value="cat">Central Africa Time (CAT)</hlm-option>
+							<hlm-option value="eat">East Africa Time (EAT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Asia</hlm-select-label>
+							<hlm-option value="msk">Moscow Time (MSK)</hlm-option>
+							<hlm-option value="ist">India Standard Time (IST)</hlm-option>
+							<hlm-option value="cst_china">China Standard Time (CST)</hlm-option>
+							<hlm-option value="jst">Japan Standard Time (JST)</hlm-option>
+							<hlm-option value="kst">Korea Standard Time (KST)</hlm-option>
+							<hlm-option value="ist_indonesia">Indonesia Central Standard Time (WITA)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Australia & Pacific</hlm-select-label>
+							<hlm-option value="awst">Australian Western Standard Time (AWST)</hlm-option>
+							<hlm-option value="acst">Australian Central Standard Time (ACST)</hlm-option>
+							<hlm-option value="aest">Australian Eastern Standard Time (AEST)</hlm-option>
+							<hlm-option value="nzst">New Zealand Standard Time (NZST)</hlm-option>
+							<hlm-option value="fjt">Fiji Time (FJT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>South America</hlm-select-label>
+							<hlm-option value="art">Argentina Time (ART)</hlm-option>
+							<hlm-option value="bot">Bolivia Time (BOT)</hlm-option>
+							<hlm-option value="brt">Brasilia Time (BRT)</hlm-option>
+							<hlm-option value="clt">Chile Standard Time (CLT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-scroll-down />
+					</hlm-select-content>
+				</hlm-select>
+			</form>
+		`,
+	}),
+};
+
+export const ScrollableWithStickyLabels: Story = {
+	render: (args) => ({
+		props: { ...args, myform: new FormGroup({ timezone: new FormControl() }) },
+		template: /* HTML */ `
+			<form [formGroup]="myform">
+				<hlm-select
+					formControlName="timezone"
+					${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}
+				>
+					<hlm-select-trigger class="w-[280px]">
+						<hlm-select-value />
+					</hlm-select-trigger>
+					<hlm-select-content class="max-h-96" [stickyLabels]="true">
+						<hlm-select-scroll-up />
+
+						<hlm-select-group>
+							<hlm-select-label>North America</hlm-select-label>
+							<hlm-option value="est">Eastern Standard Time (EST)</hlm-option>
+							<hlm-option value="cst">Central Standard Time (CST)</hlm-option>
+							<hlm-option value="mst">Mountain Standard Time (MST)</hlm-option>
+							<hlm-option value="pst">Pacific Standard Time (PST)</hlm-option>
+							<hlm-option value="akst">Alaska Standard Time (AKST)</hlm-option>
+							<hlm-option value="hst">Hawaii Standard Time (HST)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Europe & Africa</hlm-select-label>
+							<hlm-option value="gmt">Greenwich Mean Time (GMT)</hlm-option>
+							<hlm-option value="cet">Central European Time (CET)</hlm-option>
+							<hlm-option value="eet">Eastern European Time (EET)</hlm-option>
+							<hlm-option value="west">Western European Summer Time (WEST)</hlm-option>
+							<hlm-option value="cat">Central Africa Time (CAT)</hlm-option>
+							<hlm-option value="eat">East Africa Time (EAT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Asia</hlm-select-label>
+							<hlm-option value="msk">Moscow Time (MSK)</hlm-option>
+							<hlm-option value="ist">India Standard Time (IST)</hlm-option>
+							<hlm-option value="cst_china">China Standard Time (CST)</hlm-option>
+							<hlm-option value="jst">Japan Standard Time (JST)</hlm-option>
+							<hlm-option value="kst">Korea Standard Time (KST)</hlm-option>
+							<hlm-option value="ist_indonesia">Indonesia Central Standard Time (WITA)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>Australia & Pacific</hlm-select-label>
+							<hlm-option value="awst">Australian Western Standard Time (AWST)</hlm-option>
+							<hlm-option value="acst">Australian Central Standard Time (ACST)</hlm-option>
+							<hlm-option value="aest">Australian Eastern Standard Time (AEST)</hlm-option>
+							<hlm-option value="nzst">New Zealand Standard Time (NZST)</hlm-option>
+							<hlm-option value="fjt">Fiji Time (FJT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-group>
+							<hlm-select-label>South America</hlm-select-label>
+							<hlm-option value="art">Argentina Time (ART)</hlm-option>
+							<hlm-option value="bot">Bolivia Time (BOT)</hlm-option>
+							<hlm-option value="brt">Brasilia Time (BRT)</hlm-option>
+							<hlm-option value="clt">Chile Standard Time (CLT)</hlm-option>
+						</hlm-select-group>
+
+						<hlm-select-scroll-down />
+					</hlm-select-content>
+				</hlm-select>
+			</form>
+		`,
+	}),
+};
+
+export const CustomTrigger: Story = {
+	render: (args) => ({
+		props: { ...args },
+		moduleMetadata: {
+			imports: [CustomSelectTriggerComponent],
+		},
+		template: /* HTML */ `
+			<hlm-select class="inline-block" ${argsToTemplate(args, { exclude: ['initialValue', 'selectValueTransformFn'] })}>
+				<custom-select-trigger ngProjectAs="[brnSelectTrigger]" class="w-56">
+					<hlm-select-value />
+				</custom-select-trigger>
+				<hlm-select-content>
+					<hlm-select-label>Fruits</hlm-select-label>
+					<hlm-option value="apple">Apple</hlm-option>
+					<hlm-option value="banana">Banana</hlm-option>
+					<hlm-option value="blueberry">Blueberry</hlm-option>
+					<hlm-option value="grapes">Grapes</hlm-option>
+					<hlm-option value="pineapple">Pineapple</hlm-option>
+				</hlm-select-content>
+			</hlm-select>
+		`,
+	}),
+};
+
+@Component({
+	selector: 'custom-select-trigger',
+	standalone: true,
+	imports: [BrnSelectTriggerDirective, NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronDown })],
+	template: `
+		<button [class]="_computedClass()" #button brnSelectTrigger type="button">
+			<ng-content />
+			@if (icon()) {
+				<ng-content select="ng-icon" />
+			} @else {
+				<ng-icon hlm size="sm" class="ml-2 flex-none" name="lucideChevronDown" />
+			}
+		</button>
+	`,
+})
+export class CustomSelectTriggerComponent {
+	protected readonly icon = contentChild(HlmIconDirective);
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'!bg-sky-500 flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 w-[180px]',
+			this.userClass(),
+		),
+	);
+}
+
+export const WithLabelAndForm: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [LabelAndFormComponent],
+		},
+		template: /* HTML */ '<label-and-form-component/>',
+	}),
+};
+@Component({
+	selector: 'label-and-form-component',
+	standalone: true,
+	encapsulation: ViewEncapsulation.None,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [
+		FormsModule,
+		ReactiveFormsModule,
+		BrnSelectImports,
+		HlmSelectImports,
+		HlmLabelDirective,
+		HlmButtonDirective,
+	],
+	providers: [],
+	host: {
+		class: '',
+	},
+	template: `
+		<form class="space-y-5" (ngSubmit)="handleSubmit()">
+			<label hlmLabel>
+				Select a Fruit*
+				<hlm-select class="w-56" [(ngModel)]="fruit" name="fruit" required>
+					<hlm-select-trigger>
+						<brn-select-value hlm />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						<hlm-option [value]="undefined">No fruit</hlm-option>
+						<hlm-option value="apple">Apple</hlm-option>
+						<hlm-option value="banana">Banana</hlm-option>
+						<hlm-option value="blueberry">Blueberry</hlm-option>
+						<hlm-option value="grapes">Grapes</hlm-option>
+						<hlm-option value="pineapple">Pineapple</hlm-option>
+					</hlm-select-content>
+				</hlm-select>
+			</label>
+			<button hlmBtn>Submit</button>
+		</form>
+	`,
+})
+class LabelAndFormComponent {
+	public fruit = signal<string | undefined>(undefined);
+
+	public handleSubmit(): void {
+		console.log(this.fruit());
+	}
+}
+
+export const DynamicOptionsMultiSelect: Story = {
+	render: () => ({
+		moduleMetadata: {
+			imports: [DynamicOptionsMultiSelectComponent],
+		},
+		template: /* HTML */ '<dynamic-options-multi-select-component/>',
+	}),
+};
+@Component({
+	selector: 'dynamic-options-multi-select-component',
+	standalone: true,
+	encapsulation: ViewEncapsulation.None,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [
+		FormsModule,
+		ReactiveFormsModule,
+		BrnSelectImports,
+		HlmSelectImports,
+		HlmLabelDirective,
+		HlmButtonDirective,
+	],
+	providers: [],
+	host: {
+		class: '',
+	},
+	template: `
+		<form class="space-y-5">
+			<div class="mb-3">
+				<pre>Form Control Value: {{ fruit.value | json }}</pre>
+			</div>
+			<label hlmLabel>
+				Select a Fruit*
+				<hlm-select class="w-56" [formControl]="fruit" required [multiple]="true" placeholder="Select an option">
+					<hlm-select-trigger>
+						<hlm-select-value />
+					</hlm-select-trigger>
+					<hlm-select-content>
+						<hlm-select-label>Fruits</hlm-select-label>
+						@for (option of options(); track option.value) {
+							<hlm-option [value]="option.value">{{ option.label }}</hlm-option>
+						}
+					</hlm-select-content>
+				</hlm-select>
+			</label>
+		</form>
+		<button hlmBtn class="mt-2" (click)="updateOptions()">Update Options</button>
+
+		<button hlmBtn class="mt-2" (click)="updateDiffOptions()">Update Diff Options</button>
+
+		<button hlmBtn class="mt-2" (click)="updatePartialOptions()">Update Partial Options</button>
+	`,
+})
+class DynamicOptionsMultiSelectComponent implements OnInit {
+	// Checking if an issue with having options as a signal
+	public options = signal<{ value: number; label: string }[]>([]);
+	fruit = new FormControl([1, 5]);
+
+	ngOnInit(): void {
+		this.options.set([
+			{ label: 'Apple', value: 1 },
+			{ label: 'Banana', value: 2 },
+			{ label: 'Blueberry', value: 3 },
+			{ label: 'Grapes', value: 4 },
+			{ label: 'Pineapple', value: 5 },
+		]);
+	}
+
+	public updateOptions() {
+		// Reset same options
+		this.options.set([
+			{ label: 'Apple', value: 1 },
+			{ label: 'Banana', value: 2 },
+			{ label: 'Blueberry', value: 3 },
+			{ label: 'Grapes', value: 4 },
+			{ label: 'Pineapple', value: 5 },
+		]);
+	}
+
+	public updateDiffOptions() {
+		// Reset with different option values
+		this.options.set([
+			{ label: 'Apple', value: 6 },
+			{ label: 'Banana', value: 7 },
+			{ label: 'Blueberry', value: 8 },
+			{ label: 'Grapes', value: 9 },
+			{ label: 'Pineapple', value: 10 },
+		]);
+	}
+
+	public updatePartialOptions() {
+		// Reset with different option values
+		this.options.set([
+			{ label: 'Apple', value: 1 },
+			{ label: 'Banana', value: 2 },
+			{ label: 'Blueberry', value: 8 },
+			{ label: 'Grapes', value: 9 },
+			{ label: 'Pineapple', value: 10 },
+		]);
+	}
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/README.md</source>
+<document_content>
+# ui-select-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-select-helm` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/eslint.config.js</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'ui-select-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	coverageDirectory: '../../../../coverage/libs/ui/select/helm',
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/select/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/ui-select-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0",
+		"@ng-icons/core": ">=29.0.0",
+		"@ng-icons/lucide": ">=29.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"@spartan-ng/ui-icon-helm": "0.0.1-alpha.381",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1"
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/project.json</source>
+<document_content>
+{
+	"name": "ui-select-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/select/helm/src",
+	"prefix": "lib",
+	"projectType": "library",
+	"tags": [],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/select/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/select/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/select/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/select/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { HlmSelectContentDirective } from './lib/hlm-select-content.directive';
+import { HlmSelectGroupDirective } from './lib/hlm-select-group.directive';
+import { HlmSelectLabelDirective } from './lib/hlm-select-label.directive';
+import { HlmSelectOptionComponent } from './lib/hlm-select-option.component';
+import { HlmSelectScrollDownComponent } from './lib/hlm-select-scroll-down.component';
+import { HlmSelectScrollUpComponent } from './lib/hlm-select-scroll-up.component';
+import { HlmSelectTriggerComponent } from './lib/hlm-select-trigger.component';
+import { HlmSelectValueDirective } from './lib/hlm-select-value.directive';
+import { HlmSelectDirective } from './lib/hlm-select.directive';
+
+export * from './lib/hlm-select-content.directive';
+export * from './lib/hlm-select-group.directive';
+export * from './lib/hlm-select-label.directive';
+export * from './lib/hlm-select-option.component';
+export * from './lib/hlm-select-scroll-down.component';
+export * from './lib/hlm-select-scroll-up.component';
+export * from './lib/hlm-select-trigger.component';
+export * from './lib/hlm-select-value.directive';
+export * from './lib/hlm-select.directive';
+
+export const HlmSelectImports = [
+	HlmSelectContentDirective,
+	HlmSelectTriggerComponent,
+	HlmSelectOptionComponent,
+	HlmSelectValueDirective,
+	HlmSelectDirective,
+	HlmSelectScrollUpComponent,
+	HlmSelectScrollDownComponent,
+	HlmSelectLabelDirective,
+	HlmSelectGroupDirective,
+] as const;
+
+@NgModule({
+	imports: [...HlmSelectImports],
+	exports: [...HlmSelectImports],
+})
+export class HlmSelectModule {}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-content.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm, injectExposedSideProvider, injectExposesStateProvider } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmSelectContent], hlm-select-content',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+		'[attr.data-state]': '_stateProvider?.state() ?? "open"',
+		'[attr.data-side]': '_sideProvider?.side() ?? "bottom"',
+	},
+})
+export class HlmSelectContentDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	public readonly stickyLabels = input<boolean>(false);
+	protected readonly _stateProvider = injectExposesStateProvider({ optional: true });
+	protected readonly _sideProvider = injectExposedSideProvider({ optional: true });
+
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'w-full relative z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md p-1 data-[side=bottom]:top-[2px] data-[side=top]:bottom-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-group.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnSelectGroupDirective } from '@spartan-ng/brain/select';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmSelectGroup], hlm-select-group',
+	hostDirectives: [BrnSelectGroupDirective],
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSelectGroupDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm(this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-label.directive.ts</source>
+<document_content>
+import { Directive, computed, inject, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnSelectLabelDirective } from '@spartan-ng/brain/select';
+import type { ClassValue } from 'clsx';
+import { HlmSelectContentDirective } from './hlm-select-content.directive';
+
+@Directive({
+	selector: '[hlmSelectLabel], hlm-select-label',
+	hostDirectives: [BrnSelectLabelDirective],
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSelectLabelDirective {
+	private readonly _selectContent = inject(HlmSelectContentDirective);
+	private readonly _stickyLabels = computed(() => this._selectContent.stickyLabels());
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'pl-8 pr-2 text-sm font-semibold rtl:pl-2 rtl:pr-8',
+			this._stickyLabels() ? 'sticky top-0 bg-popover block z-[2]' : '',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-option.component.ts</source>
+<document_content>
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideCheck } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnSelectOptionDirective } from '@spartan-ng/brain/select';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-option',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	hostDirectives: [{ directive: BrnSelectOptionDirective, inputs: ['disabled', 'value'] }],
+	providers: [provideIcons({ lucideCheck })],
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: `
+		<ng-content />
+		<span
+			[attr.dir]="_brnSelectOption.dir()"
+			class="absolute left-2 flex h-3.5 w-3.5 items-center justify-center rtl:left-auto rtl:right-2"
+			[attr.data-state]="this._brnSelectOption.checkedState()"
+		>
+			@if (this._brnSelectOption.selected()) {
+				<ng-icon hlm size="sm" aria-hidden="true" name="lucideCheck" />
+			}
+		</span>
+	`,
+	imports: [NgIcon, HlmIconDirective],
+})
+export class HlmSelectOptionComponent {
+	protected readonly _brnSelectOption = inject(BrnSelectOptionDirective, { host: true });
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 rtl:flex-reverse rtl:pr-8 rtl:pl-2 text-sm outline-none data-[active]:bg-accent data-[active]:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-scroll-down.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronDown } from '@ng-icons/lucide';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+
+@Component({
+	selector: 'hlm-select-scroll-down',
+	imports: [NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronDown })],
+	host: {
+		class: 'flex cursor-default items-center justify-center py-1',
+	},
+	template: `
+		<ng-icon hlm size="sm" class="ml-2" name="lucideChevronDown" />
+	`,
+})
+export class HlmSelectScrollDownComponent {}
+
+</document_content>
+</document>
+<document index="19">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-scroll-up.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronUp } from '@ng-icons/lucide';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+
+@Component({
+	selector: 'hlm-select-scroll-up',
+	imports: [NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronUp })],
+	host: {
+		class: 'flex cursor-default items-center justify-center py-1',
+	},
+	template: `
+		<ng-icon hlm size="sm" class="ml-2" name="lucideChevronUp" />
+	`,
+})
+export class HlmSelectScrollUpComponent {}
+
+</document_content>
+</document>
+<document index="20">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-trigger.component.ts</source>
+<document_content>
+import { Component, computed, contentChild, inject, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronDown } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnSelectComponent, BrnSelectTriggerDirective } from '@spartan-ng/brain/select';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const selectTriggerVariants = cva(
+	'flex items-center justify-between rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+	{
+		variants: {
+			size: {
+				default: 'h-10 py-2 px-4',
+				sm: 'h-9 px-3',
+				lg: 'h-11 px-8',
+			},
+			error: {
+				auto: '[&.ng-invalid.ng-touched]:text-destructive [&.ng-invalid.ng-touched]:border-destructive [&.ng-invalid.ng-touched]:focus-visible:ring-destructive',
+				true: 'text-destructive border-destructive focus-visible:ring-destructive',
+			},
+		},
+		defaultVariants: {
+			size: 'default',
+			error: 'auto',
+		},
+	},
+);
+type SelectTriggerVariants = VariantProps<typeof selectTriggerVariants>;
+
+@Component({
+	selector: 'hlm-select-trigger',
+	imports: [BrnSelectTriggerDirective, NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronDown })],
+	template: `
+		<button [class]="_computedClass()" #button hlmInput brnSelectTrigger type="button">
+			<ng-content />
+			@if (icon()) {
+				<ng-content select="ng-icon" />
+			} @else {
+				<ng-icon hlm size="sm" class="ml-2 flex-none" name="lucideChevronDown" />
+			}
+		</button>
+	`,
+})
+export class HlmSelectTriggerComponent {
+	protected readonly icon = contentChild(HlmIconDirective);
+
+	protected readonly brnSelect = inject(BrnSelectComponent, { optional: true });
+
+	public readonly _size = input<SelectTriggerVariants['size']>('default');
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+
+	protected _computedClass = computed(() =>
+		hlm(selectTriggerVariants({ size: this._size(), error: this.brnSelect?.errorState() }), this.userClass()),
+	);
+}
+
+</document_content>
+</document>
+<document index="21">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select-value.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: 'hlm-select-value,[hlmSelectValue], brn-select-value[hlm]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSelectValueDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'!inline-block ltr:text-left rtl:text-right border-border w-[calc(100%)]] min-w-0 pointer-events-none truncate data-[placeholder]:text-muted-foreground',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="22">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/select/helm/src/lib/hlm-select.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: 'hlm-select, brn-select [hlm]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSelectDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm('space-y-2', this.userClass()));
+}
+
+</document_content>
+</document>
+</documents>

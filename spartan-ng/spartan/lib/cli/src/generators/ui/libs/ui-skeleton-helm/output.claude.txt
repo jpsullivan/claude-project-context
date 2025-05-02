@@ -1,0 +1,58 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-skeleton-helm/generator.ts</source>
+<document_content>
+import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+	return await hlmBaseGenerator(tree, {
+		...options,
+		primitiveName: 'skeleton',
+		internalName: 'ui-skeleton-helm',
+		publicName: 'ui-skeleton-helm',
+	});
+}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-skeleton-helm/files/index.ts.template</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { HlmSkeletonComponent } from './lib/hlm-skeleton.component';
+
+export * from './lib/hlm-skeleton.component';
+
+@NgModule({
+	imports: [HlmSkeletonComponent],
+	exports: [HlmSkeletonComponent],
+})
+export class HlmSkeletonModule {}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-skeleton-helm/files/lib/hlm-skeleton.component.ts.template</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-skeleton',
+	standalone: true,
+	template: '',
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSkeletonComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('block animate-pulse rounded-md bg-muted', this.userClass()));
+}
+
+</document_content>
+</document>
+</documents>

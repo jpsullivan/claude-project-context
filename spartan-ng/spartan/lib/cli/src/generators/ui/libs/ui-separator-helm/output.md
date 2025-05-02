@@ -1,0 +1,57 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-separator-helm/generator.ts
+```typescript
+import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+	return await hlmBaseGenerator(tree, {
+		...options,
+		primitiveName: 'separator',
+		internalName: 'ui-separator-helm',
+		publicName: 'ui-separator-helm',
+	});
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-separator-helm/files/index.ts.template
+```
+import { NgModule } from '@angular/core';
+import { HlmSeparatorDirective } from './lib/hlm-separator.directive';
+
+export * from './lib/hlm-separator.directive';
+
+@NgModule({
+	imports: [HlmSeparatorDirective],
+	exports: [HlmSeparatorDirective],
+})
+export class HlmSeparatorModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/ui/libs/ui-separator-helm/files/lib/hlm-separator.directive.ts.template
+```
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+export type HlmSeparatorOrientation = 'horizontal' | 'vertical';
+@Directive({
+	selector: '[hlmSeparator],brn-separator[hlm]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmSeparatorDirective {
+	public readonly orientation = input<HlmSeparatorOrientation>('horizontal');
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'inline-flex shrink-0 border-0 bg-border',
+			this.orientation() === 'horizontal' ? 'h-[1px] w-full' : 'h-full w-[1px]',
+			this.userClass(),
+		),
+	);
+}
+
+```

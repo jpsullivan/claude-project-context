@@ -1,0 +1,179 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/README.md</source>
+<document_content>
+# ui-storybook
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running Storybook
+
+Run `nx storybook ui-storybook` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/postcss.config.js</source>
+<document_content>
+const { join } = require('node:path');
+
+module.exports = {
+	plugins: {
+		tailwindcss: {
+			config: join(__dirname, 'tailwind.config.js'),
+		},
+		autoprefixer: {},
+	},
+};
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/project.json</source>
+<document_content>
+{
+	"name": "ui-storybook",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/storybook/src",
+	"prefix": "spartan-ng",
+	"tags": [],
+	"projectType": "library",
+	"targets": {
+		"storybook": {
+			"executor": "@storybook/angular:start-storybook",
+			"options": {
+				"port": 4400,
+				"configDir": "libs/ui/storybook/.storybook",
+				"browserTarget": "ui-storybook:build-storybook",
+				"compodoc": false,
+				"styles": ["libs/ui/storybook/.storybook/tailwind.css"]
+			},
+			"configurations": {
+				"ci": {
+					"quiet": true
+				}
+			}
+		},
+		"build-storybook": {
+			"executor": "@storybook/angular:build-storybook",
+			"outputs": ["{options.outputDir}"],
+			"options": {
+				"outputDir": "dist/storybook/ui-storybook",
+				"configDir": "libs/ui/storybook/.storybook",
+				"browserTarget": "ui-storybook:build-storybook",
+				"compodoc": false,
+				"styles": ["libs/ui/storybook/.storybook/tailwind.css"]
+			},
+			"configurations": {
+				"ci": {
+					"quiet": true
+				}
+			}
+		},
+		"static-storybook": {
+			"executor": "@nx/web:file-server",
+			"options": {
+				"buildTarget": "ui-storybook:build-storybook",
+				"staticFilePath": "dist/storybook/ui-storybook"
+			},
+			"configurations": {
+				"ci": {
+					"buildTarget": "ui-storybook:build-storybook:ci"
+				}
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/tailwind.config.js</source>
+<document_content>
+const { createGlobPatternsForDependencies } = require('@nx/angular/tailwind');
+const { join } = require('node:path');
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+	darkMode: ['class', '[data-mode="dark"]'],
+	presets: [require('../../../libs/brain/hlm-tailwind-preset.js')],
+	content: [join(__dirname, '../**/!(*.spec).{ts,html}'), ...createGlobPatternsForDependencies(__dirname)],
+	theme: {
+		extend: {},
+	},
+	plugins: [],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./.storybook/tsconfig.json"
+		}
+	],
+	"extends": "../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": [
+		"src/**/*.spec.ts",
+		"src/test-setup.ts",
+		"jest.config.ts",
+		"src/**/*.test.ts",
+		"**/*.stories.ts",
+		"**/*.stories.js"
+	],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/storybook/src/index.ts</source>
+<document_content>
+// placeholder as this project is simply a wrapper for
+// running storybook for all ui primitives
+
+console.log('I should not be an empty file!');
+
+</document_content>
+</document>
+</documents>

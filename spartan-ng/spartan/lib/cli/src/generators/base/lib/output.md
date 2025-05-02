@@ -1,0 +1,81 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/base/lib/build-dependency-array.ts
+```typescript
+import type { HlmBaseGeneratorSchema } from '../schema';
+import {
+	NG_ICONS_VERSION,
+	SPARTAN_BRAIN_VERSION,
+	TAILWINDCSS_VERSION,
+	TAILWIND_ANIMATE_VERSION,
+	TAILWIND_MERGE_VERSION,
+} from '../versions';
+
+export function buildDependencyArray(
+	options: HlmBaseGeneratorSchema,
+	angularVersion: string,
+	existingCdkVersion: string,
+) {
+	let dependencies: Record<string, string> = {
+		'@angular/cdk': existingCdkVersion ?? angularVersion,
+		'@spartan-ng/brain': SPARTAN_BRAIN_VERSION,
+	};
+
+	if (options.peerDependencies) {
+		dependencies = { ...dependencies, ...options.peerDependencies };
+	}
+
+	if (options.primitiveName === 'icon') {
+		dependencies = { ...dependencies, '@ng-icons/core': NG_ICONS_VERSION };
+	}
+	return dependencies;
+}
+
+export function buildDevDependencyArray() {
+	return {
+		'tailwind-merge': TAILWIND_MERGE_VERSION,
+		tailwindcss: TAILWINDCSS_VERSION,
+		'tailwindcss-animate': TAILWIND_ANIMATE_VERSION,
+	};
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/base/lib/get-target-library-directory.ts
+```typescript
+import { type Tree, extractLayoutDirectory, getWorkspaceLayout } from '@nx/devkit';
+import * as path from 'node:path';
+import type { HlmBaseGeneratorSchema } from '../schema';
+
+export function getTargetLibraryDirectory(options: HlmBaseGeneratorSchema, tree: Tree) {
+	const { layoutDirectory, projectDirectory } = extractLayoutDirectory(options.directory);
+	const workspaceLayout = getWorkspaceLayout(tree);
+	const baseLibsDir = layoutDirectory ?? workspaceLayout.libsDir;
+	const libsDir = options.rootProject ? '.' : baseLibsDir;
+	return path.join(libsDir, projectDirectory, options.publicName);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/base/lib/initialize-angular-library.ts
+```typescript
+import { type Tree, joinPathFragments } from '@nx/devkit';
+import type { HlmBaseGeneratorSchema } from '../schema';
+
+export async function initializeAngularLibrary(tree: Tree, options: HlmBaseGeneratorSchema) {
+	return await (
+		await import(
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			'@nx/angular/generators'
+		)
+	).libraryGenerator(tree, {
+		name: options.publicName,
+		skipFormat: true,
+		simpleName: true,
+		buildable: true,
+		importPath: `@spartan-ng/${options.publicName}`,
+		prefix: 'hlm',
+		skipModule: true,
+		directory: joinPathFragments(options.directory, options.publicName),
+		tags: options.tags,
+	});
+}
+
+```

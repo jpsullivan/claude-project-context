@@ -1,0 +1,470 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/README.md
+```
+# ui-form-field-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-form-field-helm` to execute the unit tests.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/eslint.config.js
+```javascript
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/jest.config.ts
+```typescript
+export default {
+	displayName: 'ui-form-field-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	coverageDirectory: '../../../../coverage/libs/form-field/helm',
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/ng-package.json
+```json
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/form-field/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/package.json
+```json
+{
+	"name": "@spartan-ng/ui-formfield-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/project.json
+```json
+{
+	"name": "ui-form-field-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/form-field/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/form-field/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/form-field/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/form-field/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/form-field/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-form-field-helm"
+			}
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/tsconfig.lib.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/tsconfig.lib.prod.json
+```json
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/tsconfig.spec.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+import { HlmErrorDirective } from './lib/hlm-error.directive';
+import { HlmFormFieldComponent } from './lib/hlm-form-field.component';
+import { HlmHintDirective } from './lib/hlm-hint.directive';
+
+export * from './lib/hlm-error.directive';
+export * from './lib/hlm-form-field.component';
+export * from './lib/hlm-hint.directive';
+
+@NgModule({
+	imports: [HlmFormFieldComponent, HlmErrorDirective, HlmHintDirective],
+	exports: [HlmFormFieldComponent, HlmErrorDirective, HlmHintDirective],
+})
+export class HlmFormFieldModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/test-setup.ts
+```typescript
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/lib/form-field.spec.ts
+```typescript
+/* eslint-disable @angular-eslint/component-class-suffix */
+/* eslint-disable @angular-eslint/component-selector */
+import { Component } from '@angular/core';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+
+import { HlmInputDirective } from '@spartan-ng/ui-input-helm';
+
+import { ErrorStateMatcher, ShowOnDirtyErrorStateMatcher } from '@spartan-ng/brain/forms';
+import { HlmErrorDirective } from './hlm-error.directive';
+import { HlmFormFieldComponent } from './hlm-form-field.component';
+import { HlmHintDirective } from './hlm-hint.directive';
+
+const DIRECTIVES = [HlmFormFieldComponent, HlmErrorDirective, HlmHintDirective, HlmInputDirective];
+
+@Component({
+	standalone: true,
+	selector: 'single-form-field-example',
+	imports: [ReactiveFormsModule, ...DIRECTIVES],
+	template: `
+		<hlm-form-field>
+			<input
+				data-testid="hlm-input"
+				aria-label="Your Name"
+				[formControl]="name"
+				class="w-80"
+				hlmInput
+				type="text"
+				placeholder="Your Name"
+			/>
+			<hlm-error data-testid="hlm-error">Your name is required</hlm-error>
+			<hlm-hint data-testid="hlm-hint">This is your public display name.</hlm-hint>
+		</hlm-form-field>
+	`,
+})
+class SingleFormFieldMock {
+	public name = new FormControl('', Validators.required);
+}
+
+@Component({
+	standalone: true,
+	selector: 'single-form-field-dirty-example',
+	imports: [ReactiveFormsModule, ...DIRECTIVES],
+	template: `
+		<hlm-form-field>
+			<input
+				data-testid="hlm-input"
+				aria-label="Your Name"
+				[formControl]="name"
+				class="w-80"
+				hlmInput
+				type="text"
+				placeholder="Your Name"
+			/>
+			<hlm-error data-testid="hlm-error">Your name is required</hlm-error>
+			<hlm-hint data-testid="hlm-hint">This is your public display name.</hlm-hint>
+		</hlm-form-field>
+	`,
+	providers: [{ provide: ErrorStateMatcher, useClass: ShowOnDirtyErrorStateMatcher }],
+})
+class SingleFormFieldDirtyMock {
+	public name = new FormControl('', Validators.required);
+}
+
+describe('Hlm Form Field Component', () => {
+	const TEXT_HINT = 'This is your public display name.';
+	const TEXT_ERROR = 'Your name is required';
+
+	const setupFormField = async () => {
+		const { fixture } = await render(SingleFormFieldMock);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			hint: screen.getByTestId('hlm-hint'),
+			error: () => screen.queryByTestId('hlm-error'),
+			trigger: screen.getByTestId('hlm-input'),
+		};
+	};
+
+	const setupFormFieldWithErrorStateDirty = async () => {
+		const { fixture } = await render(SingleFormFieldDirtyMock);
+		return {
+			user: userEvent.setup(),
+			fixture,
+			hint: screen.getByTestId('hlm-hint'),
+			error: () => screen.queryByTestId('hlm-error'),
+			trigger: screen.getByTestId('hlm-input'),
+		};
+	};
+
+	describe('SingleFormField', () => {
+		it('should show the hint if the errorState is false', async () => {
+			const { hint } = await setupFormField();
+
+			expect(hint.textContent).toBe(TEXT_HINT);
+		});
+
+		it('should show the error if the errorState is true', async () => {
+			const { user, error, trigger } = await setupFormField();
+
+			expect(error()).toBeNull();
+
+			await user.click(trigger);
+
+			await user.click(document.body);
+
+			expect(screen.queryByTestId('hlm-hint')).toBeNull();
+			expect(error()?.textContent?.trim()).toBe(TEXT_ERROR);
+		});
+	});
+
+	describe('SingleFormFieldDirty', () => {
+		it('should not display the error if the input does not have the dirty state due to the ErrorStateMatcher', async () => {
+			const { error, user, trigger } = await setupFormFieldWithErrorStateDirty();
+
+			await user.click(trigger);
+
+			await user.click(document.body);
+
+			expect(error()).toBeNull();
+		});
+
+		it('should display the error if the input has the dirty state due to the ErrorStateMatcher', async () => {
+			const { error, user, trigger } = await setupFormFieldWithErrorStateDirty();
+
+			await user.click(trigger);
+			await user.type(trigger, 'a');
+			await user.clear(trigger);
+
+			await user.click(document.body);
+
+			expect(error()?.textContent?.trim()).toBe(TEXT_ERROR);
+		});
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/lib/hlm-error.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+	standalone: true,
+	// eslint-disable-next-line @angular-eslint/directive-selector
+	selector: 'hlm-error',
+	host: {
+		class: 'block text-destructive text-sm font-medium',
+	},
+})
+export class HlmErrorDirective {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/lib/hlm-form-field.component.ts
+```typescript
+import { Component, computed, contentChild, contentChildren, effect } from '@angular/core';
+import { BrnFormFieldControl } from '@spartan-ng/brain/form-field';
+import { HlmErrorDirective } from './hlm-error.directive';
+
+@Component({
+	selector: 'hlm-form-field',
+	template: `
+		<ng-content />
+
+		@switch (hasDisplayedMessage()) {
+			@case ('error') {
+				<ng-content select="hlm-error" />
+			}
+			@default {
+				<ng-content select="hlm-hint" />
+			}
+		}
+	`,
+	standalone: true,
+	host: {
+		class: 'space-y-2 block',
+	},
+})
+export class HlmFormFieldComponent {
+	public readonly control = contentChild(BrnFormFieldControl);
+
+	public readonly errorChildren = contentChildren(HlmErrorDirective);
+
+	protected readonly hasDisplayedMessage = computed<'error' | 'hint'>(() =>
+		this.errorChildren() && this.errorChildren().length > 0 && this.control()?.errorState() ? 'error' : 'hint',
+	);
+
+	constructor() {
+		effect(() => {
+			if (!this.control()) {
+				throw new Error('hlm-form-field must contain a BrnFormFieldControl.');
+			}
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/form-field/helm/src/lib/hlm-hint.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+
+@Directive({
+	// eslint-disable-next-line @angular-eslint/directive-selector
+	selector: 'hlm-hint',
+	standalone: true,
+	host: {
+		class: 'block text-sm text-muted-foreground',
+	},
+})
+export class HlmHintDirective {}
+
+```

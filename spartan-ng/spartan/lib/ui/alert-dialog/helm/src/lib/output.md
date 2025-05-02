@@ -1,0 +1,226 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-action-button.directive.ts
+```typescript
+import { Directive } from '@angular/core';
+import { HlmButtonDirective } from '@spartan-ng/ui-button-helm';
+
+@Directive({
+	selector: 'button[hlmAlertDialogAction]',
+	standalone: true,
+	hostDirectives: [HlmButtonDirective],
+})
+export class HlmAlertDialogActionButtonDirective {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-cancel-button.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { HlmButtonDirective, provideBrnButtonConfig } from '@spartan-ng/ui-button-helm';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: 'button[hlmAlertDialogCancel]',
+	standalone: true,
+	hostDirectives: [HlmButtonDirective],
+	providers: [provideBrnButtonConfig({ variant: 'outline' })],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmAlertDialogCancelButtonDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm('mt-2 sm:mt-0', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-content.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input, signal } from '@angular/core';
+import { hlm, injectExposesStateProvider } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-alert-dialog-content',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+		'[attr.data-state]': 'state()',
+	},
+	template: `
+		<ng-content />
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmAlertDialogContentComponent {
+	private readonly _stateProvider = injectExposesStateProvider({ optional: true, host: true });
+	public readonly state = this._stateProvider?.state ?? signal('closed');
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'relative grid w-full max-w-lg gap-4 border-border border bg-background p-6 shadow-lg [animation-duration:200] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-top-[2%]  data-[state=open]:slide-in-from-top-[2%] sm:rounded-lg md:w-full',
+			this.userClass(),
+		),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-description.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { BrnAlertDialogDescriptionDirective } from '@spartan-ng/brain/alert-dialog';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmAlertDialogDescription]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnAlertDialogDescriptionDirective],
+})
+export class HlmAlertDialogDescriptionDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm('text-sm text-muted-foreground', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-footer.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-alert-dialog-footer',
+	standalone: true,
+	template: `
+		<ng-content />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmAlertDialogFooterComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-header.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-alert-dialog-header',
+	standalone: true,
+	template: `
+		<ng-content />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+})
+export class HlmAlertDialogHeaderComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex flex-col space-y-2 text-center sm:text-left', this.userClass()),
+	);
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-overlay.directive.ts
+```typescript
+import { Directive, computed, effect, input, untracked } from '@angular/core';
+import { hlm, injectCustomClassSettable } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmAlertDialogOverlay],brn-alert-dialog-overlay[hlm]',
+	standalone: true,
+})
+export class HlmAlertDialogOverlayDirective {
+	private readonly _classSettable = injectCustomClassSettable({ optional: true, host: true });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm(
+			'bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+			this.userClass(),
+		),
+	);
+
+	constructor() {
+		effect(() => {
+			const classValue = this._computedClass();
+			untracked(() => this._classSettable?.setClassToCustomElement(classValue));
+		});
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog-title.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { BrnAlertDialogTitleDirective } from '@spartan-ng/brain/alert-dialog';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmAlertDialogTitle]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnAlertDialogTitleDirective],
+})
+export class HlmAlertDialogTitleDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() => hlm('text-lg font-semibold', this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/alert-dialog/helm/src/lib/hlm-alert-dialog.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, forwardRef, ViewEncapsulation } from '@angular/core';
+import {
+	BRN_ALERT_DIALOG_DEFAULT_OPTIONS,
+	BrnAlertDialogComponent,
+	BrnAlertDialogOverlayComponent,
+} from '@spartan-ng/brain/alert-dialog';
+import { BrnDialogComponent, provideBrnDialogDefaultOptions } from '@spartan-ng/brain/dialog';
+import { HlmAlertDialogOverlayDirective } from './hlm-alert-dialog-overlay.directive';
+
+@Component({
+	selector: 'hlm-alert-dialog',
+	template: `
+		<brn-alert-dialog-overlay hlm />
+		<ng-content />
+	`,
+	providers: [
+		{
+			provide: BrnDialogComponent,
+			useExisting: forwardRef(() => HlmAlertDialogComponent),
+		},
+		provideBrnDialogDefaultOptions({
+			...BRN_ALERT_DIALOG_DEFAULT_OPTIONS,
+		}),
+	],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	encapsulation: ViewEncapsulation.None,
+	exportAs: 'hlmAlertDialog',
+	imports: [BrnAlertDialogOverlayComponent, HlmAlertDialogOverlayDirective],
+})
+export class HlmAlertDialogComponent extends BrnAlertDialogComponent {}
+
+```

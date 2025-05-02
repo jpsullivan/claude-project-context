@@ -1,0 +1,763 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/tabs.stories.ts</source>
+<document_content>
+import { BrnTabsDirective, BrnTabsImports } from '@spartan-ng/brain/tabs';
+import { type Meta, type StoryObj, argsToTemplate, moduleMetadata } from '@storybook/angular';
+import { HlmButtonDirective } from '../button/helm/src';
+import { HlmCardImports } from '../card/helm/src';
+import { HlmInputDirective } from '../input/helm/src';
+import { HlmLabelDirective } from '../label/helm/src';
+import { HlmTabsImports } from './helm/src';
+
+const meta: Meta<BrnTabsDirective> = {
+	title: 'Tabs',
+	component: BrnTabsDirective,
+	tags: ['autodocs'],
+	argTypes: {
+		activationMode: {
+			options: ['manual', 'automatic'],
+			control: {
+				type: 'select',
+			},
+		},
+	},
+	decorators: [
+		moduleMetadata({
+			imports: [
+				BrnTabsImports,
+				HlmTabsImports,
+				HlmCardImports,
+				HlmLabelDirective,
+				HlmInputDirective,
+				HlmButtonDirective,
+			],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<BrnTabsDirective>;
+export const Default: Story = {
+	render: ({ ...args }) => ({
+		props: args,
+		template: /* HTML */ `
+			<hlm-tabs tab="account" ${argsToTemplate(args)} class="mx-auto block max-w-3xl">
+				<hlm-tabs-list class="grid w-full grid-cols-2" aria-label="tabs example">
+					<button hlmTabsTrigger="account">Account</button>
+					<button hlmTabsTrigger="password">Password</button>
+				</hlm-tabs-list>
+				<div hlmTabsContent="account">
+					<section hlmCard>
+						<div hlmCardHeader>
+							<h3 hlmCardTitle>Account</h3>
+							<p hlmCardDescription>Make changes to your account here. Click save when you're done.</p>
+						</div>
+						<p hlmCardContent>
+							<label class="my-4 block" hlmLabel>
+								Name
+								<input class="mt-1.5 w-full" value="Pedro Duarte" hlmInput />
+							</label>
+							<label class="my-4 block" hlmLabel>
+								Username
+								<input class="mt-1.5 w-full" placeholder="@peduarte" hlmInput />
+							</label>
+						</p>
+						<div hlmCardFooter>
+							<button hlmBtn>Save Changes</button>
+						</div>
+					</section>
+				</div>
+				<div hlmTabsContent="password">
+					<section hlmCard>
+						<div hlmCardHeader>
+							<h3 hlmCardTitle>Password</h3>
+							<p hlmCardDescription>Change your password here. After saving, you'll be logged out.</p>
+						</div>
+						<p hlmCardContent>
+							<label class="my-4 block" hlmLabel>
+								Old Password
+								<input class="mt-1.5 w-full" type="password" hlmInput />
+							</label>
+							<label class="my-4 block" hlmLabel>
+								New Password
+								<input class="mt-1.5 w-full" type="password" hlmInput />
+							</label>
+						</p>
+						<div hlmCardFooter>
+							<button hlmBtn>Save Password</button>
+						</div>
+					</section>
+				</div>
+			</hlm-tabs>
+		`,
+	}),
+};
+
+export const Vertical: Story = {
+	render: ({ activationMode }) => ({
+		props: { activationMode },
+		template: /* HTML */ `
+			<hlm-tabs tab="account" class="mx-auto flex max-w-3xl flex-row space-x-2" orientation="vertical">
+				<hlm-tabs-list orientation="vertical" aria-label="tabs example">
+					<button class="w-full" hlmTabsTrigger="account">Account</button>
+					<button class="w-full" hlmTabsTrigger="password">Password</button>
+					<button class="w-full" hlmTabsTrigger="danger">Danger Zone</button>
+				</hlm-tabs-list>
+				<div hlmTabsContent="account">
+					<section hlmCard>
+						<div hlmCardHeader>
+							<h3 hlmCardTitle>Account</h3>
+							<p hlmCardDescription>Make changes to your account here. Click save when you're done.</p>
+						</div>
+						<p hlmCardContent>
+							<label class="my-4 block" hlmLabel>
+								Name
+								<input class="mt-1.5 w-full" value="Pedro Duarte" hlmInput />
+							</label>
+							<label class="my-4 block" hlmLabel>
+								Username
+								<input class="mt-1.5 w-full" placeholder="@peduarte" hlmInput />
+							</label>
+						</p>
+						<div hlmCardFooter>
+							<button hlmBtn>Save Changes</button>
+						</div>
+					</section>
+				</div>
+				<div hlmTabsContent="password">
+					<section hlmCard>
+						<div hlmCardHeader>
+							<h3 hlmCardTitle>Password</h3>
+							<p hlmCardDescription>Change your password here. After saving, you'll be logged out.</p>
+						</div>
+						<p hlmCardContent>
+							<label class="my-4 block" hlmLabel>
+								Old Password
+								<input class="mt-1.5 w-full" type="password" hlmInput />
+							</label>
+							<label class="my-4 block" hlmLabel>
+								New Password
+								<input class="mt-1.5 w-full" type="password" hlmInput />
+							</label>
+						</p>
+						<div hlmCardFooter>
+							<button hlmBtn>Save Password</button>
+						</div>
+					</section>
+				</div>
+				<div hlmTabsContent="danger">
+					<section hlmCard>
+						<div hlmCardHeader>
+							<h3 hlmCardTitle>Delete Account</h3>
+							<p hlmCardDescription>Are you sure you want to delete your account? You cannot undo this action.</p>
+						</div>
+						<div hlmCardFooter>
+							<button variant="destructive" hlmBtn>Delete Account</button>
+						</div>
+					</section>
+				</div>
+			</hlm-tabs>
+		`,
+	}),
+};
+
+export const Paginated: Story = {
+	render: () => ({
+		template: /* HTML */ `
+			<hlm-tabs tab="1" class="mx-auto block max-w-3xl">
+				<hlm-paginated-tabs-list>
+					<button hlmTabsTrigger="1">Tab 1</button>
+					<button hlmTabsTrigger="2">Tab 2</button>
+					<button hlmTabsTrigger="3">Tab 3</button>
+					<button hlmTabsTrigger="4">Tab 4</button>
+					<button hlmTabsTrigger="5">Tab 5</button>
+					<button hlmTabsTrigger="6">Tab 6</button>
+					<button hlmTabsTrigger="7">Tab 7</button>
+					<button hlmTabsTrigger="8">Tab 8</button>
+					<button hlmTabsTrigger="9">Tab 9</button>
+					<button hlmTabsTrigger="10">Tab 10</button>
+					<button hlmTabsTrigger="11">Tab 11</button>
+					<button hlmTabsTrigger="12">Tab 12</button>
+					<button hlmTabsTrigger="13">Tab 13</button>
+					<button hlmTabsTrigger="14">Tab 14</button>
+					<button hlmTabsTrigger="15">Tab 15</button>
+					<button hlmTabsTrigger="16">Tab 16</button>
+					<button hlmTabsTrigger="17">Tab 17</button>
+					<button hlmTabsTrigger="18">Tab 18</button>
+					<button hlmTabsTrigger="19">Tab 19</button>
+					<button hlmTabsTrigger="20">Tab 20</button>
+				</hlm-paginated-tabs-list>
+				<div hlmTabsContent="1">Tab 1</div>
+				<div hlmTabsContent="2">Tab 2</div>
+				<div hlmTabsContent="3">Tab 3</div>
+				<div hlmTabsContent="4">Tab 4</div>
+				<div hlmTabsContent="5">Tab 5</div>
+				<div hlmTabsContent="6">Tab 6</div>
+				<div hlmTabsContent="7">Tab 7</div>
+				<div hlmTabsContent="8">Tab 8</div>
+				<div hlmTabsContent="9">Tab 9</div>
+				<div hlmTabsContent="10">Tab 10</div>
+				<div hlmTabsContent="11">Tab 11</div>
+				<div hlmTabsContent="12">Tab 12</div>
+				<div hlmTabsContent="13">Tab 13</div>
+				<div hlmTabsContent="14">Tab 14</div>
+				<div hlmTabsContent="15">Tab 15</div>
+				<div hlmTabsContent="16">Tab 16</div>
+				<div hlmTabsContent="17">Tab 17</div>
+				<div hlmTabsContent="18">Tab 18</div>
+				<div hlmTabsContent="19">Tab 19</div>
+				<div hlmTabsContent="20">Tab 20</div>
+			</hlm-tabs>
+		`,
+	}),
+};
+
+export const BrnOnly: Story = {
+	render: () => ({
+		props: { activationMode: 'automatic' },
+		template: /* HTML */ `
+			<div brnTabs="account" [activationMode]="activationMode" class="mx-auto block max-w-3xl">
+				<div brnTabsList class="grid w-full grid-cols-2" [attr.aria-label]="'tabs example'">
+					<button brnTabsTrigger="account">Account</button>
+					<button brnTabsTrigger="password">Password</button>
+				</div>
+				<div brnTabsContent="account">Account content</div>
+				<div brnTabsContent="password">Password content</div>
+			</div>
+		`,
+	}),
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/README.md</source>
+<document_content>
+# ui-tabs-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-tabs-helm` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/eslint.config.js</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {
+			'@angular-eslint/template/interactive-supports-focus': 'off',
+		},
+	},
+];
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'ui-tabs-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/tabs/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/ui-tabs-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/cdk": ">=19.0.0",
+		"@angular/core": ">=19.0.0",
+		"@ng-icons/core": ">=29.0.0",
+		"@ng-icons/lucide": ">=29.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"@spartan-ng/ui-button-helm": "0.0.1-alpha.381",
+		"@spartan-ng/ui-icon-helm": "0.0.1-alpha.381",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/project.json</source>
+<document_content>
+{
+	"name": "ui-tabs-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/tabs/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/tabs/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/tabs/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/tabs/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/tabs/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-tabs-helm"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+
+import { HlmTabsContentDirective } from './lib/hlm-tabs-content.directive';
+import { HlmTabsListComponent } from './lib/hlm-tabs-list.component';
+import { HlmTabsPaginatedListComponent } from './lib/hlm-tabs-paginated-list.component';
+import { HlmTabsTriggerDirective } from './lib/hlm-tabs-trigger.directive';
+import { HlmTabsComponent } from './lib/hlm-tabs.component';
+
+export * from './lib/hlm-tabs-content.directive';
+export * from './lib/hlm-tabs-list.component';
+export * from './lib/hlm-tabs-paginated-list.component';
+export * from './lib/hlm-tabs-trigger.directive';
+export * from './lib/hlm-tabs.component';
+
+export const HlmTabsImports = [
+	HlmTabsComponent,
+	HlmTabsListComponent,
+	HlmTabsTriggerDirective,
+	HlmTabsContentDirective,
+	HlmTabsPaginatedListComponent,
+] as const;
+
+@NgModule({
+	imports: [...HlmTabsImports],
+	exports: [...HlmTabsImports],
+})
+export class HlmTabsModule {}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-content.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsContentDirective } from '@spartan-ng/brain/tabs';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmTabsContent]',
+	standalone: true,
+	hostDirectives: [{ directive: BrnTabsContentDirective, inputs: ['brnTabsContent: hlmTabsContent'] }],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsContentDirective {
+	public readonly contentFor = input.required<string>({ alias: 'hlmTabsContent' });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-list.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsListDirective } from '@spartan-ng/brain/tabs';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const listVariants = cva(
+	'inline-flex items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+	{
+		variants: {
+			orientation: {
+				horizontal: 'h-10 space-x-1',
+				vertical: 'mt-2 flex-col h-fit space-y-1',
+			},
+		},
+		defaultVariants: {
+			orientation: 'horizontal',
+		},
+	},
+);
+type ListVariants = VariantProps<typeof listVariants>;
+
+@Component({
+	selector: 'hlm-tabs-list',
+	standalone: true,
+	hostDirectives: [BrnTabsListDirective],
+	template: '<ng-content/>',
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsListComponent {
+	public readonly orientation = input<ListVariants['orientation']>('horizontal');
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(listVariants({ orientation: this.orientation() }), this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-paginated-list.component.ts</source>
+<document_content>
+import { CdkObserveContent } from '@angular/cdk/observers';
+import { Component, type ElementRef, computed, contentChildren, input, viewChild } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronLeft, lucideChevronRight } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsPaginatedListDirective, BrnTabsTriggerDirective } from '@spartan-ng/brain/tabs';
+import { buttonVariants } from '@spartan-ng/ui-button-helm';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+import { listVariants } from './hlm-tabs-list.component';
+
+@Component({
+	selector: 'hlm-paginated-tabs-list',
+	imports: [CdkObserveContent, NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideChevronRight, lucideChevronLeft })],
+	template: `
+		<button
+			#previousPaginator
+			data-pagination="previous"
+			type="button"
+			aria-hidden="true"
+			tabindex="-1"
+			[class.flex]="_showPaginationControls()"
+			[class.hidden]="!_showPaginationControls()"
+			[class]="_paginationButtonClass()"
+			[disabled]="_disableScrollBefore || null"
+			(click)="_handlePaginatorClick('before')"
+			(mousedown)="_handlePaginatorPress('before', $event)"
+			(touchend)="_stopInterval()"
+		>
+			<ng-icon hlm size="base" name="lucideChevronLeft" />
+		</button>
+
+		<div #tabListContainer class="z-[1] flex grow overflow-hidden" (keydown)="_handleKeydown($event)">
+			<div class="relative grow transition-transform" #tabList role="tablist" (cdkObserveContent)="_onContentChanges()">
+				<div #tabListInner [class]="_tabListClass()">
+					<ng-content></ng-content>
+				</div>
+			</div>
+		</div>
+
+		<button
+			#nextPaginator
+			data-pagination="next"
+			type="button"
+			aria-hidden="true"
+			tabindex="-1"
+			[class.flex]="_showPaginationControls()"
+			[class.hidden]="!_showPaginationControls()"
+			[class]="_paginationButtonClass()"
+			[disabled]="_disableScrollAfter || null"
+			(click)="_handlePaginatorClick('after')"
+			(mousedown)="_handlePaginatorPress('after', $event)"
+			(touchend)="_stopInterval()"
+		>
+			<ng-icon hlm size="base" name="lucideChevronRight" />
+		</button>
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsPaginatedListComponent extends BrnTabsPaginatedListDirective {
+	public readonly _items = contentChildren(BrnTabsTriggerDirective, { descendants: false });
+	public readonly _itemsChanges = toObservable(this._items);
+
+	public readonly _tabListContainer = viewChild.required<ElementRef<HTMLElement>>('tabListContainer');
+	public readonly _tabList = viewChild.required<ElementRef<HTMLElement>>('tabList');
+	public readonly _tabListInner = viewChild.required<ElementRef<HTMLElement>>('tabListInner');
+	public readonly _nextPaginator = viewChild.required<ElementRef<HTMLElement>>('nextPaginator');
+	public readonly _previousPaginator = viewChild.required<ElementRef<HTMLElement>>('previousPaginator');
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _computedClass = computed(() =>
+		hlm('flex overflow-hidden relative gap-1 flex-shrink-0', this.userClass()),
+	);
+
+	public readonly tabLisClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _tabListClass = computed(() => hlm(listVariants(), this.tabLisClass()));
+
+	public readonly paginationButtonClass = input<ClassValue>('', { alias: 'class' });
+	protected readonly _paginationButtonClass = computed(() =>
+		hlm(
+			'relative z-[2] select-none disabled:cursor-default',
+			buttonVariants({ variant: 'ghost', size: 'icon' }),
+			this.paginationButtonClass(),
+		),
+	);
+
+	protected _itemSelected(event: KeyboardEvent) {
+		event.preventDefault();
+	}
+}
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs-trigger.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnTabsTriggerDirective } from '@spartan-ng/brain/tabs';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmTabsTrigger]',
+	standalone: true,
+	hostDirectives: [{ directive: BrnTabsTriggerDirective, inputs: ['brnTabsTrigger: hlmTabsTrigger', 'disabled'] }],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmTabsTriggerDirective {
+	public readonly triggerFor = input.required<string>({ alias: 'hlmTabsTrigger' });
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="18">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/tabs/helm/src/lib/hlm-tabs.component.ts</source>
+<document_content>
+import { Component, input } from '@angular/core';
+import { BrnTabsDirective } from '@spartan-ng/brain/tabs';
+
+@Component({
+	selector: 'hlm-tabs',
+	standalone: true,
+	hostDirectives: [
+		{
+			directive: BrnTabsDirective,
+			inputs: ['orientation', 'direction', 'activationMode', 'brnTabs: tab'],
+			outputs: ['tabActivated'],
+		},
+	],
+	template: '<ng-content/>',
+})
+export class HlmTabsComponent {
+	public readonly tab = input.required<string>();
+}
+
+</document_content>
+</document>
+</documents>

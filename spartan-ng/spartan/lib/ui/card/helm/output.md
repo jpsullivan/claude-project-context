@@ -1,0 +1,451 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/README.md
+```
+# ui-card-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-card-helm` to execute the unit tests.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/eslint.config.js
+```javascript
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/jest.config.ts
+```typescript
+export default {
+	displayName: 'ui-card-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/ng-package.json
+```json
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/card/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/package.json
+```json
+{
+	"name": "@spartan-ng/ui-card-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"class-variance-authority": "^0.7.0",
+		"clsx": "^2.1.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/project.json
+```json
+{
+	"name": "ui-card-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/card/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/card/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/card/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/card/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/card/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-card-helm"
+			}
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/tsconfig.lib.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/tsconfig.lib.prod.json
+```json
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/tsconfig.spec.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/index.ts
+```typescript
+import { NgModule } from '@angular/core';
+
+import { HlmCardContentDirective } from './lib/hlm-card-content.directive';
+import { HlmCardDescriptionDirective } from './lib/hlm-card-description.directive';
+import { HlmCardFooterDirective } from './lib/hlm-card-footer.directive';
+import { HlmCardHeaderDirective } from './lib/hlm-card-header.directive';
+import { HlmCardTitleDirective } from './lib/hlm-card-title.directive';
+import { HlmCardDirective } from './lib/hlm-card.directive';
+
+export * from './lib/hlm-card-content.directive';
+export * from './lib/hlm-card-description.directive';
+export * from './lib/hlm-card-footer.directive';
+export * from './lib/hlm-card-header.directive';
+export * from './lib/hlm-card-title.directive';
+export * from './lib/hlm-card.directive';
+
+export const HlmCardImports = [
+	HlmCardDirective,
+	HlmCardHeaderDirective,
+	HlmCardFooterDirective,
+	HlmCardTitleDirective,
+	HlmCardDescriptionDirective,
+	HlmCardContentDirective,
+] as const;
+
+@NgModule({
+	imports: [...HlmCardImports],
+	exports: [...HlmCardImports],
+})
+export class HlmCardModule {}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/test-setup.ts
+```typescript
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card-content.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardContentVariants = cva('p-6 pt-0', {
+	variants: {},
+	defaultVariants: {},
+});
+export type CardContentVariants = VariantProps<typeof cardContentVariants>;
+
+@Directive({
+	selector: '[hlmCardContent]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardContentDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardContentVariants(), this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card-description.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardDescriptionVariants = cva('text-sm text-muted-foreground', {
+	variants: {},
+	defaultVariants: {},
+});
+export type CardDescriptionVariants = VariantProps<typeof cardDescriptionVariants>;
+
+@Directive({
+	selector: '[hlmCardDescription]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardDescriptionDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardDescriptionVariants(), this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card-footer.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardFooterVariants = cva('flex p-6 pt-0', {
+	variants: {
+		direction: {
+			row: 'flex-row items-center space-x-1.5',
+			column: 'flex-col space-y-1.5',
+		},
+	},
+	defaultVariants: {
+		direction: 'row',
+	},
+});
+export type CardFooterVariants = VariantProps<typeof cardFooterVariants>;
+
+@Directive({
+	selector: '[hlmCardFooter]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardFooterDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardFooterVariants({ direction: this.direction() }), this.userClass()));
+
+	public readonly direction = input<CardFooterVariants['direction']>('row');
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card-header.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardHeaderVariants = cva('flex p-6', {
+	variants: {
+		direction: {
+			row: 'flex-row items-center space-x-1.5',
+			column: 'flex-col space-y-1.5',
+		},
+	},
+	defaultVariants: {
+		direction: 'column',
+	},
+});
+export type CardHeaderVariants = VariantProps<typeof cardHeaderVariants>;
+
+@Directive({
+	selector: '[hlmCardHeader]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardHeaderDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardHeaderVariants({ direction: this.direction() }), this.userClass()));
+
+	public readonly direction = input<CardHeaderVariants['direction']>('column');
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card-title.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardTitleVariants = cva('text-lg font-semibold leading-none tracking-tight', {
+	variants: {},
+	defaultVariants: {},
+});
+export type CardTitleVariants = VariantProps<typeof cardTitleVariants>;
+
+@Directive({
+	selector: '[hlmCardTitle]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardTitleDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardTitleVariants(), this.userClass()));
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/card/helm/src/lib/hlm-card.directive.ts
+```typescript
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const cardVariants = cva(
+	'rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-card-foreground shadow-sm',
+	{
+		variants: {},
+		defaultVariants: {},
+	},
+);
+export type CardVariants = VariantProps<typeof cardVariants>;
+
+@Directive({
+	selector: '[hlmCard]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmCardDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(cardVariants(), this.userClass()));
+}
+
+```

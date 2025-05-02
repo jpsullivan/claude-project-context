@@ -1,0 +1,914 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/compat.ts</source>
+<document_content>
+import { convertNxGenerator } from '@nx/devkit';
+import addThemeToApplicationGenerator from './generator';
+
+export default convertNxGenerator(addThemeToApplicationGenerator);
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/generator.spec.ts</source>
+<document_content>
+import { applicationGenerator, E2eTestRunner, setupTailwindGenerator, UnitTestRunner } from '@nx/angular/generators';
+import { readProjectConfiguration, Tree, updateJson } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from 'nx/src/devkit-testing-exports';
+import { addThemeToApplicationStyles } from './libs/add-theme-to-application-styles';
+
+jest.mock('@nx/devkit', () => {
+	const original = jest.requireActual('@nx/devkit');
+	return {
+		...original,
+		// eslint-disable-next-line @typescript-eslint/no-empty-function
+		ensurePackage: () => {},
+		createProjectGraphAsync: jest.fn().mockResolvedValue({
+			nodes: {},
+			dependencies: {},
+		}),
+	};
+});
+
+describe('Theme generator', () => {
+	let tree: Tree;
+
+	beforeEach(async () => {
+		tree = createTreeWithEmptyWorkspace();
+		await applicationGenerator(tree, {
+			directory: 'website',
+			e2eTestRunner: E2eTestRunner.None,
+			linter: 'none',
+			name: 'website',
+			skipFormat: true,
+			unitTestRunner: UnitTestRunner.None,
+			standalone: true,
+			skipTests: true,
+		});
+	});
+
+	describe('Tailwind v3', () => {
+		beforeEach(async () => {
+			await setupTailwindGenerator(tree, {
+				project: 'website',
+				skipFormat: true,
+			});
+		});
+
+		it('should not add the Tailwind 4 preset global stylesheet', async () => {
+			const project = readProjectConfiguration(tree, 'website');
+
+			addThemeToApplicationStyles(
+				tree,
+				{
+					theme: 'zinc',
+					project: 'website',
+					radius: 2,
+					addCdkStyles: true,
+				},
+				project,
+			);
+
+			const styles = tree.read('website/src/styles.css', 'utf8');
+
+			expect(styles).not.toContain('@import "@spartan-ng/brain/hlm-tailwind-preset.css";');
+		});
+	});
+
+	describe('Tailwind v4', () => {
+		beforeEach(async () => {
+			updateJson(tree, 'package.json', (json) => {
+				json.devDependencies = {
+					...json.devDependencies,
+					tailwindcss: '^4.0.0',
+				};
+				return json;
+			});
+
+			tree.write('website/src/styles.css', '@import "tailwindcss";');
+		});
+
+		it('should add the Tailwind 4 preset global stylesheet', async () => {
+			const project = readProjectConfiguration(tree, 'website');
+
+			addThemeToApplicationStyles(
+				tree,
+				{
+					theme: 'zinc',
+					project: 'website',
+					radius: 2,
+					addCdkStyles: true,
+				},
+				project,
+			);
+
+			const styles = tree.read('website/src/styles.css', 'utf8');
+
+			expect(styles).toContain('@import "@spartan-ng/brain/hlm-tailwind-preset.css";');
+		});
+	});
+});
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/generator.ts</source>
+<document_content>
+import type { ProjectConfiguration, Tree } from '@nx/devkit';
+import { prompt } from 'enquirer';
+import { getProjectsAndNames } from '../../utils/get-project-names';
+import { addThemeToApplicationStyles } from './libs/add-theme-to-application-styles';
+import { SupportedRadii, type SupportedTheme, SupportedThemes } from './libs/supported-theme-generator-map';
+
+export default async function addThemeToApplicationGenerator(tree: Tree) {
+	const { projects, projectNames } = getProjectsAndNames(tree);
+
+	const response: { app: string } = await prompt({
+		type: 'select',
+		required: true,
+		name: 'app',
+		message: 'Choose which application you want to add the theme to:',
+		choices: projectNames,
+	});
+	const project: ProjectConfiguration | undefined = projects.get(response.app);
+
+	if (!project) return;
+
+	const themeOptions: {
+		theme: SupportedTheme;
+		radius: string;
+		addCdkStyles: boolean;
+		stylesEntryPoint?: string;
+		prefix?: string;
+	} = await prompt([
+		{
+			type: 'select',
+			required: true,
+			name: 'theme',
+			message:
+				'Choose which theme to apply. You can always re-run this generator and add a custom prefix to add other themes.',
+			choices: SupportedThemes,
+		},
+		{
+			type: 'select',
+			required: true,
+			name: 'radius',
+			initial: 2,
+			message: 'Which corner radius do you want to use with your theme:',
+			choices: [...SupportedRadii],
+		},
+		{
+			type: 'input',
+			name: 'stylesEntryPoint',
+			message:
+				"Path to the styles entry point relative to the workspace root. If not provided the generator will do its best to find it and it will error if it can't.",
+		},
+		{
+			type: 'input',
+			name: 'prefix',
+			message:
+				"Prefix class name applied to your theme's style definitions: e.g., theme-rose, theme-zinc. Leave empty for global theme.",
+		},
+	]);
+
+	addThemeToApplicationStyles(
+		tree,
+		{
+			project: project.name,
+			radius: Number.parseFloat(themeOptions.radius),
+			theme: themeOptions.theme,
+			addCdkStyles: themeOptions.addCdkStyles,
+			stylesEntryPoint: themeOptions.stylesEntryPoint,
+			prefix: themeOptions.prefix,
+		},
+		project,
+	);
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/schema.json</source>
+<document_content>
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"$id": "HlmThemeGeneratorSchema",
+	"title": "",
+	"type": "object",
+	"properties": {}
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/libs/add-theme-to-application-styles.ts</source>
+<document_content>
+// All credit goes to the incredible folks at Nx who use this code to update the app styles when adding tailwind
+// Check out the code here: https://github.com/nrwl/nx/blob/master/packages/angular/src/generators/setup-tailwind/lib/update-application-styles.ts
+
+import { type ProjectConfiguration, type Tree, joinPathFragments, readJson, stripIndents } from '@nx/devkit';
+import { type PackageJson } from 'nx/src/utils/package-json';
+import * as semver from 'semver';
+import { type SupportedTheme, SupportedThemeGeneratorMap } from './supported-theme-generator-map';
+
+export interface AddThemeToApplicationStylesOptions {
+	project: string;
+	theme: SupportedTheme;
+	radius: number;
+	addCdkStyles: boolean;
+	stylesEntryPoint?: string;
+	prefix?: string;
+}
+
+export function addThemeToApplicationStyles(
+	tree: Tree,
+	options: AddThemeToApplicationStylesOptions,
+	project: ProjectConfiguration,
+): void {
+	const packageJson = readJson<PackageJson>(tree, 'package.json');
+
+	let tailwindVersion = 3;
+
+	if ('tailwindcss' in packageJson.devDependencies) {
+		const version = packageJson.devDependencies['tailwindcss'];
+		tailwindVersion = semver.coerce(version)?.major ?? 3;
+	}
+
+	const tailwindImport = tailwindVersion === 4 ? '@import "@spartan-ng/brain/hlm-tailwind-preset.css";' : '';
+
+	const prefix = options.prefix ? ` .${options.prefix}` : '';
+	let stylesEntryPoint = options.stylesEntryPoint;
+
+	if (stylesEntryPoint && !tree.exists(stylesEntryPoint)) {
+		throw new Error(`The provided styles entry point "${stylesEntryPoint}" could not be found.`);
+	}
+
+	if (!stylesEntryPoint) {
+		stylesEntryPoint = findStylesEntryPoint(tree, project);
+
+		if (!stylesEntryPoint) {
+			throw new Error(
+				stripIndents`Could not find a styles entry point for project "${options.project}".
+        Please specify a styles entry point using the "stylesEntryPoint" option.`,
+			);
+		}
+	}
+
+	const stylesEntryPointContent = tree.read(stylesEntryPoint, 'utf-8');
+
+	const CDK_IMPORT = `@import '@angular/cdk/overlay-prebuilt.css';`;
+	const ckdOverlayImport = stylesEntryPointContent.includes(CDK_IMPORT) ? '' : CDK_IMPORT;
+
+	const rootFontSans = stylesEntryPointContent.includes('--font-sans')
+		? ''
+		: `:root {
+     --font-sans: ''
+     }`;
+
+	tree.write(
+		stylesEntryPoint,
+		stripIndents`
+    ${ckdOverlayImport}
+
+    ${stylesEntryPointContent}
+    ${tailwindImport}
+
+    ${rootFontSans}
+    ${SupportedThemeGeneratorMap[options.theme](options.radius, prefix)}
+
+    @layer base {
+      * {
+        @apply border-border;
+      }
+    }`,
+	);
+}
+
+function findStylesEntryPoint(tree: Tree, project: ProjectConfiguration): string | undefined {
+	// first check for common names
+	const possibleStylesEntryPoints = [
+		joinPathFragments(project.sourceRoot ?? project.root, 'styles.css'),
+		joinPathFragments(project.sourceRoot ?? project.root, 'styles.scss'),
+		joinPathFragments(project.sourceRoot ?? project.root, 'styles.sass'),
+		joinPathFragments(project.sourceRoot ?? project.root, 'styles.less'),
+	];
+
+	const stylesEntryPoint = possibleStylesEntryPoints.find((s) => tree.exists(s));
+	if (stylesEntryPoint) {
+		return stylesEntryPoint;
+	}
+
+	// then check for the specified styles in the build configuration if it exists
+	const styles: Array<string | { input: string; inject: boolean }> = project.targets?.build.options?.styles;
+
+	if (!styles) {
+		return undefined;
+	}
+
+	// find the first style that belongs to the project source
+	const style = styles.find((s) =>
+		typeof s === 'string'
+			? s.startsWith(project.root) && tree.exists(s)
+			: s.input.startsWith(project.root) && s.inject !== false && tree.exists(s.input),
+	);
+
+	if (!style) {
+		return undefined;
+	}
+
+	return typeof style === 'string' ? style : style.input;
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/cli/src/generators/theme/libs/supported-theme-generator-map.ts</source>
+<document_content>
+export const SupportedThemeGeneratorMap = {
+	zinc: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    color-scheme: dark;
+  }
+`,
+	slate: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 222.2 84% 4.9%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --ring: 212.7 26.8% 83.9;
+    color-scheme: dark;
+  }
+`,
+	stone: (radius: number, prefix = '') => `
+:root${prefix} {
+   --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --primary: 24 9.8% 10%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --ring: 20 14.3% 4.1%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --primary: 60 9.1% 97.8%;
+    --primary-foreground: 24 9.8% 10%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --ring: 24 5.7% 82.9%;
+    color-scheme: dark;
+  }
+`,
+	gray: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --primary: 220.9 39.3% 11%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --ring: 224 71.4% 4.1%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --primary: 210 20% 98%;
+    --primary-foreground: 220.9 39.3% 11%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --ring: 216 12.2% 83.9%;
+    color-scheme: dark;
+  }
+`,
+	neutral: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 0% 3.9%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 0% 83.1%;
+    color-scheme: dark;
+  }
+`,
+	red: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 72.2% 50.6%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --ring: 0 72.2% 50.6%;
+    color-scheme: dark;
+  }
+`,
+	rose: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 346.8 77.2% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 346.8 77.2% 49.8%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 346.8 77.2% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 346.8 77.2% 49.8%;
+    color-scheme: dark;
+  }
+`,
+	blue: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 346.8 77.2% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 346.8 77.2% 49.8%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 346.8 77.2% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 346.8 77.2% 49.8%;
+    color-scheme: dark;
+  }
+`,
+	green: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 142.1 70.6% 45.3%;
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
+    color-scheme: dark;
+  }
+`,
+	orange: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 24.6 95% 53.1%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 20.5 90.2% 48.2%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 20.5 90.2% 48.2%;
+    color-scheme: dark;
+  }
+`,
+	yellow: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --primary: 47.9 95.8% 53.1%;
+    --primary-foreground: 26 83.3% 14.1%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --ring: 20 14.3% 4.1%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --primary: 47.9 95.8% 53.1%;
+    --primary-foreground: 26 83.3% 14.1%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --ring: 35.5 91.7% 32.9%;
+    color-scheme: dark;
+  }
+`,
+	violet: (radius: number, prefix = '') => `
+:root${prefix} {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: ${radius}rem;
+    color-scheme: light;
+  }
+
+  .dark${prefix} {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --ring: 263.4 70% 50.4%;
+    color-scheme: dark;
+  }
+`,
+};
+
+export const SupportedThemes = Object.keys(SupportedThemeGeneratorMap);
+
+export type SupportedTheme = keyof typeof SupportedThemeGeneratorMap;
+
+export const SupportedRadii = ['0', '0.3', '0.5', '0.75', '1.0'] as const;
+
+</document_content>
+</document>
+</documents>

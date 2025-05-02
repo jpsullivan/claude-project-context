@@ -1,0 +1,357 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/sonner.stories.ts
+```typescript
+import { Component } from '@angular/core';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+import { toast } from 'ngx-sonner';
+import { HlmButtonDirective } from '../button/helm/src';
+import { HlmToasterComponent } from './helm/src';
+
+const meta: Meta<HlmToasterComponent> = {
+	title: 'Sonner',
+	component: HlmToasterComponent,
+	tags: ['autodocs'],
+	decorators: [
+		moduleMetadata({
+			imports: [HlmToasterComponent, HlmButtonDirective],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<HlmToasterComponent>;
+
+@Component({
+	selector: 'sonner-story',
+	standalone: true,
+	imports: [HlmToasterComponent, HlmButtonDirective],
+	template: `
+		<hlm-toaster />
+		<button hlmBtn (click)="showToast()">Show Toast</button>
+	`,
+})
+export class SonnerStory {
+	showToast() {
+		toast('Event has been created', {
+			description: 'Sunday, December 03, 2023 at 9:00 AM',
+			action: {
+				label: 'Undo',
+				onClick: () => console.log('Undo'),
+			},
+		});
+	}
+}
+
+export const Default: Story = {
+	render: () => ({
+		template: '<sonner-story />',
+	}),
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/README.md
+```
+# ui-sonner-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-sonner-helm` to execute the unit tests.
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/eslint.config.js
+```javascript
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/jest.config.ts
+```typescript
+export default {
+	displayName: 'ui-sonner-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	coverageDirectory: '../../../../coverage/libs/ui/sonner/helm',
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/ng-package.json
+```json
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/sonner/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/package.json
+```json
+{
+	"name": "@spartan-ng/ui-sonner-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {
+		"tslib": "^2.3.0"
+	},
+	"peerDependencies": {
+		"@angular/common": "^18.1.0",
+		"@angular/core": "^18.1.0",
+		"@ng-icons/lucide": "^26.3.0",
+		"@spartan-ng/brain": "0.0.1-alpha.381",
+		"clsx": "^2.1.1",
+		"ngx-sonner": "^3.0.0"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/project.json
+```json
+{
+	"name": "ui-sonner-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/sonner/helm/src",
+	"prefix": "lib",
+	"tags": ["scope:helm"],
+	"projectType": "library",
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/sonner/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/sonner/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/sonner/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/sonner/helm/jest.config.ts"
+			}
+		}
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/tsconfig.json
+```json
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/tsconfig.lib.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/tsconfig.lib.prod.json
+```json
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/tsconfig.spec.json
+```json
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/src/index.ts
+```typescript
+export * from './lib/hlm-toaster.component';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/src/test-setup.ts
+```typescript
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/sonner/helm/src/lib/hlm-toaster.component.ts
+```typescript
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, input, numberAttribute } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+import { NgxSonnerToaster, type ToasterProps } from 'ngx-sonner';
+
+@Component({
+	selector: 'hlm-toaster',
+	imports: [NgxSonnerToaster],
+	template: `
+		<ngx-sonner-toaster
+			[class]="_computedClass()"
+			[invert]="invert()"
+			[theme]="theme()"
+			[position]="position()"
+			[hotKey]="hotKey()"
+			[richColors]="richColors()"
+			[expand]="expand()"
+			[duration]="duration()"
+			[visibleToasts]="visibleToasts()"
+			[closeButton]="closeButton()"
+			[toastOptions]="toastOptions()"
+			[offset]="offset()"
+			[dir]="dir()"
+			[style]="userStyle()"
+		/>
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class HlmToasterComponent {
+	public readonly invert = input<ToasterProps['invert'], boolean | string>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly theme = input<ToasterProps['theme']>('light');
+	public readonly position = input<ToasterProps['position']>('bottom-right');
+	public readonly hotKey = input<ToasterProps['hotkey']>(['altKey', 'KeyT']);
+	public readonly richColors = input<ToasterProps['richColors'], boolean | string>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly expand = input<ToasterProps['expand'], boolean | string>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly duration = input<ToasterProps['duration'], number | string>(4000, {
+		transform: numberAttribute,
+	});
+	public readonly visibleToasts = input<ToasterProps['visibleToasts'], number | string>(3, {
+		transform: numberAttribute,
+	});
+	public readonly closeButton = input<ToasterProps['closeButton'], boolean | string>(false, {
+		transform: booleanAttribute,
+	});
+	public readonly toastOptions = input<ToasterProps['toastOptions']>({
+		classes: {
+			toast:
+				'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg',
+			description: 'group-[.toast]:text-muted-foreground',
+			actionButton: 'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground',
+			cancelButton: 'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground',
+		},
+	});
+	public readonly offset = input<ToasterProps['offset']>(null);
+	public readonly dir = input<ToasterProps['dir']>('auto');
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	public readonly userStyle = input<Record<string, string>>({}, { alias: 'style' });
+
+	protected readonly _computedClass = computed(() => hlm('toaster group', this.userClass()));
+}
+
+```

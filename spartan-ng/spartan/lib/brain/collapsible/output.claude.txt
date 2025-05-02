@@ -1,0 +1,344 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/README.md</source>
+<document_content>
+# @spartan-ng/brain/collapsible
+
+Secondary entry point of `@spartan-ng/brain`. It can be used by importing from `@spartan-ng/brain/collapsible`.
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/ng-package.json</source>
+<document_content>
+{
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+
+import { BrnCollapsibleContentComponent } from './lib/brn-collapsible-content.component';
+import { BrnCollapsibleTriggerDirective } from './lib/brn-collapsible-trigger.directive';
+import { BrnCollapsibleComponent } from './lib/brn-collapsible.component';
+
+export * from './lib/brn-collapsible-content.component';
+export * from './lib/brn-collapsible-trigger.directive';
+export * from './lib/brn-collapsible.component';
+
+export const BrnCollapsibleImports = [
+	BrnCollapsibleComponent,
+	BrnCollapsibleTriggerDirective,
+	BrnCollapsibleContentComponent,
+] as const;
+
+@NgModule({
+	imports: [...BrnCollapsibleImports],
+	exports: [...BrnCollapsibleImports],
+})
+export class BrnCollapsibleModule {}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/src/lib/brn-collapsible-content.component.ts</source>
+<document_content>
+import { isPlatformServer } from '@angular/common';
+import { Component, ElementRef, OnInit, PLATFORM_ID, effect, inject, input, signal, untracked } from '@angular/core';
+import { BrnCollapsibleComponent } from './brn-collapsible.component';
+
+@Component({
+	selector: 'brn-collapsible-content',
+	standalone: true,
+	host: {
+		'[hidden]': '!collapsible?.expanded()',
+		'[attr.data-state]': 'collapsible?.expanded() ? "open" : "closed"',
+		'[id]': 'collapsible?.contentId()',
+		'[style.--brn-collapsible-content-width.px]': 'width()',
+		'[style.--brn-collapsible-content-height.px]': 'height()',
+	},
+	template: `
+		<ng-content />
+	`,
+})
+export class BrnCollapsibleContentComponent implements OnInit {
+	protected readonly collapsible = inject(BrnCollapsibleComponent, { optional: true });
+	private readonly _elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+	private readonly _platformId = inject(PLATFORM_ID);
+	/**
+	 * The id of the collapsible content element.
+	 */
+	public readonly id = input<string | null | undefined>();
+	protected readonly width = signal<number | null>(null);
+	protected readonly height = signal<number | null>(null);
+
+	constructor() {
+		if (!this.collapsible) {
+			throw Error('Collapsible trigger directive can only be used inside a brn-collapsible element.');
+		}
+
+		effect(() => {
+			const id = this.id();
+			const collapsible = this.collapsible;
+			if (!id || !collapsible) return;
+			untracked(() => collapsible.contentId.set(id));
+		});
+	}
+
+	ngOnInit(): void {
+		if (isPlatformServer(this._platformId)) {
+			return;
+		}
+
+		// ensure the element is not hidden when measuring its size
+		this._elementRef.nativeElement.hidden = false;
+
+		const { width, height } = this._elementRef.nativeElement.getBoundingClientRect();
+		this.width.set(width);
+		this.height.set(height);
+
+		// we force the element to be hidden again if collapsed after measuring its size
+		// this is handled by the host binding, but it can cause a flicker if we don't do this here manually
+		this._elementRef.nativeElement.hidden = this.collapsible?.expanded() ?? false;
+	}
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/src/lib/brn-collapsible-trigger.directive.ts</source>
+<document_content>
+import { Directive, inject } from '@angular/core';
+import { BrnCollapsibleComponent } from './brn-collapsible.component';
+
+@Directive({
+	selector: 'button[brnCollapsibleTrigger]',
+	standalone: true,
+	host: {
+		'[attr.data-state]': 'collapsible?.expanded() ? "open" : "closed"',
+		'[attr.disabled]': 'collapsible?.disabled() ? true : undefined',
+		'[attr.aria-expanded]': 'collapsible?.expanded()',
+		'[attr.aria-controls]': 'collapsible?.contentId()',
+		'(click)': 'toggle()',
+	},
+})
+export class BrnCollapsibleTriggerDirective {
+	protected readonly collapsible = inject(BrnCollapsibleComponent, { optional: true });
+
+	constructor() {
+		if (!this.collapsible) {
+			throw Error('Collapsible trigger directive can only be used inside a brn-collapsible element.');
+		}
+	}
+
+	toggle(): void {
+		this.collapsible?.toggle();
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/src/lib/brn-collapsible.component.spec.ts</source>
+<document_content>
+import { render, screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
+import { axe } from 'jest-axe';
+import { BrnCollapsibleContentComponent } from './brn-collapsible-content.component';
+import { BrnCollapsibleTriggerDirective } from './brn-collapsible-trigger.directive';
+import { BrnCollapsibleComponent } from './brn-collapsible.component';
+
+describe('BrnCollapsibleComponent', () => {
+	const setup = async (id?: string, disabled = false) => {
+		const container = await render(
+			`
+     <brn-collapsible ${disabled ? 'disabled' : ''} data-testid='root'>
+      <div>
+        <h4>&#64;peduarte starred 3 repositories</h4>
+        <button brnCollapsibleTrigger data-testid='trigger'>Toggle</button>
+      </div>
+      <div>&#64;radix-ui/primitives</div>
+      <brn-collapsible-content ${id ? `id=${id}` : ''} data-testid='content'>
+        <div>&#64;radix-ui/colors</div>
+        <div>&#64;stitches/react</div>
+      </brn-collapsible-content>
+    </brn-collapsible>
+    `,
+			{
+				imports: [BrnCollapsibleComponent, BrnCollapsibleContentComponent, BrnCollapsibleTriggerDirective],
+			},
+		);
+		return {
+			user: userEvent.setup(),
+			container,
+			triggerElement: screen.getByTestId('trigger'),
+		};
+	};
+
+	type Options = {
+		root: HTMLElement;
+		trigger: HTMLElement;
+		content: HTMLElement;
+		id?: string;
+	};
+	const validateAttributes = async ({ root, trigger, content, id }: Options) => {
+		const idMatcher = id ?? expect.stringContaining('brn-collapsible-content');
+		expect(root).toBeInTheDocument();
+		expect(await axe(root)).toHaveNoViolations();
+
+		expect(trigger).toBeInTheDocument();
+		expect(trigger).toHaveAttribute('aria-controls', idMatcher);
+		expect(await axe(trigger)).toHaveNoViolations();
+
+		expect(content).toBeInTheDocument();
+		expect(content).toHaveAttribute('id', idMatcher);
+		expect(await axe(trigger)).toHaveNoViolations();
+	};
+	const validateOpen = async (id?: string) => {
+		const root = await screen.findByTestId('root');
+		const trigger = await screen.findByTestId('trigger');
+		const content = await screen.findByTestId('content');
+
+		expect(root).toHaveAttribute('data-state', 'open');
+		expect(trigger).toHaveAttribute('data-state', 'open');
+		expect(trigger).toHaveAttribute('aria-expanded', 'true');
+		expect(content).toHaveAttribute('data-state', 'open');
+
+		await validateAttributes({ root, trigger, content, id });
+	};
+	const validateClosed = async (id?: string) => {
+		const root = await screen.findByTestId('root');
+		const trigger = await screen.findByTestId('trigger');
+		const content = await screen.findByTestId('content');
+
+		expect(root).toHaveAttribute('data-state', 'closed');
+		expect(trigger).toHaveAttribute('data-state', 'closed');
+		expect(trigger).toHaveAttribute('aria-expanded', 'false');
+		expect(content).toHaveAttribute('data-state', 'closed');
+
+		await validateAttributes({ root, trigger, content, id });
+	};
+
+	it('not given id on content should create id and set it to aria-described. by default collapsible is closed', async () => {
+		await setup();
+		await validateClosed();
+	});
+
+	it('given id on content should use id and set it to aria-described. by default collapsible is closed', async () => {
+		await setup('hello-world');
+		await validateClosed('hello-world');
+	});
+
+	it('mouse click on element toggles collapsible', async () => {
+		const { user, container, triggerElement } = await setup();
+		await validateClosed();
+		await user.click(triggerElement);
+		container.detectChanges();
+		await validateOpen();
+		await user.click(triggerElement);
+		container.detectChanges();
+		await validateClosed();
+	});
+
+	it('focus with tab and enter toggles collapsible', async () => {
+		const { user, container } = await setup();
+		await validateClosed();
+		await user.keyboard('[Tab][Enter]');
+		container.detectChanges();
+		await validateOpen();
+		await user.keyboard('[Enter]');
+		container.detectChanges();
+		await validateClosed();
+		await user.keyboard('[Enter]');
+		container.detectChanges();
+		await validateOpen();
+	});
+
+	it('focus with tab and space toggles collapsible', async () => {
+		const { user, container } = await setup();
+		await validateClosed();
+		await user.keyboard('[Tab][Space]');
+		container.detectChanges();
+		await validateOpen();
+		await user.keyboard('[Space]');
+		container.detectChanges();
+		await validateClosed();
+		await user.keyboard('[Space]');
+		container.detectChanges();
+		await validateOpen();
+	});
+
+	it('disabled adds correct aria attributes and prevents toggle', async () => {
+		const { user, container, triggerElement } = await setup(undefined, true);
+		const root = await screen.findByTestId('root');
+
+		expect(root).toHaveAttribute('disabled');
+		expect(triggerElement).toHaveAttribute('disabled');
+
+		await validateClosed();
+		await user.click(triggerElement);
+		container.detectChanges();
+		await validateClosed();
+		await user.keyboard('[Enter]');
+		container.detectChanges();
+		await validateClosed();
+		await user.keyboard('[Space]');
+		container.detectChanges();
+		await validateClosed();
+	});
+});
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/brain/collapsible/src/lib/brn-collapsible.component.ts</source>
+<document_content>
+import { BooleanInput } from '@angular/cdk/coercion';
+import { ChangeDetectionStrategy, Component, booleanAttribute, input, model, signal } from '@angular/core';
+
+let collapsibleContentIdSequence = 0;
+
+export type BrnCollapsibleState = 'open' | 'closed';
+
+@Component({
+	selector: 'brn-collapsible',
+	standalone: true,
+	host: {
+		'[attr.data-state]': 'expanded() ? "open" : "closed"',
+		'[attr.disabled]': 'disabled() ? true : undefined',
+	},
+	template: `
+		<ng-content />
+	`,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class BrnCollapsibleComponent {
+	public readonly contentId = signal(`brn-collapsible-content-${collapsibleContentIdSequence++}`);
+
+	/**
+	 * The expanded or collapsed state of the collapsible component.
+	 */
+	public readonly expanded = model<boolean>(false);
+
+	/**
+	 * The disabled state of the collapsible component.
+	 */
+	public readonly disabled = input<boolean, BooleanInput>(false, { transform: booleanAttribute });
+
+	/**
+	 * Toggles the expanded state of the collapsible component.
+	 */
+	public toggle(): void {
+		this.expanded.update((expanded) => !expanded);
+	}
+}
+
+</document_content>
+</document>
+</documents>

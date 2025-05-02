@@ -1,0 +1,497 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/radio-group.stories.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { NgIcon } from '@ng-icons/core';
+import { BrnRadioGroupDirective } from '@spartan-ng/brain/radio-group';
+import { type Meta, type StoryObj, moduleMetadata } from '@storybook/angular';
+import { HlmButtonDirective } from '../button/helm/src';
+import { HlmIconDirective } from '../icon/helm/src';
+import { HlmCodeDirective, HlmSmallDirective } from '../typography/helm/src';
+import { HlmRadioGroupImports } from './helm/src';
+
+@Component({
+	selector: 'radio-group-example',
+	standalone: true,
+	imports: [
+		HlmRadioGroupImports,
+		FormsModule,
+		NgIcon,
+		HlmIconDirective,
+		HlmButtonDirective,
+		HlmCodeDirective,
+		HlmSmallDirective,
+	],
+	template: `
+		<small hlmSmall class="font-semibold">Choose a version</small>
+		<hlm-radio-group class="font-mono text-sm font-medium" [(ngModel)]="version">
+			<hlm-radio value="16.1.4">
+				<hlm-radio-indicator indicator />
+				v16.1.4
+			</hlm-radio>
+			<hlm-radio value="16.0.0">
+				<hlm-radio-indicator indicator />
+				v16.0.0
+			</hlm-radio>
+			<hlm-radio value="15.8.0">
+				<hlm-radio-indicator indicator />
+				v15.8.0
+			</hlm-radio>
+			<hlm-radio disabled value="15.2.0">
+				<hlm-radio-indicator indicator />
+				v15.2.0
+			</hlm-radio>
+		</hlm-radio-group>
+		<div class="my-2 flex space-x-2">
+			<button size="sm" hlmBtn variant="outline" (click)="version = '16.0.0'">Set to v16.0.0</button>
+			<button size="sm" hlmBtn variant="outline" (click)="version = null">Reset</button>
+		</div>
+		<small hlmSmall class="mt-6 block font-semibold">
+			Current Version:
+			<code data-testid="currentVersion" hlmCode class="text-xs">{{ version ?? 'none' }}</code>
+		</small>
+	`,
+})
+class RadioGroupExampleComponent {
+	version: string | null = '16.1.4';
+}
+
+const meta: Meta<BrnRadioGroupDirective> = {
+	title: 'Radio Group',
+	component: BrnRadioGroupDirective,
+	tags: ['autodocs'],
+	decorators: [
+		moduleMetadata({
+			imports: [RadioGroupExampleComponent],
+			providers: [],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<BrnRadioGroupDirective>;
+
+export const Default: Story = {
+	render: () => ({
+		template: '<radio-group-example/>',
+	}),
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/README.md</source>
+<document_content>
+# ui-radio-group-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-radio-group-helm` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/eslint.config.js</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+			'@angular-eslint/no-input-rename': 'off',
+			'@angular-eslint/no-output-rename': 'off',
+			'@angular-eslint/no-output-native': 'off',
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'ui-radio-group-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/radio-group/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/ui-radiogroup-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0",
+		"@spartan-ng/brain": "0.0.1-alpha.451",
+		"clsx": "^2.1.1"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/project.json</source>
+<document_content>
+{
+	"name": "ui-radio-group-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/radio-group/helm/src",
+	"prefix": "helm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/radio-group/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/radio-group/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/radio-group/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/radio-group/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-radio-group-helm"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+
+import { HlmRadioGroupComponent } from './lib/hlm-radio-group.component';
+import { HlmRadioIndicatorComponent } from './lib/hlm-radio-indicator.component';
+import { HlmRadioComponent } from './lib/hlm-radio.component';
+
+export * from './lib/hlm-radio-group.component';
+export * from './lib/hlm-radio-indicator.component';
+export * from './lib/hlm-radio.component';
+
+export const HlmRadioGroupImports = [HlmRadioGroupComponent, HlmRadioComponent, HlmRadioIndicatorComponent];
+
+@NgModule({
+	imports: [...HlmRadioGroupImports],
+	exports: [...HlmRadioGroupImports],
+})
+export class HlmRadioGroupModule {}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/src/lib/hlm-radio-group.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnRadioGroupDirective } from '@spartan-ng/brain/radio-group';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-radio-group',
+	standalone: true,
+	hostDirectives: [
+		{
+			directive: BrnRadioGroupDirective,
+			inputs: ['name', 'value', 'disabled', 'required', 'direction'],
+		},
+	],
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: '<ng-content />',
+})
+export class HlmRadioGroupComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('grid gap-2', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/src/lib/hlm-radio-indicator.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+const btnLike =
+	'aspect-square rounded-full ring-offset-background group-[.cdk-keyboard-focused]:ring-2 group-[.cdk-keyboard-focused]:ring-ring group-[.cdk-keyboard-focused]:ring-offset-2 group-[.brn-radio-disabled]:cursor-not-allowed group-[.brn-radio-disabled]:opacity-50';
+
+@Component({
+	selector: 'hlm-radio-indicator',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	template: `
+		<div
+			class="bg-foreground absolute inset-0 hidden scale-[55%] rounded-full group-[.brn-radio-checked]:inline-block"
+		></div>
+		<div class="border-primary ${btnLike} rounded-full border"></div>
+	`,
+})
+export class HlmRadioIndicatorComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('relative inline-flex h-4 w-4', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/radio-group/helm/src/lib/hlm-radio.component.ts</source>
+<document_content>
+import { booleanAttribute, Component, computed, input, output } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnRadioChange, BrnRadioComponent } from '@spartan-ng/brain/radio-group';
+import { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-radio',
+	imports: [BrnRadioComponent],
+	template: `
+		<brn-radio
+			[id]="id()"
+			[class]="_computedClass()"
+			[value]="value()"
+			[required]="required()"
+			[disabled]="disabled()"
+			[aria-label]="ariaLabel()"
+			[aria-labelledby]="ariaLabelledby()"
+			[aria-describedby]="ariaDescribedby()"
+			(change)="change.emit($event)"
+		>
+			<ng-content select="[target],[indicator]" indicator />
+			<ng-content />
+		</brn-radio>
+	`,
+})
+export class HlmRadioComponent<T = unknown> {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'group [&.brn-radio-disabled]:text-muted-foreground flex items-center space-x-2 rtl:space-x-reverse',
+			this.userClass(),
+		),
+	);
+
+	/** Used to set the id on the underlying brn element. */
+	public readonly id = input<string | undefined>(undefined);
+
+	/** Used to set the aria-label attribute on the underlying brn element. */
+	public readonly ariaLabel = input<string | undefined>(undefined, { alias: 'aria-label' });
+
+	/** Used to set the aria-labelledby attribute on the underlying brn element. */
+	public readonly ariaLabelledby = input<string | undefined>(undefined, { alias: 'aria-labelledby' });
+
+	/** Used to set the aria-describedby attribute on the underlying brn element. */
+	public readonly ariaDescribedby = input<string | undefined>(undefined, { alias: 'aria-describedby' });
+
+	/**
+	 * The value this radio button represents.
+	 */
+	public readonly value = input.required<T>();
+
+	/** Whether the checkbox is required. */
+	public readonly required = input(false, { transform: booleanAttribute });
+
+	/** Whether the checkbox is disabled. */
+	public readonly disabled = input(false, { transform: booleanAttribute });
+
+	/**
+	 * Event emitted when the checked state of this radio button changes.
+	 */
+	public readonly change = output<BrnRadioChange<T>>();
+}
+
+</document_content>
+</document>
+</documents>

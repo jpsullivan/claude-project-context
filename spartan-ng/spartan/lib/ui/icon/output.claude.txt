@@ -1,0 +1,529 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/icon.stories.ts</source>
+<document_content>
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import * as lucide from '@ng-icons/lucide';
+import { lucideHouse } from '@ng-icons/lucide';
+import { type Meta, type StoryObj, argsToTemplate, moduleMetadata } from '@storybook/angular';
+import { HlmIconDirective, type IconSize } from './helm/src';
+
+const meta: Meta<HlmIconDirective> = {
+	title: 'Icon',
+	component: HlmIconDirective,
+	tags: ['autodocs'],
+	decorators: [
+		moduleMetadata({
+			imports: [NgIcon, HlmIconDirective],
+			providers: [provideIcons(lucide)],
+		}),
+	],
+};
+
+export default meta;
+type Story = StoryObj<HlmIconDirective & NgIcon>;
+
+export const Default: Story = {
+	args: {
+		name: 'lucideCheck',
+		size: 'sm',
+		color: 'red',
+		strokeWidth: 1,
+	},
+	argTypes: {
+		size: { control: 'select', options: ['xs', 'sm', 'base', 'lg', 'xl', 'none', '2rem', '25px', '10'] },
+		name: { control: 'select', options: Object.keys(lucide) },
+		color: { control: 'color' },
+	},
+	render: ({ ...args }) => ({
+		props: args,
+		template: `<ng-icon hlm ${argsToTemplate(args)} />`,
+	}),
+};
+
+export const Tailwind: Story = {
+	args: {
+		name: 'lucideCheck',
+	},
+	argTypes: {
+		name: { control: 'select', options: Object.keys(lucide) },
+	},
+	render: ({ ...args }) => ({
+		props: args,
+		template: `<ng-icon hlm ${argsToTemplate(args)} class="text-red-600 text-5xl" />`,
+	}),
+};
+
+@Component({
+	selector: 'icon-dynamic-story',
+	standalone: true,
+	imports: [FormsModule, NgIcon, HlmIconDirective],
+	providers: [provideIcons({ lucideHouse })],
+	template: /* HTML */ `
+		<ng-icon hlm name="lucideHouse" [size]="size()" />
+		<div>Bound property value: {{size()}}</div>
+
+		<div class="flex flex-row gap-x-2">
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="xs" />
+				<span>XS</span>
+			</label>
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="sm" />
+				<span>SM</span>
+			</label>
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="base" />
+				<span>Base</span>
+			</label>
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="lg" />
+				<span>LG</span>
+			</label>
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="xl" />
+				<span>XL</span>
+			</label>
+			<label>
+				<input type="radio" name="iconSize" [ngModel]="size()" (ngModelChange)="size.set($event)" value="none" />
+				<span>None</span>
+			</label>
+		</div>
+	`,
+})
+class IconDynamicStory {
+	protected size = signal<IconSize>('base');
+}
+
+export const Dynamic: Story = {
+	decorators: [
+		moduleMetadata({
+			imports: [IconDynamicStory],
+		}),
+	],
+	render: () => ({
+		template: '<icon-dynamic-story/>',
+	}),
+};
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/README.md</source>
+<document_content>
+# ui-icon-helm
+
+This library was generated with [Nx](https://nx.dev).
+
+## Running unit tests
+
+Run `nx test ui-icon-helm` to execute the unit tests.
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/eslint.config.js</source>
+<document_content>
+const nx = require('@nx/eslint-plugin');
+const baseConfig = require('../../../../eslint.config.cjs');
+
+module.exports = [
+	...baseConfig,
+	...nx.configs['flat/angular'],
+	...nx.configs['flat/angular-template'],
+	{
+		files: ['**/*.ts'],
+		rules: {
+			'@angular-eslint/directive-selector': [
+				'error',
+				{
+					type: 'attribute',
+					prefix: 'hlm',
+					style: 'camelCase',
+				},
+			],
+			'@angular-eslint/component-selector': [
+				'error',
+				{
+					type: 'element',
+					prefix: 'hlm',
+					style: 'kebab-case',
+				},
+			],
+		},
+	},
+	{
+		files: ['**/*.html'],
+		// Override or add rules here
+		rules: {},
+	},
+];
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/jest.config.ts</source>
+<document_content>
+export default {
+	displayName: 'ui-icon-helm',
+	preset: '../../../../jest.preset.cjs',
+	setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
+	coverageDirectory: '../../../../coverage/libs/ui/icon/helm',
+	transform: {
+		'^.+\\.(ts|mjs|js|html)$': [
+			'jest-preset-angular',
+			{
+				tsconfig: '<rootDir>/tsconfig.spec.json',
+				stringifyContentPathRegex: '\\.(html|svg)$',
+			},
+		],
+	},
+	transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+	snapshotSerializers: [
+		'jest-preset-angular/build/serializers/no-ng-attributes',
+		'jest-preset-angular/build/serializers/ng-snapshot',
+		'jest-preset-angular/build/serializers/html-comment',
+	],
+};
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/ng-package.json</source>
+<document_content>
+{
+	"$schema": "../../../../node_modules/ng-packagr/ng-package.schema.json",
+	"dest": "../../../../dist/libs/ui/icon/helm",
+	"lib": {
+		"entryFile": "src/index.ts"
+	}
+}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/package.json</source>
+<document_content>
+{
+	"name": "@spartan-ng/ui-icon-helm",
+	"version": "0.0.1-alpha.381",
+	"sideEffects": false,
+	"dependencies": {},
+	"peerDependencies": {
+		"@angular/core": ">=19.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/project.json</source>
+<document_content>
+{
+	"name": "ui-icon-helm",
+	"$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/ui/icon/helm/src",
+	"prefix": "hlm",
+	"projectType": "library",
+	"tags": ["scope:helm"],
+	"targets": {
+		"build": {
+			"executor": "@nx/angular:package",
+			"outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+			"options": {
+				"project": "libs/ui/icon/helm/ng-package.json"
+			},
+			"configurations": {
+				"production": {
+					"tsConfig": "libs/ui/icon/helm/tsconfig.lib.prod.json"
+				},
+				"development": {
+					"tsConfig": "libs/ui/icon/helm/tsconfig.lib.json"
+				}
+			},
+			"defaultConfiguration": "production"
+		},
+		"test": {
+			"executor": "@nx/jest:jest",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"jestConfig": "libs/ui/icon/helm/jest.config.ts"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"release": {
+			"executor": "@spartan-ng/tools:build-update-publish",
+			"options": {
+				"libName": "ui-icon-helm"
+			}
+		}
+	}
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/tsconfig.json</source>
+<document_content>
+{
+	"compilerOptions": {
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true
+	},
+	"files": [],
+	"include": [],
+	"references": [
+		{
+			"path": "./tsconfig.lib.json"
+		},
+		{
+			"path": "./tsconfig.spec.json"
+		}
+	],
+	"extends": "../../../../tsconfig.base.json",
+	"angularCompilerOptions": {
+		"enableI18nLegacyMessageIdFormat": false,
+		"strictInjectionParameters": true,
+		"strictInputAccessModifiers": true,
+		"strictTemplates": true
+	}
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/tsconfig.lib.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"declaration": true,
+		"declarationMap": true,
+		"inlineSources": true,
+		"types": []
+	},
+	"exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+	"include": ["src/**/*.ts"]
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/tsconfig.lib.prod.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.lib.json",
+	"compilerOptions": {
+		"declarationMap": false
+	},
+	"angularCompilerOptions": {
+		"compilationMode": "partial"
+	}
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/tsconfig.spec.json</source>
+<document_content>
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "../../../../dist/out-tsc",
+		"module": "commonjs",
+		"target": "es2016",
+		"types": ["jest", "node"]
+	},
+	"files": ["src/test-setup.ts"],
+	"include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+import { HlmIconDirective } from './lib/hlm-icon.directive';
+
+export * from './lib/hlm-icon.directive';
+export * from './lib/hlm-icon.token';
+
+@NgModule({
+	imports: [HlmIconDirective],
+	exports: [HlmIconDirective],
+})
+export class HlmIconModule {}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/src/lib/hlm-icon.directive.spec.ts</source>
+<document_content>
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { By } from '@angular/platform-browser';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideCheck } from '@ng-icons/lucide';
+import { type RenderResult, render } from '@testing-library/angular';
+import { HlmIconDirective } from './hlm-icon.directive';
+
+@Component({
+	selector: 'hlm-mock',
+	standalone: true,
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [HlmIconDirective, NgIcon],
+	providers: [provideIcons({ lucideCheck })],
+	template: `
+		<ng-icon hlm class="test" name="lucideCheck" [size]="size" color="red" strokeWidth="2" />
+	`,
+})
+class HlmMockComponent {
+	@Input() public size = 'base';
+}
+
+describe('HlmIconDirective', () => {
+	let r: RenderResult<HlmMockComponent>;
+	let icon: HTMLElement;
+
+	beforeEach(async () => {
+		r = await render(HlmMockComponent);
+		icon = r.container.querySelector('ng-icon')!;
+	});
+
+	it('should add the xs size', async () => {
+		await r.rerender({ componentInputs: { size: 'xs' } });
+		r.fixture.detectChanges();
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 12px');
+	});
+
+	it('should add the sm size', async () => {
+		await r.rerender({ componentInputs: { size: 'sm' } });
+		r.fixture.detectChanges();
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 16px');
+	});
+
+	it('should add the base size', () => {
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 24px');
+	});
+
+	it('should add the lg size', async () => {
+		await r.rerender({ componentInputs: { size: 'lg' } });
+		r.fixture.detectChanges();
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 32px');
+	});
+
+	it('should add the xl size', async () => {
+		await r.rerender({ componentInputs: { size: 'xl' } });
+		r.fixture.detectChanges();
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 48px');
+	});
+
+	it('should forward the size property if the size is not a pre-defined size', async () => {
+		await r.rerender({ componentInputs: { size: '2rem' } });
+		r.fixture.detectChanges();
+		const debugEl = r.fixture.debugElement.query(By.directive(NgIcon));
+		expect(debugEl.componentInstance.size()).toBe('2rem');
+		expect(icon.getAttribute('style')).toContain('--ng-icon__size: 2rem');
+	});
+});
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/src/lib/hlm-icon.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { injectHlmIconConfig } from './hlm-icon.token';
+
+export type IconSize = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | 'none' | (Record<never, never> & string);
+
+@Directive({
+	selector: 'ng-icon[hlm]',
+	standalone: true,
+	host: {
+		'[style.--ng-icon__size]': '_computedSize()',
+	},
+})
+export class HlmIconDirective {
+	private readonly _config = injectHlmIconConfig();
+	public readonly size = input<IconSize>(this._config.size);
+
+	protected readonly _computedSize = computed(() => {
+		const size = this.size();
+
+		switch (size) {
+			case 'xs':
+				return '12px';
+			case 'sm':
+				return '16px';
+			case 'base':
+				return '24px';
+			case 'lg':
+				return '32px';
+			case 'xl':
+				return '48px';
+			default: {
+				return size;
+			}
+		}
+	});
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/icon/helm/src/lib/hlm-icon.token.ts</source>
+<document_content>
+import { InjectionToken, ValueProvider, inject } from '@angular/core';
+import type { IconSize } from './hlm-icon.directive';
+
+export interface HlmIconConfig {
+	size: IconSize;
+}
+
+const defaultConfig: HlmIconConfig = {
+	size: 'base',
+};
+
+const HlmIconConfigToken = new InjectionToken<HlmIconConfig>('HlmIconConfig');
+
+export function provideHlmIconConfig(config: Partial<HlmIconConfig>): ValueProvider {
+	return { provide: HlmIconConfigToken, useValue: { ...defaultConfig, ...config } };
+}
+
+export function injectHlmIconConfig(): HlmIconConfig {
+	return inject(HlmIconConfigToken, { optional: true }) ?? defaultConfig;
+}
+
+</document_content>
+</document>
+</documents>

@@ -1,0 +1,190 @@
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/generator.spec.ts
+```typescript
+import { type Tree, readProjectConfiguration } from '@nx/devkit';
+import { createTreeWithEmptyWorkspace } from '@nx/devkit/testing';
+
+import { hlmCliNxGeneratorGenerator } from './generator';
+import type { HlmToCliGeneratorGeneratorSchema } from './schema';
+
+describe('hlm-to-nx-generator generator', () => {
+	let tree: Tree;
+	const options: HlmToCliGeneratorGeneratorSchema = {};
+
+	beforeEach(() => {
+		tree = createTreeWithEmptyWorkspace();
+	});
+
+	it.skip('should run successfully', async () => {
+		await hlmCliNxGeneratorGenerator(tree, options);
+		const config = readProjectConfiguration(tree, 'test');
+		expect(config).toBeDefined();
+	});
+});
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/generator.ts
+```typescript
+import { type ProjectConfiguration, type Tree, formatFiles, names, readJson, workspaceRoot } from '@nx/devkit';
+import * as path from 'node:path';
+import { addPrimitiveToSupportedUILibraries } from './lib/add-primitive-to-supported-ui-libraries';
+import { copyFilesFromHlmLibToGenerator, createSharedGeneratorFiles, recursivelyDelete } from './lib/file-management';
+import { getProjectsAndNames } from './lib/get-project-names';
+import type { HlmToCliGeneratorGeneratorSchema } from './schema';
+
+const BASE_PATH = path.join('libs', 'cli', 'src', 'generators', 'ui');
+
+async function createGeneratorFromHlmLibrary(
+	projects: Map<string, ProjectConfiguration>,
+	generatorName: string,
+	internalName: string,
+	tree: Tree,
+	options: HlmToCliGeneratorGeneratorSchema,
+) {
+	const srcPath = path.join(workspaceRoot, projects.get(internalName).sourceRoot);
+	const projectRoot = path.join(BASE_PATH, 'libs', internalName);
+	const supportedUILibsJsonPath = path.join(BASE_PATH, 'supported-ui-libraries.json');
+	const filesPath = path.join(projectRoot, 'files');
+	const peerDependencies = readJson(tree, path.join(projects.get(internalName).root, 'package.json')).peerDependencies;
+	recursivelyDelete(tree, filesPath);
+	addPrimitiveToSupportedUILibraries(tree, supportedUILibsJsonPath, generatorName, internalName, peerDependencies);
+	copyFilesFromHlmLibToGenerator(tree, srcPath, filesPath, options);
+	createSharedGeneratorFiles(tree, projectRoot, options);
+}
+
+export async function hlmCliNxGeneratorGenerator(tree: Tree, options: HlmToCliGeneratorGeneratorSchema) {
+	const { projects, projectNames } = getProjectsAndNames(tree);
+	const projectNamesIgnoringCoreLibs = projectNames.filter((name) => !name.includes('core'));
+
+	for (const internalName of projectNamesIgnoringCoreLibs) {
+		const primitiveName = internalName.replace('ui-', '').replace('-helm', '').replace('-', '');
+		const cleanNames = names(primitiveName);
+		const mergedOptions = { ...options, ...cleanNames };
+		mergedOptions['internalName'] = internalName;
+		mergedOptions['publicName'] = `ui-${primitiveName}-helm`;
+		mergedOptions['primitiveName'] = primitiveName;
+
+		createGeneratorFromHlmLibrary(projects, primitiveName, internalName, tree, mergedOptions);
+	}
+
+	await formatFiles(tree);
+}
+
+export default hlmCliNxGeneratorGenerator;
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/schema.d.ts
+```typescript
+export interface HlmToCliGeneratorGeneratorSchema {
+	additionalDependencies?: string;
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/schema.json
+```json
+{
+	"$schema": "http://json-schema.org/draft-07/schema",
+	"$id": "HlmToCliGenerator",
+	"title": "",
+	"type": "object",
+	"properties": {}
+}
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/add-primitive-to-supported-ui-libraries.ts
+```typescript
+import type { Tree } from '@nx/devkit';
+import { updateJson } from 'nx/src/generators/utils/json';
+
+export const addPrimitiveToSupportedUILibraries = (
+	tree: Tree,
+	supportedJsonPath: string,
+	generatorName: string,
+	internalName: string,
+	peerDependencies: Record<string, string>,
+) => {
+	updateJson(tree, supportedJsonPath, (old) => ({
+		...old,
+		[generatorName]: {
+			internalName,
+			peerDependencies,
+		},
+	}));
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/file-management.ts
+```typescript
+import { type Tree, generateFiles } from '@nx/devkit';
+import * as path from 'node:path';
+import type { HlmToCliGeneratorGeneratorSchema } from '../schema';
+
+export const copyFilesFromHlmLibToGenerator = (
+	tree: Tree,
+	srcPath: string,
+	filesPath: string,
+	options: HlmToCliGeneratorGeneratorSchema,
+) => {
+	generateFiles(tree, srcPath, filesPath, options);
+	tree.delete(path.join(filesPath, 'test-setup.ts'));
+	recursivelyRenameToTemplate(tree, filesPath);
+};
+
+export const createSharedGeneratorFiles = (
+	tree: Tree,
+	projectRoot: string,
+	options: HlmToCliGeneratorGeneratorSchema,
+) => {
+	generateFiles(tree, path.join(__dirname, '..', 'files'), projectRoot, options);
+};
+
+export const recursivelyRenameToTemplate = (tree: Tree, filePath: string) => {
+	tree.children(filePath).forEach((child) => {
+		const childPath = path.join(filePath, child);
+		if (tree.isFile(childPath)) {
+			tree.rename(childPath, `${childPath}.template`);
+		} else {
+			recursivelyRenameToTemplate(tree, childPath);
+		}
+	});
+};
+
+export const recursivelyDelete = (tree: Tree, filePath: string) => {
+	tree.children(filePath).forEach((child) => {
+		const childPath = path.join(filePath, child);
+		if (tree.isFile(childPath)) {
+			tree.delete(childPath);
+		} else {
+			recursivelyDelete(tree, childPath);
+		}
+	});
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/lib/get-project-names.ts
+```typescript
+import { type Tree, getProjects } from '@nx/devkit';
+
+export const getProjectsAndNames = (tree: Tree) => {
+	const projectNames: string[] = [];
+	const projects = getProjects(tree);
+
+	projects.forEach((projectConfiguration, projectName) => {
+		if (projectConfiguration.projectType === 'library' && projectName.includes('helm')) {
+			projectNames.push(projectName);
+		}
+	});
+	return { projects, projectNames };
+};
+
+```
+/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/tools/src/generators/hlm-to-cli-generator/files/generator.ts.template
+```
+import { Tree } from '@nx/devkit';
+import hlmBaseGenerator from '../../../base/generator';
+import type { HlmBaseGeneratorSchema } from '../../../base/schema';
+
+export async function generator(tree: Tree, options: HlmBaseGeneratorSchema) {
+  return await hlmBaseGenerator(tree, {...options, primitiveName: '<%= primitiveName %>', internalName: '<%= internalName %>', publicName: '<%= publicName %>'});
+}
+
+```

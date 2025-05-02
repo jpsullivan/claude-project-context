@@ -1,0 +1,561 @@
+<documents>
+<document index="1">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/index.ts</source>
+<document_content>
+import { NgModule } from '@angular/core';
+
+import { HlmMenuBarItemDirective } from './lib/hlm-menu-bar-item.directive';
+import { HlmMenuBarComponent } from './lib/hlm-menu-bar.component';
+import { HlmMenuGroupComponent } from './lib/hlm-menu-group.component';
+import { HlmMenuItemCheckComponent } from './lib/hlm-menu-item-check.component';
+import { HlmMenuItemCheckboxDirective } from './lib/hlm-menu-item-checkbox.directive';
+import { HlmMenuItemIconDirective } from './lib/hlm-menu-item-icon.directive';
+import { HlmMenuItemRadioComponent } from './lib/hlm-menu-item-radio.component';
+import { HlmMenuItemRadioDirective } from './lib/hlm-menu-item-radio.directive';
+import { HlmMenuItemSubIndicatorComponent } from './lib/hlm-menu-item-sub-indicator.component';
+import { HlmMenuItemDirective } from './lib/hlm-menu-item.directive';
+import { HlmMenuLabelComponent } from './lib/hlm-menu-label.component';
+import { HlmMenuSeparatorComponent } from './lib/hlm-menu-separator.component';
+import { HlmMenuShortcutComponent } from './lib/hlm-menu-shortcut.component';
+import { HlmMenuComponent } from './lib/hlm-menu.component';
+import { HlmSubMenuComponent } from './lib/hlm-sub-menu.component';
+
+export * from './lib/hlm-menu-bar-item.directive';
+export * from './lib/hlm-menu-bar.component';
+export * from './lib/hlm-menu-group.component';
+export * from './lib/hlm-menu-item-check.component';
+export * from './lib/hlm-menu-item-checkbox.directive';
+export * from './lib/hlm-menu-item-icon.directive';
+export * from './lib/hlm-menu-item-radio.component';
+export * from './lib/hlm-menu-item-radio.directive';
+export * from './lib/hlm-menu-item-sub-indicator.component';
+export * from './lib/hlm-menu-item.directive';
+export * from './lib/hlm-menu-label.component';
+export * from './lib/hlm-menu-separator.component';
+export * from './lib/hlm-menu-shortcut.component';
+export * from './lib/hlm-menu.component';
+export * from './lib/hlm-sub-menu.component';
+
+export const HlmMenuItemImports = [
+	HlmMenuItemDirective,
+	HlmMenuItemIconDirective,
+	HlmMenuGroupComponent,
+	HlmMenuItemSubIndicatorComponent,
+	HlmMenuItemRadioComponent,
+	HlmMenuItemCheckComponent,
+	HlmMenuShortcutComponent,
+	HlmMenuItemCheckboxDirective,
+	HlmMenuItemRadioDirective,
+];
+export const HlmMenuStructureImports = [HlmMenuLabelComponent, HlmMenuSeparatorComponent] as const;
+export const HlmMenuImports = [
+	...HlmMenuItemImports,
+	...HlmMenuStructureImports,
+	HlmMenuComponent,
+	HlmSubMenuComponent,
+] as const;
+export const HlmMenuBarImports = [...HlmMenuImports, HlmMenuBarComponent, HlmMenuBarItemDirective] as const;
+
+@NgModule({
+	imports: [...HlmMenuItemImports],
+	exports: [...HlmMenuItemImports],
+})
+export class HlmMenuItemModule {}
+
+@NgModule({
+	imports: [...HlmMenuImports],
+	exports: [...HlmMenuImports],
+})
+export class HlmMenuModule {}
+
+@NgModule({
+	imports: [...HlmMenuBarImports],
+	exports: [...HlmMenuBarImports],
+})
+export class HlmMenuBarModule {}
+
+</document_content>
+</document>
+<document index="2">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/test-setup.ts</source>
+<document_content>
+// @ts-expect-error https://thymikee.github.io/jest-preset-angular/docs/getting-started/test-environment
+globalThis.ngJest = {
+	testEnvironmentOptions: {
+		errorOnUnknownElements: true,
+		errorOnUnknownProperties: true,
+	},
+};
+import 'jest-preset-angular/setup-jest';
+
+</document_content>
+</document>
+<document index="3">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-bar-item.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuItemDirective } from '@spartan-ng/brain/menu';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmMenuBarItem]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnMenuItemDirective],
+})
+export class HlmMenuBarItemDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none focus:bg-accent focus:text-accent-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="4">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-bar.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuBarDirective } from '@spartan-ng/brain/menu';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-bar',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnMenuBarDirective],
+	template: '<ng-content/>',
+})
+export class HlmMenuBarComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm('border-border flex h-10 items-center space-x-1 rounded-md border bg-background p-1', this.userClass()),
+	);
+}
+
+</document_content>
+</document>
+<document index="5">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-group.component.ts</source>
+<document_content>
+import { Component } from '@angular/core';
+import { BrnMenuGroupDirective } from '@spartan-ng/brain/menu';
+
+@Component({
+	selector: 'hlm-menu-group',
+	standalone: true,
+	host: {
+		class: 'block',
+	},
+	hostDirectives: [BrnMenuGroupDirective],
+	template: `
+		<ng-content />
+	`,
+})
+export class HlmMenuGroupComponent {}
+
+</document_content>
+</document>
+<document index="6">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-check.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideCheck } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-item-check',
+	providers: [provideIcons({ lucideCheck })],
+	imports: [NgIcon, HlmIconDirective],
+	template: `
+		<!-- Using 1rem for size to mimick h-4 w-4 -->
+		<ng-icon hlm size="1rem" name="lucideCheck" />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuItemCheckComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'group-[.checked]:opacity-100 opacity-0 absolute left-2 flex h-3.5 w-3.5 items-center justify-center',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="7">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-checkbox.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuItemCheckboxDirective } from '@spartan-ng/brain/menu';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmMenuItemCheckbox]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [
+		{
+			directive: BrnMenuItemCheckboxDirective,
+			inputs: ['disabled: disabled', 'checked: checked'],
+			outputs: ['triggered: triggered'],
+		},
+	],
+})
+export class HlmMenuItemCheckboxDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'group w-full relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="8">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-icon.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { provideHlmIconConfig } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmMenuIcon]',
+	standalone: true,
+	providers: [provideHlmIconConfig({ size: 'sm' })],
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuItemIconDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('mr-2', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="9">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-radio.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideCircle } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-item-radio',
+	providers: [provideIcons({ lucideCircle })],
+	imports: [NgIcon, HlmIconDirective],
+	template: `
+		<!-- Using 0.5rem for size to mimick h-2 w-2 -->
+		<ng-icon hlm size="0.5rem" class="*:*:fill-current" name="lucideCircle" />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuItemRadioComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'group-[.checked]:opacity-100 opacity-0 absolute left-2 flex h-3.5 w-3.5 items-center justify-center',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="10">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-radio.directive.ts</source>
+<document_content>
+import { Directive, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuItemRadioDirective } from '@spartan-ng/brain/menu';
+import type { ClassValue } from 'clsx';
+
+@Directive({
+	selector: '[hlmMenuItemRadio]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [
+		{
+			directive: BrnMenuItemRadioDirective,
+			inputs: ['disabled: disabled', 'checked: checked'],
+			outputs: ['triggered: triggered'],
+		},
+	],
+})
+export class HlmMenuItemRadioDirective {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'group w-full relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+<document index="11">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item-sub-indicator.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { lucideChevronRight } from '@ng-icons/lucide';
+import { hlm } from '@spartan-ng/brain/core';
+import { HlmIconDirective } from '@spartan-ng/ui-icon-helm';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-item-sub-indicator',
+	providers: [provideIcons({ lucideChevronRight })],
+	imports: [NgIcon, HlmIconDirective],
+	template: `
+		<ng-icon hlm size="none" class="h-full w-full" name="lucideChevronRight" />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuItemSubIndicatorComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('inline-block ml-auto h-4 w-4', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="12">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-item.directive.ts</source>
+<document_content>
+import { Directive, Input, booleanAttribute, computed, input, signal } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuItemDirective } from '@spartan-ng/brain/menu';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const hlmMenuItemVariants = cva(
+	'group w-full relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground disabled:pointer-events-none disabled:opacity-50',
+	{
+		variants: { inset: { true: 'pl-8', false: '' } },
+		defaultVariants: { inset: false },
+	},
+);
+export type HlmMenuItemVariants = VariantProps<typeof hlmMenuItemVariants>;
+
+@Directive({
+	selector: '[hlmMenuItem]',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [
+		{
+			directive: BrnMenuItemDirective,
+			inputs: ['disabled: disabled'],
+			outputs: ['triggered: triggered'],
+		},
+	],
+})
+export class HlmMenuItemDirective {
+	private readonly _inset = signal<boolean>(false);
+
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(hlmMenuItemVariants({ inset: this._inset() }), this.userClass()));
+
+	@Input({ transform: booleanAttribute })
+	public set inset(value: boolean) {
+		this._inset.set(value);
+	}
+}
+
+</document_content>
+</document>
+<document index="13">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-label.component.ts</source>
+<document_content>
+import { Component, Input, booleanAttribute, computed, input, signal } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-label',
+	standalone: true,
+	template: `
+		<ng-content />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuLabelComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm('block px-2 py-1.5 text-sm font-semibold', this._inset() && 'pl-8', this.userClass()),
+	);
+
+	private readonly _inset = signal<ClassValue>(false);
+	@Input({ transform: booleanAttribute })
+	public set inset(value: boolean) {
+		this._inset.set(value);
+	}
+}
+
+</document_content>
+</document>
+<document index="14">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-separator.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-separator',
+	standalone: true,
+	template: '',
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuSeparatorComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm('block -mx-1 my-1 h-px bg-muted', this.userClass()));
+}
+
+</document_content>
+</document>
+<document index="15">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu-shortcut.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-menu-shortcut',
+	standalone: true,
+	template: `
+		<ng-content />
+	`,
+	host: {
+		'[class]': '_computedClass()',
+	},
+})
+export class HlmMenuShortcutComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm('ml-auto font-light text-xs tracking-widest opacity-60', this.userClass()),
+	);
+}
+
+</document_content>
+</document>
+<document index="16">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-menu.component.ts</source>
+<document_content>
+import { Component, Input, computed, input, signal } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuDirective } from '@spartan-ng/brain/menu';
+import { type VariantProps, cva } from 'class-variance-authority';
+import type { ClassValue } from 'clsx';
+
+export const menuVariants = cva(
+	'block border-border min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+	{
+		variants: {
+			variant: {
+				default: 'my-0.5',
+				menubar: 'my-2',
+			},
+		},
+		defaultVariants: {
+			variant: 'default',
+		},
+	},
+);
+type MenuVariants = VariantProps<typeof menuVariants>;
+
+@Component({
+	selector: 'hlm-menu',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnMenuDirective],
+	template: `
+		<ng-content />
+	`,
+})
+export class HlmMenuComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() => hlm(menuVariants({ variant: this._variant() }), this.userClass()));
+
+	private readonly _variant = signal<MenuVariants['variant']>('default');
+	@Input()
+	public set variant(value: MenuVariants['variant']) {
+		this._variant.set(value);
+	}
+}
+
+</document_content>
+</document>
+<document index="17">
+<source>/Users/josh/Documents/GitHub/spartan-ng/spartan/libs/ui/menu/helm/src/lib/hlm-sub-menu.component.ts</source>
+<document_content>
+import { Component, computed, input } from '@angular/core';
+import { hlm } from '@spartan-ng/brain/core';
+import { BrnMenuDirective } from '@spartan-ng/brain/menu';
+import type { ClassValue } from 'clsx';
+
+@Component({
+	selector: 'hlm-sub-menu',
+	standalone: true,
+	host: {
+		'[class]': '_computedClass()',
+	},
+	hostDirectives: [BrnMenuDirective],
+	template: `
+		<ng-content />
+	`,
+})
+export class HlmSubMenuComponent {
+	public readonly userClass = input<ClassValue>('', { alias: 'class' });
+	protected _computedClass = computed(() =>
+		hlm(
+			'border-border min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+			this.userClass(),
+		),
+	);
+}
+
+</document_content>
+</document>
+</documents>
